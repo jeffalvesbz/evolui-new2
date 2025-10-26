@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from "react"
 import { useHistoricoStore, HistoricoItem } from "../stores/useHistoricoStore"
 import { useEditalStore } from "../stores/useEditalStore"
@@ -15,40 +14,33 @@ interface HistoricoPageProps {
   setActiveView: (view: string) => void;
 }
 
-// FIX: Define missing LoadingList component.
-function LoadingList() {
-    return (
-        <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                    <Skeleton className="h-12 w-12 rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
-                    </div>
+const LoadingList: React.FC = () => (
+    <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
                 </div>
-            ))}
-        </div>
-    );
-}
+            </div>
+        ))}
+    </div>
+);
 
-// FIX: Define missing EmptyState component.
-function EmptyState() {
-    return (
-        <div className="text-center py-16">
-            <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-                Nenhum registro encontrado
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-                Tente ajustar os filtros ou adicione uma nova sessão de estudo.
-            </p>
-        </div>
-    );
-}
+const EmptyState: React.FC = () => (
+    <div className="text-center py-16">
+        <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h3 className="mt-4 text-lg font-semibold text-foreground">
+            Nenhum registro encontrado
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+            Tente ajustar os filtros ou adicione uma nova sessão de estudo.
+        </p>
+    </div>
+);
 
-// FIX: Define missing AnaliseSemanal component.
-function AnaliseSemanal({ historico }: { historico: HistoricoItem[] }) {
+const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico }) => {
     const dados = useMemo(() => {
         const diasDaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const hoje = new Date();
@@ -78,9 +70,8 @@ function AnaliseSemanal({ historico }: { historico: HistoricoItem[] }) {
             </CardContent>
         </Card>
     );
-}
+};
 
-// FIX: Define missing EditModal component.
 interface EditModalProps {
     registro: HistoricoItem;
     onSave: (updatedData: any) => Promise<void>;
@@ -88,7 +79,7 @@ interface EditModalProps {
     isSaving: boolean;
 }
 
-function EditModal({ registro, onSave, onCancel, isSaving }: EditModalProps) {
+const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSaving }) => {
     const [formData, setFormData] = useState({ ...registro });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -181,7 +172,8 @@ function EditModal({ registro, onSave, onCancel, isSaving }: EditModalProps) {
             </Card>
         </div>
     );
-}
+};
+
 
 export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   const { historico, fetchHistorico, loading } = useHistoricoStore()

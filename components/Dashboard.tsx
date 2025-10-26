@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay } from 'date-fns';
@@ -178,7 +177,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       const tempoTotalSegundos = sessoesDaSemana.reduce((acc, s) => acc + s.tempo_estudado, 0);
       const tempoTotalSemanaMinutos = Math.round(tempoTotalSegundos / 60);
       
-      // FIX: Cast `goalMinutes` to a number to prevent type errors.
       const metaSemanal = Math.max(Number(goalMinutes) || 0, 1) * 7;
       const progressoSemanalPercent = metaSemanal > 0 ? Math.min(100, Math.round((tempoTotalSemanaMinutos / metaSemanal) * 100)) : 0;
 
@@ -195,7 +193,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           };
       });
 
-      const tempoPorDisciplina = sessoesDaSemana.reduce((acc, sessao) => {
+// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
+      const tempoPorDisciplina = sessoesDaSemana.reduce((acc: Record<string, number>, sessao) => {
           const topicoInfo = disciplinas
               .flatMap(d => d.topicos.map(t => ({...t, disciplinaNome: d.nome})))
               .find(t => t.id === sessao.topico_id);
@@ -209,7 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           acc[nomeDisciplina] += tempoMinutos;
           
           return acc;
-      }, {} as Record<string, number>);
+      }, {});
 
       const dadosGraficoDisciplinas = Object.entries(tempoPorDisciplina)
           .map(([name, value]) => ({
@@ -227,7 +226,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   }, [sessoes, disciplinas, goalMinutes]);
 
 
-  // FIX: Cast `goalMinutes` to a number to prevent type errors.
   const safeGoalMinutes = Math.max(Number(goalMinutes) || 0, 1);
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
   const metaPercentual = Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100));

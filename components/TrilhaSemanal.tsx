@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { FootprintsIcon, CheckIcon } from './icons';
+import { FootprintsIcon, CheckIcon, PlayIcon } from './icons';
 import { Topico } from '../types';
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
@@ -16,13 +16,21 @@ const TopicCard: React.FC<{
     topic: DraggableTopic; 
     onDragStart: (e: React.DragEvent) => void 
 }> = ({ topic, onDragStart }) => {
-    const { iniciarSessaoParaConclusaoRapida } = useEstudosStore();
+    const { iniciarSessaoParaConclusaoRapida, iniciarSessao } = useEstudosStore();
 
     const handleConcluir = () => {
         iniciarSessaoParaConclusaoRapida({
             id: topic.id,
             nome: topic.titulo,
             disciplinaId: topic.disciplinaId,
+        });
+    };
+    
+    const handleIniciarEstudo = () => {
+        iniciarSessao({
+            id: topic.id,
+            nome: topic.titulo,
+            disciplinaId: topic.disciplinaId
         });
     };
 
@@ -50,16 +58,28 @@ const TopicCard: React.FC<{
           <p className="text-xs text-muted-foreground">{topic.disciplinaNome}</p>
         </div>
         {!topic.concluido && (
-          <button 
-            onClick={(e) => {
-                e.stopPropagation(); // Prevent drag from starting
-                handleConcluir();
-            }}
-            className="p-2 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
-            title="Concluir tópico"
-          >
-            <CheckIcon className="w-4 h-4" />
-          </button>
+          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleIniciarEstudo();
+                }}
+                className="p-2 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                title="Iniciar estudo"
+            >
+                <PlayIcon className="w-4 h-4" />
+            </button>
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation(); // Prevent drag from starting
+                    handleConcluir();
+                }}
+                className="p-2 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                title="Concluir tópico (registro rápido)"
+            >
+                <CheckIcon className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
     );

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -43,16 +42,15 @@ const CicloDeEstudos: React.FC = () => {
     const { totalTempoCiclo, dadosGrafico } = useMemo(() => {
         if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [] };
         
-        // FIX: Ensure `s.tempo_previsto` is treated as a number during summation.
         const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + Number(s.tempo_previsto || 0), 0);
         
-        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc, sessao) => {
+// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
+        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc: Record<string, number>, sessao) => {
           const nomeDisciplina = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
           const tempoAtual = acc[nomeDisciplina] || 0;
-          // FIX: Ensure `sessao.tempo_previsto` is treated as a number during summation.
           acc[nomeDisciplina] = tempoAtual + Number(sessao.tempo_previsto || 0);
           return acc;
-        }, {} as Record<string, number>);
+        }, {});
 
         const graficoData = Object.entries(tempoPorDisciplina).map(([name, value]) => ({
             name,

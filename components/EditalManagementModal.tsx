@@ -10,11 +10,12 @@ type FormState = Omit<StudyPlan, 'id'>;
 
 const EditalManagementModal: React.FC = () => {
     const { isEditalModalOpen, closeEditalModal } = useModalStore();
-    const { editais, addEdital, updateEdital, removeEdital } = useEditalStore();
+    const { editais, addEdital, updateEdital, removeEdital, setEditalAtivo } = useEditalStore();
 
     const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list');
     const [selectedEdital, setSelectedEdital] = useState<StudyPlan | null>(null);
     const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     const { register, handleSubmit, reset, formState: { errors } } = useForm<FormState>();
 
@@ -49,10 +50,13 @@ const EditalManagementModal: React.FC = () => {
     };
 
     const onSubmit = async (data: FormState) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
         try {
             if (mode === 'create') {
-                await addEdital(data);
-                toast.success('Edital criado com sucesso!');
+                const novoEdital = await addEdital(data);
+                setEditalAtivo(novoEdital); // UX Improvement: Set new edital as active
+                toast.success('Edital criado e ativado com sucesso!');
             } else if (mode === 'edit' && selectedEdital) {
                 await updateEdital(selectedEdital.id, data);
                 toast.success('Edital atualizado com sucesso!');
@@ -61,6 +65,8 @@ const EditalManagementModal: React.FC = () => {
         } catch (error) {
             toast.error('Ocorreu um erro ao salvar o edital.');
             console.error(error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
@@ -145,8 +151,8 @@ const EditalManagementModal: React.FC = () => {
             </div>
             <div className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2">
                 <button type="button" onClick={handleCancelForm} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
-                <button type="submit" className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2">
-                    <SaveIcon className="w-4 h-4"/> Salvar
+                <button type="submit" disabled={isSubmitting} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50">
+                     {isSubmitting ? 'Salvando...' : <><SaveIcon className="w-4 h-4"/> Salvar</>}
                 </button>
             </div>
         </form>

@@ -22,23 +22,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ loading: true });
     try {
-      // Em um app real, a API retornaria o token e os dados do usuário
-      // const { token, user } = await loginApi(email, password);
-      
-      // MOCK para demonstração sem backend real
-      if (email === 'test@evolui.app') {
-        const MOCK_TOKEN = 'fake-jwt-token-for-testing';
-        const MOCK_USER: User = { id: 'user-1', name: 'Jefferson Alves', email: 'test@evolui.app' };
-        localStorage.setItem('authToken', MOCK_TOKEN);
-        set({ user: MOCK_USER, token: MOCK_TOKEN, isAuthenticated: true });
-      } else {
-        throw new Error("Credenciais inválidas.");
-      }
+      const { token, user } = await loginApi(email, password);
+      localStorage.setItem('authToken', token);
+      set({ user, token, isAuthenticated: true, loading: false });
     } catch (error) {
       console.error("Login failed:", error);
-      throw error;
-    } finally {
       set({ loading: false });
+      throw error;
     }
   },
 

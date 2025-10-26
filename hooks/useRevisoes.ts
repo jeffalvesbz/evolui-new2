@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -231,7 +230,8 @@ export const useEstatisticasRevisoes = () => {
     }, {} as Record<string, number>)
 
     // Performance por origem
-    const performancePorOrigem = revisoes.reduce<Record<string, { total: number; concluidas: number }>>((acc, revisao) => {
+// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
+    const performancePorOrigem = revisoes.reduce((acc: Record<string, { total: number; concluidas: number }>, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }
@@ -240,13 +240,14 @@ export const useEstatisticasRevisoes = () => {
         acc[revisao.origem].concluidas++
       }
       return acc
-    }, {} as Record<string, { total: number; concluidas: number }>)
+    }, {})
 
     // Calcular taxa de conclusão por origem
-    const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc, [origem, dados]) => {
+// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
+    const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc: Record<string, number>, [origem, dados]) => {
       acc[origem] = dados.total > 0 ? Math.round((dados.concluidas / dados.total) * 100) : 0
       return acc
-    }, {} as Record<string, number>)
+    }, {})
 
     return {
       revisoesUltimaSemana: revisoesUltimaSemana.length,

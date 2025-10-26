@@ -342,15 +342,24 @@ const CriarCicloModal: React.FC = () => {
         nextStep();
     }
 
-    const onSave = (data: FormData) => {
-        const novoCiclo = {
-            nome: data.nomeCiclo,
-            sessoes: data.sessoesGeradas,
-        };
-        const cicloCriado = addCiclo(novoCiclo as Omit<Ciclo, "id">);
-        setCicloAtivoId(cicloCriado.id);
-        toast.success(`Ciclo "${cicloCriado.nome}" criado e ativado!`);
-        closeModal();
+    const onSave = async (data: FormData) => {
+        try {
+            const novoCicloData = {
+                nome: data.nomeCiclo,
+                sessoes: data.sessoesGeradas.map((sessao, index) => ({
+                    ...sessao,
+                    ordem: index,
+                })),
+            };
+            const cicloCriado = await addCiclo(novoCicloData as Omit<Ciclo, 'id' | 'studyPlanId'>);
+            if (cicloCriado) {
+                setCicloAtivoId(cicloCriado.id);
+                toast.success(`Ciclo "${cicloCriado.nome}" criado e ativado!`);
+                closeModal();
+            }
+        } catch (e) {
+            console.error("Failed to save ciclo", e);
+        }
     };
 
     const steps = [
