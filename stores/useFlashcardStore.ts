@@ -1,86 +1,85 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { Flashcard } from '../types';
-import { addDays, startOfDay, isAfter } from 'date-fns';
-
-const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+import { getFlashcards, createFlashcards, updateFlashcardApi } from '../services/geminiService';
+import { toast } from '../components/Sonner';
 
 interface FlashcardStore {
   flashcards: Flashcard[];
-  _hasHydrated: boolean;
-  addFlashcards: (newFlashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[], topicoId: string) => void;
-  updateFlashcard: (id: string, updates: Partial<Flashcard>) => void;
+  loading: boolean;
+  fetchFlashcardsByTopic: (topicoId: string) => Promise<void>;
+  addFlashcards: (newFlashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[], topicoId: string) => Promise<void>;
+  updateFlashcard: (id: string, updates: Partial<Flashcard>) => Promise<void>;
   getFlashcardsByTopic: (topicoId: string) => Flashcard[];
   getDueFlashcards: () => Flashcard[];
   getUpcomingFlashcards: () => Flashcard[];
-  fetchFlashcards: (userId: string, force?: boolean) => Promise<void>;
-  removeFlashcardsByTopicIds: (topicIds: string[]) => void;
+  removeFlashcardsByTopicIds: (topicIds: string[]) => void; // Assume local removal for now
 }
 
-export const useFlashcardsStore = create<FlashcardStore>()(
-  persist(
-    (set, get) => ({
+export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
       flashcards: [],
-      _hasHydrated: false,
-      addFlashcards: (newFlashcards, topicoId) => {
-        const tomorrow = startOfDay(addDays(new Date(), 1));
+      loading: false,
 
-        const formattedFlashcards: Flashcard[] = newFlashcards.map(fc => ({
-          ...fc,
-          id: generateId('flashcard'),
-          topico_id: topicoId,
-          // Initialize SRS properties
-          interval: 1,
-          easeFactor: 2.5,
-          dueDate: tomorrow.toISOString(),
-        }));
-
-        set(state => ({
-          flashcards: [...state.flashcards, ...formattedFlashcards],
-        }));
+      fetchFlashcardsByTopic: async (topicoId: string) => {
+        set({ loading: true });
+        try {
+          const flashcards = await getFlashcards(topicoId);
+          set(state => ({
+            // Merge new flashcards, avoiding duplicates
+            flashcards: [...state.flashcards.filter(fc => fc.topico_id !== topicoId), ...flashcards]
+          }));
+        } catch (error) {
+          console.error(`Failed to fetch flashcards for topic ${topicoId}:`, error);
+          toast.error("Não foi possível carregar os flashcards.");
+        } finally {
+          set({ loading: false });
+        }
       },
-      updateFlashcard: (id, updates) => {
-        set(state => ({
-          flashcards: state.flashcards.map(fc =>
-            fc.id === id ? { ...fc, ...updates } : fc
-          ),
-        }));
+
+      addFlashcards: async (newFlashcards, topicoId) => {
+        try {
+          const createdFlashcards = await createFlashcards(topicoId, { flashcards: newFlashcards });
+          set(state => ({
+            flashcards: [...state.flashcards, ...createdFlashcards],
+          }));
+        } catch(e) {
+            toast.error("Falha ao salvar flashcards.");
+            throw e;
+        }
+      },
+      updateFlashcard: async (id, updates) => {
+        try {
+            const flashcardAtualizado = await updateFlashcardApi(id, updates);
+            set(state => ({
+              flashcards: state.flashcards.map(fc =>
+                fc.id === id ? flashcardAtualizado : fc
+              ),
+            }));
+        } catch(e) {
+            toast.error("Falha ao atualizar flashcard.");
+            // Opcional: reverter a UI para o estado anterior
+            throw e;
+        }
       },
       getFlashcardsByTopic: (topicoId) => {
         return get().flashcards.filter(fc => fc.topico_id === topicoId);
       },
       getDueFlashcards: () => {
-        const today = startOfDay(new Date());
-        return get().flashcards.filter(fc => {
-            const dueDate = startOfDay(new Date(fc.dueDate));
-            return dueDate <= today;
-        });
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        return get().flashcards.filter(fc => new Date(fc.dueDate) <= today);
       },
       getUpcomingFlashcards: () => {
-        const today = startOfDay(new Date());
-        return get().flashcards.filter(fc => {
-            const dueDate = startOfDay(new Date(fc.dueDate));
-            return isAfter(dueDate, today);
-        });
-      },
-      fetchFlashcards: async (userId, force = false) => {
-        console.log(`Fetching flashcards for user ${userId}, force: ${force}`);
-        // This is a placeholder for a future API call.
-        return Promise.resolve();
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        return get().flashcards.filter(fc => new Date(fc.dueDate) > today);
       },
       removeFlashcardsByTopicIds: (topicIds) => {
+          // No backend, this would be a single API call
+          console.warn("removeFlashcardsByTopicIds should be a backend operation");
           const topicIdSet = new Set(topicIds);
           set(state => ({
               flashcards: state.flashcards.filter(fc => !topicIdSet.has(fc.topico_id))
           }));
       },
-    }),
-    {
-      name: 'evolui-flashcards-store',
-      storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) state._hasHydrated = true;
-      },
-    }
-  )
+    })
 );

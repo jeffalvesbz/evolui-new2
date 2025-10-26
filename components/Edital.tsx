@@ -17,13 +17,10 @@ const generateTopicId = () =>
 
 const Edital = () => {
   const disciplinas = useDisciplinasStore((state) => state.disciplinas);
-  const carregarDisciplinas = useDisciplinasStore((state) => state.setEditalAtivo);
   const addDisciplina = useDisciplinasStore((state) => state.addDisciplina);
   const updateDisciplina = useDisciplinasStore((state) => state.updateDisciplina);
   const removeDisciplina = useDisciplinasStore((state) => state.removeDisciplina);
   const getAverageProgress = useDisciplinasStore((state) => state.getAverageProgress);
-  const resetDisciplinas = useDisciplinasStore((state) => state.resetDisciplinas);
-  const editalAtivo = useEditalStore((state) => state.editalAtivo);
   const openAddTopicModal = useModalStore((state) => state.openAddTopicModal);
 
   const [mode, setMode] = useState<PainelMode>('default');
@@ -31,22 +28,13 @@ const Edital = () => {
 
   const averageProgress = useMemo(() => getAverageProgress(), [getAverageProgress, disciplinas]);
 
-  useEffect(() => {
-    const id = editalAtivo?.id;
-    if (id) {
-      carregarDisciplinas(id);
-    } else {
-      resetDisciplinas();
-    }
-  }, [carregarDisciplinas, resetDisciplinas, editalAtivo?.id]);
-
   const handleCreateDisciplina = async (payload: PainelDisciplinaPayload) => {
     try {
       const disciplina = await addDisciplina({
         nome: payload.nome,
         anotacoes: payload.anotacoes,
         topicos: payload.topicos.map((topic) => ({
-          id: '', // será gerado pelo store
+          id: '', // será gerado pelo backend
           titulo: (topic.titulo || '').trim(),
           concluido: topic.concluido || false,
           nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
@@ -68,20 +56,11 @@ const Edital = () => {
     if (!selectedDiscipline) return;
 
     try {
-      const sanitizedTopicos: Topico[] = payload.topicos.map((topic) => ({
-        id: topic.id ?? generateTopicId(),
-        titulo: topic.titulo || '',
-        concluido: topic.concluido ?? false,
-        nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
-        ultimaRevisao: topic.ultimaRevisao ?? null,
-        proximaRevisao: topic.proximaRevisao ?? null,
-      }));
-
       await updateDisciplina(selectedDiscipline.id, {
         nome: payload.nome,
         anotacoes: payload.anotacoes,
         progresso: payload.progresso,
-        topicos: sanitizedTopicos,
+        topicos: payload.topicos,
       });
 
       toast.success(`Disciplina "${payload.nome}" atualizada!`);

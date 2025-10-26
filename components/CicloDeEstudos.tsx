@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -42,11 +43,14 @@ const CicloDeEstudos: React.FC = () => {
     const { totalTempoCiclo, dadosGrafico } = useMemo(() => {
         if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [] };
         
-        const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + s.tempo_previsto, 0);
+        // FIX: Ensure `s.tempo_previsto` is treated as a number during summation.
+        const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + Number(s.tempo_previsto || 0), 0);
         
         const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc, sessao) => {
           const nomeDisciplina = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
-          acc[nomeDisciplina] = (acc[nomeDisciplina] || 0) + sessao.tempo_previsto;
+          const tempoAtual = acc[nomeDisciplina] || 0;
+          // FIX: Ensure `sessao.tempo_previsto` is treated as a number during summation.
+          acc[nomeDisciplina] = tempoAtual + Number(sessao.tempo_previsto || 0);
           return acc;
         }, {} as Record<string, number>);
 

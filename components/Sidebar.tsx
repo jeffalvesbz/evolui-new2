@@ -13,7 +13,7 @@ import {
   SettingsIcon,
   PencilRulerIcon,
 } from './icons';
-import { mockUser } from '../data/mockData';
+import { useAuthStore } from '../stores/useAuthStore';
 
 interface SidebarProps {
   activeView: string;
@@ -36,6 +36,7 @@ const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolea
 );
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
+  const { user, logout } = useAuthStore();
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutGridIcon /> },
     { id: 'planejamento', label: 'Planejamento', icon: <ClipboardListIcon /> },
@@ -69,16 +70,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
           />
         ))}
       </nav>
-      <div className="p-4 border-t border-white/10 space-y-4">
-        <div className="p-3 bg-black/20 rounded-lg">
-            <p className="font-semibold text-sm text-foreground">{mockUser.name}</p>
-            <p className="text-xs text-muted-foreground">{mockUser.status}</p>
+      {user && (
+        <div className="p-4 border-t border-white/10 space-y-4">
+            <div className="p-3 bg-black/20 rounded-lg">
+                <p className="font-semibold text-sm text-foreground">{user.name}</p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button className="flex-1 flex items-center justify-between p-3 bg-black/20 rounded-lg hover:bg-black/30 transition-colors">
+                    <span className="font-semibold text-sm text-foreground">Configurações</span>
+                    <SettingsIcon className="w-4 h-4 text-muted-foreground"/>
+                </button>
+                 <button onClick={logout} className="p-3 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors font-semibold text-sm">
+                    Sair
+                </button>
+            </div>
         </div>
-        <button className="w-full flex items-center justify-between p-3 bg-black/20 rounded-lg hover:bg-black/30 transition-colors">
-            <span className="font-semibold text-sm text-foreground">Configurações</span>
-            <SettingsIcon className="w-4 h-4 text-muted-foreground"/>
-        </button>
-      </div>
+      )}
     </aside>
   );
 };

@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { SessaoEstudo } from '../types';
-import { mockSessoesPorEdital } from '../data/mockData';
 import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
+import { getSessoes, createSessao, updateSessaoApi, deleteSessao } from '../services/geminiService';
+import { useEditalStore } from './useEditalStore';
 
 export interface SessaoAtual {
   topico: {
@@ -39,16 +39,13 @@ interface PomodoroSettings {
 
 interface EstudosStore {
   sessoes: SessaoEstudo[];
-  sessoesPorEdital: Record<string, SessaoEstudo[]>;
   trilha: TrilhaSemanalData;
-  trilhaPorEdital: Record<string, TrilhaSemanalData>;
-  editalAtivoId: string | null;
+  loading: boolean;
   sessaoAtual: SessaoAtual | null;
   timerInterval: number | null;
   pomodoroSettings: PomodoroSettings;
-  _hasHydrated: boolean;
   
-  setEditalAtivo: (editalId: string) => void;
+  fetchSessoes: (editalId: string) => Promise<void>;
   
   // Ações do cronômetro
   iniciarSessao: (topico: { id: string, nome: string, disciplinaId?: string }, mode?: 'cronometro' | 'pomodoro') => void;
@@ -58,32 +55,25 @@ interface EstudosStore {
   pausarSessao: () => void;
   retomarSessao: () => void;
   encerrarSessaoParaSalvar: () => void;
-  salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id'> & { topico_id: string }, tempoEmSegundos?: number) => Promise<void>;
+  salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id' | 'studyPlanId'> & { topico_id: string }, tempoEmSegundos?: number) => Promise<void>;
   descartarSessao: () => void;
   alternarModoTimer: () => void;
   updatePomodoroSettings: (settings: Partial<PomodoroSettings>) => void;
   skipBreak: () => void;
 
-
-  addSessao: (sessao: SessaoEstudo) => Promise<void>;
+  addSessao: (sessao: Omit<SessaoEstudo, 'id' | 'studyPlanId'>) => Promise<void>;
   updateSessao: (id: string, updates: Partial<Omit<SessaoEstudo, 'id'>>) => Promise<void>;
   removeSessao: (id: string) => Promise<void>;
   moveTopicoNaTrilha: (topicoId: string, fromDia: string, toDia: string, fromIndex: number, toIndex: number) => void;
-  removeDataForEdital: (editalId: string) => void;
-  initializeDataForEdital: (editalId: string) => void;
   _tick: () => void;
 }
 
 const emptyTrilha: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
 
-export const useEstudosStore = create<EstudosStore>()(
-  persist(
-    (set, get) => ({
+export const useEstudosStore = create<EstudosStore>((set, get) => ({
       sessoes: [],
-      sessoesPorEdital: {},
       trilha: emptyTrilha,
-      trilhaPorEdital: {},
-      editalAtivoId: null,
+      loading: false,
       sessaoAtual: null,
       timerInterval: null,
       pomodoroSettings: {
@@ -92,32 +82,18 @@ export const useEstudosStore = create<EstudosStore>()(
         longBreak: 15 * 60,
         cyclesBeforeLongBreak: 4,
       },
-      _hasHydrated: false,
 
-      setEditalAtivo: (editalId) => {
-        set(state => {
-          let sessoesDoEdital = state.sessoesPorEdital[editalId];
-          let trilhaDoEdital = state.trilhaPorEdital[editalId];
-          const newSessoesState = { ...state.sessoesPorEdital };
-          const newTrilhaState = { ...state.trilhaPorEdital };
-
-          if (sessoesDoEdital === undefined) {
-            sessoesDoEdital = mockSessoesPorEdital[editalId] ?? [];
-            newSessoesState[editalId] = sessoesDoEdital;
+      fetchSessoes: async (editalId: string) => {
+          set({ loading: true });
+          try {
+              const sessoes = await getSessoes(editalId);
+              set({ sessoes });
+          } catch(error) {
+              console.error("Failed to fetch study sessions:", error);
+              toast.error("Não foi possível carregar as sessões de estudo.");
+          } finally {
+              set({ loading: false });
           }
-          if (trilhaDoEdital === undefined) {
-            trilhaDoEdital = emptyTrilha;
-            newTrilhaState[editalId] = trilhaDoEdital;
-          }
-
-          return {
-            editalAtivoId: editalId,
-            sessoes: sessoesDoEdital,
-            trilha: trilhaDoEdital,
-            sessoesPorEdital: newSessoesState,
-            trilhaPorEdital: newTrilhaState,
-          };
-        });
       },
 
       _tick: () => {
@@ -279,7 +255,6 @@ export const useEstudosStore = create<EstudosStore>()(
         
         await addSessao({
           ...detalhes,
-          id: `ses-${sessaoAtual.topico.id.startsWith('manual-') ? 'manual-' : ''}${Date.now()}`,
           tempo_estudado: Math.round(tempoEstudado),
           data_estudo: new Date().toISOString().split('T')[0],
         });
@@ -337,108 +312,52 @@ export const useEstudosStore = create<EstudosStore>()(
       },
 
       addSessao: async (sessao) => {
-        const { editalAtivoId } = get();
-        if (!editalAtivoId) {
-          console.error("Não é possível adicionar sessão, nenhum edital ativo.");
-          throw new Error("Nenhum edital ativo selecionado.");
+        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
+        if (!editalAtivoId) throw new Error("Nenhum edital ativo selecionado.");
+
+        try {
+            const novaSessao = await createSessao(editalAtivoId, sessao);
+            set(state => ({ sessoes: [...state.sessoes, novaSessao] }));
+        } catch (error) {
+            console.error("Failed to add session:", error);
+            toast.error("Falha ao adicionar sessão de estudo.");
         }
-        set(state => {
-          const sessoesAtuais = state.sessoesPorEdital[editalAtivoId] || [];
-          const novasSessoes = [...sessoesAtuais, sessao];
-          return {
-            sessoes: novasSessoes,
-            sessoesPorEdital: { ...state.sessoesPorEdital, [editalAtivoId]: novasSessoes },
-          };
-        });
       },
       updateSessao: async (id, updates) => {
-        const { editalAtivoId } = get();
-        if (!editalAtivoId) return;
-    
-        set(state => {
-            const novasSessoes = state.sessoes.map(s =>
-                s.id === id ? { ...s, ...updates } : s
-            );
-            return {
-                sessoes: novasSessoes,
-                sessoesPorEdital: {
-                    ...state.sessoesPorEdital,
-                    [editalAtivoId]: novasSessoes,
-                },
-            };
-        });
+        try {
+            const sessaoAtualizada = await updateSessaoApi(id, updates);
+            set(state => ({
+                sessoes: state.sessoes.map(s => s.id === id ? sessaoAtualizada : s),
+            }));
+        } catch (error) {
+            console.error("Failed to update session:", error);
+            toast.error("Falha ao atualizar sessão de estudo.");
+        }
       },
       removeSessao: async (id) => {
-          const { editalAtivoId } = get();
-          if (!editalAtivoId) return;
-      
-          set(state => {
-              const novasSessoes = state.sessoes.filter(s => s.id !== id);
-              return {
-                  sessoes: novasSessoes,
-                  sessoesPorEdital: {
-                      ...state.sessoesPorEdital,
-                      [editalAtivoId]: novasSessoes,
-                  },
-              };
-          });
+          try {
+              await deleteSessao(id);
+              set(state => ({
+                  sessoes: state.sessoes.filter(s => s.id !== id),
+              }));
+          } catch (error) {
+              console.error("Failed to delete session:", error);
+              toast.error("Falha ao remover sessão de estudo.");
+          }
       },
       moveTopicoNaTrilha: (topicoId, fromDia, toDia, fromIndex, toIndex) => {
-        const { editalAtivoId } = get();
-        if (!editalAtivoId) return;
-
+        // Esta lógica permanece no frontend por enquanto, mas poderia ser movida para o backend
         set(state => {
           const newTrilha = JSON.parse(JSON.stringify(state.trilha));
-    
           let itemToMove = topicoId;
-    
           if (fromDia !== 'backlog') {
             const sourceColumn = newTrilha[fromDia];
             [itemToMove] = sourceColumn.splice(fromIndex, 1);
           }
-    
           const destinationColumn = newTrilha[toDia];
           destinationColumn.splice(toIndex, 0, itemToMove);
-    
-          return { 
-              trilha: newTrilha,
-              trilhaPorEdital: { ...state.trilhaPorEdital, [editalAtivoId]: newTrilha },
-          };
+          return { trilha: newTrilha };
         });
       },
-      removeDataForEdital: (editalId) => {
-          set(state => {
-              const { [editalId]: _, ...sessoesRest } = state.sessoesPorEdital;
-              const { [editalId]: __, ...trilhaRest } = state.trilhaPorEdital;
-              return { 
-                  sessoesPorEdital: sessoesRest,
-                  trilhaPorEdital: trilhaRest 
-              };
-          });
-      },
-      initializeDataForEdital: (editalId) => {
-        set(state => {
-            if (state.sessoesPorEdital[editalId] === undefined) {
-                return {
-                    sessoesPorEdital: { ...state.sessoesPorEdital, [editalId]: [] },
-                    trilhaPorEdital: { ...state.trilhaPorEdital, [editalId]: emptyTrilha },
-                };
-            }
-            return state;
-        });
-      },
-    }),
-    {
-      name: 'evolui-study-sessions', 
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
-        sessoesPorEdital: state.sessoesPorEdital, 
-        trilhaPorEdital: state.trilhaPorEdital,
-        pomodoroSettings: state.pomodoroSettings,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) state._hasHydrated = true;
-      },
-    }
-  )
+    })
 );

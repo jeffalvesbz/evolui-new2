@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -29,7 +30,6 @@ export interface RevisoesProcessadas {
   // Funções
   concluirRevisao: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => Promise<void>
   reagendarRevisao: (id: string, dias: number) => Promise<void>
-  // FIX: Corrected typo from `removerRevisao` to `removeRevisao` to match the store method name.
   removeRevisao: (id: string) => Promise<void>
   atualizarStatusAtrasadas: () => Promise<void>
   
@@ -45,18 +45,17 @@ export const useRevisoes = (): RevisoesProcessadas => {
     revisoes,
     loading,
     error,
-    fetchRevisoes,
     concluirRevisao: concluirRevisaoStore,
     reagendarRevisao,
-    // FIX: Corrected typo from `removerRevisao` to `removeRevisao` to match the store method name.
     removeRevisao,
     atualizarStatusAtrasadas,
   } = useRevisoesStore()
 
   // Carregar revisões na inicialização
   useEffect(() => {
-    void fetchRevisoes()
-  }, [fetchRevisoes])
+    // Data fetching is now centralized in App.tsx via useEditalDataSync.
+    // This avoids redundant or erroneous calls from this hook.
+  }, [])
 
   // Atualizar status de atrasadas periodicamente
   useEffect(() => {
@@ -144,7 +143,6 @@ export const useRevisoes = (): RevisoesProcessadas => {
     novaDificuldade?: 'facil' | 'medio' | 'dificil'
   ) => {
     try {
-      // FIX: Removed incorrect type assertion. The `novaDificuldade` parameter already has the correct type expected by the store.
       await concluirRevisaoStore({ id, resultado, novaDificuldade })
     } catch (error) {
       console.error('❌ Erro ao concluir revisão via hook:', error)
@@ -156,7 +154,6 @@ export const useRevisoes = (): RevisoesProcessadas => {
     ...dadosProcessados,
     concluirRevisao,
     reagendarRevisao,
-    // FIX: Corrected typo from `removerRevisao` to `removeRevisao`.
     removeRevisao,
     atualizarStatusAtrasadas,
     loading,
@@ -234,7 +231,7 @@ export const useEstatisticasRevisoes = () => {
     }, {} as Record<string, number>)
 
     // Performance por origem
-    const performancePorOrigem = revisoes.reduce((acc, revisao) => {
+    const performancePorOrigem = revisoes.reduce<Record<string, { total: number; concluidas: number }>>((acc, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }

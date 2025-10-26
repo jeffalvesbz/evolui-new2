@@ -163,13 +163,9 @@ const Simulados = () => {
                   Estilo Cebraspe (uma errada anula uma certa)
               </label>
               
-              {/* FIX: Convert input value to number for state update. */}
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Acertos</span><input type="number" min="0" value={form.correct} onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              {/* FIX: Convert input value to number for state update. */}
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              {/* FIX: Convert input value to number for state update. */}
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              {/* FIX: Convert input value to number for state update. */}
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
               <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2"></textarea></label>

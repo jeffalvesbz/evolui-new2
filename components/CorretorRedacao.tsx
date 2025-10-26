@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// FIX: Added CartesianGrid to the import to resolve 'Cannot find name' errors.
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Legend, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
 import { PencilRulerIcon, SparklesIcon, CameraIcon, HistoryIcon } from './icons';
 import { corrigirRedacao, extrairTextoDeImagem } from '../services/geminiService';
@@ -221,7 +220,6 @@ const CorretorRedacao: React.FC = () => {
         if (!file) return;
 
         setIsOcrLoading(true);
-        // FIX: Replaced toast.info with the default toast call, which creates an info-level notification.
         toast("Extraindo texto da imagem...");
         try {
             const base64Data = await blobToBase64(file);

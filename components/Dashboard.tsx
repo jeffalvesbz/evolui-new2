@@ -18,17 +18,13 @@ import {
   WifiOffIcon,
   EditIcon,
 } from './icons';
-import { useCrossBrowserSync } from '../hooks/useCrossBrowserSync';
 
 import EditalSelector from './EditalSelector';
 import { 
-  useAuthStore, 
   Card, CardContent, CardHeader, CardTitle, CardDescription,
   Button,
   Progress,
   SectionHeader,
-  SyncStatusNotification,
-  ProductionSyncAlert,
 } from '../lib/dashboardMocks';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useEditalStore } from '../stores/useEditalStore';
@@ -38,6 +34,7 @@ import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { isSameDay as isSameDayDateFns, startOfDay } from 'date-fns';
 import { useModalStore } from '../stores/useModalStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 // --- Chart Components ---
 
@@ -181,7 +178,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       const tempoTotalSegundos = sessoesDaSemana.reduce((acc, s) => acc + s.tempo_estudado, 0);
       const tempoTotalSemanaMinutos = Math.round(tempoTotalSegundos / 60);
       
-      const metaSemanal = Math.max(goalMinutes || 0, 1) * 7;
+      // FIX: Cast `goalMinutes` to a number to prevent type errors.
+      const metaSemanal = Math.max(Number(goalMinutes) || 0, 1) * 7;
       const progressoSemanalPercent = metaSemanal > 0 ? Math.min(100, Math.round((tempoTotalSemanaMinutos / metaSemanal) * 100)) : 0;
 
       const diasDaSemana = eachDayOfInterval({ start: inicioSemana, end: fimSemana });
@@ -229,7 +227,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   }, [sessoes, disciplinas, goalMinutes]);
 
 
-  const safeGoalMinutes = Math.max(goalMinutes || 0, 1);
+  // FIX: Cast `goalMinutes` to a number to prevent type errors.
+  const safeGoalMinutes = Math.max(Number(goalMinutes) || 0, 1);
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
   const metaPercentual = Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100));
 
@@ -288,13 +287,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     (a, b) => a - b,
   );
 
-  const [isSyncing, setIsSyncing] = useState(false);
-  const { isOnline, lastSync, needsSync, forceSync } = useCrossBrowserSync();
-
   return (
     <div className="space-y-12">
-      <SyncStatusNotification />
-      <ProductionSyncAlert />
       <section className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
         <Card className="glass-card overflow-hidden shadow-2xl shadow-black/20">
           <CardHeader className="bg-gradient-to-br from-primary/10 via-background/0 to-background/0 p-8">
@@ -369,7 +363,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   <span className="text-muted-foreground">Meta diária</span>
                   <select
                     value={safeGoalMinutes}
-                    onChange={(event) => setGoalMinutes(Number(event.target.value))}
+                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
                     aria-label="Definir meta diaria"
                     className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
                   >
@@ -515,4 +509,4 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   )
 }
 
-export default Dashboard
+export default Dashboard;

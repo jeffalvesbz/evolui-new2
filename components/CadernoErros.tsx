@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,7 +95,6 @@ const ErroFormModal: React.FC = () => {
                     origem: 'erro',
                     dificuldade: novoErro.nivelDificuldade || 'médio',
                 });
-                // FIX: Corrected call to toast.info, which does not exist. The default toast function creates an info-level notification.
                 toast("Revisão do erro agendada para amanhã.");
             }
             closeErroModal();

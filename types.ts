@@ -1,4 +1,4 @@
-// FIX: Removed the conflicting import statement. This file defines the types it was trying to import.
+// This file defines the types for the application.
 
 export interface StudyPlan {
   id: string;
@@ -24,6 +24,7 @@ export interface Disciplina {
   progresso: number;
   anotacoes: string;
   topicos: Topico[];
+  studyPlanId: string;
 }
 
 export interface SessaoEstudo {
@@ -32,6 +33,7 @@ export interface SessaoEstudo {
   tempo_estudado: number; // in seconds
   data_estudo: string;
   comentarios?: string;
+  studyPlanId: string;
 }
 
 export interface SessaoCiclo {
@@ -45,6 +47,7 @@ export interface Ciclo {
   id: string;
   nome: string;
   sessoes: SessaoCiclo[];
+  studyPlanId: string;
 }
 
 export interface Revisao {
@@ -56,6 +59,7 @@ export interface Revisao {
   status: 'pendente' | 'concluida' | 'atrasada';
   origem: 'flashcard' | 'erro' | 'manual' | 'teorica';
   dificuldade: NivelDificuldade;
+  studyPlanId: string;
 }
 
 export interface Flashcard {
@@ -77,8 +81,7 @@ export interface RevisaoErro {
 export interface CadernoErro {
   id: string;
   disciplina: string;
-  // FIX: Added disciplinaId to link errors to a specific discipline, resolving form and data model inconsistencies.
-  disciplinaId?: string;
+  disciplinaId: string;
   assunto: string;
   descricao: string;
   topicoId?: string; // Tópico do edital
@@ -91,13 +94,13 @@ export interface CadernoErro {
   enunciado?: string;
   alternativaCorreta?: string;
   observacoes?: string;
+  studyPlanId: string;
 }
 
 export interface User {
   id: string;
   name: string;
-  avatarLetter: string;
-  status: string;
+  email: string;
 }
 
 export interface DashboardStats {
@@ -146,4 +149,5 @@ export interface RedacaoCorrigida {
   correcao: CorrecaoCompleta;
   data: string; // ISO string
   tema?: string;
+  studyPlanId: string;
 }

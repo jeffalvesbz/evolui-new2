@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { getSimulados, createSimulado, updateSimuladoApi, deleteSimulado } from '../services/geminiService';
+import { toast } from '../components/Sonner';
+import { useEditalStore } from './useEditalStore';
 
 export interface Simulation {
   id: string;
@@ -16,46 +18,66 @@ export interface Simulation {
 
 interface StudyStore {
   simulations: Simulation[];
-  _hasHydrated: boolean;
+  loading: boolean;
+  fetchSimulados: (editalId: string) => Promise<void>;
   addSimulation: (simulation: Omit<Simulation, 'id'>) => Promise<Simulation>;
   updateSimulation: (id: string, updates: Partial<Simulation>) => Promise<void>;
   deleteSimulation: (id: string) => Promise<void>;
 }
 
-const generateId = () => `sim-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-export const useStudyStore = create<StudyStore>()(
-  persist(
-    (set) => ({
+export const useStudyStore = create<StudyStore>((set, get) => ({
       simulations: [],
-      _hasHydrated: false,
+      loading: false,
+
+      fetchSimulados: async (editalId: string) => {
+        set({ loading: true });
+        try {
+          const simulations = await getSimulados(editalId);
+          set({ simulations });
+        } catch (error) {
+          console.error("Failed to fetch simulations:", error);
+          toast.error("Não foi possível carregar os simulados.");
+        } finally {
+          set({ loading: false });
+        }
+      },
+
       addSimulation: async (simulationData) => {
-        const newSimulation: Simulation = {
-          ...simulationData,
-          id: generateId(),
-        };
-        set(state => ({ simulations: [...state.simulations, newSimulation] }));
-        return newSimulation;
+        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
+        if (!editalAtivoId) throw new Error("Edital não selecionado.");
+
+        try {
+            const newSimulation = await createSimulado(editalAtivoId, simulationData);
+            set(state => ({ simulations: [...state.simulations, newSimulation] }));
+            return newSimulation;
+        } catch (error) {
+            toast.error("Falha ao adicionar simulado.");
+            throw error;
+        }
       },
       updateSimulation: async (id, updates) => {
-        set(state => ({
-          simulations: state.simulations.map(sim => 
-            sim.id === id ? { ...sim, ...updates } : sim
-          ),
-        }));
+        try {
+            const updatedSimulation = await updateSimuladoApi(id, updates);
+            set(state => ({
+              simulations: state.simulations.map(sim => 
+                sim.id === id ? updatedSimulation : sim
+              ),
+            }));
+        } catch (error) {
+            toast.error("Falha ao atualizar simulado.");
+            throw error;
+        }
       },
       deleteSimulation: async (id) => {
-        set(state => ({
-          simulations: state.simulations.filter(sim => sim.id !== id),
-        }));
+        try {
+            await deleteSimulado(id);
+            set(state => ({
+              simulations: state.simulations.filter(sim => sim.id !== id),
+            }));
+        } catch (error) {
+            toast.error("Falha ao remover simulado.");
+            throw error;
+        }
       },
-    }),
-    {
-      name: 'evolui-study-store',
-      storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) state._hasHydrated = true;
-      },
-    }
-  )
+    })
 );

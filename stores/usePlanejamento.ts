@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { mockDisciplinasPorEdital, mockStudyPlanPLF } from '../data/mockData';
 import { Disciplina } from '../types';
 
 // Based on usage in useCicloRotativo
@@ -17,17 +16,10 @@ interface PlanejamentoState {
   syncWeightsWithDisciplinas: (disciplinas: Disciplina[]) => void;
 }
 
-// Create initial weights from the default PLF edital disciplines
-const initialDisciplinesForPLF = mockDisciplinasPorEdital[mockStudyPlanPLF.id] || [];
-const initialWeights = initialDisciplinesForPLF.reduce((acc, disciplina) => {
-    acc[disciplina.nome] = 10; // Assign a default weight of 10
-    return acc;
-}, {} as Record<string, number>);
-
-
+// FIX: Removed dependency on mock data and initialized with an empty object.
 const initialPlanningConfig: PlanningConfig = {
     planConfig: {
-        weights: initialWeights
+        weights: {}
     }
 }
 

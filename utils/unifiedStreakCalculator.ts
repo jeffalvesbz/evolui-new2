@@ -9,8 +9,8 @@ export const useUnifiedStreak = () => {
             return { streak: 0, lastDay: null };
         }
 
-        const studyDays = [...new Set(historico.map(s => new Date(s.data).toISOString().split('T')[0]))]
-            .map(dateStr => new Date(dateStr))
+        const studyDays = [...new Set(historico.map(s => s.data))]
+            .map((dateStr: string) => new Date(`${dateStr}T00:00:00`))
             .sort((a, b) => b.getTime() - a.getTime());
 
         if (studyDays.length === 0) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { SyncManager, useAuthStore } from '../lib/dashboardMocks';
+import { SyncManager } from '../lib/dashboardMocks';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useEditalStore } from '../stores/useEditalStore';
 
 /**

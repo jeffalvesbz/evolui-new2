@@ -29,7 +29,7 @@ export const scheduleAutoRevisoes = async ({
   // Spaced Repetition System intervals
   const intervals = [1, 7, 15, 30]; 
 
-  const makeRevision = (days: number): Omit<Revisao, 'id'> => ({
+  const makeRevision = (days: number): Omit<Revisao, 'id' | 'studyPlanId'> => ({
     topico_id: topicoId,
     disciplinaId,
     conteudo: `Revisão de ${days} dia(s): ${topicoNome || disciplinaNome}`,

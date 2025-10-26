@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useMemo } from "react"
 import { useHistoricoStore, HistoricoItem } from "../stores/useHistoricoStore"
 import { useEditalStore } from "../stores/useEditalStore"
@@ -5,13 +6,181 @@ import { HistoricoService } from "../services/support/HistoricoService"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card"
 import { Skeleton } from "./ui/Skeleton"
 import Input from "./ui/Input"
-import { SearchIcon, ClockIcon, BookOpenIcon, CalendarDaysIcon, TrendingUpIcon, FilterIcon, TargetIcon, BarChart3Icon, TrophyIcon, FlameIcon, ZapIcon, StarIcon, CheckCircle2Icon, BellIcon, XIcon, Trash2Icon, AlertTriangleIcon, ArrowRightIcon, EditIcon, FileTextIcon } from "./icons"
+import { SearchIcon, ClockIcon, BookOpenIcon, CalendarDaysIcon, TrendingUpIcon, FilterIcon, TargetIcon, BarChart3Icon, TrophyIcon, FlameIcon, ZapIcon, StarIcon, CheckCircle2Icon, BellIcon, XIcon, Trash2Icon, AlertTriangleIcon, ArrowRightIcon, EditIcon, FileTextIcon, SaveIcon } from "./icons"
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useUnifiedStreak } from "../utils/unifiedStreakCalculator"
 import { useDailyGoalStore } from "../stores/useDailyGoalStore"
 
 interface HistoricoPageProps {
   setActiveView: (view: string) => void;
+}
+
+// FIX: Define missing LoadingList component.
+function LoadingList() {
+    return (
+        <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// FIX: Define missing EmptyState component.
+function EmptyState() {
+    return (
+        <div className="text-center py-16">
+            <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+                Nenhum registro encontrado
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+                Tente ajustar os filtros ou adicione uma nova sessão de estudo.
+            </p>
+        </div>
+    );
+}
+
+// FIX: Define missing AnaliseSemanal component.
+function AnaliseSemanal({ historico }: { historico: HistoricoItem[] }) {
+    const dados = useMemo(() => {
+        const diasDaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const hoje = new Date();
+        const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(hoje); d.setDate(d.getDate() - i); return d; }).reverse();
+
+        return dias.map(d => {
+            const minutos = historico
+                .filter(item => new Date(`${item.data}T00:00:00`).toDateString() === d.toDateString())
+                .reduce((acc, i) => acc + i.duracao_minutos, 0);
+            return { name: diasDaSemana[d.getDay()], minutos };
+        });
+    }, [historico]);
+
+    return (
+        <Card className="border-border shadow-lg">
+            <CardHeader><CardTitle>Análise Semanal</CardTitle></CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={dados}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                        <XAxis dataKey="name" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
+                        <YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
+                        <Bar dataKey="minutos" fill="var(--color-secondary)" name="Minutos" />
+                    </BarChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+    );
+}
+
+// FIX: Define missing EditModal component.
+interface EditModalProps {
+    registro: HistoricoItem;
+    onSave: (updatedData: any) => Promise<void>;
+    onCancel: () => void;
+    isSaving: boolean;
+}
+
+function EditModal({ registro, onSave, onCancel, isSaving }: EditModalProps) {
+    const [formData, setFormData] = useState({ ...registro });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const isNumber = type === 'number';
+        setFormData(prev => ({
+            ...prev,
+            [name]: isNumber ? Number(value) : value
+        }));
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(formData);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onCancel} />
+            <Card className="relative bg-card shadow-2xl max-w-lg w-full">
+                <form onSubmit={handleSubmit}>
+                    <CardHeader>
+                        <CardTitle>Editar Registro</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 max-h-[70vh] overflow-y-auto">
+                        {formData.type === 'estudo' && (
+                            <>
+                                <p><span className="font-semibold">Disciplina:</span> {formData.disciplina}</p>
+                                <p><span className="font-semibold">Tópico:</span> {formData.topico}</p>
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">Duração (minutos)</label>
+                                    <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">Comentários</label>
+                                    <textarea name="comentarios" value={formData.comentarios || ''} onChange={handleChange} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                                </div>
+                            </>
+                        )}
+                        {formData.type === 'simulado' && (
+                            <>
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">Nome do Simulado</label>
+                                    <Input name="nome" value={formData.nome} onChange={handleChange} />
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">Acertos</label>
+                                        <Input type="number" name="acertos" value={formData.acertos} onChange={handleChange} />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">Erros</label>
+                                        <Input type="number" name="erros" value={formData.erros} onChange={handleChange} />
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-muted-foreground">Brancos</label>
+                                        <Input type="number" name="brancos" value={formData.brancos} onChange={handleChange} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">Duração (minutos)</label>
+                                    <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-muted-foreground">Comentários</label>
+                                    <textarea name="comentarios" value={formData.comentarios || ''} onChange={handleChange} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                                </div>
+                            </>
+                        )}
+                    </CardContent>
+                    <div className="flex justify-end gap-3 p-4 border-t border-border">
+                        <button type="button" onClick={onCancel} disabled={isSaving} className="px-4 py-2 border border-border rounded-lg font-semibold text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50">
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={isSaving} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                            {isSaving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                    Salvando...
+                                </>
+                            ) : (
+                                <>
+                                    <SaveIcon className="w-4 h-4" />
+                                    Salvar
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </Card>
+        </div>
+    );
 }
 
 export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
@@ -495,8 +664,6 @@ function Stats({ historico }: { historico: HistoricoItem[] }) {
 
 function HistoricoList({ historico, onEdit, onDelete }: { historico: HistoricoItem[], onEdit: (r: HistoricoItem) => void, onDelete: (id: string, type: 'estudo' | 'simulado', name: string) => void }) {
   const formatDataCompleta = (data: string) => {
-    // new Date('YYYY-MM-DD') is parsed as UTC, causing off-by-one errors.
-    // Appending time makes it parse in the local timezone.
     const date = new Date(`${data}T00:00:00`);
     const hoje = new Date();
     const ontem = new Date(hoje);
@@ -689,96 +856,8 @@ function GraficoProgresso({ historico }: { historico: HistoricoItem[] }) {
   return (
     <Card className="border-border shadow-lg"><CardHeader><CardTitle>Progresso (14d)</CardTitle></CardHeader>
       <CardContent><ResponsiveContainer width="100%" height={250}>
-        <LineChart data={dados}><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis dataKey="data" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }} /><Line type="monotone" dataKey="minutos" stroke="var(--color-primary)" strokeWidth={2} /></LineChart>
+        <LineChart data={dados}><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis dataKey="data" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} /><Line type="monotone" dataKey="minutos" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} /></LineChart>
       </ResponsiveContainer></CardContent>
     </Card>
-  )
-}
-
-function AnaliseSemanal({ historico }: { historico: HistoricoItem[] }) {
-  const dados = useMemo(() => {
-    const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const tempo = Array(7).fill(0);
-    historico.forEach(i => { tempo[new Date(`${i.data}T00:00:00`).getDay()] += i.duracao_minutos || 0; });
-    return dias.map((dia, idx) => ({ dia, minutos: tempo[idx] }));
-  }, [historico]);
-  return (
-    <Card className="border-border shadow-lg"><CardHeader><CardTitle>Análise Semanal</CardTitle></CardHeader>
-      <CardContent><ResponsiveContainer width="100%" height={250}>
-        <BarChart data={dados}><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis dataKey="dia" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', border: '1px solid var(--color-border)' }} /><Bar dataKey="minutos" fill="var(--color-primary)" radius={[4, 4, 0, 0]} /></BarChart>
-      </ResponsiveContainer></CardContent>
-    </Card>
-  )
-}
-
-function EditModal({ registro, onSave, onCancel, isSaving }: { registro: HistoricoItem, onSave: (d: any) => void, onCancel: () => void, isSaving: boolean }) {
-  const [formData, setFormData] = useState(() => {
-    if (registro.type === 'estudo') {
-        return {
-            disciplina: registro.disciplina || '',
-            topico: registro.topico || '',
-            duracao_minutos: registro.duracao_minutos || 0,
-            comentarios: registro.comentarios || '',
-        };
-    } else { // simulado
-        return {
-            nome: registro.nome || '',
-            duracao_minutos: registro.duracao_minutos || 0,
-            comentarios: registro.comentarios || '',
-            acertos: registro.acertos || 0,
-            erros: registro.erros || 0,
-            brancos: registro.brancos || 0,
-        };
-    }
-  });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({ ...prev, [name]: type === 'number' ? parseInt(value) || 0 : value }));
-  };
-
-  return (
-    <div className="fixed inset-0 z-[101] flex items-center justify-center p-4"><div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onCancel} />
-      <Card className="relative bg-card shadow-2xl max-w-2xl w-full border-primary/50"><CardHeader><CardTitle>Editar Registro</CardTitle></CardHeader>
-        <CardContent>
-          <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="space-y-4">
-            {registro.type === 'estudo' ? (
-              <>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Disciplina *</label><Input type="text" name="disciplina" value={(formData as any).disciplina} onChange={handleInputChange} required disabled /></div>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Tópico</label><Input type="text" name="topico" value={(formData as any).topico} onChange={handleInputChange} disabled /></div>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Duração (minutos) *</label><Input type="number" name="duracao_minutos" min="1" value={formData.duracao_minutos} onChange={handleInputChange} required /></div>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Comentários</label><textarea name="comentarios" value={formData.comentarios} onChange={handleInputChange} rows={3} className="w-full rounded-md border border-border bg-background p-2 text-sm" /></div>
-              </>
-            ) : (
-              <>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Nome do Simulado *</label><Input type="text" name="nome" value={(formData as any).nome} onChange={handleInputChange} required /></div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Acertos *</label><Input type="number" name="acertos" min="0" value={(formData as any).acertos} onChange={handleInputChange} required /></div>
-                  <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Erros *</label><Input type="number" name="erros" min="0" value={(formData as any).erros} onChange={handleInputChange} required /></div>
-                  <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Brancos</label><Input type="number" name="brancos" min="0" value={(formData as any).brancos} onChange={handleInputChange} /></div>
-                </div>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Duração (minutos) *</label><Input type="number" name="duracao_minutos" min="1" value={formData.duracao_minutos} onChange={handleInputChange} required /></div>
-                <div><label className="block text-sm font-semibold text-muted-foreground mb-1">Comentários</label><textarea name="comentarios" value={formData.comentarios} onChange={handleInputChange} rows={2} className="w-full rounded-md border border-border bg-background p-2 text-sm" /></div>
-              </>
-            )}
-            <div className="flex gap-3 pt-4 border-t border-border"><button type="button" onClick={onCancel} disabled={isSaving} className="flex-1 px-4 py-2 border border-border rounded-lg font-semibold text-muted-foreground hover:bg-muted">Cancelar</button><button type="submit" disabled={isSaving} className="flex-1 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold flex items-center justify-center gap-2">{isSaving ? 'Salvando...' : 'Salvar'}</button></div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function LoadingList() {
-  return <div className="grid gap-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full rounded-lg" />)}</div>
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4"><SearchIcon className="w-8 h-8 text-muted-foreground/50" /></div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum registro encontrado</h3>
-      <p className="text-sm text-muted-foreground max-w-md">Ajuste os filtros ou comece a registrar seus estudos e simulados para ver seu histórico aqui.</p>
-    </div>
   )
 }

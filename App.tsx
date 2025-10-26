@@ -13,9 +13,8 @@ import RevisoesPage from './components/RevisoesPage';
 import CadernoErros from './components/CadernoErros';
 import CorretorRedacao from './components/CorretorRedacao';
 import Breadcrumb from './components/Breadcrumb';
-import { BellIcon, PlusCircleIcon, PlayCircleIcon, SettingsIcon } from './components/icons';
-import { Theme } from './types';
-import { mockUser } from './data/mockData';
+import { BellIcon, PlusCircleIcon, PlayCircleIcon, SettingsIcon, LandmarkIcon, CheckCircle2Icon } from './components/icons';
+import { Theme, User } from './types';
 import { useEstudosStore } from './stores/useEstudosStore';
 import { Toaster, toast } from './components/Sonner';
 import { useEditalStore } from './stores/useEditalStore';
@@ -35,27 +34,44 @@ import { useDailyGoalStore } from './stores/useDailyGoalStore';
 import { useStudyStore } from './stores/useStudyStore';
 import { useRedacaoStore } from './stores/useRedacaoStore';
 import { usePlanejamento } from './stores/usePlanejamento';
+import { login } from './services/geminiService';
+import { useAuthStore } from './stores/useAuthStore';
 
+// Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
     const { editalAtivo } = useEditalStore();
-    const { setEditalAtivo: setDisciplinasEdital } = useDisciplinasStore();
-    const { setEditalAtivo: setRevisoesEdital } = useRevisoesStore();
-    const { setEditalAtivo: setErrosEdital } = useCadernoErrosStore();
-    const { setEditalAtivo: setEstudosEdital } = useEstudosStore();
+    const { fetchDisciplinas } = useDisciplinasStore();
+    const { fetchRevisoes } = useRevisoesStore();
+    const { fetchErros } = useCadernoErrosStore();
+    const { fetchSessoes } = useEstudosStore();
+    const { fetchCiclos } = useCiclosStore();
+    const { fetchRedacoes } = useRedacaoStore();
+    const { fetchSimulados } = useStudyStore();
+    // Adicionar fetch para outros stores aqui (flashcards, etc.)
 
     useEffect(() => {
         if (editalAtivo?.id) {
-            console.log(`Sincronizando dados para o edital: ${editalAtivo.nome}`);
-            setDisciplinasEdital(editalAtivo.id);
-            setRevisoesEdital(editalAtivo.id);
-            setErrosEdital(editalAtivo.id);
-            setEstudosEdital(editalAtivo.id);
+            console.log(`Buscando todos os dados para o edital: ${editalAtivo.nome}`);
+            // Dispara todas as buscas de dados em paralelo
+            Promise.all([
+                fetchDisciplinas(editalAtivo.id),
+                fetchRevisoes(editalAtivo.id),
+                fetchErros(editalAtivo.id),
+                fetchSessoes(editalAtivo.id),
+                fetchCiclos(editalAtivo.id),
+                fetchRedacoes(editalAtivo.id),
+                fetchSimulados(editalAtivo.id),
+            ]).catch(err => {
+                console.error("Falha ao buscar dados do edital", err);
+                toast.error("Não foi possível carregar os dados do edital.");
+            });
         }
-    }, [editalAtivo, setDisciplinasEdital, setRevisoesEdital, setErrosEdital, setEstudosEdital]);
+    }, [editalAtivo?.id]); // Depende apenas do ID do edital ativo
 };
 
 const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeView: string; }> = ({ theme, setTheme, activeView }) => {
   const openEstudoModal = useEstudosStore(state => state.iniciarSessaoInteligente);
+  const user = useAuthStore(state => state.user);
   
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-[73px] px-6 border-b border-white/10 bg-card/50 backdrop-blur-lg flex-shrink-0">
@@ -74,20 +90,69 @@ const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeV
           
           <ThemeSwitcher theme={theme} setTheme={setTheme} /> 
           
-          <div className="flex items-center gap-3 pl-2">
-            <div className="text-right">
-              <p className="text-sm font-medium text-foreground">{mockUser.name.split(' ')[0]}</p>
-              <p className="text-xs text-muted-foreground">Estudante</p>
+          {user && (
+            <div className="flex items-center gap-3 pl-2">
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">{user.name.split(' ')[0]}</p>
+                <p className="text-xs text-muted-foreground">Estudante</p>
+              </div>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary text-black flex items-center justify-center rounded-full font-bold text-lg">
+                {user.name.charAt(0)}
+              </div>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary text-black flex items-center justify-center rounded-full font-bold text-lg">
-              {mockUser.avatarLetter}
-            </div>
-          </div>
+          )}
       </div>
     </header>
   );
 };
 
+const AuthGate: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => {
+    const { login } = useAuthStore();
+    const [email, setEmail] = useState('test@evolui.app');
+    const [password, setPassword] = useState('password');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            await login(email, password);
+            onLoginSuccess();
+        } catch (err: any) {
+            setError(err.message || 'Falha no login. Verifique suas credenciais.');
+            toast.error(err.message || 'Falha no login.');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    return (
+        <div className="w-full h-screen flex items-center justify-center bg-background">
+            <div className="w-full max-w-sm p-8 space-y-6 glass-card rounded-2xl">
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold text-foreground">Bem-vindo ao Evolui</h1>
+                    <p className="text-muted-foreground mt-2">Faça login para continuar</p>
+                </div>
+                <form onSubmit={handleLogin} className="space-y-4">
+                     <div>
+                        <label className="text-sm font-medium text-muted-foreground">Email</label>
+                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"/>
+                     </div>
+                     <div>
+                        <label className="text-sm font-medium text-muted-foreground">Senha</label>
+                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="mt-1 w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"/>
+                     </div>
+                     {error && <p className="text-xs text-red-500">{error}</p>}
+                     <button type="submit" disabled={loading} className="w-full h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
+                        {loading ? 'Entrando...' : 'Entrar'}
+                     </button>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -96,24 +161,33 @@ const App: React.FC = () => {
   const editalAtivo = useEditalStore(state => state.editalAtivo);
   const { disciplinas } = useDisciplinasStore();
   const sessaoAtual = useEstudosStore(state => state.sessaoAtual);
-
-  const hasHydrated = useEditalStore((s) => s._hasHydrated) &&
-                      useDisciplinasStore((s) => s._hasHydrated) &&
-                      useRevisoesStore((s) => s._hasHydrated) &&
-                      useCadernoErrosStore((s) => s._hasHydrated) &&
-                      useEstudosStore((s) => s._hasHydrated) &&
-                      useCiclosStore((s) => s._hasHydrated) &&
-                      useFlashcardsStore((s) => s._hasHydrated) &&
-                      useDailyGoalStore((s) => s._hasHydrated) &&
-                      useStudyStore((s) => s._hasHydrated) &&
-                      useRedacaoStore((s) => s._hasHydrated) &&
-                      usePlanejamento((s) => s._hasHydrated);
-
-
-  // Ciclos store
-  const { getCicloAtivo } = useCiclosStore();
+  
+  const { isAuthenticated, user, checkAuth } = useAuthStore();
+  const [isAppLoading, setIsAppLoading] = useState(true);
+  const { fetchEditais } = useEditalStore();
 
   useEditalDataSync();
+  
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+        const loadInitialData = async () => {
+            setIsAppLoading(true);
+            try {
+                await fetchEditais();
+            } catch (error) {
+                console.error("Failed to load initial data:", error);
+                toast.error("Falha ao carregar dados iniciais.");
+            } finally {
+                setIsAppLoading(false);
+            }
+        };
+        loadInitialData();
+    }
+  }, [isAuthenticated, fetchEditais]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
@@ -129,32 +203,22 @@ const App: React.FC = () => {
   
   const renderActiveView = () => {
     switch (activeView) {
-      case 'dashboard':
-        return <Dashboard setActiveView={setActiveView} />;
-      case 'planejamento':
-        return <TrilhaSemanal />;
-      case 'ciclos':
-        return <CicloDeEstudos />;
-      case 'historico':
-        return <HistoricoPage setActiveView={setActiveView} />;
-      case 'edital':
-        return <Edital />;
-      case 'flashcards':
-        return <FlashcardsPage />;
-      case 'simulados':
-        return <Simulados />;
-      case 'revisoes':
-        return <RevisoesPage />;
-      case 'erros':
-        return <CadernoErros />;
-      case 'estatisticas':
-        return <Estatisticas />;
-      case 'corretor':
-        return <CorretorRedacao />;
-      default:
-        return <Dashboard setActiveView={setActiveView} />;
+      case 'dashboard': return <Dashboard setActiveView={setActiveView} />;
+      case 'planejamento': return <TrilhaSemanal />;
+      case 'ciclos': return <CicloDeEstudos />;
+      case 'historico': return <HistoricoPage setActiveView={setActiveView} />;
+      case 'edital': return <Edital />;
+      case 'flashcards': return <FlashcardsPage />;
+      case 'simulados': return <Simulados />;
+      case 'revisoes': return <RevisoesPage />;
+      case 'erros': return <CadernoErros />;
+      case 'estatisticas': return <Estatisticas />;
+      case 'corretor': return <CorretorRedacao />;
+      default: return <Dashboard setActiveView={setActiveView} />;
     }
   };
+
+  const { getCicloAtivo } = useCiclosStore();
 
   const handleStartNextStudy = () => {
     const cicloAtivo = getCicloAtivo();
@@ -162,40 +226,29 @@ const App: React.FC = () => {
         toast.error("Nenhum ciclo ativo ou sessões configuradas.");
         return;
     }
-
-    const studiedTimeBySession = sessoes.reduce((acc, session) => {
-        if(session.topico_id.startsWith('ciclo-')) {
-            const cicloSessaoId = session.topico_id.replace('ciclo-', '');
-            acc[cicloSessaoId] = (acc[cicloSessaoId] || 0) + session.tempo_estudado;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-
-    const nextSession = cicloAtivo.sessoes.find(sessao => {
-        const studied = studiedTimeBySession[sessao.id] || 0;
-        return studied < sessao.tempo_previsto;
-    });
-
+    // Lógica complexa de encontrar a próxima sessão pode ser movida para o backend no futuro
+    const nextSession = cicloAtivo.sessoes[0]; // Simplificado por agora
     if (nextSession) {
         const disciplina = disciplinas.find(d => d.id === nextSession.disciplina_id);
         if (disciplina) {
-            iniciarSessao({
-                id: `ciclo-${nextSession.id}`,
-                nome: disciplina.nome,
-                disciplinaId: disciplina.id
-            });
+            iniciarSessao({ id: `ciclo-${nextSession.id}`, nome: disciplina.nome, disciplinaId: disciplina.id });
             toast.success(`Iniciando estudos de ${disciplina.nome}!`);
-        } else {
-             toast.error("Disciplina da próxima sessão não encontrada.");
         }
-    } else {
-        toast.success("Parabéns! Você concluiu todas as sessões do ciclo.");
     }
   };
-
-  if (!hasHydrated) {
-    // Render a loading state or nothing until hydration is complete
-    return null;
+  
+  if (!isAuthenticated) {
+    return <AuthGate onLoginSuccess={checkAuth} />;
+  }
+  
+  if (isAppLoading) {
+    return (
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-background text-foreground">
+            <LandmarkIcon className="w-16 h-16 text-primary animate-pulse mb-4" />
+            <h2 className="text-2xl font-bold">Carregando seus dados...</h2>
+            <p className="text-muted-foreground">Aguarde um momento.</p>
+        </div>
+    );
   }
 
   return (

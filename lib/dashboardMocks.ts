@@ -1,20 +1,6 @@
 import React from 'react';
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { mockUser } from '../data/mockData';
 
-// Mocks for Stores
-export const useAuthStore = create(() => ({
-  user: mockUser,
-}));
-
-export const useEstudoModalStore = create<{ isManualOpen: boolean; openManual: () => void; closeManual: () => void; }>((set) => ({
-  isManualOpen: false,
-  openManual: () => set({ isManualOpen: true }),
-  closeManual: () => set({ isManualOpen: false }),
-}));
-
-// Mock for Core Logic
+// Mocks for Core Logic
 export class SyncManager {
   static getInstance() {
     return {
@@ -32,7 +18,6 @@ export class SyncManager {
 // Mocks for UI Components -> Replaced with styled components
 const baseCardClasses = "bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl text-card-foreground shadow-sm";
 
-// FIX: Replaced JSX syntax with React.createElement to make the components valid in a .ts file.
 export const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
     React.createElement('div', { className: `${baseCardClasses} ${className || ''}` }, children)
 );
@@ -82,6 +67,3 @@ export const SectionHeader: React.FC<{ title: string, description: string }> = (
         React.createElement('p', { className: "text-muted-foreground mt-1" }, description)
     )
 );
-
-export const SyncStatusNotification = () => null;
-export const ProductionSyncAlert = () => null;
