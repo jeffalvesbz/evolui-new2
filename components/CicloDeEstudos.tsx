@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -37,20 +39,21 @@ const CicloDeEstudos: React.FC = () => {
 
     const cicloAtivo = useMemo(() => getCicloAtivo(), [cicloAtivoId, ciclos, getCicloAtivo]);
 
-    const disciplinasMap = useMemo(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
+    // FIX: Explicitly type the Map to prevent type inference issues downstream.
+    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
 
     const { totalTempoCiclo, dadosGrafico } = useMemo(() => {
         if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [] };
         
         const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + Number(s.tempo_previsto || 0), 0);
         
-// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
-        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc: Record<string, number>, sessao) => {
+        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc, sessao) => {
           const nomeDisciplina = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
-          const tempoAtual = acc[nomeDisciplina] || 0;
-          acc[nomeDisciplina] = tempoAtual + Number(sessao.tempo_previsto || 0);
+          // FIX: Add type assertion to the initial value of reduce to ensure correct type inference.
+          // This resolves indexing errors by telling TypeScript the shape of `acc`.
+          acc[nomeDisciplina] = (acc[nomeDisciplina] || 0) + Number(sessao.tempo_previsto || 0);
           return acc;
-        }, {});
+        }, {} as Record<string, number>);
 
         const graficoData = Object.entries(tempoPorDisciplina).map(([name, value]) => ({
             name,

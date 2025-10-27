@@ -1,9 +1,11 @@
+
 import { create } from 'zustand';
 import { Revisao, NivelDificuldade } from '../types';
 import { addDays } from 'date-fns';
 import { getRevisoes, createRevisao, updateRevisaoApi, deleteRevisao } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
 import { toast } from '../components/Sonner';
+import { useGamificationStore } from './useGamificationStore';
 
 
 const mapDificuldade = (d?: 'facil' | 'medio' | 'dificil'): NivelDificuldade | undefined => {
@@ -84,6 +86,9 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
         const mappedNovaDificuldade = mapDificuldade(novaDificuldade);
 
         await get().updateRevisao(id, { status: 'concluida', dificuldade: mappedNovaDificuldade ?? revisaoOriginal.dificuldade });
+        
+        const eventType = revisaoOriginal.status === 'atrasada' ? 'revisao_atrasada' : 'revisao_concluida';
+        useGamificationStore.getState().logXpEvent(eventType, 5, { revisaoId: id });
 
         if (resultado === 'errou') {
             const novaRevisaoData: Omit<Revisao, 'id' | 'studyPlanId'> = {

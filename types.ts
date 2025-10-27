@@ -151,3 +151,58 @@ export interface RedacaoCorrigida {
   tema?: string;
   studyPlanId: string;
 }
+
+// Tipos para o Gerador de Plano IA
+export interface DisciplinaParaIA {
+  id: string;
+  nome: string;
+  dificuldade: 'facil' | 'medio' | 'dificil';
+  topicos: { id: string; titulo: string }[];
+}
+
+// Tipos para Gamificação
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Should match an icon component name
+  xp: number;
+}
+
+export interface GamificationStats {
+  user_id: string;
+  xp_total: number;
+  level: number;
+  current_streak_days: number;
+  best_streak_days: number;
+  unlockedBadgeIds: string[];
+}
+
+export type XpLogEvent = 'estudo_concluido' | 'revisao_concluida' | 'trilha_topico_concluido' | 'estudo_extra' | 'revisao_atrasada' | 'meta_semanal_completa';
+
+export interface XpLogEntry {
+  id: string;
+  user_id: string;
+  event: XpLogEvent;
+  amount: number;
+  meta_json: Record<string, any>;
+  created_at: string;
+}
+
+// Tipos para o sistema de Amigos
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
+
+export interface Friendship {
+    id: string;
+    user_id_1: string; // requester
+    user_id_2: string; // receiver
+    status: FriendshipStatus;
+    created_at: string;
+}
+
+export interface FriendRequest {
+    friendship_id: string;
+    requester_id: string;
+    requester_name: string;
+    requester_level: number;
+}

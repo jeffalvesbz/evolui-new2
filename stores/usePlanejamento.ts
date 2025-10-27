@@ -16,7 +16,6 @@ interface PlanejamentoState {
   syncWeightsWithDisciplinas: (disciplinas: Disciplina[]) => void;
 }
 
-// FIX: Removed dependency on mock data and initialized with an empty object.
 const initialPlanningConfig: PlanningConfig = {
     planConfig: {
         weights: {}

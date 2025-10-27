@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -146,12 +147,10 @@ const RevisoesPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3">Por Origem</h4>
-                        {/* FIX: Explicitly type map parameters to resolve 'unknown' type error for `v`. */}
                         <div className="space-y-2 text-sm">{Object.entries(estatisticas.porOrigem).map(([k, v]: [string, number]) => <div key={k} className="flex justify-between items-center"><span className="capitalize text-foreground">{k}</span><span className="font-mono text-muted-foreground">{v}</span></div>)}</div>
                     </div>
                     <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3">Por Dificuldade</h4>
-                        {/* FIX: Explicitly type map parameters to resolve 'unknown' type error for `v`. */}
                         <div className="space-y-2 text-sm">{Object.entries(estatisticas.porDificuldade).map(([k, v]: [string, number]) => <div key={k} className="flex justify-between items-center"><span className="capitalize text-foreground">{k}</span><span className="font-mono text-muted-foreground">{v}</span></div>)}</div>
                     </div>
                 </div>

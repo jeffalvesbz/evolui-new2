@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { FootprintsIcon, CheckIcon, PlayIcon } from './icons';
+import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon } from './icons';
 import { Topico } from '../types';
+import { useModalStore } from '../stores/useModalStore';
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
   <div className={`bg-card rounded-xl border border-muted/50 shadow-sm ${className}`}>
@@ -98,6 +99,8 @@ const DIAS_SEMANA = [
 const TrilhaSemanal: React.FC = () => {
     const { trilha, moveTopicoNaTrilha } = useEstudosStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const { openGeradorPlanoModal } = useModalStore();
+
     const [draggingOverDay, setDraggingOverDay] = useState<string | null>(null);
     const [filtroDisciplina, setFiltroDisciplina] = useState<string>('todas');
 
@@ -172,14 +175,22 @@ const TrilhaSemanal: React.FC = () => {
         }
     };
     
+    const isPlanoVazio = Object.values(topicsByDay).every(day => day.length === 0) && unscheduledTopics.length > 0;
+
     return (
         <div className="flex flex-col h-full">
-            <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-muted/50">
-                <div className="flex items-center gap-3">
-                    <FootprintsIcon className="w-7 h-7 text-primary" />
-                    <h1 className="text-2xl font-bold text-foreground">Trilha Semanal</h1>
+            <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-muted/50 flex items-center justify-between">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <FootprintsIcon className="w-7 h-7 text-primary" />
+                        <h1 className="text-2xl font-bold text-foreground">Trilha Semanal</h1>
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-sm">Organize seus estudos arrastando os tópicos para os dias da semana.</p>
                 </div>
-                <p className="text-muted-foreground mt-1 text-sm">Organize seus estudos arrastando os tópicos para os dias da semana.</p>
+                 <button onClick={openGeradorPlanoModal} className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <SparklesIcon className="w-4 h-4" />
+                    Gerar Plano com IA
+                </button>
             </header>
             <div className="flex-1 p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
                 {/* Unscheduled Topics */}
@@ -238,6 +249,19 @@ const TrilhaSemanal: React.FC = () => {
                             </div>
                         </div>
                     ))}
+                    {isPlanoVazio && (
+                         <div className="md:col-span-4 xl:col-span-7 flex items-center justify-center -mt-32">
+                            <div className="text-center p-8">
+                                <FootprintsIcon className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-foreground">Seu planejamento está vazio.</h3>
+                                <p className="text-muted-foreground mt-2 mb-6">Arraste os tópicos da esquerda ou deixe que a nossa IA crie um plano para você.</p>
+                                <button onClick={openGeradorPlanoModal} className="h-11 px-6 flex items-center mx-auto gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                                    <SparklesIcon className="w-5 h-5" />
+                                    Gerar plano de estudos com IA
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

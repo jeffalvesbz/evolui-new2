@@ -12,6 +12,7 @@ import {
   CalendarClockIcon,
   SettingsIcon,
   PencilRulerIcon,
+  TrophyIcon,
 } from './icons';
 import { useAuthStore } from '../stores/useAuthStore';
 
@@ -43,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { id: 'ciclos', label: 'Ciclos de Estudos', icon: <RepeatIcon /> },
     { id: 'edital', label: 'Edital', icon: <LandmarkIcon /> },
     { id: 'estatisticas', label: 'Estatísticas', icon: <BarChart3Icon /> },
+    { id: 'gamificacao', label: 'Gamificação', icon: <TrophyIcon /> },
     { id: 'flashcards', label: 'Flashcards', icon: <LayersIcon /> },
     { id: 'revisoes', label: 'Revisões', icon: <CalendarClockIcon /> },
     { id: 'erros', label: 'Caderno de Erros', icon: <BookCopyIcon /> },

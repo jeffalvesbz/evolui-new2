@@ -4,6 +4,8 @@ import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
 import { getSessoes, createSessao, updateSessaoApi, deleteSessao } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
+import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
 
 export interface SessaoAtual {
   topico: {
@@ -25,6 +27,7 @@ export type TrilhaSemanalData = {
   seg: string[];
   ter: string[];
   qua: string[];
+  qui: string[];
   sex: string[];
   sab: string[];
   dom: string[];
@@ -65,6 +68,7 @@ interface EstudosStore {
   updateSessao: (id: string, updates: Partial<Omit<SessaoEstudo, 'id'>>) => Promise<void>;
   removeSessao: (id: string) => Promise<void>;
   moveTopicoNaTrilha: (topicoId: string, fromDia: string, toDia: string, fromIndex: number, toIndex: number) => void;
+  setTrilhaCompleta: (novaTrilha: TrilhaSemanalData) => void;
   _tick: () => void;
 }
 
@@ -259,6 +263,11 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
           data_estudo: new Date().toISOString().split('T')[0],
         });
         
+        await useGamificationStore.getState().logXpEvent('estudo_concluido', 10, {
+            topicoId: detalhes.topico_id,
+            tempoEstudadoSeg: Math.round(tempoEstudado),
+        });
+
         descartarSessao();
         useUiStore.getState().closeSaveModal();
       },
@@ -358,6 +367,16 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
           destinationColumn.splice(toIndex, 0, itemToMove);
           return { trilha: newTrilha };
         });
+      },
+      setTrilhaCompleta: (novaTrilha) => {
+        const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+        const trilhaValidada: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+        for (const dia of dias) {
+            if (novaTrilha[dia] && Array.isArray(novaTrilha[dia])) {
+                trilhaValidada[dia] = novaTrilha[dia];
+            }
+        }
+        set({ trilha: trilhaValidada });
       },
     })
 );

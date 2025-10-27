@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay } from 'date-fns';
@@ -34,6 +36,7 @@ import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { isSameDay as isSameDayDateFns, startOfDay } from 'date-fns';
 import { useModalStore } from '../stores/useModalStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { MiniGamificationCard } from './MiniGamificationCard';
 
 // --- Chart Components ---
 
@@ -129,6 +132,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const goalMinutes = useDailyGoalStore((state) => state.goalMinutes);
   const setGoalMinutes = useDailyGoalStore((state) => state.setGoalMinutes);
 
+  // FIX: Cast goalMinutes to number to avoid TypeScript error with `unknown` type before hydration.
+  const safeGoalMinutes = Number(goalMinutes) || 0;
+
   // Edital-aware data from stores
   const sessoes = useEstudosStore((state) => state.sessoes);
   const disciplinas = useDisciplinasStore((state) => state.disciplinas);
@@ -177,7 +183,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       const tempoTotalSegundos = sessoesDaSemana.reduce((acc, s) => acc + s.tempo_estudado, 0);
       const tempoTotalSemanaMinutos = Math.round(tempoTotalSegundos / 60);
       
-      const metaSemanal = Math.max(Number(goalMinutes) || 0, 1) * 7;
+      // Use safeGoalMinutes for weekly goal calculation. Avoid division by zero.
+      // FIX: Use `safeGoalMinutes` to avoid type errors with `unknown` from Zustand before hydration.
+      const metaSemanal = Math.max(safeGoalMinutes * 7, 1);
       const progressoSemanalPercent = metaSemanal > 0 ? Math.min(100, Math.round((tempoTotalSemanaMinutos / metaSemanal) * 100)) : 0;
 
       const diasDaSemana = eachDayOfInterval({ start: inicioSemana, end: fimSemana });
@@ -193,7 +201,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           };
       });
 
-// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
       const tempoPorDisciplina = sessoesDaSemana.reduce((acc: Record<string, number>, sessao) => {
           const topicoInfo = disciplinas
               .flatMap(d => d.topicos.map(t => ({...t, disciplinaNome: d.nome})))
@@ -223,14 +230,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           dadosGraficoSemanal,
           dadosGraficoDisciplinas,
       };
-  }, [sessoes, disciplinas, goalMinutes]);
+  }, [sessoes, disciplinas, safeGoalMinutes]);
 
 
-  const safeGoalMinutes = Math.max(Number(goalMinutes) || 0, 1);
+  // Use safeGoalMinutes which is guaranteed to be a number.
+// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
-  const metaPercentual = Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100));
-
-  const metaSemanal = safeGoalMinutes * 7;
+// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
+  const metaPercentual = safeGoalMinutes > 0 ? Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100)) : 0;
   
   const recentStudies = useMemo(() => sessoes
     .slice() // Create a copy to avoid mutating the original array
@@ -281,6 +288,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     },
   ];
   
+// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const goalOptions = [...new Set([...DAILY_GOAL_OPTIONS, safeGoalMinutes])].sort(
     (a, b) => a - b,
   );
@@ -346,63 +354,53 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           </CardContent>
         </Card>
 
-        <Card className="glass-card">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              <CalendarClockIcon className="h-4 w-4" />
-              Resumo rápido
-            </CardDescription>
-            <CardTitle className="text-2xl mt-1">Status do dia</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Meta diária</span>
-                  <select
-                    value={safeGoalMinutes}
-                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
-                    aria-label="Definir meta diaria"
-                    className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  >
-                    {goalOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {formatStudyDuration(option)}
-                      </option>
-                    ))}
-                  </select>
+        <div className="flex flex-col gap-8">
+            <MiniGamificationCard setActiveView={setActiveView} />
+            <Card className="glass-card">
+              <CardHeader>
+                <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
+                  <CalendarClockIcon className="h-4 w-4" />
+                  Resumo rápido
+                </CardDescription>
+                <CardTitle className="text-2xl mt-1">Status do dia</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Meta diária</span>
+                      <select
+                        // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
+                        value={safeGoalMinutes}
+                        onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
+                        aria-label="Definir meta diaria"
+                        className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        {goalOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {formatStudyDuration(option)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="font-medium text-foreground">{metaPercentual}%</span>
+                  </div>
+                  <Progress value={metaPercentual} />
                 </div>
-                <span className="font-medium text-foreground">{metaPercentual}%</span>
-              </div>
-              <Progress value={metaPercentual} />
-            </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Progresso semanal</span>
+                <div className="grid grid-cols-2 gap-4 text-center pt-2">
+                  <div className="rounded-lg border border-border bg-background/30 p-3">
+                    <p className="text-2xl font-bold text-primary">{revisoesPendentes}</p>
+                    <p className="text-xs text-muted-foreground">Revisões</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background/30 p-3">
+                    <p className="text-2xl font-bold text-primary">{errosResolvidosHoje}</p>
+                    <p className="text-xs text-muted-foreground">Erros resolvidos</p>
+                  </div>
                 </div>
-                <span className="font-medium text-foreground">{progressoSemanal}%</span>
-              </div>
-              <Progress value={progressoSemanal} className="h-2" />
-                 <span className="text-xs text-muted-foreground">
-                    {formatStudyDuration(tempoSemanaAtual)} / {formatStudyDuration(metaSemanal)}
-                  </span>
-            </div>
-
-
-            <div className="grid grid-cols-2 gap-4 text-center pt-2">
-              <div className="rounded-lg border border-border bg-background/30 p-3">
-                <p className="text-2xl font-bold text-primary">{revisoesPendentes}</p>
-                <p className="text-xs text-muted-foreground">Revisões</p>
-              </div>
-              <div className="rounded-lg border border-border bg-background/30 p-3">
-                <p className="text-2xl font-bold text-primary">{errosResolvidosHoje}</p>
-                <p className="text-xs text-muted-foreground">Erros resolvidos</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+        </div>
       </section>
 
       <section className="space-y-4">

@@ -1,3 +1,5 @@
+
+
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -27,7 +29,7 @@ export interface RevisoesProcessadas {
   }
   
   // Funções
-  concluirRevisao: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => Promise<void>
+  concluirRevisao: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'difícil') => Promise<void>
   reagendarRevisao: (id: string, dias: number) => Promise<void>
   removeRevisao: (id: string) => Promise<void>
   atualizarStatusAtrasadas: () => Promise<void>
@@ -94,22 +96,22 @@ export const useRevisoes = (): RevisoesProcessadas => {
     const totalConcluidas = concluidas.length
 
     // Estatísticas por origem
-    const porOrigem = revisoesProcessadas.reduce((acc, revisao) => {
+    const porOrigem = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.origem] = (acc[revisao.origem] || 0) + 1
       return acc
-    }, {} as Record<string, number>)
+    }, {})
 
     // Estatísticas por dificuldade
-    const porDificuldade = revisoesProcessadas.reduce((acc, revisao) => {
+    const porDificuldade = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.dificuldade] = (acc[revisao.dificuldade] || 0) + 1
       return acc
-    }, {} as Record<string, number>)
+    }, {})
 
     // Estatísticas por status
-    const porStatus = revisoesProcessadas.reduce((acc, revisao) => {
+    const porStatus = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.status] = (acc[revisao.status] || 0) + 1
       return acc
-    }, {} as Record<string, number>)
+    }, {})
 
     // Taxa de conclusão
     const taxaConclusao = revisoes.length > 0 
@@ -139,7 +141,7 @@ export const useRevisoes = (): RevisoesProcessadas => {
   const concluirRevisao = async (
     id: string, 
     resultado: 'acertou' | 'errou' | 'adiou',
-    novaDificuldade?: 'facil' | 'medio' | 'dificil'
+    novaDificuldade?: 'facil' | 'medio' | 'difícil'
   ) => {
     try {
       await concluirRevisaoStore({ id, resultado, novaDificuldade })
@@ -224,14 +226,15 @@ export const useEstatisticasRevisoes = () => {
       : 0
 
     // Distribuição por dificuldade
-    const distribuicaoDificuldade = revisoes.reduce((acc, revisao) => {
+    const distribuicaoDificuldade = revisoes.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.dificuldade] = (acc[revisao.dificuldade] || 0) + 1
       return acc
-    }, {} as Record<string, number>)
+    }, {})
 
     // Performance por origem
-// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
-    const performancePorOrigem = revisoes.reduce((acc: Record<string, { total: number; concluidas: number }>, revisao) => {
+    // FIX: Add type assertion to the initial value of reduce to ensure correct type inference.
+    // This gives `acc` a proper type, allowing `performancePorOrigem` to be correctly inferred.
+    const performancePorOrigem = revisoes.reduce((acc, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }
@@ -240,10 +243,9 @@ export const useEstatisticasRevisoes = () => {
         acc[revisao.origem].concluidas++
       }
       return acc
-    }, {})
+    }, {} as Record<string, { total: number; concluidas: number }>)
 
     // Calcular taxa de conclusão por origem
-// FIX: Explicitly type the accumulator in the reduce function to prevent incorrect type inference.
     const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc: Record<string, number>, [origem, dados]) => {
       acc[origem] = dados.total > 0 ? Math.round((dados.concluidas / dados.total) * 100) : 0
       return acc

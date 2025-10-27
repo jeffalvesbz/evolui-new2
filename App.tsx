@@ -36,6 +36,12 @@ import { useRedacaoStore } from './stores/useRedacaoStore';
 import { usePlanejamento } from './stores/usePlanejamento';
 import { login } from './services/geminiService';
 import { useAuthStore } from './stores/useAuthStore';
+import { useGamificationStore } from './stores/useGamificationStore';
+import HeaderXPChip from './components/HeaderXPChip';
+import GamificationPage from './components/GamificationPage';
+import AchievementNotifier from './components/AchievementNotifier';
+import GeradorPlanoModal from './components/GeradorPlanoModal';
+import { useFriendsStore } from './stores/useFriendsStore';
 
 // Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
@@ -47,12 +53,10 @@ const useEditalDataSync = () => {
     const { fetchCiclos } = useCiclosStore();
     const { fetchRedacoes } = useRedacaoStore();
     const { fetchSimulados } = useStudyStore();
-    // Adicionar fetch para outros stores aqui (flashcards, etc.)
 
     useEffect(() => {
         if (editalAtivo?.id) {
             console.log(`Buscando todos os dados para o edital: ${editalAtivo.nome}`);
-            // Dispara todas as buscas de dados em paralelo
             Promise.all([
                 fetchDisciplinas(editalAtivo.id),
                 fetchRevisoes(editalAtivo.id),
@@ -66,8 +70,36 @@ const useEditalDataSync = () => {
                 toast.error("Não foi possível carregar os dados do edital.");
             });
         }
-    }, [editalAtivo?.id]); // Depende apenas do ID do edital ativo
+    }, [editalAtivo?.id]);
 };
+
+// Hook para buscar dados de gamificação
+const useGamificationDataSync = () => {
+    const { user } = useAuthStore();
+    const { fetchGamificationStats, fetchBadges, fetchXpLog } = useGamificationStore();
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchGamificationStats(user.id);
+            fetchBadges();
+            fetchXpLog(user.id);
+        }
+    }, [user?.id, fetchGamificationStats, fetchBadges, fetchXpLog]);
+};
+
+// Hook to fetch friends data
+const useFriendsDataSync = () => {
+    const { user } = useAuthStore();
+    const { fetchFriends, fetchFriendRequests } = useFriendsStore();
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchFriends(user.id);
+            fetchFriendRequests(user.id);
+        }
+    }, [user?.id, fetchFriends, fetchFriendRequests]);
+}
+
 
 const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeView: string; }> = ({ theme, setTheme, activeView }) => {
   const openEstudoModal = useEstudosStore(state => state.iniciarSessaoInteligente);
@@ -77,6 +109,7 @@ const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeV
     <header className="sticky top-0 z-30 flex items-center justify-between h-[73px] px-6 border-b border-white/10 bg-card/50 backdrop-blur-lg flex-shrink-0">
        <Breadcrumb activeView={activeView} setActiveView={() => {}} />
       <div className="flex items-center gap-2">
+          <HeaderXPChip />
           <button onClick={openEstudoModal} className="h-9 px-4 flex items-center gap-2 rounded-lg bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity">
             <PlusCircleIcon className="w-4 h-4" />
             Registrar estudo
@@ -167,6 +200,8 @@ const App: React.FC = () => {
   const { fetchEditais } = useEditalStore();
 
   useEditalDataSync();
+  useGamificationDataSync();
+  useFriendsDataSync();
   
   useEffect(() => {
     checkAuth();
@@ -214,6 +249,7 @@ const App: React.FC = () => {
       case 'erros': return <CadernoErros />;
       case 'estatisticas': return <Estatisticas />;
       case 'corretor': return <CorretorRedacao />;
+      case 'gamificacao': return <GamificationPage />;
       default: return <Dashboard setActiveView={setActiveView} />;
     }
   };
@@ -254,10 +290,12 @@ const App: React.FC = () => {
   return (
     <div className="flex h-screen bg-background text-foreground font-sans dark overflow-hidden">
       <Toaster />
+      <AchievementNotifier />
       <SalvarSessaoModal />
       <EditalManagementModal />
       <AdicionarTopicoModal />
       <CriarCicloModal />
+      <GeradorPlanoModal />
       
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="flex flex-col flex-1 w-full">

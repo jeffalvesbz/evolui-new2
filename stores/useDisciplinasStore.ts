@@ -1,8 +1,11 @@
+
 import { create } from 'zustand';
 import { Disciplina, Topico } from '../types';
 import { getDisciplinas, createDisciplina, updateDisciplinaApi, deleteDisciplina, updateTopicoApi, createTopico } from '../services/geminiService';
 import { toast } from '../components/Sonner';
 import { useCiclosStore } from './useCiclosStore';
+import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
 
 const calculateProgress = (topicos: Topico[]): number => {
   if (topicos.length === 0) return 0;
@@ -102,6 +105,8 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
     const disciplina = get().disciplinas.find(d => d.id === disciplinaId);
     if (!disciplina) return;
 
+    const topicoOriginal = disciplina.topicos.find(t => t.id === topicoId);
+
     const topicosAtualizados = disciplina.topicos.map(t => 
         t.id === topicoId ? { ...t, ...updates } : t
     );
@@ -110,6 +115,11 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
     set(state => ({
       disciplinas: state.disciplinas.map(d => d.id === disciplinaId ? { ...d, topicos: topicosAtualizados, progresso: calculateProgress(topicosAtualizados) } : d)
     }));
+    
+    // Check for gamification event after optimistic update
+    if (updates.concluido && !topicoOriginal?.concluido) {
+        useGamificationStore.getState().logXpEvent('trilha_topico_concluido', 15, { topicoId });
+    }
 
     try {
         await updateTopicoApi(topicoId, updates);

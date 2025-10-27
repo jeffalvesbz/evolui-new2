@@ -19,6 +19,10 @@ interface ModalStore {
   erroEmEdicao: CadernoErro | null;
   openErroModal: (erro?: CadernoErro | null) => void;
   closeErroModal: () => void;
+
+  isGeradorPlanoModalOpen: boolean;
+  openGeradorPlanoModal: () => void;
+  closeGeradorPlanoModal: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set) => ({
@@ -39,4 +43,8 @@ export const useModalStore = create<ModalStore>((set) => ({
   erroEmEdicao: null,
   openErroModal: (erro = null) => set({ isErroModalOpen: true, erroEmEdicao: erro }),
   closeErroModal: () => set({ isErroModalOpen: false, erroEmEdicao: null }),
+
+  isGeradorPlanoModalOpen: false,
+  openGeradorPlanoModal: () => set({ isGeradorPlanoModalOpen: true }),
+  closeGeradorPlanoModal: () => set({ isGeradorPlanoModalOpen: false }),
 }));

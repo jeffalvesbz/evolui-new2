@@ -221,7 +221,8 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
         toast.success(`${sessoesIntercaladas.length} sessões geradas!`);
     };
 
-    const disciplinasMap = useMemo(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
+    // FIX: Add generic type to useMemo to ensure correct type inference for the map.
+    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
 
     return (
         <div className="space-y-6">
@@ -255,7 +256,7 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                          <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-black/20 group">
                              <span className="font-mono text-sm bg-muted/50 w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground">{index + 1}</span>
                              <div className="flex-1">
-                                <p className="font-semibold text-foreground">{disciplinasMap.get(sessoesGeradas[index].disciplina_id)}</p>
+                                <p className="font-semibold text-foreground">{disciplinasMap.get(sessoesGeradas[index].disciplina_id) || 'Desconhecida'}</p>
                                 <p className="text-xs text-muted-foreground">{formatMinutesToHours(sessoesGeradas[index].tempo_previsto / 60)}</p>
                              </div>
                              <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -274,7 +275,8 @@ const Etapa4: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     const { watch } = formMethods;
     const nomeCiclo: string = watch('nomeCiclo');
     const sessoesGeradas: Omit<SessaoCiclo, 'id' | 'ordem'>[] = watch('sessoesGeradas');
-    const disciplinasMap = useMemo(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
+    // FIX: Add generic type to useMemo to ensure correct type inference for the map.
+    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
     const totalTempo = sessoesGeradas.reduce((acc, s) => acc + s.tempo_previsto, 0);
 
     return (
@@ -292,7 +294,7 @@ const Etapa4: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                     {sessoesGeradas.map((sessao, index) => (
                          <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-background/50">
                              <span className="font-mono text-xs bg-muted/50 w-6 h-6 flex items-center justify-center rounded-md text-muted-foreground">{index + 1}</span>
-                             <p className="font-medium text-foreground flex-1">{disciplinasMap.get(sessao.disciplina_id)}</p>
+                             <p className="font-medium text-foreground flex-1">{disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}</p>
                              <p className="text-sm text-muted-foreground">{formatMinutesToHours(sessao.tempo_previsto / 60)}</p>
                          </div>
                     ))}

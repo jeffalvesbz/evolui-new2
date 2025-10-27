@@ -35,13 +35,7 @@ export const useHistoricoStore = create<HistoricoState>((set, get) => ({
   fetchHistorico: async (editalId: string) => {
     set({ loading: true });
     
-    // Garante que os stores dependentes estão sincronizados com o edital ativo
-    useEstudosStore.getState().setEditalAtivo(editalId);
-    useDisciplinasStore.getState().setEditalAtivo(editalId);
-
-    // Aguarda um ciclo para garantir que os stores foram atualizados
-    await new Promise(resolve => setTimeout(resolve, 0));
-
+    // As stores dependentes já são sincronizadas pelo hook `useEditalDataSync` no App.tsx
     const sessoes = useEstudosStore.getState().sessoes;
     const { findTopicById } = useDisciplinasStore.getState();
     const simulados = useStudyStore.getState().simulations.filter(s => s.edital_id === editalId);

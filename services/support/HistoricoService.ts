@@ -9,7 +9,6 @@ export const HistoricoService = {
     } else {
         await useStudyStore.getState().deleteSimulation(id);
     }
-    window.dispatchEvent(new CustomEvent('historico:updated'));
   },
   
   async update(id: string, type: 'estudo' | 'simulado', updates: any): Promise<void> {
@@ -29,6 +28,5 @@ export const HistoricoService = {
             blank: updates.brancos,
         });
     }
-    window.dispatchEvent(new CustomEvent('historico:updated'));
   }
 };
