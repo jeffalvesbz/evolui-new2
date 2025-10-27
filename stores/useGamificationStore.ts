@@ -47,7 +47,8 @@ const getXpForLevel = (level: number): number => {
 
 const getEventMessage = (event: XpLogEvent): string => {
     switch (event) {
-        case 'estudo_concluido':
+        // FIX: Changed 'estudo_concluido' to 'cronometro_finalizado' to match the XpLogEvent type.
+        case 'cronometro_finalizado':
             return 'por concluir um estudo';
         case 'revisao_concluida':
             return 'por concluir uma revisão';
@@ -128,7 +129,10 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
         toast.success(`+${amount} XP ${getEventMessage(event)}!`);
 
         try {
-            await logXpEventApi(userId, event, amount, meta);
+            // FIX: Added missing arguments 'tipo_evento' and 'multiplicador' to the logXpEventApi call to match its definition and prevent a runtime error.
+            const tipo_evento = event === 'estudo_manual' ? 'manual' : 'ativo';
+            const multiplicador = 1; // Default multiplier
+            await logXpEventApi(userId, event, amount, meta, tipo_evento, multiplicador);
             
             await get().fetchGamificationStats(userId);
             await get().fetchXpLog(userId);

@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -47,13 +49,12 @@ const CicloDeEstudos: React.FC = () => {
         
         const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + Number(s.tempo_previsto || 0), 0);
         
-        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc, sessao) => {
+        // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference.
+        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc: Record<string, number>, sessao) => {
           const nomeDisciplina = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
-          // FIX: Add type assertion to the initial value of reduce to ensure correct type inference.
-          // This resolves indexing errors by telling TypeScript the shape of `acc`.
           acc[nomeDisciplina] = (acc[nomeDisciplina] || 0) + Number(sessao.tempo_previsto || 0);
           return acc;
-        }, {} as Record<string, number>);
+        }, {});
 
         const graficoData = Object.entries(tempoPorDisciplina).map(([name, value]) => ({
             name,

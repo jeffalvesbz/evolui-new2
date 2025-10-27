@@ -167,6 +167,7 @@ export interface Badge {
   description: string;
   icon: string; // Should match an icon component name
   xp: number;
+  is_secret?: boolean;
 }
 
 export interface GamificationStats {
@@ -178,7 +179,16 @@ export interface GamificationStats {
   unlockedBadgeIds: string[];
 }
 
-export type XpLogEvent = 'estudo_concluido' | 'revisao_concluida' | 'trilha_topico_concluido' | 'estudo_extra' | 'revisao_atrasada' | 'meta_semanal_completa';
+export type XpLogEvent = 
+  'cronometro_finalizado' |
+  'estudo_manual' |
+  'revisao_concluida' | 
+  'revisao_atrasada' |
+  'revisao_dificil' |
+  'trilha_topico_concluido' | 
+  'estudo_extra' |
+  'meta_semanal_completa' |
+  'missao_diaria_completa';
 
 export interface XpLogEntry {
   id: string;
@@ -187,6 +197,8 @@ export interface XpLogEntry {
   amount: number;
   meta_json: Record<string, any>;
   created_at: string;
+  tipo_evento?: 'ativo' | 'manual';
+  multiplicador?: number;
 }
 
 // Tipos para o sistema de Amigos

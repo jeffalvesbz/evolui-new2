@@ -2,7 +2,8 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     TrophyIcon, StarIcon, FlameIcon, BookOpenIcon, RepeatIcon, FootprintsIcon,
-    PlusCircleIcon, CalendarClockIcon, TargetIcon, TrendingUpIcon, BookCopyIcon
+    PlusCircleIcon, CalendarClockIcon, TargetIcon, TrendingUpIcon, BookCopyIcon,
+    BookOpenCheckIcon
 } from './icons';
 import { useGamificationStore, WeeklyRankingData } from '../stores/useGamificationStore';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -16,17 +17,20 @@ import FriendsManagement from './FriendsManagement';
 
 // Icon mapping for activities
 const activityIcons: Record<XpLogEvent, React.FC<{ className?: string }>> = {
-    'estudo_concluido': BookOpenIcon,
+    'cronometro_finalizado': BookOpenIcon,
     'revisao_concluida': RepeatIcon,
     'trilha_topico_concluido': FootprintsIcon,
     'estudo_extra': PlusCircleIcon,
     'revisao_atrasada': CalendarClockIcon,
     'meta_semanal_completa': TargetIcon,
+    'revisao_dificil': BookCopyIcon,
+    'estudo_manual': BookOpenIcon,
+    'missao_diaria_completa': TargetIcon,
 };
 
 const getEventMessage = (event: XpLogEvent): string => {
     switch (event) {
-        case 'estudo_concluido':
+        case 'cronometro_finalizado':
             return 'Estudo concluído';
         case 'revisao_concluida':
             return 'Revisão concluída';
@@ -43,6 +47,15 @@ const getEventMessage = (event: XpLogEvent): string => {
     }
 };
 
+const SecretBadgePlaceholder: React.FC = () => (
+    <div className="p-4 rounded-xl border border-dashed border-border bg-muted/30 flex flex-col items-center justify-center text-center transition-all opacity-70 hover:opacity-100 hover:border-primary/50">
+        <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-muted">
+            <span className="text-2xl font-bold text-muted-foreground">?</span>
+        </div>
+        <p className="font-bold text-sm text-foreground">Conquista Misteriosa</p>
+        <p className="text-xs text-muted-foreground flex-grow">Continue sua jornada para revelar.</p>
+    </div>
+);
 
 const GamificationPage = () => {
     const { stats, badges, xpLog, unlockedBadges, xpForCurrentLevel, xpForNextLevel, weeklyRanking, fetchWeeklyRanking } = useGamificationStore();
@@ -103,7 +116,11 @@ const GamificationPage = () => {
                         <CardHeader><CardTitle>Conquistas</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {unlocked.map(badge => <BadgeCard key={badge.id} badge={badge} unlocked />)}
-                            {locked.map(badge => <BadgeCard key={badge.id} badge={badge} unlocked={false} />)}
+                            {locked.map(badge => 
+                                badge.is_secret 
+                                ? <SecretBadgePlaceholder key={badge.id} /> 
+                                : <BadgeCard key={badge.id} badge={badge} unlocked={false} />
+                            )}
                         </CardContent>
                     </Card>
                      <Card className="border-border shadow-md">
@@ -166,6 +183,10 @@ const BadgeCard: React.FC<{ badge: BadgeType, unlocked: boolean }> = ({ badge, u
         'RepeatIcon': RepeatIcon,
         'BookCopyIcon': BookCopyIcon,
         'TrophyIcon': TrophyIcon,
+        'RefreshCwIcon': TrendingUpIcon, // Placeholder
+        'HistoryIcon': TrendingUpIcon, // Placeholder
+        'SunIcon': TrendingUpIcon, // Placeholder
+        'BookOpenCheckIcon': BookOpenCheckIcon,
     }[badge.icon] || TrophyIcon;
 
     return (

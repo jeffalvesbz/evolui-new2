@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useGamificationStore } from '../stores/useGamificationStore';
 import BadgeNotification from './BadgeNotification';
+import SecretBadgeNotification from './SecretBadgeNotification';
 
 const AchievementNotifier: React.FC = () => {
   const queue = useGamificationStore(state => state.newlyUnlockedBadgesQueue);
@@ -12,11 +13,19 @@ const AchievementNotifier: React.FC = () => {
   return (
     <AnimatePresence>
       {currentBadge && (
-        <BadgeNotification
-          key={currentBadge.id}
-          badge={currentBadge}
-          onComplete={processNext}
-        />
+        currentBadge.is_secret ? (
+            <SecretBadgeNotification 
+                key={currentBadge.id}
+                badge={currentBadge}
+                onComplete={processNext}
+            />
+        ) : (
+            <BadgeNotification
+                key={currentBadge.id}
+                badge={currentBadge}
+                onComplete={processNext}
+            />
+        )
       )}
     </AnimatePresence>
   );

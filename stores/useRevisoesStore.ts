@@ -1,6 +1,5 @@
-
 import { create } from 'zustand';
-import { Revisao, NivelDificuldade } from '../types';
+import { Revisao, NivelDificuldade, XpLogEvent } from '../types';
 import { addDays } from 'date-fns';
 import { getRevisoes, createRevisao, updateRevisaoApi, deleteRevisao } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
@@ -87,8 +86,20 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
 
         await get().updateRevisao(id, { status: 'concluida', dificuldade: mappedNovaDificuldade ?? revisaoOriginal.dificuldade });
         
-        const eventType = revisaoOriginal.status === 'atrasada' ? 'revisao_atrasada' : 'revisao_concluida';
-        useGamificationStore.getState().logXpEvent(eventType, 5, { revisaoId: id });
+        // Determine the correct event and context
+        let eventType: XpLogEvent = revisaoOriginal.status === 'atrasada' ? 'revisao_atrasada' : 'revisao_concluida';
+        const context = {
+            difficulty: mappedNovaDificuldade ?? revisaoOriginal.dificuldade,
+            isCorrect: resultado === 'acertou'
+        };
+
+        // If it's a difficult card answered correctly, use the specific event
+        if (context.difficulty === 'difícil' && context.isCorrect && eventType !== 'revisao_atrasada') {
+            eventType = 'revisao_dificil';
+        }
+
+        useGamificationStore.getState().logXpEvent(eventType, { revisaoId: id }, context);
+
 
         if (resultado === 'errou') {
             const novaRevisaoData: Omit<Revisao, 'id' | 'studyPlanId'> = {

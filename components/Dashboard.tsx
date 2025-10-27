@@ -1,5 +1,6 @@
 
 
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay } from 'date-fns';
@@ -234,9 +235,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
 
 
   // Use safeGoalMinutes which is guaranteed to be a number.
-// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
+  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
-// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
+  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const metaPercentual = safeGoalMinutes > 0 ? Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100)) : 0;
   
   const recentStudies = useMemo(() => sessoes
@@ -288,7 +289,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     },
   ];
   
-// FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
+  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const goalOptions = [...new Set([...DAILY_GOAL_OPTIONS, safeGoalMinutes])].sort(
     (a, b) => a - b,
   );

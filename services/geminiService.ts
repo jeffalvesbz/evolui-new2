@@ -1,5 +1,3 @@
-
-
 import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship } from '../types';
 import { TrilhaSemanalData } from '../stores/useEstudosStore';
 import * as mockData from '../data/mockData';
@@ -168,7 +166,6 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                 }
                  if (method === 'GET' && id === 'log') {
                     const userId = subResource;
-                    // FIX: Add explicit types for `a` and `b` in the sort callback to resolve the arithmetic operation error.
                     return db.gamification_xp_log.filter(l => l.user_id === userId).sort((a: XpLogEntry, b: XpLogEntry) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 }
                 if (method === 'GET' && id === 'ranking' && subResource === 'weekly') {
@@ -245,15 +242,26 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                     return { ranking: fullRanking, currentUserRank };
                 }
                 if (method === 'POST' && id === 'log') {
-                    const { userId, event, amount, meta } = body;
-                    const logEntry = { id: uuid(), user_id: userId, event, amount, meta_json: meta, created_at: new Date().toISOString() };
+                    const { userId, event, amount, meta, tipo_evento, multiplicador } = body;
+                    const logEntry: XpLogEntry = { 
+                        id: uuid(), 
+                        user_id: userId, 
+                        event, 
+                        amount, 
+                        meta_json: meta, 
+                        created_at: new Date().toISOString(),
+                        tipo_evento,
+                        multiplicador,
+                    };
                     db.gamification_xp_log.push(logEntry);
                     
                     let userStats = db.gamification_user_stats.find(s => s.user_id === userId);
                     if (userStats) {
-                        userStats.xp_total += amount;
+                        // FIX: Cast `amount` to a number to ensure the arithmetic operation is valid and prevent type errors, as the type from JSON.parse is 'any'.
+                        userStats.xp_total += Number(amount);
                         // --- Streak Logic ---
-                        if (event === 'estudo_concluido' || event === 'estudo_extra') {
+                        // Apenas eventos de estudo ativo contam para o streak
+                        if (event === 'cronometro_finalizado') {
                             const userSessoes = db.sessoes;
                             const streak = calculateStreakFromSessoes(userSessoes);
                             userStats.current_streak_days = streak;
@@ -263,7 +271,8 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                         }
 
                     } else {
-                        userStats = { user_id: userId, xp_total: amount, level: 1, current_streak_days: 1, best_streak_days: 1, unlockedBadgeIds: [] };
+                        const initialStreak = tipo_evento === 'ativo' ? 1 : 0;
+                        userStats = { user_id: userId, xp_total: amount, level: 1, current_streak_days: initialStreak, best_streak_days: initialStreak, unlockedBadgeIds: [] };
                         db.gamification_user_stats.push(userStats);
                     }
                     return logEntry;
@@ -479,9 +488,9 @@ export const updateGamificationStats = (userId: string, data: Partial<Gamificati
     method: 'PUT',
     body: JSON.stringify(data),
 });
-export const logXpEvent = (userId: string, event: XpLogEvent, amount: number, meta: Record<string, any> = {}) => apiFetch('/gamification/log', {
+export const logXpEvent = (userId: string, event: XpLogEvent, amount: number, meta: Record<string, any> = {}, tipo_evento: 'ativo' | 'manual', multiplicador: number) => apiFetch('/gamification/log', {
     method: 'POST',
-    body: JSON.stringify({ userId, event, amount, meta }),
+    body: JSON.stringify({ userId, event, amount, meta, tipo_evento, multiplicador }),
 });
 export const getBadges = () => apiFetch('/badges');
 export const getXpLog = (userId: string) => apiFetch(`/gamification/log/${userId}`);

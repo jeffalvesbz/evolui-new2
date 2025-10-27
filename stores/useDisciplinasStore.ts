@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Disciplina, Topico } from '../types';
 import { getDisciplinas, createDisciplina, updateDisciplinaApi, deleteDisciplina, updateTopicoApi, createTopico } from '../services/geminiService';
@@ -118,7 +117,7 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
     
     // Check for gamification event after optimistic update
     if (updates.concluido && !topicoOriginal?.concluido) {
-        useGamificationStore.getState().logXpEvent('trilha_topico_concluido', 15, { topicoId });
+        useGamificationStore.getState().logXpEvent('trilha_topico_concluido', { topicoId });
     }
 
     try {

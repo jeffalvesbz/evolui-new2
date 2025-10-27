@@ -1,18 +1,13 @@
-
 import React from 'react';
 import { SunIcon, MoonIcon } from './icons';
 import { Theme } from '../types';
 
 interface ThemeSwitcherProps {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
 }
 
-const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ theme, setTheme }) => {
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-  };
-
+const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({ theme, toggleTheme }) => {
   return (
     <button
       onClick={toggleTheme}

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { SessaoEstudo } from '../types';
+import { SessaoEstudo, XpLogEvent } from '../types';
 import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
 import { getSessoes, createSessao, updateSessaoApi, deleteSessao } from '../services/geminiService';
@@ -263,10 +263,18 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
           data_estudo: new Date().toISOString().split('T')[0],
         });
         
-        await useGamificationStore.getState().logXpEvent('estudo_concluido', 10, {
-            topicoId: detalhes.topico_id,
-            tempoEstudadoSeg: Math.round(tempoEstudado),
-        });
+        const eventType: XpLogEvent = (sessaoAtual.isConclusaoRapida || sessaoAtual.topico.id.startsWith('manual-')) ? 'estudo_manual' : 'cronometro_finalizado';
+        
+        await useGamificationStore.getState().logXpEvent(
+            eventType,
+            { // meta
+                topicoId: detalhes.topico_id,
+                tempoEstudadoSeg: Math.round(tempoEstudado),
+            },
+            { // context
+                durationMinutes: Math.round(tempoEstudado / 60)
+            }
+        );
 
         descartarSessao();
         useUiStore.getState().closeSaveModal();

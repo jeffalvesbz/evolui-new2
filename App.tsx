@@ -101,7 +101,7 @@ const useFriendsDataSync = () => {
 }
 
 
-const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeView: string; }> = ({ theme, setTheme, activeView }) => {
+const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: string; }> = ({ theme, toggleTheme, activeView }) => {
   const openEstudoModal = useEstudosStore(state => state.iniciarSessaoInteligente);
   const user = useAuthStore(state => state.user);
   
@@ -121,7 +121,7 @@ const Header: React.FC<{ theme: Theme; setTheme: (theme: Theme) => void; activeV
             <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
           </button>
           
-          <ThemeSwitcher theme={theme} setTheme={setTheme} /> 
+          <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} /> 
           
           {user && (
             <div className="flex items-center gap-3 pl-2">
@@ -199,6 +199,10 @@ const App: React.FC = () => {
   const [isAppLoading, setIsAppLoading] = useState(true);
   const { fetchEditais } = useEditalStore();
 
+  const { unlockBadges, badges, stats } = useGamificationStore();
+  const themeToggleCount = React.useRef(0);
+  const themeToggleTimeout = React.useRef<number | null>(null);
+
   useEditalDataSync();
   useGamificationDataSync();
   useFriendsDataSync();
@@ -235,6 +239,29 @@ const App: React.FC = () => {
     document.documentElement.className = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
+  
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    
+    if (themeToggleTimeout.current) {
+        clearTimeout(themeToggleTimeout.current);
+    }
+    themeToggleCount.current++;
+
+    if (themeToggleCount.current >= 5) {
+        const matrixBadge = badges.find(b => b.id === 'badge-secret-1');
+        const isUnlocked = stats?.unlockedBadgeIds.includes('badge-secret-1');
+
+        if (matrixBadge && !isUnlocked) {
+            unlockBadges([matrixBadge]);
+        }
+        themeToggleCount.current = 0;
+    }
+
+    themeToggleTimeout.current = window.setTimeout(() => {
+        themeToggleCount.current = 0;
+    }, 3000); // Reset after 3 seconds of inactivity
+  };
   
   const renderActiveView = () => {
     switch (activeView) {
@@ -302,7 +329,7 @@ const App: React.FC = () => {
         <div className="w-full h-8 bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-xs font-bold text-black shadow-lg z-20">
             Edital ativo: {editalAtivo?.nome || 'Nenhum edital selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
         </div>
-        <Header theme={theme} setTheme={setTheme} activeView={activeView} />
+        <Header theme={theme} toggleTheme={toggleTheme} activeView={activeView} />
         <main className="flex-1 overflow-y-auto p-8 relative">
           <div className="max-w-7xl mx-auto">
             {renderActiveView()}

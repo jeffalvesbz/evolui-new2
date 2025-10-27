@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
+import { useGamificationStore } from '../stores/useGamificationStore';
 import { generateFlashcards } from '../services/geminiService';
 import { Flashcard as FlashcardType } from '../types';
 import { SparklesIcon, LayersIcon, SaveIcon, BookOpenCheckIcon, ChevronLeftIcon, ChevronRightIcon, CheckCircle2Icon } from './icons';
@@ -177,9 +178,8 @@ interface ReviewViewProps {
   setView: (view: View) => void;
 }
 const ReviewView: React.FC<ReviewViewProps> = ({ setView }) => {
-    const getDueFlashcards = useFlashcardsStore(state => state.getDueFlashcards);
-    const getUpcomingFlashcards = useFlashcardsStore(state => state.getUpcomingFlashcards);
-    const updateFlashcard = useFlashcardsStore(state => state.updateFlashcard);
+    const { getDueFlashcards, getUpcomingFlashcards, updateFlashcard } = useFlashcardsStore();
+    const { logXpEvent } = useGamificationStore();
     
     const [activeDeck, setActiveDeck] = useState<FlashcardType[]>([]);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -245,6 +245,10 @@ const ReviewView: React.FC<ReviewViewProps> = ({ setView }) => {
     const handleAnswer = (answer: 'correct' | 'incorrect') => {
         const currentCard = activeDeck[currentCardIndex];
         if (!currentCard) return;
+
+        // Gamification
+        const xpAmount = answer === 'correct' ? 10 : 5;
+        logXpEvent('revisao_concluida', xpAmount, { flashcardId: currentCard.id, result: answer });
 
         const srsUpdates = calculateNextReview(currentCard, answer);
         updateFlashcard(currentCard.id, srsUpdates);

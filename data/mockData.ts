@@ -163,6 +163,18 @@ export const MOCK_BADGES: Badge[] = [
     { id: 'badge-4', name: 'Revisor Dedicado', description: 'Complete 10 revisões agendadas.', icon: 'RepeatIcon', xp: 30 },
     { id: 'badge-5', name: 'Caça-Erros', description: 'Registre 5 erros no seu caderno.', icon: 'BookCopyIcon', xp: 25 },
     { id: 'badge-6', name: 'Edital Concluído', description: 'Conclua 100% de um edital.', icon: 'TrophyIcon', xp: 200 },
+    // New public achievements
+    { id: 'badge-7', name: 'Mestre do Tempo', description: 'Estude por um total de 50 horas.', icon: 'ClockIcon', xp: 100 },
+    { id: 'badge-8', name: 'Senhor do Tempo', description: 'Estude por um total de 100 horas.', icon: 'HistoryIcon', xp: 200 },
+    { id: 'badge-9', name: 'Guardião da Memória', description: 'Revise 500 flashcards.', icon: 'LayersIcon', xp: 150 },
+    { id: 'badge-10', name: 'A Lenda', description: 'Mantenha uma sequência de 100 dias de estudos.', icon: 'TrophyIcon', xp: 300 },
+    { id: 'badge-11', name: 'Imparável', description: 'Estude por 10 horas em um único dia.', icon: 'ZapIcon', xp: 120 },
+    { id: 'badge-12', name: 'Exterminador de Débitos', description: 'Conclua 20 revisões que estavam atrasadas.', icon: 'CheckCircle2Icon', xp: 80 },
+    // Secret Achievements
+    { id: 'badge-secret-1', name: 'Matrix', description: 'Qual realidade você escolheu?', icon: 'RefreshCwIcon', xp: 150, is_secret: true },
+    { id: 'badge-secret-2', name: 'Interestelar', description: 'O tempo é relativo. Você estudou por 5 horas seguidas.', icon: 'HistoryIcon', xp: 300, is_secret: true },
+    { id: 'badge-secret-3', name: 'Memento Vivere', description: 'A vida é constância. Você manteve um streak de 30 dias.', icon: 'SunIcon', xp: 250, is_secret: true },
+    { id: 'badge-secret-4', name: 'O Sábio', description: 'Você não teme o conhecimento. Resolveu 10 erros difíceis.', icon: 'BookOpenCheckIcon', xp: 200, is_secret: true },
 ];
 
 export const MOCK_GAMIFICATION_STATS: GamificationStats = {
@@ -190,7 +202,7 @@ export const MOCK_GAMIFICATION_STATS_LIST: GamificationStats[] = [
 // --- Add more xp logs for ranking ---
 const generateRandomLogs = (): XpLogEntry[] => {
     const logs: XpLogEntry[] = [];
-    const events: XpLogEvent[] = ['estudo_concluido', 'revisao_concluida', 'estudo_extra'];
+    const events: XpLogEvent[] = ['cronometro_finalizado', 'revisao_concluida', 'estudo_extra'];
     const users = [MOCK_USER, ...MOCK_USERS_FOR_RANKING];
     for (let i = 0; i < 30; i++) { // Generate logs for the last 30 days
         for (let j = 0; j < Math.floor(Math.random() * 5); j++) { // 0 to 4 logs per day
@@ -213,9 +225,9 @@ const generateRandomLogs = (): XpLogEntry[] => {
 
 
 export const MOCK_XP_LOG: XpLogEntry[] = [
-    { id: 'xp-1', user_id: MOCK_USER_ID, event: 'estudo_concluido', amount: 10, meta_json: { topico_id: 'top-p-1' }, created_at: today.toISOString() },
-    { id: 'xp-2', user_id: MOCK_USER_ID, event: 'estudo_concluido', amount: 10, meta_json: { topico_id: 'top-m-1' }, created_at: yesterday.toISOString() },
-    { id: 'xp-3', user_id: MOCK_USER_ID, event: 'estudo_concluido', amount: 10, meta_json: { topico_id: 'top-m-2' }, created_at: twoDaysAgo.toISOString() },
+    { id: 'xp-1', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-p-1' }, created_at: today.toISOString() },
+    { id: 'xp-2', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-m-1' }, created_at: yesterday.toISOString() },
+    { id: 'xp-3', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-m-2' }, created_at: twoDaysAgo.toISOString() },
     ...generateRandomLogs(),
 ];
 

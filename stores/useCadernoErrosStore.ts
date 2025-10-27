@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { CadernoErro, RevisaoErro } from '../types';
 import { getErros, createErro, updateErroApi, deleteErro } from '../services/geminiService';
@@ -40,7 +39,7 @@ export const useCadernoErrosStore = create<CadernoErrosStore>((set, get) => ({
     try {
         const newErro = await createErro(editalAtivoId, erroData);
         set(state => ({ erros: [...state.erros, newErro] }));
-        useGamificationStore.getState().logXpEvent('estudo_extra', 2, { erroId: newErro.id, action: 'create' });
+        useGamificationStore.getState().logXpEvent('estudo_extra', { erroId: newErro.id, action: 'create' });
         return newErro;
     } catch (error) {
         toast.error("Falha ao registrar erro.");
@@ -57,7 +56,7 @@ export const useCadernoErrosStore = create<CadernoErrosStore>((set, get) => ({
         }));
         // Se o erro foi marcado como resolvido e não estava resolvido antes
         if (updates.resolvido && !erroOriginal?.resolvido) {
-            useGamificationStore.getState().logXpEvent('estudo_extra', 5, { erroId: id, action: 'resolve' });
+            useGamificationStore.getState().logXpEvent('estudo_extra', { erroId: id, action: 'resolve' });
         }
     } catch (error) {
         toast.error("Falha ao atualizar erro.");

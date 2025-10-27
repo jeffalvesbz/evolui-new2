@@ -8,7 +8,8 @@ import { ptBR } from 'date-fns/locale';
 
 interface RevisaoCardProps {
     revisao: Revisao;
-    onConcluir: (id: string, resultado: 'acertou' | 'errou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => void;
+    // FIX: Widened the type of `resultado` to include 'adiou', matching the function signature from the `useRevisoes` hook and resolving the assignment error.
+    onConcluir: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => void;
     onReagendar: (id: string, dias: number) => void;
     onRemover: (id: string) => void;
 }

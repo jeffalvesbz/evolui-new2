@@ -190,6 +190,12 @@ const SalvarSessaoModal: React.FC = () => {
                 </header>
 
                 <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                    {sessaoAtual.isConclusaoRapida && (
+                        <div className="p-3 bg-primary/10 rounded-lg text-primary text-xs flex items-center gap-2">
+                            <SparklesIcon className="w-4 h-4 flex-shrink-0" />
+                            <span><b>Dica:</b> Ative o cronômetro em seu próximo estudo para ganhar mais XP e contar para seu streak!</span>
+                        </div>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Categoria *</label>
