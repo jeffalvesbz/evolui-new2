@@ -1,4 +1,5 @@
 
+
 import { create } from 'zustand';
 import { GamificationStats, XpLogEvent, Badge, XpLogEntry } from '../types';
 import { getGamificationStats, logXpEvent as logXpEventApi, getBadges, getXpLog, updateGamificationStats, getWeeklyRanking } from '../services/geminiService';
@@ -48,6 +49,7 @@ const getXpForLevel = (level: number): number => {
 
 const getEventMessage = (event: XpLogEvent): string => {
     switch (event) {
+        // FIX: Changed 'estudo_concluido' to 'cronometro_finalizado' to match the XpLogEvent type.
         case 'cronometro_finalizado':
             return 'por concluir um estudo';
         case 'revisao_concluida':
@@ -60,8 +62,6 @@ const getEventMessage = (event: XpLogEvent): string => {
             return 'por colocar uma revisão em dia';
         case 'meta_semanal_completa':
             return 'por completar sua meta semanal';
-        case 'conquista_desbloqueada':
-            return 'por uma nova conquista';
         default:
             return 'pela sua dedicação';
     }
@@ -138,6 +138,7 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
         toast.success(`+${amount} XP ${getEventMessage(event)}!`);
 
         try {
+            // FIX: Added missing arguments 'tipo_evento' and 'multiplicador' to the logXpEventApi call to match its definition and prevent a runtime error.
             const tipo_evento = event === 'estudo_manual' ? 'manual' : 'ativo';
             const multiplicador = 1; // Default multiplier
             await logXpEventApi(userId, event, amount, meta, tipo_evento, multiplicador);
@@ -154,64 +155,35 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     },
     
     unlockBadges: (newlyUnlocked: Badge[]) => {
-        const userId = useAuthStore.getState().user?.id;
-        const { stats, fetchXpLog, fetchGamificationStats } = get();
-        if (!stats || newlyUnlocked.length === 0 || !userId) return;
+        const { stats } = get();
+        if (!stats || newlyUnlocked.length === 0) return;
 
-        // 1. Adiciona as conquistas à fila de notificações da UI
-        set(state => ({ 
-            newlyUnlockedBadgesQueue: [...state.newlyUnlockedBadgesQueue, ...newlyUnlocked]
-        }));
-        
-        // 2. Atualiza o estado local de forma otimista para feedback imediato na UI
         const newBadgeIds = newlyUnlocked.map(b => b.id);
-        const totalXpFromBadges = newlyUnlocked.reduce((acc, b) => acc + (b.xp || 0), 0);
+        const totalXpFromBadges = newlyUnlocked.reduce((acc, b) => acc + b.xp, 0);
         
-        const oldLevel = stats.level;
-        
+        const previousLevel = calculateLevel(stats.xp_total);
+
         const updatedStats = {
-            ...stats,
-            unlockedBadgeIds: [...new Set([...stats.unlockedBadgeIds, ...newBadgeIds])],
-            xp_total: stats.xp_total + totalXpFromBadges,
+          ...stats,
+          unlockedBadgeIds: [...new Set([...stats.unlockedBadgeIds, ...newBadgeIds])],
+          xp_total: stats.xp_total + totalXpFromBadges,
         };
         updatedStats.level = calculateLevel(updatedStats.xp_total);
         
-        set({ stats: updatedStats });
+        set(state => ({ 
+            stats: updatedStats,
+            newlyUnlockedBadgesQueue: [...state.newlyUnlockedBadgesQueue, ...newlyUnlocked]
+        }));
         
-        if (updatedStats.level > oldLevel) {
-            toast.success(`🚀 Você subiu para o Nível ${updatedStats.level}!`);
+        if (updatedStats.level > previousLevel) {
+          toast.success(`🚀 Você subiu para o Nível ${updatedStats.level}!`);
         }
 
-        // 3. Persiste a lista de conquistas atualizada e registra os eventos de XP no backend
-        updateGamificationStats(userId, { 
+        updateGamificationStats(stats.user_id, { 
+          xp_total: updatedStats.xp_total,
           unlockedBadgeIds: updatedStats.unlockedBadgeIds
-        }).then(() => {
-            // Após salvar a lista de conquistas, registra o XP de cada uma
-            const logPromises = newlyUnlocked.map(badge => {
-                if (badge.xp && badge.xp > 0) {
-                    toast.success(`+${badge.xp} XP pela conquista "${badge.name}"!`);
-                    return logXpEventApi(
-                        userId,
-                        'conquista_desbloqueada', 
-                        badge.xp, 
-                        { badgeId: badge.id, badgeName: badge.name }, 
-                        'manual', 
-                        1
-                    );
-                }
-                return Promise.resolve(null);
-            });
-
-            // Após todos os logs, atualiza o feed de atividades
-            Promise.all(logPromises).then(() => {
-                fetchXpLog(userId);
-            });
-
         }).catch(err => {
           console.error("Failed to save unlocked badges:", err);
-          toast.error("Erro ao salvar suas novas conquistas.");
-          // Em caso de falha, resgata o estado do servidor para reverter a mudança otimista
-          fetchGamificationStats(userId);
         });
     },
 

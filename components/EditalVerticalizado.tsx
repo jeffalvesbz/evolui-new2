@@ -3,18 +3,16 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { Disciplina, Topico } from '../types';
 import { 
     ChevronDownIcon, 
-    CheckCircle2Icon, 
     FilePlus2Icon, 
     Trash2Icon, 
     EditIcon, 
     LandmarkIcon, 
-    ClockIcon, 
-    RefreshCwIcon, 
     CheckIcon,
     SaveIcon,
 } from './icons';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
 import { toast } from './Sonner';
+import { Progress } from '../lib/dashboardMocks';
 
 const TopicoItem: React.FC<{
     topico: Topico;
@@ -120,21 +118,16 @@ const DisciplinaCard: React.FC<{
     
     return (
         <div className="bg-card rounded-xl border border-border">
-            <header className="flex items-center p-4">
-                <div className="flex-1 space-y-1">
+            <header className="p-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+                <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg text-foreground">{disciplina.nome}</h3>
-                    <p className="text-xs text-muted-foreground">Atualizado em 18/10</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-secondary font-bold">
-                        <CheckCircle2Icon className="w-5 h-5" />
-                        <span>{disciplina.progresso.toFixed(0)}%</span>
-                    </div>
-                    <button className="p-2 rounded-full hover:bg-muted text-muted-foreground"><RefreshCwIcon className="w-4 h-4"/></button>
-                    <button className="p-2 rounded-full hover:bg-muted text-muted-foreground"><ClockIcon className="w-4 h-4"/></button>
-                    <button onClick={() => setIsExpanded(!isExpanded)} className="p-2 rounded-full hover:bg-muted text-muted-foreground">
+                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="p-2 rounded-full hover:bg-muted text-muted-foreground">
                         <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Progress value={disciplina.progresso} />
+                    <span className="text-sm font-bold text-secondary w-14 text-right">{disciplina.progresso.toFixed(0)}%</span>
                 </div>
             </header>
             {isExpanded && (
@@ -145,14 +138,14 @@ const DisciplinaCard: React.FC<{
                         )) : (
                             <div className="text-center py-8">
                                <p className="text-sm text-muted-foreground">Nenhum tópico adicionado.</p>
-                               <button onClick={onAddTopic} className="mt-2 text-sm font-semibold text-primary hover:underline">Adicionar primeiro tópico</button>
+                               <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="mt-2 text-sm font-semibold text-primary hover:underline">Adicionar primeiro tópico</button>
                             </div>
                         )}
                     </div>
                     <div className="p-2 flex items-center justify-end gap-1 border-t border-border bg-muted/30">
-                        <button onClick={onAddTopic} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópico"><FilePlus2Icon className="w-4 h-4" /></button>
-                        <button onClick={onEdit} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Editar Disciplina"><EditIcon className="w-4 h-4" /></button>
-                        <button onClick={onDelete} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500" title="Excluir Disciplina"><Trash2Icon className="w-4 h-4" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópico"><FilePlus2Icon className="w-4 h-4" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Editar Disciplina"><EditIcon className="w-4 h-4" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500" title="Excluir Disciplina"><Trash2Icon className="w-4 h-4" /></button>
                     </div>
                 </div>
             )}

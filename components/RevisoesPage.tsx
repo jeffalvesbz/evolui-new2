@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -20,7 +18,6 @@ import { toast } from './Sonner';
 import { useEditalStore } from '../stores/useEditalStore';
 
 type FiltroStatus = 'todas' | 'pendentes' | 'programadas' | 'atrasadas' | 'concluidas';
-type FiltroOrigem = 'todas' | 'flashcard' | 'erro' | 'manual' | 'teorica';
 type FiltroDificuldade = 'todas' | 'fácil' | 'médio' | 'difícil';
 
 const RevisoesPage: React.FC = () => {
@@ -41,7 +38,6 @@ const RevisoesPage: React.FC = () => {
   } = useRevisoes();
 
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todas');
-  const [filtroOrigem, setFiltroOrigem] = useState<FiltroOrigem>('todas');
   const [filtroDificuldade, setFiltroDificuldade] = useState<FiltroDificuldade>('todas');
   const [mostrarEstatisticas, setMostrarEstatisticas] = useState(false);
 
@@ -52,7 +48,6 @@ const RevisoesPage: React.FC = () => {
       if (filtroStatus === 'atrasadas' && revisao.status !== 'atrasada') return false;
       if (filtroStatus === 'concluidas' && revisao.status !== 'concluida') return false;
     }
-    if (filtroOrigem !== 'todas' && revisao.origem !== filtroOrigem) return false;
     if (filtroDificuldade !== 'todas' && revisao.dificuldade !== filtroDificuldade) return false;
     return true;
   });
@@ -124,7 +119,7 @@ const RevisoesPage: React.FC = () => {
       <header className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-1">Sistema de Revisões</h1>
-          <p className="text-muted-foreground">Gerencie suas revisões de flashcards, erros e estudos manuais.</p>
+          <p className="text-muted-foreground">Gerencie suas revisões de estudos teóricos e manuais.</p>
         </div>
         <div className="flex items-center gap-2">
             <button onClick={() => setMostrarEstatisticas(!mostrarEstatisticas)} className="h-9 px-3 flex items-center gap-2 rounded-lg bg-card border border-border text-sm text-muted-foreground hover:bg-muted"><BarChart3Icon className="w-4 h-4" /> Estatísticas</button>
@@ -170,11 +165,6 @@ const RevisoesPage: React.FC = () => {
                 <FilterButton label="Pendentes" isActive={filtroStatus === 'pendentes'} onClick={() => setFiltroStatus('pendentes')} />
                 <FilterButton label="Atrasadas" isActive={filtroStatus === 'atrasadas'} onClick={() => setFiltroStatus('atrasadas')} />
                 <FilterButton label="Concluídas" isActive={filtroStatus === 'concluidas'} onClick={() => setFiltroStatus('concluidas')} />
-            </div>
-             <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-semibold w-20">Origem:</span>
-                <FilterButton label="Todas" isActive={filtroOrigem === 'todas'} onClick={() => setFiltroOrigem('todas')} />
-                <FilterButton label="Flashcard" isActive={filtroOrigem === 'flashcard'} onClick={() => setFiltroOrigem('flashcard')} />
-                <FilterButton label="Erro" isActive={filtroOrigem === 'erro'} onClick={() => setFiltroOrigem('erro')} />
             </div>
         </div>
       </div>

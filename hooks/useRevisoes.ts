@@ -1,7 +1,6 @@
 
 
 
-
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -73,7 +72,9 @@ export const useRevisoes = (): RevisoesProcessadas => {
   const dadosProcessados = useMemo(() => {
     const hoje = startOfDay(new Date());
 
-    const revisoesProcessadas = revisoes;
+    const revisoesProcessadas = revisoes.filter(
+      revisao => revisao.origem === 'teorica' || revisao.origem === 'manual'
+    );
 
     // Filtrar revisões por status e data
     const pendentesHoje = revisoesProcessadas.filter(revisao => 
@@ -116,8 +117,8 @@ export const useRevisoes = (): RevisoesProcessadas => {
     }, {})
 
     // Taxa de conclusão
-    const taxaConclusao = revisoes.length > 0 
-      ? Math.round((totalConcluidas / revisoes.length) * 100)
+    const taxaConclusao = revisoesProcessadas.length > 0 
+      ? Math.round((totalConcluidas / revisoesProcessadas.length) * 100)
       : 0
 
     return {
@@ -234,8 +235,8 @@ export const useEstatisticasRevisoes = () => {
     }, {})
 
     // Performance por origem
-    // FIX: Explicitly type the accumulator parameter of the reduce function to prevent TypeScript from inferring it as 'unknown', which was causing property access errors.
-    const performancePorOrigem = revisoes.reduce((acc: Record<string, { total: number; concluidas: number }>, revisao) => {
+// FIX: Add type assertion to the initial value of reduce to ensure correct type inference for `performancePorOrigem`.
+    const performancePorOrigem = revisoes.reduce((acc, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }
@@ -244,7 +245,7 @@ export const useEstatisticasRevisoes = () => {
         acc[revisao.origem].concluidas++
       }
       return acc
-    }, {})
+    }, {} as Record<string, { total: number; concluidas: number }>)
 
     // Calcular taxa de conclusão por origem
     const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc: Record<string, number>, [origem, dados]) => {

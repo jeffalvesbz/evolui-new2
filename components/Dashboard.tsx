@@ -38,6 +38,10 @@ import { isSameDay as isSameDayDateFns, startOfDay } from 'date-fns';
 import { useModalStore } from '../stores/useModalStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { MiniGamificationCard } from './MiniGamificationCard';
+import AcoesRecomendadas from './AcoesRecomendadas';
+import { mensagensDiarias } from '../data/motivacoes';
+import { useGamificationStore } from '../stores/useGamificationStore';
+import { gerarMensagemMotivacionalIA } from '../services/geminiService';
 
 // --- Chart Components ---
 
@@ -109,8 +113,9 @@ const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }
 };
 
 
-const formatStudyDuration = (minutes: number) => {
-  const totalMinutes = Math.max(0, Math.round(minutes ?? 0))
+const formatStudyDuration = (minutes: unknown) => {
+// FIX: Cast `minutes` to Number to handle potential `unknown` type from store hydration before it's a number.
+  const totalMinutes = Math.max(0, Math.round(Number(minutes) || 0));
   const hours = Math.floor(totalMinutes / 60)
   const remaining = totalMinutes % 60
   if (hours <= 0) return `${remaining} min`
@@ -132,9 +137,12 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   
   const goalMinutes = useDailyGoalStore((state) => state.goalMinutes);
   const setGoalMinutes = useDailyGoalStore((state) => state.setGoalMinutes);
+  const gamificationStats = useGamificationStore((state) => state.stats);
 
-  // FIX: Cast goalMinutes to number to avoid TypeScript error with `unknown` type before hydration.
-  const safeGoalMinutes = Number(goalMinutes) || 0;
+  const [motivationalMessage, setMotivationalMessage] = useState<{ frase: string; autor: string | null }>({ frase: '', autor: null });
+  const [isMessageLoading, setIsMessageLoading] = useState(true);
+
+  const safeGoalMinutes = useMemo(() => (typeof goalMinutes === 'number' ? goalMinutes : 0), [goalMinutes]);
 
   // Edital-aware data from stores
   const sessoes = useEstudosStore((state) => state.sessoes);
@@ -184,8 +192,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       const tempoTotalSegundos = sessoesDaSemana.reduce((acc, s) => acc + s.tempo_estudado, 0);
       const tempoTotalSemanaMinutos = Math.round(tempoTotalSegundos / 60);
       
-      // Use safeGoalMinutes for weekly goal calculation. Avoid division by zero.
-      // FIX: Use `safeGoalMinutes` to avoid type errors with `unknown` from Zustand before hydration.
       const metaSemanal = Math.max(safeGoalMinutes * 7, 1);
       const progressoSemanalPercent = metaSemanal > 0 ? Math.min(100, Math.round((tempoTotalSemanaMinutos / metaSemanal) * 100)) : 0;
 
@@ -216,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           acc[nomeDisciplina] += tempoMinutos;
           
           return acc;
-      }, {});
+      }, {} as Record<string, number>);
 
       const dadosGraficoDisciplinas = Object.entries(tempoPorDisciplina)
           .map(([name, value]) => ({
@@ -234,11 +240,41 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   }, [sessoes, disciplinas, safeGoalMinutes]);
 
 
-  // Use safeGoalMinutes which is guaranteed to be a number.
-  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
-  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const metaPercentual = safeGoalMinutes > 0 ? Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100)) : 0;
+
+  useEffect(() => {
+    const fetchMotivationalMessage = async () => {
+        if (!user || gamificationStats === null) {
+            const fallbackIndex = Math.floor(Math.random() * mensagensDiarias.length);
+            setMotivationalMessage(mensagensDiarias[fallbackIndex]);
+            setIsMessageLoading(false);
+            return;
+        };
+        
+        setIsMessageLoading(true);
+        try {
+            const message = await gerarMensagemMotivacionalIA(
+                user.name.split(' ')[0],
+                tempoTotalHoje,
+                metaPercentual,
+                gamificationStats.current_streak_days,
+                revisoesPendentes
+            );
+            setMotivationalMessage({ frase: message, autor: null });
+        } catch (error) {
+             console.error("Failed to fetch motivational message", error);
+             const fallbackIndex = Math.floor(Math.random() * mensagensDiarias.length);
+             setMotivationalMessage(mensagensDiarias[fallbackIndex]);
+        } finally {
+            setIsMessageLoading(false);
+        }
+    };
+    
+    const timeoutId = setTimeout(fetchMotivationalMessage, 100);
+    return () => clearTimeout(timeoutId);
+
+  }, [user, gamificationStats, tempoTotalHoje, metaPercentual, revisoesPendentes]);
   
   const recentStudies = useMemo(() => sessoes
     .slice() // Create a copy to avoid mutating the original array
@@ -289,7 +325,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     },
   ];
   
-  // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
   const goalOptions = [...new Set([...DAILY_GOAL_OPTIONS, safeGoalMinutes])].sort(
     (a, b) => a - b,
   );
@@ -371,7 +406,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Meta diária</span>
                       <select
-                        // FIX: Use safeGoalMinutes to avoid potential type errors with 'unknown' from Zustand before hydration.
                         value={safeGoalMinutes}
                         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
                         aria-label="Definir meta diaria"
@@ -403,6 +437,29 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             </Card>
         </div>
       </section>
+
+      <section>
+        <Card className="p-6 text-center bg-gradient-to-r from-primary/10 via-background/0 to-secondary/10 rounded-2xl shadow-lg border-purple-500/20 min-h-[100px] flex flex-col justify-center">
+          {isMessageLoading ? (
+            <div className="space-y-2 animate-pulse">
+                <div className="h-4 bg-muted/50 rounded-full w-3/4 mx-auto"></div>
+                <div className="h-4 bg-muted/50 rounded-full w-1/2 mx-auto"></div>
+            </div>
+          ) : (
+            <>
+              <p className="text-lg italic text-foreground/90 flex items-center justify-center gap-2">
+                  {motivationalMessage.autor === null && <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />}
+                  <span>“{motivationalMessage.frase}”</span>
+              </p>
+              {motivationalMessage.autor && (
+                <p className="text-sm text-primary mt-2">— {motivationalMessage.autor}</p>
+              )}
+            </>
+          )}
+        </Card>
+      </section>
+      
+      <AcoesRecomendadas setActiveView={setActiveView} />
 
       <section className="space-y-4">
           <SectionHeader

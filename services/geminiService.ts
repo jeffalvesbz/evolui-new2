@@ -1,3 +1,7 @@
+
+
+
+import { GoogleGenAI, Type } from '@google/genai';
 import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship } from '../types';
 import { TrilhaSemanalData } from '../stores/useEstudosStore';
 import * as mockData from '../data/mockData';
@@ -8,6 +12,8 @@ import { subDays, isAfter } from 'date-fns';
 // Mude para 'false' para tentar usar o backend real em http://localhost:4000
 const USE_MOCK_API = true;
 const API_BASE_URL = 'http://localhost:4000/api';
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // #region MOCK API IMPLEMENTATION
 // =================================================================================
@@ -75,7 +81,18 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
     // --- AI Proxies ---
     if (endpoint.startsWith('/ai/')) {
         if (endpoint === '/ai/generate-flashcards') return [{ pergunta: 'Qual a capital do Brasil?', resposta: 'Brasília.' }, { pergunta: 'Quanto é 2+2?', resposta: '4.' }];
+        if (endpoint === '/ai/generate-flashcards-from-content') {
+            await new Promise(res => setTimeout(res, 1500)); // Simulate AI thinking
+            return [
+                { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto'},
+                { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima.', estilo: 'explicativo' },
+                { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' },
+                { pergunta: 'Qual a finalidade da prisão preventiva?', resposta: 'Garantia da ordem pública, da ordem econômica, por conveniência da instrução criminal ou para assegurar a aplicação da lei penal.', estilo: 'direto' },
+                { pergunta: 'Diferencie dolo direto de dolo eventual.', resposta: 'No dolo direto, o agente quer o resultado. No dolo eventual, o agente assume o risco de produzi-lo.', estilo: 'explicativo' },
+            ];
+        }
         if (endpoint === '/ai/suggest-topics') return ['Tópico Sugerido 1', 'Tópico Sugerido 2'];
+        // A correção de redação agora usa a API real, então este mock não será chamado por padrão.
         if (endpoint === '/ai/corrigir-redacao') return mockData.MOCK_CORRECAO_COMPLETA;
         if (endpoint === '/ai/extrair-texto-de-imagem') return { text: "Texto extraído da imagem com sucesso." };
         if (endpoint === '/ai/gerar-plano-estudos') {
@@ -166,7 +183,8 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                 }
                  if (method === 'GET' && id === 'log') {
                     const userId = subResource;
-                    return db.gamification_xp_log.filter(l => l.user_id === userId).sort((a: XpLogEntry, b: XpLogEntry) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+// FIX: Use .getTime() for proper date comparison in sort to avoid arithmetic operations on Date objects.
+                    return db.gamification_xp_log.filter((l: XpLogEntry) => l.user_id === userId).sort((a: XpLogEntry, b: XpLogEntry) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
                 }
                 if (method === 'GET' && id === 'ranking' && subResource === 'weekly') {
                     const sevenDaysAgo = subDays(new Date(), 7);
@@ -175,7 +193,7 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                     const weeklyXpByUser = weeklyLogs.reduce((acc: Record<string, number>, log: XpLogEntry) => {
                         acc[log.user_id] = (acc[log.user_id] || 0) + log.amount;
                         return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
 
                     const allUsers = [...db.users, ...mockData.MOCK_USERS_FOR_RANKING];
                     
@@ -220,7 +238,7 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                     const weeklyXpByUser = weeklyLogs.reduce((acc: Record<string, number>, log: XpLogEntry) => {
                         acc[log.user_id] = (acc[log.user_id] || 0) + log.amount;
                         return acc;
-                    }, {});
+                    }, {} as Record<string, number>);
 
                     const allUsers: User[] = [...db.users, ...mockData.MOCK_USERS_FOR_RANKING];
                     
@@ -257,8 +275,7 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
                     
                     let userStats = db.gamification_user_stats.find(s => s.user_id === userId);
                     if (userStats) {
-                        // FIX: Cast `amount` to a number to ensure the arithmetic operation is valid and prevent type errors, as the type from JSON.parse is 'any'.
-                        userStats.xp_total += Number(amount);
+                        userStats.xp_total += amount;
                         // --- Streak Logic ---
                         // Apenas eventos de estudo ativo contam para o streak
                         if (event === 'cronometro_finalizado') {
@@ -291,6 +308,11 @@ const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
             case 'editais':
                 if (method === 'GET' && !id) return db.editais;
                 if (method === 'POST') {
+                    const alreadyExists = db.editais.some((e: StudyPlan) => e.nome === body.nome && e.data_alvo === body.data_alvo);
+                    if (alreadyExists) {
+                        console.warn(`[MOCK API] Duplicate edital creation prevented: "${body.nome}"`);
+                        return db.editais.find((e: StudyPlan) => e.nome === body.nome && e.data_alvo === body.data_alvo);
+                    }
                     const newEdital = { ...body, id: uuid() };
                     db.editais.push(newEdital);
                     return newEdital;
@@ -452,6 +474,13 @@ export const generateFlashcards = async (topicName: string): Promise<Omit<Flashc
   });
 };
 
+export const generateFlashcardsFromContent = async (disciplinaId: string): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
+    return apiFetch('/ai/generate-flashcards-from-content', {
+        method: 'POST',
+        body: JSON.stringify({ disciplinaId })
+    });
+};
+
 export const suggestTopics = async (comment: string): Promise<string[]> => {
   return apiFetch('/ai/suggest-topics', {
     method: 'POST',
@@ -459,19 +488,117 @@ export const suggestTopics = async (comment: string): Promise<string[]> => {
   });
 };
 
+const correcaoSchema = {
+    type: Type.OBJECT,
+    properties: {
+        banca: { type: Type.STRING, description: "A banca examinadora para a qual a redação foi corrigida." },
+        notaMaxima: { type: Type.NUMBER, description: "A nota máxima possível para a redação." },
+        avaliacaoDetalhada: {
+            type: Type.ARRAY,
+            description: "Uma lista de avaliações para cada critério da banca.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    criterio: { type: Type.STRING, description: "O nome do critério de avaliação." },
+                    pontuacao: { type: Type.NUMBER, description: "A pontuação obtida no critério." },
+                    maximo: { type: Type.NUMBER, description: "A pontuação máxima do critério." },
+                    feedback: { type: Type.STRING, description: "Feedback detalhado sobre o desempenho no critério." },
+                },
+                required: ['criterio', 'pontuacao', 'maximo', 'feedback']
+            }
+        },
+        comentariosGerais: { type: Type.STRING, description: "Um feedback geral sobre a redação, com pontos fortes e fracos." },
+        notaFinal: { type: Type.NUMBER, description: "A nota final atribuída à redação." },
+        errosDetalhados: {
+            type: Type.ARRAY,
+            description: "Uma lista de erros específicos encontrados no texto.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    trecho: { type: Type.STRING, description: "O trecho exato do texto onde o erro foi encontrado." },
+                    tipo: { type: Type.STRING, description: "O tipo de erro (ex: Gramática, Coerência)." },
+                    explicacao: { type: Type.STRING, description: "Uma explicação clara sobre o erro." },
+                    sugestao: { type: Type.STRING, description: "Uma sugestão de como corrigir o trecho." },
+                },
+                required: ['trecho', 'tipo', 'explicacao', 'sugestao']
+            }
+        }
+    },
+    required: ['banca', 'notaMaxima', 'avaliacaoDetalhada', 'comentariosGerais', 'notaFinal', 'errosDetalhados']
+};
+
 export const corrigirRedacao = async (redacao: string, banca: string, notaMaxima: number, tema?: string): Promise<CorrecaoCompleta> => {
-    return apiFetch('/ai/corrigir-redacao', {
-        method: 'POST',
-        body: JSON.stringify({ redacao, banca, notaMaxima, tema }),
-    });
+    try {
+        const prompt = `
+            Por favor, atue como um corretor de redação experiente. Analise a seguinte redação com base nos critérios da banca examinadora "${banca}".
+            A nota máxima para esta redação é ${notaMaxima}.
+            
+            O tema da redação é: "${tema || 'Não especificado'}".
+            
+            Texto da Redação:
+            ---
+            ${redacao}
+            ---
+            
+            Sua análise deve ser detalhada, apontando erros gramaticais, de coesão, coerência, argumentação e adequação ao tema e à proposta.
+            Forneça um feedback construtivo para cada critério de avaliação da banca "${banca}".
+            
+            Retorne sua análise estritamente no formato JSON, seguindo o schema fornecido.
+            - "banca": Deve ser a string "${banca}".
+            - "notaMaxima": Deve ser o número ${notaMaxima}.
+            - "avaliacaoDetalhada": Forneça a pontuação e feedback para cada critério da banca. A soma das pontuações máximas dos critérios deve ser igual à nota máxima.
+            - "comentariosGerais": Um parágrafo com um feedback geral sobre o texto, pontos fortes e fracos, e sugestões de melhoria.
+            - "notaFinal": A nota final calculada com base na sua avaliação.
+            - "errosDetalhados": Uma lista de erros específicos encontrados no texto, com o trecho exato, o tipo de erro, uma explicação e uma sugestão de correção. Identifique os erros mais importantes. Se não houver erros, retorne uma lista vazia.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: correcaoSchema
+            },
+        });
+        
+        let jsonText = response.text.trim();
+        // Limpa o bloco de código markdown se a API o retornar
+        if (jsonText.startsWith('```json')) {
+            jsonText = jsonText.slice(7, -3).trim();
+        }
+        
+        const correcao = JSON.parse(jsonText) as CorrecaoCompleta;
+        return correcao;
+
+    } catch (error) {
+        console.error("Erro ao corrigir redação com a API Gemini:", error);
+        throw new Error("Não foi possível processar a correção da redação. A resposta da IA pode ser inválida.");
+    }
 };
 
 export const extrairTextoDeImagem = async (base64Image: string, mimeType: string): Promise<string> => {
-    const { text } = await apiFetch('/ai/extrair-texto-de-imagem', {
-        method: 'POST',
-        body: JSON.stringify({ image: base64Image, mimeType }),
-    });
-    return text;
+    try {
+        const imagePart = {
+            inlineData: {
+                mimeType,
+                data: base64Image,
+            },
+        };
+
+        const textPart = {
+            text: "Transcreva o texto contido nesta imagem. Se for uma redação manuscrita, transcreva o texto completo. Se não houver texto legível, retorne uma string vazia.",
+        };
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [imagePart, textPart] },
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error("Erro ao extrair texto com a API Gemini:", error);
+        throw new Error("Não foi possível extrair o texto da imagem.");
+    }
 };
 
 export const gerarPlanoDeEstudosIA = async (objetivo: string, horasSemanais: number, disciplinasComTopicos: DisciplinaParaIA[]): Promise<TrilhaSemanalData> => {
@@ -479,6 +606,100 @@ export const gerarPlanoDeEstudosIA = async (objetivo: string, horasSemanais: num
         method: 'POST',
         body: JSON.stringify({ objetivo, horasSemanais, disciplinasComTopicos }),
     });
+};
+
+export const sugerirCicloIA = async (disciplinas: { id: string, nome: string, dificuldade: string }[], tempoTotalMinutos: number): Promise<{disciplina_id: string, tempo_previsto: number}[]> => {
+    const prompt = `
+        Como um especialista em planejamento de estudos, crie uma sugestão de distribuição de tempo para um ciclo de estudos.
+        O tempo total para uma rotação completa do ciclo é de ${tempoTotalMinutos} minutos.
+        As matérias e suas dificuldades percebidas pelo estudante são:
+        ${disciplinas.map(d => `- ${d.nome} (ID: ${d.id}, Dificuldade: ${d.dificuldade})`).join('\n')}
+
+        Regras:
+        1. Distribua os ${tempoTotalMinutos} minutos totais entre as matérias. Matérias "difíceis" devem receber mais tempo que as "médias", e "médias" mais que as "fáceis".
+        2. A soma dos tempos alocados deve ser exatamente ${tempoTotalMinutos} minutos.
+        3. Retorne o resultado como um array JSON de objetos, onde cada objeto contém "disciplina_id" (string) e "tempo_previsto" (número em minutos).
+        4. Não inclua nenhuma outra informação ou texto explicativo na sua resposta, apenas o array JSON.
+    `;
+
+    const schema = {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                disciplina_id: { type: Type.STRING },
+                tempo_previsto: { type: Type.NUMBER },
+            },
+            required: ['disciplina_id', 'tempo_previsto']
+        }
+    };
+
+     try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: schema
+            },
+        });
+        
+        let jsonText = response.text.trim();
+        if (jsonText.startsWith('```json')) {
+            jsonText = jsonText.slice(7, -3).trim();
+        }
+        
+        const sugestao = JSON.parse(jsonText) as {disciplina_id: string, tempo_previsto: number}[];
+        // Converter minutos para segundos
+        return sugestao.map(s => ({ ...s, tempo_previsto: s.tempo_previsto * 60 }));
+
+    } catch (error) {
+        console.error("Erro ao sugerir ciclo com a API Gemini:", error);
+        throw new Error("Não foi possível gerar a sugestão de ciclo.");
+    }
+};
+
+export const gerarMensagemMotivacionalIA = async (
+    userName: string, 
+    tempoHojeMin: number, 
+    metaPercentual: number,
+    streakDays: number,
+    revisoesPendentes: number
+): Promise<string> => {
+    try {
+        const prompt = `
+            Você é um coach de estudos amigável e motivador chamado Evolui.
+            Seu objetivo é gerar uma mensagem curta e personalizada para o usuário ${userName}, com base em seu progresso de hoje.
+            Seja encorajador e inspirador. Use uma linguagem informal e positiva. Fale diretamente com ${userName}.
+            A mensagem deve ter no máximo 2 ou 3 frases.
+
+            Aqui estão os dados do usuário hoje:
+            - Nome: ${userName}
+            - Tempo total de estudo hoje: ${tempoHojeMin} minutos.
+            - Percentual da meta diária concluída: ${metaPercentual}%.
+            - Dias seguidos estudando (streak): ${streakDays} dias.
+            - Revisões pendentes para hoje: ${revisoesPendentes} revisões.
+
+            Analise os dados e crie uma mensagem.
+            - Se o progresso for bom (ex: mais de 50% da meta, ou estudou bastante), elogie o esforço.
+            - Se o progresso for baixo, incentive-o a começar, lembrando que cada passo conta.
+            - Mencione o streak de forma positiva se for maior que 1.
+            - Se houver revisões pendentes, mencione-as de forma encorajadora, como um próximo passo.
+            - Não use "Olá" ou saudações, vá direto para a mensagem.
+            - Não inclua aspas na sua resposta. Retorne apenas o texto da mensagem.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        return response.text.trim();
+    } catch (error) {
+        console.error("Erro ao gerar mensagem motivacional com a API Gemini:", error);
+        // Fallback message
+        return "Continue focado nos seus objetivos. Cada passo que você dá hoje te aproxima da sua aprovação!";
+    }
 };
 
 
@@ -542,6 +763,7 @@ export const deleteCiclo = (id: string) => apiFetch(`/ciclos/${id}`, { method: '
 export const getFlashcards = (topicoId: string) => apiFetch(`/topicos/${topicoId}/flashcards`);
 export const createFlashcards = (topicoId: string, data: any) => apiFetch(`/topicos/${topicoId}/flashcards`, { method: 'POST', body: JSON.stringify(data) });
 export const updateFlashcardApi = (id: string, data: any) => apiFetch(`/flashcards/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteFlashcard = (id: string) => apiFetch(`/flashcards/${id}`, { method: 'DELETE' });
 
 export const getRedacoes = (editalId: string) => apiFetch(`/editais/${editalId}/redacoes`);
 export const createRedacao = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/redacoes`, { method: 'POST', body: JSON.stringify(data) });

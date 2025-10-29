@@ -1,14 +1,12 @@
-
-
-
-
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { RepeatIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon, ClockIcon, PlusCircleIcon } from './icons';
+import { useEstudosStore } from '../stores/useEstudosStore';
+import { RepeatIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon, ClockIcon, PlusCircleIcon, ArrowUpIcon, ArrowDownIcon, PlayIcon, StarIcon } from './icons';
 import { toast } from './Sonner';
 import { useModalStore } from '../stores/useModalStore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Ciclo, SessaoCiclo } from '../types';
 
 // Helper to format time
 const formatTime = (seconds: number) => {
@@ -30,8 +28,11 @@ const CicloDeEstudos: React.FC = () => {
         removeCiclo,
         addSessaoAoCiclo,
         removeSessaoDoCiclo,
+        ultimaSessaoConcluidaId,
+        reordenarSessao,
     } = useCiclosStore();
     const { disciplinas } = useDisciplinasStore();
+    const { iniciarSessao } = useEstudosStore();
     const openCriarCicloModal = useModalStore(state => state.openCriarCicloModal);
     
     const [isEditingCiclo, setIsEditingCiclo] = useState(false);
@@ -41,32 +42,37 @@ const CicloDeEstudos: React.FC = () => {
 
     const cicloAtivo = useMemo(() => getCicloAtivo(), [cicloAtivoId, ciclos, getCicloAtivo]);
 
-    // FIX: Explicitly type the Map to prevent type inference issues downstream.
     const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
 
-    const { totalTempoCiclo, dadosGrafico } = useMemo(() => {
-        if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [] };
+    const { totalTempoCiclo, dadosGrafico, proximaSessao } = useMemo(() => {
+        if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [], proximaSessao: null };
         
-        const tempoTotal = cicloAtivo.sessoes.reduce((acc, s) => acc + Number(s.tempo_previsto || 0), 0);
+        const sessoesOrdenadas = [...cicloAtivo.sessoes].sort((a, b) => a.ordem - b.ordem);
         
-        // FIX: Explicitly type the accumulator in the reduce function to ensure correct type inference.
-        const tempoPorDisciplina = cicloAtivo.sessoes.reduce((acc: Record<string, number>, sessao) => {
-          const nomeDisciplina = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
-          acc[nomeDisciplina] = (acc[nomeDisciplina] || 0) + Number(sessao.tempo_previsto || 0);
-          return acc;
-        }, {});
-
-        const graficoData = Object.entries(tempoPorDisciplina).map(([name, value]) => ({
-            name,
-            value: Math.round(value / 60), // em minutos
+        const tempoTotal = sessoesOrdenadas.reduce((acc: number, s) => acc + Number(s.tempo_previsto || 0), 0);
+        
+        const dadosGrafico = sessoesOrdenadas.map(sessao => ({
+            name: disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida',
+            value: Math.round(Number(sessao.tempo_previsto || 0) / 60)
         }));
+        
+        // Lógica para encontrar a próxima sessão
+        let proxima: SessaoCiclo | null = null;
+        if (sessoesOrdenadas.length > 0) {
+            if (!ultimaSessaoConcluidaId) {
+                proxima = sessoesOrdenadas[0];
+            } else {
+                const ultimoIndice = sessoesOrdenadas.findIndex(s => s.id === ultimaSessaoConcluidaId);
+                proxima = sessoesOrdenadas[(ultimoIndice + 1) % sessoesOrdenadas.length];
+            }
+        }
 
-        return { totalTempoCiclo: tempoTotal, dadosGrafico: graficoData };
-    }, [cicloAtivo, disciplinasMap]);
+        return { totalTempoCiclo: tempoTotal, dadosGrafico, proximaSessao: proxima };
+    }, [cicloAtivo, disciplinasMap, ultimaSessaoConcluidaId]);
     
     const handleUpdateCicloName = () => {
         if (cicloAtivo && editedCicloName.trim() && editedCicloName.trim() !== cicloAtivo.nome) {
-            updateCiclo(cicloAtivo.id, editedCicloName.trim());
+            updateCiclo(cicloAtivo.id, { nome: editedCicloName.trim() });
             toast.success("Nome do ciclo atualizado.");
         }
         setIsEditingCiclo(false);
@@ -87,6 +93,18 @@ const CicloDeEstudos: React.FC = () => {
             setIsAddingSessao(false);
         } else {
             toast.error("Selecione uma disciplina e defina um tempo válido.");
+        }
+    };
+    
+    const handleIniciarEstudoCiclo = (sessao: SessaoCiclo) => {
+        const disciplina = disciplinas.find(d => d.id === sessao.disciplina_id);
+        if (disciplina && cicloAtivo) {
+            iniciarSessao({
+                id: `ciclo-${sessao.id}`, // ID sintético para rastreamento
+                nome: disciplina.nome,
+                disciplinaId: disciplina.id
+            });
+            toast.success(`Iniciando estudos de ${disciplina.nome}!`);
         }
     };
 
@@ -146,8 +164,10 @@ const CicloDeEstudos: React.FC = () => {
                             </div>
                         </header>
                         <div className="divide-y divide-border max-h-[60vh] overflow-y-auto">
-                            {cicloAtivo.sessoes.map((sessao, index) => (
-                                <div key={sessao.id} className="p-4 flex items-center justify-between group">
+                            {cicloAtivo.sessoes.map((sessao, index) => {
+                                const isNext = sessao.id === proximaSessao?.id;
+                                return (
+                                <div key={sessao.id} className={`p-4 flex items-center justify-between group transition-colors ${isNext ? 'bg-primary/10 border-l-4 border-primary' : ''}`}>
                                     <div className="flex items-center gap-4">
                                         <span className="text-sm font-bold bg-muted/50 w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground">{index + 1}</span>
                                         <div>
@@ -155,11 +175,26 @@ const CicloDeEstudos: React.FC = () => {
                                             <p className="text-sm text-muted-foreground flex items-center gap-1"><ClockIcon className="w-3 h-3"/> {formatTime(sessao.tempo_previsto)}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)} className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Trash2Icon className="w-4 h-4"/>
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                         {isNext ? (
+                                            <button onClick={() => handleIniciarEstudoCiclo(sessao)} className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-primary text-black text-xs font-bold shadow-sm hover:opacity-90">
+                                                <PlayIcon className="w-3 h-3"/> Iniciar Estudo
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => handleIniciarEstudoCiclo(sessao)} className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground text-xs font-bold shadow-sm hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <PlayIcon className="w-3 h-3"/>
+                                            </button>
+                                        )}
+                                        <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => reordenarSessao(cicloAtivo.id, sessao.id, 'up')} disabled={index === 0} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowUpIcon className="w-3 h-3"/></button>
+                                            <button onClick={() => reordenarSessao(cicloAtivo.id, sessao.id, 'down')} disabled={index === cicloAtivo.sessoes.length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3"/></button>
+                                        </div>
+                                        <button onClick={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)} className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Trash2Icon className="w-4 h-4"/>
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
+                            )})}
                             
                             {isAddingSessao && (
                                 <div className="p-4 bg-muted/20 flex items-end gap-3">
@@ -196,8 +231,8 @@ const CicloDeEstudos: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="bg-card rounded-xl border border-border shadow-sm p-4">
-                        <h3 className="font-bold text-center mb-2 text-foreground">Distribuição do Tempo</h3>
+                    <div className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-4">
+                        <h3 className="font-bold text-center text-foreground">Distribuição do Tempo</h3>
                         {dadosGrafico.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
@@ -210,6 +245,13 @@ const CicloDeEstudos: React.FC = () => {
                             </ResponsiveContainer>
                         ) : (
                             <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">Adicione sessões para ver o gráfico.</div>
+                        )}
+                        {proximaSessao && (
+                             <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
+                                <p className="text-xs font-bold text-primary mb-1">PRÓXIMA SESSÃO</p>
+                                <p className="font-semibold text-lg text-foreground">{disciplinasMap.get(proximaSessao.disciplina_id)}</p>
+                                <p className="text-sm text-muted-foreground">{formatTime(proximaSessao.tempo_previsto)}</p>
+                            </div>
                         )}
                     </div>
                 </div>

@@ -32,7 +32,8 @@ export const checkAndAwardBadges = () => {
     acc[dia] += sessao.tempo_estudado;
     return acc;
   }, {} as Record<string, number>);
-  const maxHorasDia = Math.max(0, ...Object.values(sessoesPorDia)) / 3600;
+  // FIX: Cast the result of Object.values to number[] to resolve type inference issue with Math.max.
+  const maxHorasDia = Math.max(0, ...(Object.values(sessoesPorDia) as number[])) / 3600;
 
   const revisoesAtrasadasConcluidas = xpLog.filter(log => log.event === 'revisao_atrasada').length;
 
@@ -47,7 +48,6 @@ export const checkAndAwardBadges = () => {
         if (totalHorasEstudo >= 10) criteriaMet = true;
         break;
       case 'badge-3': // Sequência de 7 Dias
-        // FIX: Cast `current_streak_days` to a number to handle potential `unknown` type during hydration from zustand persist middleware.
         if (Number(stats.current_streak_days) >= 7) criteriaMet = true;
         break;
       case 'badge-4': // Revisor Dedicado
@@ -75,7 +75,6 @@ export const checkAndAwardBadges = () => {
         break;
           
       case 'badge-10': // A Lenda (100 day streak)
-        // FIX: Cast `current_streak_days` to a number to handle potential `unknown` type during hydration from zustand persist middleware.
         if (Number(stats.current_streak_days) >= 100) criteriaMet = true;
         break;
 
@@ -95,7 +94,6 @@ export const checkAndAwardBadges = () => {
         break;
       case 'badge-secret-3': // Memento Vivere (30 day streak)
         // stats.current_streak_days is calculated from sessoes and should be the source of truth
-        // FIX: Cast `current_streak_days` to a number to handle potential `unknown` type during hydration from zustand persist middleware.
         if (Number(stats.current_streak_days) >= 30) {
           criteriaMet = true;
         }

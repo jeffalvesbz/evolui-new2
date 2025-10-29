@@ -1,19 +1,39 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
-import { useGamificationStore } from '../stores/useGamificationStore';
-import { generateFlashcards } from '../services/geminiService';
-import { Flashcard as FlashcardType } from '../types';
-import { SparklesIcon, LayersIcon, SaveIcon, BookOpenCheckIcon, ChevronLeftIcon, ChevronRightIcon, CheckCircle2Icon } from './icons';
+import { useFlashcardStudyStore, StudySession } from '../stores/useFlashcardStudyStore';
+import { Flashcard as FlashcardType, Disciplina } from '../types';
+import {
+  SparklesIcon,
+  LayersIcon,
+  ChevronLeftIcon,
+  CheckCircle2Icon,
+  EyeIcon,
+  LayoutGridIcon,
+  BookOpenCheckIcon,
+  PlusCircleIcon,
+  HistoryIcon,
+  EllipsisIcon,
+  EditIcon,
+  Trash2Icon,
+} from './icons';
 import { toast } from './Sonner';
-import { calculateNextReview } from '../services/srsService';
-import { differenceInCalendarDays, startOfDay } from 'date-fns';
+import { addDays, startOfDay } from 'date-fns';
+import { generateFlashcardsFromContent } from '../services/geminiService';
+import { useModalStore } from '../stores/useModalStore';
 
-type GeneratedFlashcard = Omit<FlashcardType, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>;
-type View = 'generate' | 'review';
+// --- Helper & Sub-components ---
 
-// Shared Flippable Card Component
+const PurpleBackground = () => (
+    <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundImage: 'linear-gradient(180deg, #4c1d95, #020617 40%)',
+      zIndex: -2
+    }} />
+);
+
 const FlippableCard: React.FC<{
   flashcard: { pergunta: string; resposta: string };
   isFlipped: boolean;
@@ -21,389 +41,422 @@ const FlippableCard: React.FC<{
   className?: string;
 }> = ({ flashcard, isFlipped, onFlip, className = '' }) => {
     return (
-        <div className={`w-full h-56 perspective-1000 ${className}`} onClick={onFlip}>
+        <div className={`w-full h-full perspective-1000 ${className}`} onClick={onFlip}>
             <motion.div
                 className="relative w-full h-full transform-style-3d"
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ duration: 0.6 }}
+                transition={{ duration: 0.4, ease: 'easeInOut' }}
             >
                 {/* Front */}
-                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl border border-border flex flex-col justify-center items-center p-4 cursor-pointer shadow-lg">
-                    <p className="text-sm text-muted-foreground mb-2">Pergunta</p>
-                    <p className="text-center font-semibold text-foreground">{flashcard.pergunta}</p>
+                <div className="absolute w-full h-full backface-hidden bg-white rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer shadow-2xl text-slate-800">
+                    <p className="text-sm text-slate-500 mb-2">Pergunta</p>
+                    <p className="text-center text-xl font-semibold">{flashcard.pergunta}</p>
                 </div>
                 {/* Back */}
-                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl border border-primary/50 flex flex-col justify-center items-center p-4 cursor-pointer rotate-y-180 shadow-lg">
-                    <p className="text-sm text-primary mb-2 font-bold">Resposta</p>
-                    <p className="text-center text-sm text-foreground">{flashcard.resposta}</p>
+                <div className="absolute w-full h-full backface-hidden bg-white rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer rotate-y-180 shadow-2xl text-slate-800">
+                    <p className="text-sm text-violet-600 mb-2 font-bold">Resposta</p>
+                    <p className="text-center font-medium">{flashcard.resposta}</p>
                 </div>
             </motion.div>
         </div>
     );
 };
 
+const DeckCard: React.FC<{
+  title: string;
+  cardCount: number;
+  dueCount?: number;
+  icon: React.ReactNode;
+  onSelect: () => void;
+  color: string;
+}> = ({ title, cardCount, dueCount, icon, onSelect, color }) => (
+    <div
+        onClick={onSelect}
+        className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-all hover:scale-105"
+    >
+        <div>
+            <div className={`p-2 rounded-lg bg-white/10 w-min mb-3 ${color}`}>{icon}</div>
+            <h3 className="font-bold text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground">{cardCount} cards</p>
+        </div>
+        {dueCount !== undefined && dueCount > 0 && (
+            <div className="mt-2 text-xs font-bold text-secondary">
+                {dueCount} para revisar
+            </div>
+        )}
+    </div>
+);
 
-// Generator View Component
-const GeneratorView: React.FC = () => {
-    const [selectedTopicId, setSelectedTopicId] = useState<string>('');
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [generatedFlashcards, setGeneratedFlashcards] = useState<GeneratedFlashcard[]>([]);
-    const [flippedStates, setFlippedStates] = useState<boolean[]>([]);
-
-    const allTopics = useDisciplinasStore(state => state.getAllTopics());
-    const addFlashcards = useFlashcardsStore(state => state.addFlashcards);
-
-    const selectedTopicName = useMemo(() => {
-        return allTopics.find(t => t.id === selectedTopicId)?.titulo || '';
-    }, [selectedTopicId, allTopics]);
+// --- AI Generator Component ---
+const GeradorIA: React.FC = () => {
+    const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const { addFlashcards } = useFlashcardsStore();
+    const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        setFlippedStates(new Array(generatedFlashcards.length).fill(false));
-    }, [generatedFlashcards]);
+        if(disciplinas.length > 0 && !selectedDisciplinaId) {
+            setSelectedDisciplinaId(disciplinas[0].id);
+        }
+    }, [disciplinas, selectedDisciplinaId]);
 
     const handleGenerate = async () => {
-        if (!selectedTopicId) {
-            toast.error('Por favor, selecione um tópico para gerar os flashcards.');
+        const disciplina = disciplinas.find(d => d.id === selectedDisciplinaId);
+        if (!disciplina) {
+            toast.error("Por favor, selecione uma disciplina.");
             return;
         }
-        setIsLoading(true);
-        setGeneratedFlashcards([]);
+        if (disciplina.topicos.length === 0) {
+            toast.error(`A disciplina "${disciplina.nome}" não possui tópicos. Adicione um tópico primeiro no menu 'Edital'.`);
+            return;
+        }
 
+        setIsLoading(true);
+        toast("Gerando flashcards com IA... Isso pode levar um momento.");
         try {
-            const flashcards = await generateFlashcards(selectedTopicName);
-            setGeneratedFlashcards(flashcards);
-            toast.success(`Flashcards gerados para "${selectedTopicName}"!`);
+            const generated = await generateFlashcardsFromContent(disciplina.id);
+            // Associa os flashcards gerados ao primeiro tópico da disciplina
+            const targetTopicId = disciplina.topicos[0].id;
+            await addFlashcards(generated, targetTopicId);
+            toast.success(`${generated.length} flashcards gerados para ${disciplina.nome}!`);
         } catch (error) {
-            toast.error('Ocorreu um erro ao gerar os flashcards.');
+            toast.error("Falha ao gerar flashcards com IA.");
             console.error(error);
         } finally {
             setIsLoading(false);
         }
     };
-    
-    const handleSave = () => {
-        if (generatedFlashcards.length === 0 || !selectedTopicId) {
-            toast.error('Não há flashcards para salvar ou nenhum tópico foi selecionado.');
-            return;
-        }
-
-        addFlashcards(generatedFlashcards, selectedTopicId);
-        toast.success('Flashcards salvos com sucesso!');
-        setGeneratedFlashcards([]);
-        setSelectedTopicId('');
-    };
-
-    const handleFlip = (index: number) => {
-        setFlippedStates(states => states.map((s, i) => i === index ? !s : s));
-    };
 
     return (
-        <div className="bg-card rounded-xl border border-border shadow-sm">
-            <div className="p-6 border-b border-border">
-                <div className="flex flex-col sm:flex-row gap-4 items-end">
-                    <div className="flex-1 w-full">
-                        <label htmlFor="topic-select" className="block text-sm font-medium text-muted-foreground mb-1">
-                            Selecione um Tópico do Edital
-                        </label>
-                        <select
-                            id="topic-select"
-                            value={selectedTopicId}
-                            onChange={(e) => setSelectedTopicId(e.target.value)}
-                            className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
-                            disabled={isLoading}
-                        >
-                            <option value="">-- Escolha um tópico --</option>
-                            {allTopics.map(topic => (
-                                <option key={topic.id} value={topic.id}>
-                                    {topic.disciplinaNome} - {topic.titulo}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isLoading || !selectedTopicId}
-                        className="w-full sm:w-auto h-10 px-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <SparklesIcon className="w-4 h-4" />
-                        {isLoading ? 'Gerando...' : 'Gerar com IA'}
-                    </button>
+        <div className="bg-card/60 backdrop-blur-xl border border-dashed border-primary/50 rounded-xl p-4 space-y-3">
+             <div className="flex items-center gap-3">
+                <SparklesIcon className="w-6 h-6 text-primary"/>
+                <div>
+                    <h3 className="font-bold text-foreground">Gerador de Flashcards com IA</h3>
+                    <p className="text-sm text-muted-foreground">Gere cards a partir de seus PDFs (simulado).</p>
                 </div>
             </div>
-            
-            <div className="p-6">
-                {isLoading && (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <SparklesIcon className="w-12 h-12 text-primary animate-pulse mb-4" />
-                        <h3 className="font-semibold text-lg text-foreground">Gerando flashcards...</h3>
-                        <p className="text-muted-foreground mt-1">Aguarde, a IA está criando conteúdo para você.</p>
-                    </div>
-                )}
-
-                {!isLoading && generatedFlashcards.length === 0 && (
-                     <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <LayersIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-                        <h3 className="font-semibold text-lg text-foreground">Pronto para começar</h3>
-                        <p className="max-w-xs mx-auto text-muted-foreground mt-1">Selecione um tópico e clique em "Gerar com IA" para criar seu material de revisão.</p>
-                    </div>
-                )}
-
-                {!isLoading && generatedFlashcards.length > 0 && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h3 className="text-xl font-bold mb-4 text-center">Flashcards para: <span className="text-primary">{selectedTopicName}</span></h3>
-                        <p className="text-sm text-muted-foreground text-center mb-6">Clique em um card para virar e ver a resposta.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {generatedFlashcards.map((fc, index) => (
-                                <FlippableCard key={index} flashcard={fc} isFlipped={flippedStates[index]} onFlip={() => handleFlip(index)} />
-                            ))}
-                        </div>
-                        <div className="mt-8 flex justify-end">
-                            <button
-                                onClick={handleSave}
-                                className="h-10 px-6 flex items-center justify-center gap-2 rounded-lg bg-secondary text-black text-sm font-medium hover:bg-secondary/90 transition-colors"
-                            >
-                                <SaveIcon className="w-4 h-4" />
-                                Salvar Flashcards no Edital
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </div>
+            <select
+                value={selectedDisciplinaId}
+                onChange={e => setSelectedDisciplinaId(e.target.value)}
+                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"
+            >
+                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+            </select>
+            <button onClick={handleGenerate} disabled={isLoading} className="w-full h-10 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50">
+                {isLoading ? 'Gerando...' : 'Gerar 5 Flashcards'}
+            </button>
+             <p className="text-center text-xs text-muted-foreground">Você gerou 742 / 1000 flashcards este mês.</p>
         </div>
     );
 };
 
-// Review View Component
-interface ReviewViewProps {
-  setView: (view: View) => void;
-}
-const ReviewView: React.FC<ReviewViewProps> = ({ setView }) => {
-    const { getDueFlashcards, getUpcomingFlashcards, updateFlashcard } = useFlashcardsStore();
-    const { logXpEvent } = useGamificationStore();
+
+// --- Main Views ---
+
+const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => void }> = ({ onSelectDeck }) => {
+    const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const { flashcards, getDueFlashcards, fetchFlashcardsForTopics, loading } = useFlashcardsStore();
+    const { openCriarFlashcardModal } = useModalStore();
     
-    const [activeDeck, setActiveDeck] = useState<FlashcardType[]>([]);
-    const [currentCardIndex, setCurrentCardIndex] = useState(0);
-    const [isFlipped, setIsFlipped] = useState(false);
-    const [sessionResults, setSessionResults] = useState<{ correct: number, incorrect: number } | null>(null);
-    const [sessionAnswers, setSessionAnswers] = useState<('correct' | 'incorrect')[]>([]);
+    const allTopicIds = useMemo(() => disciplinas.flatMap(d => d.topicos.map(t => t.id)), [disciplinas]);
 
-    const dueFlashcards = useMemo(() => getDueFlashcards(), [getDueFlashcards, activeDeck]); // Re-evaluate when deck changes
-    
-    const upcomingReviews = useMemo(() => {
-        const upcoming = getUpcomingFlashcards();
-        const today = startOfDay(new Date());
-
-        const grouped: Record<number, FlashcardType[]> = {};
-        
-        upcoming.forEach(card => {
-            const dueDate = startOfDay(new Date(card.dueDate));
-            const diff = differenceInCalendarDays(dueDate, today);
-            if (diff > 0) {
-                if (!grouped[diff]) {
-                    grouped[diff] = [];
-                }
-                grouped[diff].push(card);
-            }
-        });
-
-        return Object.entries(grouped)
-            .map(([days, cards]) => ({ days: Number(days), count: cards.length }))
-            .sort((a, b) => a.days - b.days);
-    }, [getUpcomingFlashcards]);
-
-    const formatUpcomingDate = (days: number) => {
-        if (days === 1) return 'Amanhã';
-        return `Em ${days} dias`;
-    };
-
-    const startReview = () => {
-        setActiveDeck(dueFlashcards);
-        setCurrentCardIndex(0);
-        setIsFlipped(false);
-        setSessionResults(null);
-        setSessionAnswers([]);
-    };
-
-    const handleNext = () => {
-        if (currentCardIndex < activeDeck.length - 1) {
-            setCurrentCardIndex(i => i + 1);
-            setIsFlipped(false);
-        } else {
-            const correct = sessionAnswers.filter(a => a === 'correct').length;
-            const incorrect = sessionAnswers.filter(a => a === 'incorrect').length;
-            setSessionResults({ correct, incorrect });
+    useEffect(() => {
+        if(allTopicIds.length > 0) {
+            fetchFlashcardsForTopics(allTopicIds);
         }
-    };
-    
-    const handlePrev = () => {
-        if (currentCardIndex > 0) {
-            setCurrentCardIndex(i => i - 1);
-            setIsFlipped(false);
-        }
-    };
-    
-    const handleAnswer = (answer: 'correct' | 'incorrect') => {
-        const currentCard = activeDeck[currentCardIndex];
-        if (!currentCard) return;
+    }, [allTopicIds, fetchFlashcardsForTopics]);
 
-        // Gamification
-        const xpAmount = answer === 'correct' ? 10 : 5;
-        logXpEvent('revisao_concluida', xpAmount, { flashcardId: currentCard.id, result: answer });
+    const getFlashcardsByDisciplina = useCallback((disciplinaId: string) => {
+        const disciplina = disciplinas.find(d => d.id === disciplinaId);
+        if (!disciplina) return [];
+        const topicIds = new Set(disciplina.topicos.map(t => t.id));
+        return flashcards.filter(fc => topicIds.has(fc.topico_id));
+    }, [disciplinas, flashcards]);
 
-        const srsUpdates = calculateNextReview(currentCard, answer);
-        updateFlashcard(currentCard.id, srsUpdates);
-        setSessionAnswers(current => [...current, answer]);
-        setTimeout(handleNext, 300);
-    };
-    
-    const exitSession = () => {
-        setActiveDeck([]);
-    };
+    const dueFlashcards = useMemo(() => getDueFlashcards(), [flashcards, getDueFlashcards]);
 
-    if (sessionResults) {
-        return (
-             <div className="bg-card rounded-xl border border-border shadow-sm p-8 text-center flex flex-col items-center justify-center min-h-[500px]">
-                <CheckCircle2Icon className="w-16 h-16 text-secondary mb-4"/>
-                <h3 className="text-2xl font-bold text-foreground">Sessão Concluída!</h3>
-                <p className="text-muted-foreground mt-2">Veja seu desempenho abaixo:</p>
-                <div className="flex gap-8 my-8">
-                    <div>
-                        <p className="text-4xl font-bold text-green-400">{sessionResults.correct}</p>
-                        <p className="text-sm text-muted-foreground">Acertos</p>
-                    </div>
-                    <div>
-                        <p className="text-4xl font-bold text-red-400">{sessionResults.incorrect}</p>
-                        <p className="text-sm text-muted-foreground">Erros</p>
-                    </div>
-                </div>
-                <div className="flex gap-4">
-                    <button onClick={exitSession} className="h-10 px-6 rounded-lg bg-muted text-muted-foreground font-semibold">Voltar ao Início</button>
-                    <button onClick={() => setView('generate')} className="h-10 px-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-                        <SparklesIcon className="w-4 h-4" />
-                        Gerar Novos Flashcards
-                    </button>
-                </div>
-            </div>
-        )
-    }
-
-    if (activeDeck.length > 0 && currentCardIndex < activeDeck.length) {
-        const currentCard = activeDeck[currentCardIndex];
-        return (
-            <div className="bg-card rounded-xl border border-border shadow-sm p-6 flex flex-col items-center">
-                <AnimatePresence mode="wait">
-                    <motion.div key={currentCardIndex} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="w-full max-w-lg">
-                       <FlippableCard flashcard={currentCard} isFlipped={isFlipped} onFlip={() => setIsFlipped(!isFlipped)} />
-                    </motion.div>
-                </AnimatePresence>
-                <div className="my-6 text-sm font-semibold text-muted-foreground">
-                    Card {currentCardIndex + 1} de {activeDeck.length}
-                </div>
-                
-                <AnimatePresence>
-                {isFlipped && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-4 mb-4">
-                        <button onClick={() => handleAnswer('incorrect')} className="h-12 w-32 rounded-lg bg-red-500/20 text-red-400 font-bold hover:bg-red-500/30 transition-colors">Errei</button>
-                        <button onClick={() => handleAnswer('correct')} className="h-12 w-32 rounded-lg bg-green-500/20 text-green-400 font-bold hover:bg-green-500/30 transition-colors">Acertei</button>
-                    </motion.div>
-                )}
-                </AnimatePresence>
-
-                <div className="flex items-center justify-between w-full max-w-lg">
-                    <button onClick={handlePrev} disabled={currentCardIndex === 0} className="p-3 rounded-full bg-muted hover:bg-muted/80 disabled:opacity-50"><ChevronLeftIcon className="w-5 h-5"/></button>
-                    <button onClick={exitSession} className="px-4 py-2 text-sm rounded-lg bg-muted text-muted-foreground">Sair</button>
-                    <button onClick={handleNext} disabled={!isFlipped} className="p-3 rounded-full bg-muted hover:bg-muted/80 disabled:opacity-50"><ChevronRightIcon className="w-5 h-5"/></button>
-                </div>
-            </div>
-        );
+    if (loading && flashcards.length === 0) {
+        return <div className="text-center py-20 text-muted-foreground">Carregando seus flashcards...</div>
     }
 
     return (
-        <div className="bg-card rounded-xl border border-border shadow-sm p-8 text-center flex flex-col items-center justify-center min-h-[500px]">
-            <BookOpenCheckIcon className="w-16 h-16 text-primary mb-4" />
-            <h3 className="text-2xl font-bold text-foreground">Revisão Espaçada</h3>
-            <p className="text-muted-foreground mt-2 max-w-md">O sistema programa automaticamente os melhores dias para você revisar cada flashcard, fortalecendo sua memória a longo prazo.</p>
-            
-            <div className="my-8 p-6 rounded-lg bg-muted/50 border border-border w-full max-w-xs">
-                <p className="text-sm text-muted-foreground">Cards para revisar hoje</p>
-                <p className="text-5xl font-bold text-foreground my-2">{dueFlashcards.length}</p>
-            </div>
-
-            {dueFlashcards.length > 0 ? (
-                <button onClick={startReview} className="h-12 px-8 rounded-lg bg-primary text-primary-foreground font-bold text-lg hover:bg-primary/90 transition-transform hover:scale-105">
-                    Iniciar Revisão
+        <div className="space-y-8">
+            <header className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground">Flashcards</h1>
+                    <p className="text-muted-foreground mt-1">Escolha um deck para estudar ou revise os cards vencidos.</p>
+                </div>
+                <button onClick={() => openCriarFlashcardModal()} className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <PlusCircleIcon className="w-4 h-4" />
+                    Criar Flashcard
                 </button>
-            ) : (
-                <p className="font-semibold text-secondary">Parabéns, nenhuma revisão pendente por hoje! 🎉</p>
-            )}
-
-            {upcomingReviews.length > 0 && (
-                <div className="mt-8 w-full max-w-md">
-                    <h4 className="text-lg font-semibold text-center text-muted-foreground mb-4">Próximas Revisões</h4>
-                    <div className="space-y-2">
-                        {upcomingReviews.map(({ days, count }) => (
-                            <div key={days} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg text-sm">
-                                <span className="font-medium text-foreground">{formatUpcomingDate(days)}</span>
-                                <span className="font-semibold text-muted-foreground">{count} card{count > 1 ? 's' : ''}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-// Main Page Component
-const FlashcardsPage: React.FC = () => {
-    const [view, setView] = useState<View>('generate');
-
-    const TabButton: React.FC<{
-        label: string;
-        icon: React.ElementType;
-        active: boolean;
-        onClick: () => void;
-    }> = ({ label, icon: Icon, active, onClick }) => (
-        <button
-            onClick={onClick}
-            className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-t-lg border-b-2 font-semibold transition-all ${
-                active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/50'
-            }`}
-        >
-            <Icon className="w-5 h-5" />
-            <span>{label}</span>
-        </button>
-    );
-
-    return (
-        <div className="max-w-5xl mx-auto space-y-8">
-            <style>{`.perspective-1000 { perspective: 1000px; } .transform-style-3d { transform-style: preserve-3d; } .rotate-y-180 { transform: rotateY(180deg); } .backface-hidden { backface-visibility: hidden; }`}</style>
-            
-            <header>
-                <h1 className="text-3xl font-bold text-foreground">Flashcards</h1>
-                <p className="text-muted-foreground mt-1">Crie flashcards com IA e revise o conteúdo de forma ativa e espaçada.</p>
             </header>
 
-            <div>
-                <div className="flex border-b border-border">
-                    <TabButton label="Gerador IA" icon={SparklesIcon} active={view === 'generate'} onClick={() => setView('generate')} />
-                    <TabButton label="Revisão" icon={BookOpenCheckIcon} active={view === 'review'} onClick={() => setView('review')} />
-                </div>
-                <div className="pt-6">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={view}
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -10, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {view === 'generate' ? <GeneratorView /> : <ReviewView setView={setView} />}
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <DeckCard
+                    title="Revisão do Dia"
+                    cardCount={dueFlashcards.length}
+                    dueCount={dueFlashcards.length}
+                    icon={<BookOpenCheckIcon className="w-6 h-6" />}
+                    color="text-secondary"
+                    onSelect={() => {
+                        if (dueFlashcards.length > 0) {
+                             onSelectDeck({ deck: dueFlashcards, name: 'Revisão', isReviewSession: true });
+                        } else {
+                            toast("Nenhum card para revisar hoje! 🎉");
+                        }
+                    }}
+                />
+                 <div className="md:col-span-2 lg:col-span-1"><GeradorIA/></div>
             </div>
+
+            <div>
+                <h2 className="text-xl font-bold text-foreground mb-4">Decks por Matéria</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {disciplinas.map((disciplina) => {
+                        const cardsInDeck = getFlashcardsByDisciplina(disciplina.id);
+                        const dueInDeck = cardsInDeck.filter(c => new Date(c.dueDate) <= startOfDay(new Date()));
+                        return (
+                             <DeckCard
+                                key={disciplina.id}
+                                title={disciplina.nome}
+                                cardCount={cardsInDeck.length}
+                                dueCount={dueInDeck.length}
+                                icon={<LayoutGridIcon className="w-6 h-6" />}
+                                color="text-primary"
+                                onSelect={() => {
+                                    if (cardsInDeck.length > 0) {
+                                        onSelectDeck({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false });
+                                    } else {
+                                        toast(`Nenhum flashcard encontrado para ${disciplina.nome}.`);
+                                    }
+                                }}
+                            />
+                        )
+                    })}
+                </div>
+                 {disciplinas.length === 0 && (
+                    <div className="text-center py-12 text-muted-foreground">
+                        <p>Nenhuma disciplina encontrada.</p>
+                        <p className="text-sm">Adicione disciplinas e tópicos na aba 'Edital' para começar.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const StudySummary: React.FC = () => {
+    const { session, answers, sessionStartTime, exitSession } = useFlashcardStudyStore();
+    
+    const stats = useMemo(() => {
+        const total = session?.deck.length || 0;
+        const answeredCount = Object.keys(answers).length;
+        const errei = Object.values(answers).filter(a => a === 'errei').length;
+        const dificil = Object.values(answers).filter(a => a === 'dificil').length;
+        const bom = Object.values(answers).filter(a => a === 'bom').length;
+        const facil = Object.values(answers).filter(a => a === 'facil').length;
+
+        const durationMillis = sessionStartTime ? Date.now() - sessionStartTime : 0;
+        const minutes = Math.floor(durationMillis / 60000);
+        const seconds = Math.floor((durationMillis % 60000) / 1000);
+
+        return {
+            total,
+            answeredCount,
+            errei,
+            dificil,
+            bom,
+            facil,
+            duration: `${minutes}m ${seconds}s`
+        }
+    }, [session, answers, sessionStartTime]);
+
+    return (
+        <div className="text-center py-12 flex flex-col items-center max-w-md mx-auto">
+            <CheckCircle2Icon className="w-16 h-16 text-secondary mb-4" />
+            <h2 className="text-2xl font-bold">Sessão Concluída!</h2>
+            <p className="text-muted-foreground mt-2">Você revisou {stats.answeredCount} de {stats.total} cards em {stats.duration}.</p>
+            
+            <div className="w-full my-8 p-4 bg-card/60 rounded-xl border border-border space-y-3">
+                <div className="flex justify-between items-center text-sm"><span className="text-red-400 font-bold">Errei</span><span>{stats.errei}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-orange-400 font-bold">Difícil</span><span>{stats.dificil}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-blue-400 font-bold">Bom</span><span>{stats.bom}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-green-400 font-bold">Fácil</span><span>{stats.facil}</span></div>
+            </div>
+
+            <button onClick={exitSession} className="mt-6 h-10 px-6 rounded-lg bg-primary text-primary-foreground font-semibold">
+                Voltar aos Decks
+            </button>
+        </div>
+    );
+};
+
+const StudyView: React.FC = () => {
+    const { session, currentIndex, isFlipped, flipCard, answerCard, exitSession, removeCurrentCardFromSession } = useFlashcardStudyStore();
+    const { updateFlashcard, removeFlashcard } = useFlashcardsStore();
+    const { openCriarFlashcardModal } = useModalStore();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleAnswer = useCallback(async (difficulty: 'errei' | 'dificil' | 'bom' | 'facil') => {
+        if (!session) return;
+        const currentCard = session.deck[currentIndex];
+        if (!currentCard) return;
+        
+        let daysToAdd: number;
+        switch (difficulty) {
+            case 'errei': daysToAdd = 1; break; // Reset
+            case 'dificil': daysToAdd = 1; break;
+            case 'bom': daysToAdd = 3; break;
+            case 'facil': daysToAdd = 5; break;
+        }
+        
+        const newDueDate = addDays(startOfDay(new Date()), daysToAdd);
+        
+        try {
+            await updateFlashcard(currentCard.id, { dueDate: newDueDate.toISOString() });
+            answerCard(difficulty);
+        } catch (error) {
+            toast.error("Não foi possível salvar seu progresso. Tente novamente.");
+        }
+    }, [session, currentIndex, updateFlashcard, answerCard]);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                flipCard();
+            }
+            if (isFlipped) {
+                if (e.key === '1') handleAnswer('errei');
+                if (e.key === '2') handleAnswer('dificil');
+                if (e.key === '3') handleAnswer('bom');
+                if (e.key === '4') handleAnswer('facil');
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isFlipped, flipCard, handleAnswer]);
+
+    if (!session) return null;
+    
+    const currentCard = session.deck[currentIndex];
+    const progress = (currentIndex / session.deck.length) * 100;
+
+    const handleDelete = async () => {
+        setIsMenuOpen(false);
+        if (!currentCard) return;
+
+        const confirmed = window.confirm(`Tem certeza que deseja excluir este flashcard?\n\nPergunta: ${currentCard.pergunta}`);
+        if (confirmed) {
+            try {
+                await removeFlashcard(currentCard.id);
+                removeCurrentCardFromSession();
+                toast.success("Flashcard excluído.");
+            } catch (e) {
+                toast.error("Falha ao excluir o flashcard.");
+            }
+        }
+    };
+
+    const handleEdit = () => {
+        setIsMenuOpen(false);
+        if (!currentCard) return;
+        openCriarFlashcardModal(currentCard);
+    };
+    
+    if (!currentCard) {
+        return <StudySummary />;
+    }
+    
+    return (
+        <div className="flex flex-col items-center max-w-2xl mx-auto">
+            <header className="w-full flex items-center justify-between mb-4">
+                <button onClick={exitSession} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+                    <ChevronLeftIcon className="w-5 h-5" />
+                    {session.name}
+                </button>
+                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-muted-foreground">{currentIndex + 1}/{session.deck.length}</span>
+                    <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setIsMenuOpen(false); } }} tabIndex={-1}>
+                        <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full hover:bg-white/10">
+                            <EllipsisIcon className="w-5 h-5 text-muted-foreground" />
+                        </button>
+                        {isMenuOpen && (
+                            <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg z-20 border border-border">
+                                <button onClick={handleEdit} className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2">
+                                    <EditIcon className="w-4 h-4" /> Editar Card
+                                </button>
+                                <button onClick={handleDelete} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-muted flex items-center gap-2">
+                                    <Trash2Icon className="w-4 h-4" /> Excluir Card
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            <div className="w-full bg-muted/30 rounded-full h-2 mb-6">
+                <motion.div className="h-full bg-secondary rounded-full" animate={{ width: `${progress}%` }} />
+            </div>
+
+            <div className="relative w-full h-64 flex items-center justify-center">
+                 <FlippableCard flashcard={currentCard} isFlipped={isFlipped} onFlip={flipCard} className="z-10"/>
+            </div>
+            
+            <div className="mt-8 w-full flex justify-center items-center h-20">
+                <AnimatePresence mode="wait">
+                    {!isFlipped ? (
+                        <motion.button
+                            key="show"
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            onClick={flipCard}
+                            className="h-14 px-8 flex items-center gap-2 rounded-full bg-violet-200 text-violet-800 font-bold"
+                        >
+                            <EyeIcon className="w-5 h-5"/> Mostrar Resposta
+                        </motion.button>
+                    ) : (
+                        <motion.div
+                            key="answers"
+                            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                            className="flex flex-wrap justify-center gap-2"
+                        >
+                            <button onClick={() => handleAnswer('errei')} className="h-12 w-28 rounded-full bg-red-200 text-red-800 font-bold">Errei (1)</button>
+                            <button onClick={() => handleAnswer('dificil')} className="h-12 w-28 rounded-full bg-orange-200 text-orange-800 font-bold">Difícil (2)</button>
+                            <button onClick={() => handleAnswer('bom')} className="h-12 w-28 rounded-full bg-blue-200 text-blue-800 font-bold">Bom (3)</button>
+                            <button onClick={() => handleAnswer('facil')} className="h-12 w-28 rounded-full bg-green-200 text-green-800 font-bold">Fácil (4)</button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </div>
+    );
+};
+
+const FlashcardsPage: React.FC = () => {
+    const { session, startSession } = useFlashcardStudyStore();
+
+    return (
+        <div className="w-full">
+            <PurpleBackground />
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={session ? 'study' : 'decks'}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    {session ? (
+                        <StudyView />
+                    ) : (
+                        <DeckSelectionView onSelectDeck={startSession} />
+                    )}
+                </motion.div>
+            </AnimatePresence>
+             <style>{`.perspective-1000 { perspective: 1000px; } .transform-style-3d { transform-style: preserve-3d; } .rotate-y-180 { transform: rotateY(180deg); } .backface-hidden { backface-visibility: hidden; }`}</style>
         </div>
     );
 };

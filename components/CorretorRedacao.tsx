@@ -97,6 +97,12 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
 const HistoricoProgresso: React.FC = () => {
     const historico = useRedacaoStore(state => state.historico);
     const [selectedCorrecao, setSelectedCorrecao] = useState<RedacaoCorrigida | null>(null);
+    const [bancaFiltro, setBancaFiltro] = useState<string>('todas');
+
+    const bancasDisponiveis = useMemo(() => {
+        const bancas = new Set(historico.map(h => h.banca));
+        return ['todas', ...Array.from(bancas)];
+    }, [historico]);
 
     const evolutionData = useMemo(() => historico
         .map(h => ({
@@ -108,12 +114,17 @@ const HistoricoProgresso: React.FC = () => {
         .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [historico]);
 
     const criteriaData = useMemo(() => {
+        const historicoFiltrado = bancaFiltro === 'todas'
+            ? historico
+            : historico.filter(h => h.banca === bancaFiltro);
+
         const criteriaMap = new Map<string, { total: number, count: number }>();
-        historico.forEach(h => {
+        historicoFiltrado.forEach(h => {
             h.correcao.avaliacaoDetalhada.forEach(c => {
                 const key = c.criterio.split(':')[0];
                 const current = criteriaMap.get(key) || { total: 0, count: 0 };
-                current.total += (c.pontuacao / c.maximo) * 100;
+                const scorePercent = c.maximo > 0 ? (c.pontuacao / c.maximo) * 100 : 0;
+                current.total += scorePercent;
                 current.count++;
                 criteriaMap.set(key, current);
             });
@@ -122,7 +133,7 @@ const HistoricoProgresso: React.FC = () => {
             name,
             media: parseFloat((total / count).toFixed(1))
         }));
-    }, [historico]);
+    }, [historico, bancaFiltro]);
     
      const errorTypesData = useMemo(() => {
         const errorMap = new Map<string, number>();
@@ -160,12 +171,26 @@ const HistoricoProgresso: React.FC = () => {
                      </ResponsiveContainer>
                 </div>
                  <div className="bg-card rounded-xl border border-border p-6">
-                     <h3 className="text-lg font-bold text-foreground mb-4">Média por Critério</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-foreground">Média por Critério</h3>
+                        {bancasDisponiveis.length > 2 && (
+                            <select
+                                value={bancaFiltro}
+                                onChange={(e) => setBancaFiltro(e.target.value)}
+                                className="bg-muted/50 border border-border rounded-md px-3 py-1.5 text-xs focus:ring-primary focus:border-primary"
+                                aria-label="Filtrar por banca"
+                            >
+                                {bancasDisponiveis.map(b => (
+                                    <option key={b} value={b}>{b === 'todas' ? 'Todas as Bancas' : b}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                      <ResponsiveContainer width="100%" height={300}>
                          <BarChart data={criteriaData} layout="vertical" margin={{ left: 10 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                             <XAxis type="number" domain={[0, 100]} stroke="var(--color-muted-foreground)" fontSize={12} unit="%"/>
-                            <YAxis type="category" dataKey="name" stroke="var(--color-muted-foreground)" width={30} fontSize={12}/>
+                            <YAxis type="category" dataKey="name" stroke="var(--color-muted-foreground)" width={80} fontSize={12} interval={0} tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value} />
                             <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} cursor={{fill: 'rgba(16, 185, 129, 0.1)'}}/>
                             <Bar dataKey="media" fill="var(--color-secondary)" radius={[0, 4, 4, 0]} barSize={20}/>
                         </BarChart>

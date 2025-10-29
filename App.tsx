@@ -42,6 +42,7 @@ import GamificationPage from './components/GamificationPage';
 import AchievementNotifier from './components/AchievementNotifier';
 import GeradorPlanoModal from './components/GeradorPlanoModal';
 import { useFriendsStore } from './stores/useFriendsStore';
+import CriarFlashcardModal from './components/CriarFlashcardModal';
 
 // Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
@@ -190,9 +191,7 @@ const AuthGate: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
   const [activeView, setActiveView] = useState('dashboard'); 
-  const { iniciarSessao, sessoes } = useEstudosStore();
   const editalAtivo = useEditalStore(state => state.editalAtivo);
-  const { disciplinas } = useDisciplinasStore();
   const sessaoAtual = useEstudosStore(state => state.sessaoAtual);
   
   const { isAuthenticated, user, checkAuth } = useAuthStore();
@@ -281,25 +280,6 @@ const App: React.FC = () => {
     }
   };
 
-  const { getCicloAtivo } = useCiclosStore();
-
-  const handleStartNextStudy = () => {
-    const cicloAtivo = getCicloAtivo();
-    if (!cicloAtivo || cicloAtivo.sessoes.length === 0) {
-        toast.error("Nenhum ciclo ativo ou sessões configuradas.");
-        return;
-    }
-    // Lógica complexa de encontrar a próxima sessão pode ser movida para o backend no futuro
-    const nextSession = cicloAtivo.sessoes[0]; // Simplificado por agora
-    if (nextSession) {
-        const disciplina = disciplinas.find(d => d.id === nextSession.disciplina_id);
-        if (disciplina) {
-            iniciarSessao({ id: `ciclo-${nextSession.id}`, nome: disciplina.nome, disciplinaId: disciplina.id });
-            toast.success(`Iniciando estudos de ${disciplina.nome}!`);
-        }
-    }
-  };
-  
   if (!isAuthenticated) {
     return <AuthGate onLoginSuccess={checkAuth} />;
   }
@@ -323,6 +303,7 @@ const App: React.FC = () => {
       <AdicionarTopicoModal />
       <CriarCicloModal />
       <GeradorPlanoModal />
+      <CriarFlashcardModal />
       
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="flex flex-col flex-1 w-full">
@@ -335,14 +316,6 @@ const App: React.FC = () => {
             {renderActiveView()}
           </div>
           
-          {!sessaoAtual && (
-            <button 
-              onClick={handleStartNextStudy}
-              className="fixed bottom-6 right-6 h-14 w-14 flex items-center justify-center rounded-full bg-gradient-to-tr from-primary to-secondary text-black shadow-lg shadow-primary/30 hover:opacity-90 transition-all transform hover:scale-110 z-40">
-              <PlayCircleIcon className="w-7 h-7" />
-            </button>
-          )}
-
           <CronometroInteligente />
         </main>
       </div>

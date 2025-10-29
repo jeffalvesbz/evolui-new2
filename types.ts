@@ -5,6 +5,8 @@ export interface StudyPlan {
   nome: string;
   descricao: string;
   data_alvo: string;
+  banca?: string;
+  orgao?: string;
 }
 
 export type NivelDificuldade = 'fácil' | 'médio' | 'difícil' | 'desconhecido';
@@ -71,6 +73,7 @@ export interface Flashcard {
   interval: number; // in days
   easeFactor: number; // multiplier
   dueDate: string; // ISO string date
+  estilo?: 'direto' | 'explicativo' | 'completar';
 }
 
 export interface RevisaoErro {
@@ -188,7 +191,8 @@ export type XpLogEvent =
   'trilha_topico_concluido' | 
   'estudo_extra' |
   'meta_semanal_completa' |
-  'missao_diaria_completa';
+  'missao_diaria_completa' |
+  'conquista_desbloqueada';
 
 export interface XpLogEntry {
   id: string;

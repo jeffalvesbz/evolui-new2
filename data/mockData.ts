@@ -41,6 +41,8 @@ export const MOCK_EDITAIS: StudyPlan[] = [
     nome: 'Concurso XYZ 2024',
     descricao: 'Edital para o concurso do órgão XYZ, com provas em Dezembro.',
     data_alvo: '2024-12-15',
+    banca: 'Cebraspe',
+    orgao: 'Órgão XYZ',
   },
 ];
 

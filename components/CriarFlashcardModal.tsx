@@ -1,0 +1,153 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { useModalStore } from '../stores/useModalStore';
+import { useDisciplinasStore } from '../stores/useDisciplinasStore';
+import { useFlashcardsStore } from '../stores/useFlashcardStore';
+import { toast } from './Sonner';
+import { LayersIcon, XIcon, SaveIcon } from './icons';
+
+interface FormData {
+  disciplinaId: string;
+  topicoId: string;
+  pergunta: string;
+  resposta: string;
+}
+
+const CriarFlashcardModal: React.FC = () => {
+  const { isCriarFlashcardModalOpen, closeCriarFlashcardModal, flashcardToEdit } = useModalStore();
+  const { disciplinas } = useDisciplinasStore();
+  const { addFlashcard, updateFlashcard } = useFlashcardsStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addAnother, setAddAnother] = useState(true);
+
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormData>();
+  const selectedDisciplinaId = watch('disciplinaId');
+
+  const isEditMode = !!flashcardToEdit;
+
+  const topicosFiltrados = useMemo(() => {
+    if (!selectedDisciplinaId) return [];
+    const disciplina = disciplinas.find(d => d.id === selectedDisciplinaId);
+    return disciplina?.topicos || [];
+  }, [selectedDisciplinaId, disciplinas]);
+
+  useEffect(() => {
+    if (isCriarFlashcardModalOpen) {
+      if (isEditMode) {
+        const disciplina = disciplinas.find(d => d.topicos.some(t => t.id === flashcardToEdit.topico_id));
+        reset({
+          disciplinaId: disciplina?.id || '',
+          topicoId: flashcardToEdit.topico_id,
+          pergunta: flashcardToEdit.pergunta,
+          resposta: flashcardToEdit.resposta,
+        });
+      } else {
+        if (!addAnother || !watch('disciplinaId')) {
+          reset({ disciplinaId: '', topicoId: '', pergunta: '', resposta: '' });
+        } else {
+          reset({ pergunta: '', resposta: '' }); // Keep disciplina and topic
+        }
+      }
+    }
+  }, [isCriarFlashcardModalOpen, isEditMode, flashcardToEdit, reset, disciplinas, addAnother, watch]);
+
+  // Limpa o tópico se a disciplina mudar
+  useEffect(() => {
+    if (!isEditMode) {
+      setValue('topicoId', '');
+    }
+  }, [selectedDisciplinaId, setValue, isEditMode]);
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      if (isEditMode) {
+        await updateFlashcard(flashcardToEdit.id, {
+          pergunta: data.pergunta,
+          resposta: data.resposta,
+        });
+        toast.success('Flashcard atualizado com sucesso!');
+        closeCriarFlashcardModal();
+      } else {
+        await addFlashcard({
+          pergunta: data.pergunta,
+          resposta: data.resposta,
+          topico_id: data.topicoId,
+        }, data.topicoId);
+        toast.success('Flashcard criado com sucesso!');
+        if (addAnother) {
+          reset({ ...data, pergunta: '', resposta: '' });
+        } else {
+          closeCriarFlashcardModal();
+        }
+      }
+    } catch (error) {
+      toast.error(`Não foi possível ${isEditMode ? 'atualizar' : 'criar'} o flashcard.`);
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isCriarFlashcardModalOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeCriarFlashcardModal}>
+      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <header className="p-4 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LayersIcon className="w-6 h-6 text-primary" />
+              <h2 className="text-lg font-bold">{isEditMode ? 'Editar Flashcard' : 'Criar Flashcard'}</h2>
+            </div>
+            <button type="button" onClick={closeCriarFlashcardModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
+          </header>
+
+          <main className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
+                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="">Selecione...</option>
+                        {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                    </select>
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
+                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="">Selecione...</option>
+                        {topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)}
+                    </select>
+                </div>
+            </div>
+             <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pergunta *</label>
+                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"/>
+            </div>
+             <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Resposta *</label>
+                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"/>
+            </div>
+          </main>
+
+          <footer className="p-4 bg-muted/30 border-t border-border flex justify-between items-center">
+             {!isEditMode ? (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={addAnother} onChange={e => setAddAnother(e.target.checked)} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" />
+                    Adicionar outro
+                </label>
+             ) : <div />}
+            <div className="flex gap-2">
+                <button type="button" onClick={closeCriarFlashcardModal} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+                <button type="submit" disabled={isSubmitting} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50">
+                    <SaveIcon className="w-4 h-4" /> {isSubmitting ? 'Salvando...' : 'Salvar'}
+                </button>
+            </div>
+          </footer>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CriarFlashcardModal;

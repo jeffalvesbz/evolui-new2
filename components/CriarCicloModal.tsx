@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -171,6 +173,7 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
 const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     const { control, watch, setValue } = formMethods;
     const { fields, move } = useFieldArray({ control, name: 'sessoesGeradas' });
+    const disciplinas = useDisciplinasStore(state => state.disciplinas);
 
     const materias: MateriaCiclo[] = watch('materias');
     const tempoSessao: number = watch('tempoSessao');
@@ -222,7 +225,7 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     };
 
     // FIX: Add generic type to useMemo to ensure correct type inference for the map.
-    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
+    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
 
     return (
         <div className="space-y-6">
@@ -273,11 +276,12 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
 
 const Etapa4: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     const { watch } = formMethods;
+    const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const nomeCiclo: string = watch('nomeCiclo');
     const sessoesGeradas: Omit<SessaoCiclo, 'id' | 'ordem'>[] = watch('sessoesGeradas');
     // FIX: Add generic type to useMemo to ensure correct type inference for the map.
-    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
-    const totalTempo = sessoesGeradas.reduce((acc, s) => acc + s.tempo_previsto, 0);
+    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
+    const totalTempo = sessoesGeradas.reduce((acc: number, s) => acc + (s.tempo_previsto || 0), 0);
 
     return (
         <div className="text-center space-y-6">
@@ -337,7 +341,7 @@ const CriarCicloModal: React.FC = () => {
              toast.error("Todas as matérias devem ter uma duração maior que zero.");
             return;
         }
-        if(step === 3 && watch('sessoesGeradas').length === 0){
+        if(step === 3 && watch('sessoesGeradas').length === 0)){
              toast.error("Gere as sessões de estudo antes de prosseguir.");
             return;
         }

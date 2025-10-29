@@ -175,7 +175,8 @@ const TrilhaSemanal: React.FC = () => {
         }
     };
     
-    const isPlanoVazio = Object.values(topicsByDay).every(day => day.length === 0) && unscheduledTopics.length > 0;
+    // FIX: Explicitly type `day` to resolve `unknown` type error from Object.values inference.
+    const isPlanoVazio = Object.values(topicsByDay).every((day: DraggableTopic[]) => day.length === 0) && unscheduledTopics.length > 0;
 
     return (
         <div className="flex flex-col h-full">

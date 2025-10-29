@@ -7,6 +7,7 @@ const navItems = [
     { id: 'ciclos', label: 'Ciclos de Estudos' },
     { id: 'edital', label: 'Edital' },
     { id: 'estatisticas', label: 'Estatísticas' },
+    { id: 'gamificacao', label: 'Jornada do Herói' },
     { id: 'flashcards', label: 'Flashcards' },
     { id: 'revisoes', label: 'Revisões' },
     { id: 'erros', label: 'Caderno de Erros' },

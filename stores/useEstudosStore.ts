@@ -6,10 +6,11 @@ import { getSessoes, createSessao, updateSessaoApi, deleteSessao } from '../serv
 import { useEditalStore } from './useEditalStore';
 import { useGamificationStore } from './useGamificationStore';
 import { checkAndAwardBadges } from '../services/badgeService';
+import { useCiclosStore } from './useCiclosStore';
 
 export interface SessaoAtual {
   topico: {
-    id: string;
+    id: string; // Pode ser um topicoId real ou um id sintético como 'ciclo-sessaoId'
     nome: string;
     disciplinaId?: string; // Opcional, para pré-selecionar no modal
   };
@@ -256,6 +257,16 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
             useUiStore.getState().closeSaveModal();
             return;
         };
+
+        // Rastreamento de progresso do ciclo
+        if (sessaoAtual.topico.id.startsWith('ciclo-')) {
+            const cicloStore = useCiclosStore.getState();
+            const cicloAtivoId = cicloStore.cicloAtivoId;
+            const sessaoCicloId = sessaoAtual.topico.id.replace('ciclo-', '');
+            if (cicloAtivoId) {
+                cicloStore.setUltimaSessaoConcluida(cicloAtivoId, sessaoCicloId);
+            }
+        }
         
         await addSessao({
           ...detalhes,

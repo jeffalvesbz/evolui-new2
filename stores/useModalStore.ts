@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CadernoErro } from '../types';
+import { CadernoErro, Flashcard } from '../types';
 
 interface ModalStore {
   isEditalModalOpen: boolean;
@@ -23,6 +23,11 @@ interface ModalStore {
   isGeradorPlanoModalOpen: boolean;
   openGeradorPlanoModal: () => void;
   closeGeradorPlanoModal: () => void;
+
+  isCriarFlashcardModalOpen: boolean;
+  flashcardToEdit: Flashcard | null;
+  openCriarFlashcardModal: (flashcard?: Flashcard) => void;
+  closeCriarFlashcardModal: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set) => ({
@@ -47,4 +52,9 @@ export const useModalStore = create<ModalStore>((set) => ({
   isGeradorPlanoModalOpen: false,
   openGeradorPlanoModal: () => set({ isGeradorPlanoModalOpen: true }),
   closeGeradorPlanoModal: () => set({ isGeradorPlanoModalOpen: false }),
+
+  isCriarFlashcardModalOpen: false,
+  flashcardToEdit: null,
+  openCriarFlashcardModal: (flashcard = null) => set({ isCriarFlashcardModalOpen: true, flashcardToEdit: flashcard }),
+  closeCriarFlashcardModal: () => set({ isCriarFlashcardModalOpen: false, flashcardToEdit: null }),
 }));

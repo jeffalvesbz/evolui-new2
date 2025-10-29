@@ -24,14 +24,14 @@ const EditalManagementModal: React.FC = () => {
             setMode('list');
             setSelectedEdital(null);
             setDeleteConfirmationId(null);
-            reset({ nome: '', descricao: '', data_alvo: '' });
+            reset({ nome: '', descricao: '', data_alvo: '', banca: '', orgao: '' });
         }
     }, [isEditalModalOpen, reset]);
 
     const handleStartCreate = () => {
         setMode('create');
         setSelectedEdital(null);
-        reset({ nome: '', descricao: '', data_alvo: '' });
+        reset({ nome: '', descricao: '', data_alvo: '', banca: '', orgao: '' });
     };
 
     const handleStartEdit = (edital: StudyPlan) => {
@@ -40,7 +40,9 @@ const EditalManagementModal: React.FC = () => {
         reset({
             nome: edital.nome,
             descricao: edital.descricao,
-            data_alvo: edital.data_alvo
+            data_alvo: edital.data_alvo,
+            banca: edital.banca,
+            orgao: edital.orgao,
         });
     };
 
@@ -138,6 +140,16 @@ const EditalManagementModal: React.FC = () => {
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Nome do Edital *</label>
                     <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
                     {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-1 block">Órgão</label>
+                        <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-1 block">Banca</label>
+                        <input {...register('banca')} placeholder="Ex: Cebraspe" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                    </div>
                 </div>
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Descrição</label>

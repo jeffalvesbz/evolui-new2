@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import {
     TrophyIcon, StarIcon, FlameIcon, BookOpenIcon, RepeatIcon, FootprintsIcon,
     PlusCircleIcon, CalendarClockIcon, TargetIcon, TrendingUpIcon, BookCopyIcon,
-    BookOpenCheckIcon
+    BookOpenCheckIcon,
+    MedalIcon
 } from './icons';
 import { useGamificationStore, WeeklyRankingData } from '../stores/useGamificationStore';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -26,6 +27,7 @@ const activityIcons: Record<XpLogEvent, React.FC<{ className?: string }>> = {
     'revisao_dificil': BookCopyIcon,
     'estudo_manual': BookOpenIcon,
     'missao_diaria_completa': TargetIcon,
+    'conquista_desbloqueada': MedalIcon,
 };
 
 const getEventMessage = (event: XpLogEvent): string => {
@@ -42,6 +44,8 @@ const getEventMessage = (event: XpLogEvent): string => {
             return 'Revisão em dia';
         case 'meta_semanal_completa':
             return 'Meta semanal completa';
+        case 'conquista_desbloqueada':
+            return 'Conquista desbloqueada';
         default:
             return 'Dedicação';
     }
@@ -89,7 +93,7 @@ const GamificationPage = () => {
     return (
         <div className="space-y-8">
             <header>
-                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><TrophyIcon className="w-8 h-8"/> Sua Jornada</h1>
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><TrophyIcon className="w-8 h-8"/> Jornada do Herói</h1>
                 <p className="text-muted-foreground mt-1">Acompanhe seu progresso, compita com amigos e ganhe conquistas.</p>
             </header>
             

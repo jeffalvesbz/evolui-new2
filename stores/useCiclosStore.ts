@@ -8,16 +8,18 @@ interface CiclosState {
   ciclos: Ciclo[];
   cicloAtivoId: string | null;
   loading: boolean;
+  ultimaSessaoConcluidaId: string | null; // Novo estado para rastrear progresso
   
   fetchCiclos: (editalId: string) => Promise<void>;
   getCicloAtivo: () => Ciclo | null;
   setCicloAtivoId: (id: string | null) => void;
+  setUltimaSessaoConcluida: (cicloId: string, sessaoId: string) => void;
   addCiclo: (cicloData: Omit<Ciclo, 'id' | 'studyPlanId'>) => Promise<Ciclo>;
-  updateCiclo: (id: string, nome: string) => void;
+  updateCiclo: (id: string, updates: Partial<Omit<Ciclo, 'id'>>) => Promise<void>;
   removeCiclo: (id: string) => void;
   addSessaoAoCiclo: (cicloId: string, disciplinaId: string, tempoPrevisto: number) => void;
-  updateSessaoNoCiclo: (cicloId: string, sessaoId: string, updates: Partial<Omit<SessaoCiclo, 'id'>>) => void;
-  removeSessaoDoCiclo: (cicloId: string, sessaoId: string) => void;
+  reordenarSessao: (cicloId: string, sessaoId: string, direcao: 'up' | 'down') => Promise<void>;
+  removeSessaoDoCiclo: (cicloId: string, sessaoId: string) => Promise<void>;
   removeSessoesPorDisciplina: (disciplinaId: string) => void;
 }
 
@@ -25,6 +27,7 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       ciclos: [],
       cicloAtivoId: null,
       loading: false,
+      ultimaSessaoConcluidaId: null,
 
       fetchCiclos: async (editalId: string) => {
         set({ loading: true });
@@ -34,6 +37,12 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
             if (!get().cicloAtivoId && ciclos.length > 0) {
                 set({ cicloAtivoId: ciclos[0].id });
             }
+             // Tenta carregar o último estado do localStorage (simulado)
+            const savedProgress = localStorage.getItem(`ciclo-progress-${ciclos[0]?.id}`);
+            if (savedProgress) {
+                set({ ultimaSessaoConcluidaId: JSON.parse(savedProgress) });
+            }
+
         } catch (error) {
             console.error("Failed to fetch ciclos:", error);
             toast.error("Não foi possível carregar os ciclos de estudo.");
@@ -46,7 +55,20 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
         const { ciclos, cicloAtivoId } = get();
         return ciclos.find(c => c.id === cicloAtivoId) || null;
       },
-      setCicloAtivoId: (id) => set({ cicloAtivoId: id }),
+      setCicloAtivoId: (id) => {
+        set({ cicloAtivoId: id, ultimaSessaoConcluidaId: null });
+        if (id) {
+            const savedProgress = localStorage.getItem(`ciclo-progress-${id}`);
+            if (savedProgress) {
+                set({ ultimaSessaoConcluidaId: JSON.parse(savedProgress) });
+            }
+        }
+      },
+      setUltimaSessaoConcluida: (cicloId, sessaoId) => {
+          set({ ultimaSessaoConcluidaId: sessaoId });
+           // Simula persistência no localStorage
+          localStorage.setItem(`ciclo-progress-${cicloId}`, JSON.stringify(sessaoId));
+      },
       addCiclo: async (cicloData) => {
         const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
         if (!editalAtivoId) throw new Error("Edital não selecionado.");
@@ -60,21 +82,23 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
             throw e;
         }
       },
-      updateCiclo: async (id, nome) => {
-        const ciclo = get().getCicloAtivo();
+      updateCiclo: async (id, updates) => {
+        const ciclo = get().ciclos.find(c => c.id === id);
         if(!ciclo) return;
         try {
-            const cicloAtualizado = await updateCicloApi(id, { ...ciclo, nome });
+            const cicloAtualizado = await updateCicloApi(id, { ...ciclo, ...updates });
             set(state => ({
                 ciclos: state.ciclos.map(c => c.id === id ? cicloAtualizado : c),
             }));
         } catch (e) {
             toast.error("Falha ao atualizar ciclo.");
+            throw e;
         }
       },
       removeCiclo: async (id) => {
         try {
             await deleteCiclo(id);
+            localStorage.removeItem(`ciclo-progress-${id}`);
             set(state => ({
               ciclos: state.ciclos.filter(c => c.id !== id),
               cicloAtivoId: state.cicloAtivoId === id ? state.ciclos[0]?.id || null : state.cicloAtivoId,
@@ -83,21 +107,48 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
             toast.error("Falha ao remover ciclo.");
         }
       },
-
-      // As ações de sessão são otimistas para melhor UX, mas idealmente teriam endpoints de API
       addSessaoAoCiclo: (cicloId, disciplinaId, tempoPrevisto) => {
-        // Esta lógica deve ser movida para um endpoint de API dedicado
-        console.warn("addSessaoAoCiclo should be an API call");
+          const ciclo = get().ciclos.find(c => c.id === cicloId);
+          if(!ciclo) return;
+          const novaSessao = {
+              id: `sessao-${Date.now()}`,
+              disciplina_id: disciplinaId,
+              tempo_previsto: tempoPrevisto,
+              ordem: ciclo.sessoes.length,
+          };
+          get().updateCiclo(cicloId, { sessoes: [...ciclo.sessoes, novaSessao] });
       },
-      updateSessaoNoCiclo: (cicloId, sessaoId, updates) => {
-        console.warn("updateSessaoNoCiclo should be an API call");
+      reordenarSessao: async (cicloId, sessaoId, direcao) => {
+        const ciclo = get().ciclos.find(c => c.id === cicloId);
+        if (!ciclo) return;
+
+        const sessoes = [...ciclo.sessoes];
+        const index = sessoes.findIndex(s => s.id === sessaoId);
+
+        if (direcao === 'up' && index > 0) {
+            [sessoes[index], sessoes[index - 1]] = [sessoes[index - 1], sessoes[index]];
+        } else if (direcao === 'down' && index < sessoes.length - 1) {
+            [sessoes[index], sessoes[index + 1]] = [sessoes[index + 1], sessoes[index]];
+        }
+        
+        const sessoesReordenadas = sessoes.map((s, i) => ({ ...s, ordem: i }));
+        await get().updateCiclo(cicloId, { sessoes: sessoesReordenadas });
       },
-      removeSessaoDoCiclo: (cicloId, sessaoId) => {
-        console.warn("removeSessaoDoCiclo should be an API call");
+      removeSessaoDoCiclo: async (cicloId, sessaoId) => {
+          const ciclo = get().ciclos.find(c => c.id === cicloId);
+          if(!ciclo) return;
+          const sessoesAtualizadas = ciclo.sessoes
+            .filter(s => s.id !== sessaoId)
+            .map((s, i) => ({ ...s, ordem: i })); // Reajusta a ordem
+          await get().updateCiclo(cicloId, { sessoes: sessoesAtualizadas });
       },
       removeSessoesPorDisciplina: (disciplinaId) => {
-        // Esta lógica é complexa e deve ser tratada pelo backend
-        console.warn("removeSessoesPorDisciplina should be handled by the backend");
+          get().ciclos.forEach(ciclo => {
+              const sessoesFiltradas = ciclo.sessoes.filter(s => s.disciplina_id !== disciplinaId);
+              if(sessoesFiltradas.length < ciclo.sessoes.length) {
+                  get().updateCiclo(ciclo.id, { sessoes: sessoesFiltradas });
+              }
+          });
       },
     })
 );

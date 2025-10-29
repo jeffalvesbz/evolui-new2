@@ -1,18 +1,23 @@
+
 import { create } from 'zustand';
-import { Flashcard } from '../types';
-import { getFlashcards, createFlashcards, updateFlashcardApi } from '../services/geminiService';
+import { Flashcard, Disciplina } from '../types';
+import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as deleteFlashcardApi } from '../services/geminiService';
 import { toast } from '../components/Sonner';
+import { startOfDay } from 'date-fns';
 
 interface FlashcardStore {
   flashcards: Flashcard[];
   loading: boolean;
   fetchFlashcardsByTopic: (topicoId: string) => Promise<void>;
+  fetchFlashcardsForTopics: (topicIds: string[]) => Promise<void>;
+  addFlashcard: (newFlashcard: Omit<Flashcard, 'id' | 'interval' | 'easeFactor' | 'dueDate'>, topicoId: string) => Promise<void>;
   addFlashcards: (newFlashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[], topicoId: string) => Promise<void>;
   updateFlashcard: (id: string, updates: Partial<Flashcard>) => Promise<void>;
+  removeFlashcard: (id: string) => Promise<void>;
   getFlashcardsByTopic: (topicoId: string) => Flashcard[];
+  getFlashcardsByDisciplinaId: (disciplina: Disciplina, allFlashcards: Flashcard[]) => Flashcard[];
   getDueFlashcards: () => Flashcard[];
-  getUpcomingFlashcards: () => Flashcard[];
-  removeFlashcardsByTopicIds: (topicIds: string[]) => void; // Assume local removal for now
+  removeFlashcardsByTopicIds: (topicIds: string[]) => void;
 }
 
 export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
@@ -24,7 +29,6 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
         try {
           const flashcards = await getFlashcards(topicoId);
           set(state => ({
-            // Merge new flashcards, avoiding duplicates
             flashcards: [...state.flashcards.filter(fc => fc.topico_id !== topicoId), ...flashcards]
           }));
         } catch (error) {
@@ -32,6 +36,43 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
           toast.error("Não foi possível carregar os flashcards.");
         } finally {
           set({ loading: false });
+        }
+      },
+
+      fetchFlashcardsForTopics: async (topicIds) => {
+          const { flashcards } = get();
+          const fetchedTopicIds = new Set(flashcards.map(fc => fc.topico_id));
+          const idsToFetch = topicIds.filter(id => !fetchedTopicIds.has(id));
+
+          if (idsToFetch.length === 0) {
+            return;
+          }
+          
+          set({ loading: true });
+          try {
+            const promises = idsToFetch.map(id => getFlashcards(id));
+            const newFlashcardsArrays = await Promise.all(promises);
+            const newFlashcards = newFlashcardsArrays.flat();
+            set(state => ({
+              flashcards: [...state.flashcards, ...newFlashcards]
+            }));
+          } catch (error) {
+            console.error("Failed to fetch flashcards for topics", error);
+            toast.error("Erro ao carregar alguns flashcards.");
+          } finally {
+            set({ loading: false });
+          }
+      },
+      
+      addFlashcard: async (newFlashcard, topicoId) => {
+        try {
+            const createdFlashcards = await createFlashcards(topicoId, { flashcards: [newFlashcard] });
+            set(state => ({
+                flashcards: [...state.flashcards, ...createdFlashcards],
+            }));
+        } catch(e) {
+            toast.error("Falha ao salvar flashcard.");
+            throw e;
         }
       },
 
@@ -47,35 +88,55 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
         }
       },
       updateFlashcard: async (id, updates) => {
+        const originalFlashcards = get().flashcards;
+        const updatedFlashcard = { ...originalFlashcards.find(f => f.id === id), ...updates } as Flashcard;
+        // Optimistic update
+        set(state => ({
+          flashcards: state.flashcards.map(fc =>
+            fc.id === id ? updatedFlashcard : fc
+          ),
+        }));
         try {
-            const flashcardAtualizado = await updateFlashcardApi(id, updates);
-            set(state => ({
-              flashcards: state.flashcards.map(fc =>
-                fc.id === id ? flashcardAtualizado : fc
-              ),
-            }));
+            await updateFlashcardApi(id, updates);
         } catch(e) {
             toast.error("Falha ao atualizar flashcard.");
-            // Opcional: reverter a UI para o estado anterior
+            set({ flashcards: originalFlashcards }); // Revert on failure
+            throw e;
+        }
+      },
+       removeFlashcard: async (id: string) => {
+        const originalFlashcards = get().flashcards;
+        // Optimistic update
+        set(state => ({
+          flashcards: state.flashcards.filter(fc => fc.id !== id),
+        }));
+        try {
+          await deleteFlashcardApi(id);
+        } catch(e) {
+            toast.error("Falha ao remover flashcard.");
+            set({ flashcards: originalFlashcards }); // Revert on failure
             throw e;
         }
       },
       getFlashcardsByTopic: (topicoId) => {
         return get().flashcards.filter(fc => fc.topico_id === topicoId);
       },
-      getDueFlashcards: () => {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        return get().flashcards.filter(fc => new Date(fc.dueDate) <= today);
+      getFlashcardsByDisciplinaId: (disciplina, allFlashcards) => {
+        if (!disciplina) return [];
+        const topicIds = new Set(disciplina.topicos.map(t => t.id));
+        return allFlashcards.filter(fc => topicIds.has(fc.topico_id));
       },
-      getUpcomingFlashcards: () => {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        return get().flashcards.filter(fc => new Date(fc.dueDate) > today);
+      getDueFlashcards: () => {
+        const today = startOfDay(new Date());
+        return get().flashcards.filter(fc => {
+            try {
+                return new Date(fc.dueDate) <= today;
+            } catch (e) {
+                return false;
+            }
+        });
       },
       removeFlashcardsByTopicIds: (topicIds) => {
-          // No backend, this would be a single API call
-          console.warn("removeFlashcardsByTopicIds should be a backend operation");
           const topicIdSet = new Set(topicIds);
           set(state => ({
               flashcards: state.flashcards.filter(fc => !topicIdSet.has(fc.topico_id))

@@ -1,7 +1,3 @@
-
-
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,8 +19,7 @@ const ErroFormModal: React.FC = () => {
     const { isErroModalOpen, erroEmEdicao, closeErroModal } = useModalStore();
     const { addErro, updateErro } = useCadernoErrosStore();
     const { disciplinas } = useDisciplinasStore();
-    const { addRevisao } = useRevisoesStore();
-
+    
     const [topicosFiltrados, setTopicosFiltrados] = useState<Topico[]>([]);
 
     const { register, handleSubmit, control, reset, watch } = useForm<FormData>();
@@ -82,20 +77,8 @@ const ErroFormModal: React.FC = () => {
                 await updateErro(erroEmEdicao.id, payload);
                 toast.success("Erro atualizado com sucesso!");
             } else {
-                const novoErro = await addErro(payload);
+                await addErro(payload);
                 toast.success("Erro registrado com sucesso!");
-                
-                // Agendar revisão automática
-                await addRevisao({
-                    topico_id: novoErro.topicoId!,
-                    disciplinaId: novoErro.disciplinaId!,
-                    conteudo: `Revisar erro: ${novoErro.assunto}`,
-                    data_prevista: addDays(new Date(), 1).toISOString(),
-                    status: 'pendente',
-                    origem: 'erro',
-                    dificuldade: novoErro.nivelDificuldade || 'médio',
-                });
-                toast("Revisão do erro agendada para amanhã.");
             }
             closeErroModal();
         } catch (error) {
@@ -226,6 +209,7 @@ const ErroCard: React.FC<{ erro: CadernoErro; onEdit: (e: CadernoErro) => void; 
 // --- Componente Principal ---
 const CadernoErros: React.FC = () => {
     const { erros, removeErro, updateErro } = useCadernoErrosStore();
+    const { addRevisao } = useRevisoesStore();
     const { openErroModal } = useModalStore();
     
     const [filtroStatus, setFiltroStatus] = useState<'todos' | 'resolvido' | 'pendente'>('todos');
@@ -251,8 +235,29 @@ const CadernoErros: React.FC = () => {
     }, [erros, filtroStatus, filtroDisciplina, busca]);
 
     const handleToggleStatus = async (erro: CadernoErro) => {
-        await updateErro(erro.id, { resolvido: !erro.resolvido });
-        toast.success(`Erro marcado como ${!erro.resolvido ? 'resolvido' : 'pendente'}.`);
+        const isResolving = !erro.resolvido;
+        await updateErro(erro.id, { resolvido: isResolving });
+        toast.success(`Erro marcado como ${isResolving ? 'resolvido' : 'pendente'}.`);
+
+        if (isResolving && erro.topicoId && erro.disciplinaId) {
+            setTimeout(() => {
+                if (window.confirm(`Deseja agendar uma revisão futura sobre "${erro.assunto}" para garantir a fixação?`)) {
+                    addRevisao({
+                        topico_id: erro.topicoId!,
+                        disciplinaId: erro.disciplinaId!,
+                        conteudo: `Revisar erro: ${erro.assunto}`,
+                        data_prevista: addDays(new Date(), 7).toISOString(),
+                        status: 'pendente',
+                        origem: 'teorica',
+                        dificuldade: erro.nivelDificuldade || 'médio',
+                    }).then(() => {
+                        toast.success("Revisão teórica agendada para daqui a 7 dias.");
+                    }).catch(() => {
+                        toast.error("Falha ao agendar revisão.");
+                    });
+                }
+            }, 300);
+        }
     };
     
     const confirmarExclusao = async () => {
