@@ -343,7 +343,7 @@ const CriarCicloModal: React.FC = () => {
              toast.error("Todas as matérias devem ter uma duração maior que zero.");
             return;
         }
-        if(step === 3 && watch('sessoesGeradas').length === 0){
+        if(step === 3 && watch('sessoesGeradas').length === 0)){
              toast.error("Gere as sessões de estudo antes de prosseguir.");
             return;
         }
