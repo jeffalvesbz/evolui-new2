@@ -1,6 +1,4 @@
 
-
-
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -235,7 +233,7 @@ export const useEstatisticasRevisoes = () => {
     }, {})
 
     // Performance por origem
-// FIX: Add type assertion to the initial value of reduce to ensure correct type inference for `performancePorOrigem`.
+    // FIX: Add type assertion to the initial value of reduce to ensure correct type inference for `performancePorOrigem`.
     const performancePorOrigem = revisoes.reduce((acc, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }

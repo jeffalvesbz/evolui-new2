@@ -1,5 +1,6 @@
 
 
+
 import { create } from 'zustand';
 import { GamificationStats, XpLogEvent, Badge, XpLogEntry } from '../types';
 import { getGamificationStats, logXpEvent as logXpEventApi, getBadges, getXpLog, updateGamificationStats, getWeeklyRanking } from '../services/geminiService';
@@ -62,6 +63,8 @@ const getEventMessage = (event: XpLogEvent): string => {
             return 'por colocar uma revisão em dia';
         case 'meta_semanal_completa':
             return 'por completar sua meta semanal';
+        case 'conquista_desbloqueada':
+            return 'por uma nova conquista';
         default:
             return 'pela sua dedicação';
     }

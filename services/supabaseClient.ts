@@ -1,13 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/supabase'; // Este tipo será gerado pelo Supabase CLI
+import { Database } from '../types/supabase';
 
+// -----------------------------------------------------------------------------
 // ATENÇÃO: Substitua pelos valores do seu projeto Supabase!
-// Vá para Project Settings > API no seu dashboard Supabase.
-const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+// Você pode encontrar esses valores em: Project Settings > API no seu dashboard.
+// -----------------------------------------------------------------------------
+const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-if (supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
-    console.warn('Variáveis de ambiente do Supabase não configuradas. A aplicação usará placeholders e falhará ao conectar.');
+if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseAnonKey === 'placeholder-anon-key') {
+    console.warn('Variáveis de ambiente do Supabase não configuradas. A aplicação falhará ao conectar ao banco de dados. Insira suas credenciais reais no arquivo `services/supabaseClient.ts`.');
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

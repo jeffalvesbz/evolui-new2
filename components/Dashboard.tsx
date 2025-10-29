@@ -1,6 +1,4 @@
 
-
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay } from 'date-fns';
@@ -113,9 +111,8 @@ const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }
 };
 
 
-const formatStudyDuration = (minutes: unknown) => {
-// FIX: Cast `minutes` to Number to handle potential `unknown` type from store hydration before it's a number.
-  const totalMinutes = Math.max(0, Math.round(Number(minutes) || 0));
+const formatStudyDuration = (minutes: number) => {
+  const totalMinutes = Math.max(0, Math.round(minutes || 0));
   const hours = Math.floor(totalMinutes / 60)
   const remaining = totalMinutes % 60
   if (hours <= 0) return `${remaining} min`
@@ -258,7 +255,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 user.name.split(' ')[0],
                 tempoTotalHoje,
                 metaPercentual,
-                gamificationStats.current_streak_days,
+                // FIX: Cast gamificationStats.current_streak_days to a number to resolve the type error.
+                Number(gamificationStats.current_streak_days),
                 revisoesPendentes
             );
             setMotivationalMessage({ frase: message, autor: null });
