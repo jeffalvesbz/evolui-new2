@@ -2,14 +2,20 @@ import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 
 // -----------------------------------------------------------------------------
-// ATENÇÃO: Substitua pelos valores do seu projeto Supabase!
-// Você pode encontrar esses valores em: Project Settings > API no seu dashboard.
+// ✅ Correto para Vite / Google AI Studio / Vercel
 // -----------------------------------------------------------------------------
-const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseAnonKey === 'placeholder-anon-key') {
-    console.warn('Variáveis de ambiente do Supabase não configuradas. A aplicação falhará ao conectar ao banco de dados. Insira suas credenciais reais no arquivo `services/supabaseClient.ts`.');
+// 🚨 Verificação para evitar erro em produção
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    '❌ Erro: Variáveis do Supabase não configuradas. ' +
+    'Verifique se VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão no .env ou no Vercel.'
+  );
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(
+  supabaseUrl,
+  supabaseAnonKey
+);
