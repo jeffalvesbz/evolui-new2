@@ -40,7 +40,7 @@ export const LayersIcon: React.FC<IconProps> = ({ className }) => (
 
 export const BookCopyIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-        <path d="M2 10h6v10H2z"></path><path d="M14 2h- телевизионнойa4a2 2 0 0 0-2 2v4h6v-4a2 2 0 0 0-2-2z"></path><path d="M4 10V4a2 2 0 0 1 2-2h4v10H4z"></path><rect width="8" height="18" x="14" y="4" rx="2"></rect>
+        <path d="M2 10h6v10H2z"></path><path d="M14 2h-4a2 2 0 0 0-2 2v4h6V4a2 2 0 0 0-2-2z"></path><path d="M4 10V4a2 2 0 0 1 2-2h4v10H4z"></path><rect width="8" height="18" x="14" y="4" rx="2"></rect>
     </svg>
 );
 

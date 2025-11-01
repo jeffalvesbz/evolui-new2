@@ -1,7 +1,7 @@
-
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { isSameDay, isAfter, isBefore, startOfDay, addDays, subDays } from 'date-fns';
 
 

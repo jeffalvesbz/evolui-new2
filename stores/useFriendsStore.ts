@@ -1,6 +1,3 @@
-
-
-
 import { create } from 'zustand';
 import { User, FriendRequest } from '../types';
 import {
@@ -136,7 +133,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
             set(state => ({
                 friendRequests: state.friendRequests.filter(req => req.friendship_id !== friendshipId),
             }));
-            // FIX: The `toast.info` method does not exist. Use the default `toast()` function which defaults to the 'info' type.
+// FIX: The `toast.info` method does not exist. Use the default `toast()` function which defaults to the 'info' type.
             toast("Pedido de amizade recusado.");
         } catch (error) {
             console.error("Failed to decline friend request:", error);

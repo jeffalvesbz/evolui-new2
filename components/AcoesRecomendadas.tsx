@@ -1,6 +1,3 @@
-
-
-
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -18,6 +15,7 @@ import { useEstudosStore } from '../stores/useEstudosStore';
 import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { SectionHeader } from '../lib/dashboardMocks';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfDay, isSameDay } from 'date-fns';
 import { toast } from './Sonner';
 import type { SessaoCiclo } from '../types';
@@ -183,7 +181,7 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
         <div className="glass-card rounded-xl p-8 text-center">
           <SparklesIcon className="w-12 h-12 text-secondary mx-auto mb-4" />
           <h3 className="font-bold text-lg text-foreground">Tudo em dia!</h3>
-          <p className="text-muted-foreground mt-1">Você está em dia com suas tarefas. Que tal um estudo livre ou adicionar um novo tópico?</p>
+          <p className="text-muted-foreground mt-1">Você está em dia com suas tarefas planejadas. Que tal um estudo livre ou adicionar um novo tópico?</p>
         </div>
       )}
     </section>

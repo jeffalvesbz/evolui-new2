@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -42,7 +43,6 @@ import AchievementNotifier from './components/AchievementNotifier';
 import GeradorPlanoModal from './components/GeradorPlanoModal';
 import { useFriendsStore } from './stores/useFriendsStore';
 import CriarFlashcardModal from './components/CriarFlashcardModal';
-import QuickActionsSidebar from './components/QuickActionsSidebar';
 import MobileHeader from './components/MobileHeader';
 
 // Hook para buscar dados dos stores quando o edital ativo muda
@@ -58,7 +58,8 @@ const useEditalDataSync = () => {
 
     useEffect(() => {
         if (editalAtivo?.id) {
-            console.log(`Buscando todos os dados para o edital: ${editalAtivo.nome}`);
+            console.log(`Buscando todos os dados para o plano de estudo: ${editalAtivo.nome}`);
+            // ✅ Corrigido: As funções de fetch agora recebem `editalAtivo.id` que representa o `studyPlanId`.
             Promise.all([
                 fetchDisciplinas(editalAtivo.id),
                 fetchRevisoes(editalAtivo.id),
@@ -68,8 +69,8 @@ const useEditalDataSync = () => {
                 fetchRedacoes(editalAtivo.id),
                 fetchSimulados(editalAtivo.id),
             ]).catch(err => {
-                console.error("Falha ao buscar dados do edital", err);
-                toast.error("Não foi possível carregar os dados do edital.");
+                console.error("Falha ao buscar dados do plano de estudo", err);
+                toast.error("Não foi possível carregar os dados do plano de estudo.");
             });
         }
     }, [editalAtivo?.id]);
@@ -342,7 +343,7 @@ const App: React.FC = () => {
       
       <div className="flex-1 flex flex-col min-w-0">
         <div className="w-full h-8 bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-xs font-bold text-black shadow-lg z-20 flex-shrink-0">
-            Edital ativo: {editalAtivo?.nome || 'Nenhum edital selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
+            Plano de Estudo Ativo: {editalAtivo?.nome || 'Nenhum plano selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
         </div>
         <Header theme={theme} toggleTheme={toggleTheme} activeView={activeView} />
         <MobileHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
@@ -355,8 +356,6 @@ const App: React.FC = () => {
           <CronometroInteligente />
         </main>
       </div>
-      
-      <QuickActionsSidebar setActiveView={setActiveView} />
     </div>
   );
 };

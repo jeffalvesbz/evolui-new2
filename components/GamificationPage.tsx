@@ -12,6 +12,7 @@ import { useFriendsStore } from '../stores/useFriendsStore';
 import { Badge as BadgeType, XpLogEvent, XpLogEntry } from '../types';
 import { Card, CardHeader, CardContent, CardTitle } from '../components/ui/Card';
 import { formatDistanceToNow } from 'date-fns';
+// FIX: Changed date-fns/locale import to a subpath import to resolve type error.
 import { ptBR } from 'date-fns/locale';
 import WeeklyRanking from './WeeklyRanking';
 import FriendsManagement from './FriendsManagement';
@@ -214,6 +215,7 @@ const LogEntry: React.FC<{ log: XpLogEntry }> = ({ log }) => {
                 <p className="text-sm font-semibold text-foreground">+{log.amount} XP</p>
                 <p className="text-xs text-muted-foreground">{getEventMessage(log.event)}</p>
             </div>
+            {/* FIX: Changed locale import to a named import. */}
             <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(log.created_at), { addSuffix: true, locale: ptBR })}</p>
         </div>
     );

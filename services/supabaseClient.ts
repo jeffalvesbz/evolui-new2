@@ -1,21 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/supabase';
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "../types/supabase";
 
-// -----------------------------------------------------------------------------
-// ✅ Correto para Vite / Google AI Studio / Vercel
-// -----------------------------------------------------------------------------
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// ⚙️ MODO GOOGLE AI STUDIO — chaves fixas públicas (anon key segura)
+const supabaseUrl = "https://ilzbcfamqkfcochldtxn.supabase.co";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsemJjZmFtcWtmY29jaGxkdHhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTUzNTIsImV4cCI6MjA3NzE5MTM1Mn0.ywCtrjlKOIN6OYBDdvP7f5o5L7_rPUhMZXRDv2DczDk";
 
-// 🚨 Verificação para evitar erro em produção
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    '❌ Erro: Variáveis do Supabase não configuradas. ' +
-    'Verifique se VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão no .env ou no Vercel.'
-  );
-}
-
-export const supabase = createClient<Database>(
-  supabaseUrl,
-  supabaseAnonKey
-);
+// Cria o cliente Supabase
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

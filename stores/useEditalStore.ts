@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { StudyPlan } from '../types';
-import { getEditais, createEdital, updateEditalApi, deleteEdital } from '../services/geminiService';
+import { getStudyPlans, createStudyPlan, updateStudyPlanApi, deleteStudyPlan } from '../services/geminiService';
 import { toast } from '../components/Sonner';
 
 interface EditalStore {
@@ -23,7 +23,7 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
   fetchEditais: async () => {
     set({ loading: true });
     try {
-      const editais = await getEditais();
+      const editais = await getStudyPlans();
       set({ editais, loading: false });
       if (get().editalAtivo === null && editais.length > 0) {
           set({ editalAtivo: editais[0] });
@@ -37,7 +37,7 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
 
   addEdital: async (editalData) => {
     try {
-      const newEdital = await createEdital(editalData);
+      const newEdital = await createStudyPlan(editalData);
       set(state => ({ editais: [...state.editais, newEdital] }));
       return newEdital;
     } catch (error) {
@@ -49,7 +49,7 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
   
   updateEdital: async (id, updates) => {
     try {
-      const updatedEdital = await updateEditalApi(id, updates);
+      const updatedEdital = await updateStudyPlanApi(id, updates);
       set(state => ({
         editais: state.editais.map(e => (e.id === id ? updatedEdital : e)),
         editalAtivo: state.editalAtivo?.id === id ? updatedEdital : state.editalAtivo
@@ -63,7 +63,7 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
 
   removeEdital: async (id) => {
     try {
-      await deleteEdital(id);
+      await deleteStudyPlan(id);
       set(state => {
         const novosEditais = state.editais.filter(e => e.id !== id);
         let novoEditalAtivo = state.editalAtivo;

@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
-import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay } from 'date-fns';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
+import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay, startOfDay } from 'date-fns';
 import { 
   ClockIcon as Clock3, 
   TargetIcon as Target, 
@@ -32,7 +32,6 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
 import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
-import { isSameDay as isSameDayDateFns, startOfDay } from 'date-fns';
 import { useModalStore } from '../stores/useModalStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { MiniGamificationCard } from './MiniGamificationCard';
@@ -160,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
 
   const { revisoesHoje, revisoesPendentes } = useMemo(() => {
     const hoje = startOfDay(new Date());
-    const pendentes = revisoes.filter(r => r.status === 'pendente' && isSameDayDateFns(new Date(r.data_prevista), hoje));
+    const pendentes = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
     return {
       revisoesHoje: pendentes,
       revisoesPendentes: pendentes.length,
@@ -255,8 +254,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 user.name.split(' ')[0],
                 tempoTotalHoje,
                 metaPercentual,
-                // FIX: Cast gamificationStats.current_streak_days to a number to resolve the type error.
-                Number(gamificationStats.current_streak_days),
+                gamificationStats.current_streak_days,
                 revisoesPendentes
             );
             setMotivationalMessage({ frase: message, autor: null });

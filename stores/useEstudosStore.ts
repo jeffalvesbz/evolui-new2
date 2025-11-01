@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { SessaoEstudo, XpLogEvent } from '../types';
 import { useUiStore } from './useUiStore';
@@ -49,7 +50,7 @@ interface EstudosStore {
   timerInterval: number | null;
   pomodoroSettings: PomodoroSettings;
   
-  fetchSessoes: (editalId: string) => Promise<void>;
+  fetchSessoes: (studyPlanId: string) => Promise<void>;
   
   // Ações do cronômetro
   iniciarSessao: (topico: { id: string, nome: string, disciplinaId?: string }, mode?: 'cronometro' | 'pomodoro') => void;
@@ -88,10 +89,11 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
         cyclesBeforeLongBreak: 4,
       },
 
-      fetchSessoes: async (editalId: string) => {
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchSessoes: async (studyPlanId: string) => {
           set({ loading: true });
           try {
-              const sessoes = await getSessoes(editalId);
+              const sessoes = await getSessoes(studyPlanId);
               set({ sessoes });
           } catch(error) {
               console.error("Failed to fetch study sessions:", error);
@@ -340,11 +342,11 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
       },
 
       addSessao: async (sessao) => {
-        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
-        if (!editalAtivoId) throw new Error("Nenhum edital ativo selecionado.");
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        if (!studyPlanId) throw new Error("Nenhum plano de estudo ativo selecionado.");
 
         try {
-            const novaSessao = await createSessao(editalAtivoId, sessao);
+            const novaSessao = await createSessao(studyPlanId, sessao);
             set(state => ({ sessoes: [...state.sessoes, novaSessao] }));
         } catch (error) {
             console.error("Failed to add session:", error);

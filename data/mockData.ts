@@ -1,6 +1,7 @@
 import { User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, Flashcard, RedacaoCorrigida, CorrecaoCompleta, GamificationStats, XpLogEntry, XpLogEvent, Badge, Friendship } from '../types';
 import { Simulation } from '../stores/useStudyStore';
-import { subDays, format } from 'date-fns';
+// FIX: Changed date-fns import for subDays to use a named import to resolve module export errors.
+import { subDays } from 'date-fns';
 
 const today = new Date();
 const yesterday = new Date();
@@ -152,7 +153,7 @@ export const MOCK_SIMULADOS: Simulation[] = [
         blank: 10,
         durationMinutes: 240,
         date: yesterday.toISOString(),
-        edital_id: MOCK_EDITAL_ID,
+        studyPlanId: MOCK_EDITAL_ID,
         isCebraspe: false,
     }
 ];

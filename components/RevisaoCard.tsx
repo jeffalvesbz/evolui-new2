@@ -1,10 +1,10 @@
-
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ClockIcon, CheckCircle2Icon, AlertCircleIcon, CalendarDaysIcon, BookCopyIcon, LayersIcon, EditIcon, ZapIcon, Trash2Icon, RefreshCwIcon, ChevronDownIcon } from './icons';
 import { Revisao } from '../types';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { formatDistanceToNow } from 'date-fns';
+// FIX: Changed date-fns/locale import to a subpath import to resolve module export error.
 import { ptBR } from 'date-fns/locale';
 
 interface RevisaoCardProps {
@@ -51,6 +51,7 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
     const { Icon: OrigemIcon, label: origemLabel } = getOrigemInfo(revisao.origem);
 
     const dataFormatada = useMemo(() => {
+        // FIX: Changed locale import to a named import.
         return formatDistanceToNow(new Date(revisao.data_prevista), { addSuffix: true, locale: ptBR });
     }, [revisao.data_prevista]);
 

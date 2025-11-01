@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { Ciclo, SessaoCiclo } from '../types';
 import { getCiclos, createCiclo, updateCicloApi, deleteCiclo } from '../services/geminiService';
@@ -10,7 +11,7 @@ interface CiclosState {
   loading: boolean;
   ultimaSessaoConcluidaId: string | null; // Novo estado para rastrear progresso
   
-  fetchCiclos: (editalId: string) => Promise<void>;
+  fetchCiclos: (studyPlanId: string) => Promise<void>;
   getCicloAtivo: () => Ciclo | null;
   setCicloAtivoId: (id: string | null) => void;
   setUltimaSessaoConcluida: (cicloId: string, sessaoId: string) => void;
@@ -29,10 +30,11 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       loading: false,
       ultimaSessaoConcluidaId: null,
 
-      fetchCiclos: async (editalId: string) => {
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchCiclos: async (studyPlanId: string) => {
         set({ loading: true });
         try {
-            const ciclos = await getCiclos(editalId);
+            const ciclos = await getCiclos(studyPlanId);
             set({ ciclos });
             if (!get().cicloAtivoId && ciclos.length > 0) {
                 set({ cicloAtivoId: ciclos[0].id });
@@ -70,11 +72,11 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
           localStorage.setItem(`ciclo-progress-${cicloId}`, JSON.stringify(sessaoId));
       },
       addCiclo: async (cicloData) => {
-        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
-        if (!editalAtivoId) throw new Error("Edital não selecionado.");
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        if (!studyPlanId) throw new Error("Plano de estudo não selecionado.");
 
         try {
-            const novoCiclo = await createCiclo(editalAtivoId, cicloData);
+            const novoCiclo = await createCiclo(studyPlanId, cicloData);
             set(state => ({ ciclos: [...state.ciclos, novoCiclo] }));
             return novoCiclo;
         } catch(e) {

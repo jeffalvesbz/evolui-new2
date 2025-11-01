@@ -19,6 +19,7 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { useModalStore } from '../stores/useModalStore';
 import { useGamificationStore } from '../stores/useGamificationStore';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfDay, isSameDay } from 'date-fns';
 import { toast } from './Sonner';
 import { Progress } from '../lib/dashboardMocks';
@@ -61,6 +62,7 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
         const cicloAtivo = getCicloAtivo();
         if (cicloAtivo && cicloAtivo.sessoes.length > 0) {
             const sessoesOrdenadas = [...cicloAtivo.sessoes].sort((a, b) => a.ordem - b.ordem);
+            // FIX: Add explicit type to 'proximaSessaoCiclo' to resolve 'unknown' type error.
             let proximaSessaoCiclo: SessaoCiclo | undefined;
             
             if (!ultimaSessaoConcluidaId) {

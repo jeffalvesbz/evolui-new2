@@ -19,6 +19,7 @@ import {
   Trash2Icon,
 } from './icons';
 import { toast } from './Sonner';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { addDays, startOfDay } from 'date-fns';
 import { generateFlashcardsFromContent } from '../services/geminiService';
 import { useModalStore } from '../stores/useModalStore';

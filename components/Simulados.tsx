@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon, XIcon } from './icons'
 import { toast } from './Sonner'
-import { useStudyStore } from '../stores/useStudyStore'
+import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 
 const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
@@ -24,21 +24,21 @@ const Simulados = () => {
     if (!editalAtivo?.id) {
       return simulados
     }
-    return simulados.filter(s => s.edital_id === editalAtivo.id)
+    return simulados.filter(s => s.studyPlanId === editalAtivo.id)
   }, [simulados, editalAtivo?.id])
   
   const [form, setForm] = useState({
     name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: '', isCebraspe: false
   })
-  const [editingSimulation, setEditingSimulation] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editingSimulation, setEditingSimulation] = useState<Simulation | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Simulation | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const resetForm = () => {
     setForm({ name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: '', isCebraspe: false })
   }
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!form.name.trim() || !editalAtivo?.id) {
       toast.error('Selecione um edital e preencha o nome do simulado.')
@@ -51,7 +51,7 @@ const Simulados = () => {
       correct: Number(form.correct), wrong: Number(form.wrong), blank: Number(form.blank),
       durationMinutes: Number(form.durationMinutes),
       date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
-      edital_id: editalAtivo.id,
+      studyPlanId: editalAtivo.id,
       isCebraspe: form.isCebraspe,
     }
 
@@ -71,11 +71,11 @@ const Simulados = () => {
     }
   }
 
-  const openEdit = (simulation) => {
+  const openEdit = (simulation: Simulation) => {
     setEditingSimulation(simulation)
     setForm({
       name: simulation.name, correct: simulation.correct, wrong: simulation.wrong,
-      blank: simulation.blank, durationMinutes: simulation.durationMinutes,
+      blank: simulation.blank || 0, durationMinutes: simulation.durationMinutes,
       notes: simulation.notes ?? '',
       date: simulation.date ? simulation.date.slice(0, 10) : '',
       isCebraspe: simulation.isCebraspe ?? false,
@@ -180,7 +180,7 @@ const Simulados = () => {
           <div className="p-6 space-y-4">
             <h3 className="text-lg font-semibold">Excluir Simulado</h3>
             <p className="text-sm text-muted-foreground">Tem certeza que quer excluir "{deleteTarget.name}"? Esta ação é irreversível.</p>
-            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setDeleteTarget(null)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="button" onClick={async () => { await deleteSimulation(deleteTarget.id); setDeleteTarget(null); toast.success('Simulado excluído.'); }} className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600">Excluir</button></div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setDeleteTarget(null)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="button" onClick={async () => { if(deleteTarget) { await deleteSimulation(deleteTarget.id); setDeleteTarget(null); toast.success('Simulado excluído.');} }} className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600">Excluir</button></div>
           </div>
         </Modal>
       )}
@@ -188,4 +188,4 @@ const Simulados = () => {
   )
 }
 
-export default Simulados
+export default Simulados;

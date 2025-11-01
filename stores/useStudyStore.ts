@@ -1,3 +1,5 @@
+
+
 import { create } from 'zustand';
 import { getSimulados, createSimulado, updateSimuladoApi, deleteSimulado } from '../services/geminiService';
 import { toast } from '../components/Sonner';
@@ -12,15 +14,15 @@ export interface Simulation {
   durationMinutes: number;
   notes?: string;
   date: string; // ISO string
-  edital_id: string;
+  studyPlanId: string;
   isCebraspe?: boolean;
 }
 
 interface StudyStore {
   simulations: Simulation[];
   loading: boolean;
-  fetchSimulados: (editalId: string) => Promise<void>;
-  addSimulation: (simulation: Omit<Simulation, 'id'>) => Promise<Simulation>;
+  fetchSimulados: (studyPlanId: string) => Promise<void>;
+  addSimulation: (simulation: Omit<Simulation, 'id' | 'studyPlanId'>) => Promise<Simulation>;
   updateSimulation: (id: string, updates: Partial<Simulation>) => Promise<void>;
   deleteSimulation: (id: string) => Promise<void>;
 }
@@ -29,10 +31,15 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
       simulations: [],
       loading: false,
 
-      fetchSimulados: async (editalId: string) => {
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchSimulados: async (studyPlanId: string) => {
         set({ loading: true });
         try {
-          const simulations = await getSimulados(editalId);
+          const data = await getSimulados(studyPlanId);
+          const simulations: Simulation[] = data.map((sim: any) => {
+            const { study_plan_id, ...rest } = sim;
+            return { ...rest, studyPlanId: study_plan_id };
+          });
           set({ simulations });
         } catch (error) {
           console.error("Failed to fetch simulations:", error);
@@ -43,11 +50,11 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
       },
 
       addSimulation: async (simulationData) => {
-        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
-        if (!editalAtivoId) throw new Error("Edital não selecionado.");
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        if (!studyPlanId) throw new Error("Plano de estudo não selecionado.");
 
         try {
-            const newSimulation = await createSimulado(editalAtivoId, simulationData);
+            const newSimulation = await createSimulado(studyPlanId, simulationData);
             set(state => ({ simulations: [...state.simulations, newSimulation] }));
             return newSimulation;
         } catch (error) {
@@ -60,7 +67,7 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
             const updatedSimulation = await updateSimuladoApi(id, updates);
             set(state => ({
               simulations: state.simulations.map(sim => 
-                sim.id === id ? updatedSimulation : sim
+                sim.id === id ? { ...sim, ...updatedSimulation } : sim
               ),
             }));
         } catch (error) {
