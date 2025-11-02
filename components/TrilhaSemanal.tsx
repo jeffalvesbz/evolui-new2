@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon } from './icons';
+import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, SearchIcon } from './icons';
 import { Topico } from '../types';
 import { useModalStore } from '../stores/useModalStore';
 
@@ -102,7 +102,7 @@ const TrilhaSemanal: React.FC = () => {
     const { openGeradorPlanoModal } = useModalStore();
 
     const [draggingOverDay, setDraggingOverDay] = useState<string | null>(null);
-    const [filtroDisciplina, setFiltroDisciplina] = useState<string>('todas');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const allTopics = useMemo(() => 
         disciplinas.flatMap(d => 
@@ -119,12 +119,13 @@ const TrilhaSemanal: React.FC = () => {
             const isUnscheduled = !scheduledTopicIds.has(t.id);
             if (!isUnscheduled) return false;
 
-            if (filtroDisciplina === 'todas') {
+            if (searchTerm.trim() === '') {
                 return true;
             }
-            return t.disciplinaId === filtroDisciplina;
+            return t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   t.disciplinaNome.toLowerCase().includes(searchTerm.toLowerCase());
         });
-    }, [allTopics, scheduledTopicIds, filtroDisciplina]);
+    }, [allTopics, scheduledTopicIds, searchTerm]);
 
     const topicsByDay = useMemo(() => {
         const result: { [key: string]: DraggableTopic[] } = {};
@@ -193,32 +194,36 @@ const TrilhaSemanal: React.FC = () => {
                     Gerar Plano com IA
                 </button>
             </header>
-            <div className="flex-1 p-4 sm:p-6 lg:p-8 grid grid-cols-1 xl:grid-cols-[25rem_1fr] gap-6 overflow-hidden">
+            <div className="flex-1 p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[22rem_1fr] gap-6 overflow-hidden">
                 {/* Backlog Column */}
                 <div className="flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-bold">Backlog de Tópicos ({unscheduledTopics.length})</h2>
-                        <select
-                            value={filtroDisciplina}
-                            onChange={(e) => setFiltroDisciplina(e.target.value)}
-                            className="bg-muted/50 border border-border rounded-md px-3 py-1.5 text-xs focus:ring-primary focus:border-primary"
+                    <Card className="flex-1 flex flex-col overflow-hidden">
+                        <div className="p-3 border-b border-border flex justify-between items-center flex-shrink-0">
+                            <h2 className="text-xl font-bold">Backlog de Tópicos ({unscheduledTopics.length})</h2>
+                            <div className="relative">
+                                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-40 rounded-md border border-border bg-background py-1.5 pl-8 pr-2 text-sm focus:border-primary focus:ring-primary"
+                                />
+                            </div>
+                        </div>
+                        <div
+                            className={`flex-1 p-3 overflow-y-auto transition-colors ${draggingOverDay === 'backlog' ? 'bg-primary/10' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, 'backlog')}
+                            onDragEnter={() => setDraggingOverDay('backlog')}
+                            onDragLeave={() => setDraggingOverDay(null)}
                         >
-                            <option value="todas">Todas as Disciplinas</option>
-                            {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-                        </select>
-                    </div>
-                    <Card
-                        className={`flex-1 p-3 overflow-y-auto transition-colors ${draggingOverDay === 'backlog' ? 'bg-primary/10' : ''}`}
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, 'backlog')}
-                        onDragEnter={() => setDraggingOverDay('backlog')}
-                        onDragLeave={() => setDraggingOverDay(null)}
-                    >
-                        {unscheduledTopics.map((topic, index) => (
-                            <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, 'backlog', index)} />
-                        ))}
+                            {unscheduledTopics.map((topic, index) => (
+                                <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, 'backlog', index)} />
+                            ))}
+                        </div>
                     </Card>
                 </div>
+
 
                 {/* Week Columns */}
                 <div className="overflow-x-auto">

@@ -1,3 +1,5 @@
+
+
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
@@ -97,22 +99,25 @@ export const useRevisoes = (): RevisoesProcessadas => {
     const totalConcluidas = concluidas.length
 
     // Estatísticas por origem
+// FIX: Add explicit type to accumulator and initial value to ensure correct type inference.
     const porOrigem = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.origem] = (acc[revisao.origem] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Estatísticas por dificuldade
+// FIX: Add explicit type to accumulator and initial value to ensure correct type inference.
     const porDificuldade = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.dificuldade] = (acc[revisao.dificuldade] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Estatísticas por status
+// FIX: Add explicit type to accumulator and initial value to ensure correct type inference.
     const porStatus = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.status] = (acc[revisao.status] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Taxa de conclusão
     const taxaConclusao = revisoesProcessadas.length > 0 
@@ -233,8 +238,8 @@ export const useEstatisticasRevisoes = () => {
     }, {})
 
     // Performance por origem
-    // FIX: Add type assertion to the initial value of reduce to ensure correct type inference for `performancePorOrigem`.
-    const performancePorOrigem = revisoes.reduce((acc, revisao) => {
+    // FIX: Add explicit type to accumulator to ensure correct type inference for `performancePorOrigem`.
+    const performancePorOrigem = revisoes.reduce((acc: Record<string, { total: number; concluidas: number }>, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }
@@ -243,13 +248,15 @@ export const useEstatisticasRevisoes = () => {
         acc[revisao.origem].concluidas++
       }
       return acc
+    // FIX: Typed the initial value of reduce to prevent the accumulator from being inferred as 'unknown'.
     }, {} as Record<string, { total: number; concluidas: number }>)
 
     // Calcular taxa de conclusão por origem
+    // FIX: Add explicit type to accumulator and initial value to ensure correct type inference.
     const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc: Record<string, number>, [origem, dados]) => {
       acc[origem] = dados.total > 0 ? Math.round((dados.concluidas / dados.total) * 100) : 0
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     return {
       revisoesUltimaSemana: revisoesUltimaSemana.length,

@@ -1,10 +1,11 @@
 
-
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabase } from './supabaseClient';
 import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship, FriendRequest, NivelDificuldade } from '../types';
 import { TrilhaSemanalData } from '../stores/useEstudosStore';
 import { Simulation } from '../stores/useStudyStore';
+import { subDays } from 'date-fns';
+import { WeeklyRankingData } from '../stores/useGamificationStore';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -14,6 +15,12 @@ const getUserId = async () => {
     if (!data.session?.user.id) throw new Error("Usuário não autenticado.");
     return data.session.user.id;
 }
+
+// --- Helper para calcular nível ---
+const calculateLevel = (xp: number): number => {
+    if (xp <= 0) return 1;
+    return Math.floor(Math.pow(xp / 100, 0.6)) + 1;
+};
 
 
 // --- AUTH SERVICE ---
@@ -189,10 +196,55 @@ export const getXpLog = async (userId: string) => {
     if (error) throw error;
     return data;
 };
-export const getWeeklyRanking = async (userId: string) => {
-    // This would typically be a database function (RPC) for performance
-    console.warn("getWeeklyRanking not implemented with Supabase RPC, returning empty mock.");
-    return { ranking: [], currentUserRank: null };
+export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingData> => {
+    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+
+    const { data: xpLogsData, error: logError } = await supabase
+        .from('xp_log')
+        .select('user_id, amount')
+        .gte('created_at', sevenDaysAgo);
+    
+    if (logError) throw logError;
+    const xpLogs = (xpLogsData || []) as any[];
+
+    const weeklyXpMap = new Map<string, number>();
+    for (const log of xpLogs) {
+        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
+    }
+    
+    const userIdsInRanking = new Set(weeklyXpMap.keys());
+    userIdsInRanking.add(userId); // Ensure current user is always included
+    
+    const userIdsArray = Array.from(userIdsInRanking);
+
+    if (userIdsArray.length === 0) {
+        return { ranking: [], currentUserRank: null };
+    }
+    
+    const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total')
+        .in('user_id', userIdsArray);
+    
+    if (profileError) throw profileError;
+    const profiles = (profilesData || []) as any[];
+    
+    const fullRanking = profiles.map(p => ({
+        user_id: p.user_id,
+        name: p.name,
+        level: calculateLevel(p.xp_total),
+        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
+    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
+    
+    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
+    const currentUserRank = currentUserIndex !== -1 
+        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
+        : null;
+
+    return {
+        ranking: fullRanking.slice(0, 50),
+        currentUserRank,
+    };
 };
 
 
@@ -357,246 +409,492 @@ const createGenericCrud = <T extends { id: string }>(tableName: string) => ({
         // FIX: Cast data to any to bypass 'never' type issue.
         const { data, error } = await supabase.from(tableName).insert(payload as any).select().single();
         if (error) throw error;
-        if (!data) throw new Error(`Failed to create item in ${tableName}, no data returned.`);
         return data as T;
     },
-    update: async (id: string, updates: Partial<T>): Promise<T> => {
+    update: async (id: string, updates: Partial<Omit<T, 'id'>>): Promise<T> => {
         // FIX: Cast data to any to bypass 'never' type issue.
         const { data, error } = await supabase.from(tableName).update(updates as any).eq('id', id).select().single();
         if (error) throw error;
-        if (!data) throw new Error(`Failed to update item in ${tableName}, no data returned.`);
         return data as T;
     },
-    remove: async (id: string): Promise<void> => {
+    delete: async (id: string) => {
         const { error } = await supabase.from(tableName).delete().eq('id', id);
         if (error) throw error;
     },
 });
 
-const sessoesCrud = createGenericCrud<SessaoEstudo>('sessoes_estudo');
-export const getSessoes = sessoesCrud.get;
-export const createSessao = sessoesCrud.create;
-export const updateSessaoApi = sessoesCrud.update;
-export const deleteSessao = sessoesCrud.remove;
+export const { get: getSessoes, create: createSessao, update: updateSessaoApi, delete: deleteSessao } = createGenericCrud<SessaoEstudo>('sessoes_estudo');
+export const { get: getSimulados, create: createSimulado, update: updateSimuladoApi, delete: deleteSimulado } = createGenericCrud<Simulation>('simulados');
+export const { get: getRedacoes, create: createRedacao } = createGenericCrud<RedacaoCorrigida>('redacoes_corrigidas');
 
-const revisoesCrud = createGenericCrud<Revisao>('revisoes');
-export const getRevisoes = revisoesCrud.get;
-// This is now replaced by the custom implementation below
-// export const createRevisao = revisoesCrud.create; 
-export const updateRevisaoApi = revisoesCrud.update;
-export const deleteRevisao = revisoesCrud.remove;
 
-// Override createRevisao to handle camelCase -> snake_case mapping for disciplinaId
-export const createRevisao = async (studyPlanId: string, itemData: Omit<Revisao, 'id' | 'studyPlanId'>): Promise<Revisao> => {
+// --- Custom CRUD for Revisoes to fix schema mismatch ---
+const mapRevisaoToDb = (revisaoData: Partial<Revisao>) => {
+    const { disciplinaId, ...rest } = revisaoData;
+    const dbPayload: any = { ...rest };
+    if (disciplinaId !== undefined) {
+        dbPayload.disciplina_id = disciplinaId;
+    }
+    // The other fields like topico_id, data_prevista are already snake_case in the Revisao type
+    return dbPayload;
+};
+
+const mapDbToRevisao = (dbData: any): Revisao => {
+    const { disciplina_id, ...rest } = dbData;
+    return {
+        ...rest,
+        disciplinaId: disciplina_id,
+    } as Revisao;
+};
+
+export const getRevisoes = async (studyPlanId: string): Promise<Revisao[]> => {
+    const { data, error } = await supabase
+        .from('revisoes')
+        .select('*')
+        .eq('study_plan_id', studyPlanId);
+    if (error) throw error;
+    // FIX: Type 'never' cannot be mapped. Cast to any[] first.
+    return (data as any[]).map(mapDbToRevisao);
+};
+
+export const createRevisao = async (studyPlanId: string, revisaoData: Omit<Revisao, 'id' | 'studyPlanId'>): Promise<Revisao> => {
     const userId = await getUserId();
-    // FIX: Removed incorrect mapping. The payload now correctly uses camelCase 'disciplinaId' as defined in the Supabase types.
-    const payload = { ...itemData, study_plan_id: studyPlanId, user_id: userId };
-    
-    // FIX: Cast payload to any to resolve Supabase client 'never' type error
-    const { data, error } = await supabase.from('revisoes').insert(payload as any).select().single();
+    const dbPayload = mapRevisaoToDb(revisaoData);
+    dbPayload.study_plan_id = studyPlanId;
+    dbPayload.user_id = userId;
+
+    const { data, error } = await supabase.from('revisoes').insert(dbPayload).select().single();
     if (error) {
-        console.error("Error creating revision:", error);
+        console.error("Failed to create revisao:", error);
         throw error;
     }
-    if (!data) throw new Error(`Failed to create item in revisoes, no data returned.`);
-    
-    // FIX: Removed incorrect mapping back. The data from Supabase already matches the 'Revisao' type.
-    return data as Revisao;
+    return mapDbToRevisao(data);
 };
 
-const errosCrud = createGenericCrud<CadernoErro>('caderno_erros');
-export const getErros = errosCrud.get;
-// export const createErro = errosCrud.create; // Replaced by custom implementation below
-// export const updateErroApi = errosCrud.update; // Replaced by custom implementation below
-export const deleteErro = errosCrud.remove;
+export const updateRevisaoApi = async (id: string, updates: Partial<Omit<Revisao, 'id'>>): Promise<Revisao> => {
+    const dbPayload = mapRevisaoToDb(updates);
 
-// Custom implementation for createErro to handle camelCase -> snake_case mapping
-export const createErro = async (studyPlanId: string, itemData: Omit<CadernoErro, 'id' | 'studyPlanId'>): Promise<CadernoErro> => {
+    const { data, error } = await supabase.from('revisoes').update(dbPayload).eq('id', id).select().single();
+    if (error) {
+        console.error("Failed to update revisao:", error);
+        throw error;
+    }
+    return mapDbToRevisao(data);
+};
+
+export const deleteRevisao = async (id: string) => {
+    const { error } = await supabase.from('revisoes').delete().eq('id', id);
+    if (error) throw error;
+};
+
+
+// --- Custom CRUD for Caderno de Erros to fix schema mismatch ---
+const mapCadernoErroToDb = (erroData: Partial<CadernoErro>) => {
+    const dbPayload: any = {};
+    if (erroData.assunto !== undefined) dbPayload.assunto = erroData.assunto;
+    if (erroData.descricao !== undefined) dbPayload.descricao = erroData.descricao;
+    if (erroData.resolvido !== undefined) dbPayload.resolvido = erroData.resolvido;
+    if (erroData.data !== undefined) dbPayload.data = erroData.data;
+    if (erroData.observacoes !== undefined) dbPayload.observacoes = erroData.observacoes;
+    if (erroData.disciplinaId !== undefined) dbPayload.disciplina_id = erroData.disciplinaId;
+    if (erroData.topicoId !== undefined) dbPayload.topico_id = erroData.topicoId;
+    return dbPayload;
+};
+
+export const getErros = async (studyPlanId: string): Promise<CadernoErro[]> => {
+    const { data, error } = await supabase
+        .from('caderno_erros')
+        .select('*, disciplina:disciplinas(nome), topico:topicos(titulo)')
+        .eq('study_plan_id', studyPlanId);
+    
+    if (error) throw error;
+
+    return (data as any[]).map((e: any) => ({
+        ...e,
+        disciplina: e.disciplina?.nome || 'Disciplina Desconhecida',
+        disciplinaId: e.disciplina_id,
+        topicoId: e.topico_id,
+        topicoTitulo: e.topico?.titulo || ''
+    })) as CadernoErro[];
+};
+
+export const createErro = async (studyPlanId: string, erroData: Omit<CadernoErro, 'id' | 'studyPlanId'>): Promise<CadernoErro> => {
     const userId = await getUserId();
-    // FIX: Removed incorrect manual mapping to snake_case. The payload now passes the camelCase properties from `itemData` directly, which matches the Supabase generated types.
-    const payload = { 
-        ...itemData,
-        study_plan_id: studyPlanId, 
-        user_id: userId,
-    };
+    const dbPayload = mapCadernoErroToDb(erroData);
     
-    // FIX: Cast payload to any to resolve Supabase client 'never' type error
-    const { data, error } = await supabase.from('caderno_erros').insert(payload as any).select().single();
+    dbPayload.study_plan_id = studyPlanId;
+    dbPayload.user_id = userId;
+
+    if (!dbPayload.disciplina_id) {
+        throw new Error("disciplinaId is required to create an error entry.");
+    }
+
+    const { data, error } = await supabase.from('caderno_erros').insert(dbPayload).select().single();
+    
     if (error) {
-        console.error("Error creating erro:", error);
+        console.error("Failed to add erro:", error);
         throw error;
     }
-    if (!data) throw new Error(`Failed to create item in caderno_erros, no data returned.`);
     
-    // FIX: Removed incorrect mapping from snake_case. The data returned from Supabase already has the correct camelCase properties and can be cast directly.
-    return data as CadernoErro;
+    return {
+        ...(data as any),
+        ...erroData,
+        disciplina: erroData.disciplina,
+        disciplinaId: data.disciplina_id,
+        topicoId: data.topico_id,
+        topicoTitulo: erroData.topicoTitulo,
+    } as CadernoErro;
 };
 
-// Custom implementation for updateErroApi to handle camelCase -> snake_case mapping
-export const updateErroApi = async (id: string, updates: Partial<CadernoErro>): Promise<CadernoErro> => {
-    // FIX: Removed incorrect manual mapping to snake_case. The `updates` object already contains the correct camelCase property names as defined in the Supabase types.
-    const payload = updates;
+export const updateErroApi = async (id: string, updates: Partial<Omit<CadernoErro, 'id'>>): Promise<CadernoErro> => {
+    const dbPayload = mapCadernoErroToDb(updates);
 
-    // FIX: Cast payload to any to resolve Supabase client 'never' type error
-    const { data, error } = await supabase.from('caderno_erros').update(payload as any).eq('id', id).select().single();
+    const { data, error } = await supabase.from('caderno_erros').update(dbPayload).eq('id', id).select('*, disciplina:disciplinas(nome), topico:topicos(titulo)').single();
     if (error) {
-        console.error("Error updating erro:", error);
+        console.error("Failed to update erro:", error);
         throw error;
     }
-    if (!data) throw new Error(`Failed to update item in caderno_erros, no data returned.`);
     
-    // FIX: Removed incorrect mapping from snake_case. The data returned from Supabase already has the correct camelCase properties.
-    return data as CadernoErro;
+    const { disciplina, topico, disciplina_id, topico_id, ...rest } = data as any;
+
+    return {
+        ...rest,
+        ...updates,
+        disciplina: disciplina?.nome || updates.disciplina || 'Disciplina Desconhecida',
+        disciplinaId: disciplina_id,
+        topicoId: topico_id,
+        topicoTitulo: topico?.titulo || updates.topicoTitulo || '',
+    } as CadernoErro;
 };
 
-const redacoesCrud = createGenericCrud<RedacaoCorrigida>('redacoes_corrigidas');
-export const getRedacoes = redacoesCrud.get;
-export const createRedacao = redacoesCrud.create;
+export const deleteErro = async (id: string) => {
+    const { error } = await supabase.from('caderno_erros').delete().eq('id', id);
+    if (error) throw error;
+};
 
-// Ciclos (with nested sessoes_ciclo)
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
+
+// ✅ Corrigido: Funções CRUD para Ciclos movidas para implementações customizadas para lidar com a relação com `sessoes_ciclo`.
 export const getCiclos = async (studyPlanId: string): Promise<Ciclo[]> => {
     const { data, error } = await supabase
         .from('ciclos')
         .select('*, sessoes_ciclo(*)')
         .eq('study_plan_id', studyPlanId);
+
     if (error) throw error;
-    const ciclos = data.map(ciclo => {
-        // FIX: Cast to any to allow spread
-        const { sessoes_ciclo, ...rest } = ciclo as any;
-        return { ...rest, sessoes: sessoes_ciclo || [] };
-    });
-    return ciclos as any as Ciclo[];
+    
+    return (data || []).map((ciclo: any) => ({
+        ...ciclo,
+        sessoes: (ciclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
+    })) as any as Ciclo[];
 };
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
+
 export const createCiclo = async (studyPlanId: string, cicloData: Omit<Ciclo, 'id' | 'studyPlanId'>): Promise<Ciclo> => {
     const userId = await getUserId();
     const { sessoes, ...cicloInfo } = cicloData;
-    
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data: newCiclo, error: cicloError } = await supabase.from('ciclos').insert({ ...cicloInfo, study_plan_id: studyPlanId, user_id: userId } as any).select().single();
+
+    const { data: ciclo, error: cicloError } = await supabase
+        .from('ciclos')
+        .insert({ ...cicloInfo, user_id: userId, study_plan_id: studyPlanId } as any)
+        .select()
+        .single();
     if (cicloError) throw cicloError;
 
     if (sessoes && sessoes.length > 0) {
-        if (!newCiclo) throw new Error("Failed to create ciclo.");
-        const sessoesToInsert = sessoes.map(s => {
-            const { id, ...rest } = s; // Destructure and remove client-side id
-            return { ...rest, ciclo_id: (newCiclo as any).id, user_id: userId };
-        });
-        const { error: sessoesError } = await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
-        if (sessoesError) {
-            console.error("Error inserting ciclo sessoes:", sessoesError);
-            throw sessoesError;
-        }
+        const sessoesToInsert = sessoes.map(s => ({
+            disciplina_id: s.disciplina_id,
+            ordem: s.ordem,
+            tempo_previsto: s.tempo_previsto,
+            user_id: userId,
+            ciclo_id: ciclo.id,
+        }));
+        const { data: insertedSessoes, error: sessoesError } = await supabase
+            .from('sessoes_ciclo')
+            .insert(sessoesToInsert as any)
+            .select();
+        if (sessoesError) throw sessoesError;
+        return { ...ciclo, sessoes: (insertedSessoes || []).sort((a: any, b: any) => a.ordem - b.ordem) } as any as Ciclo;
     }
-
-    // FIX: Cast to any to allow spread
-    return { ...(newCiclo as any), sessoes: sessoes || [] };
+    
+    return { ...ciclo, sessoes: [] } as any as Ciclo;
 };
-export const updateCicloApi = async (id: string, updates: Partial<Ciclo>): Promise<Ciclo> => {
+
+export const updateCicloApi = async (id: string, updates: Partial<Omit<Ciclo, 'id'>>): Promise<Ciclo> => {
     const userId = await getUserId();
     const { sessoes, ...cicloInfo } = updates;
 
     if (Object.keys(cicloInfo).length > 0) {
-        // FIX: Cast data to any to bypass 'never' type issue.
-        const { error } = await supabase.from('ciclos').update(cicloInfo as any).eq('id', id);
-        if (error) throw error;
+        const { error: cicloError } = await supabase
+            .from('ciclos')
+            .update(cicloInfo as any)
+            .eq('id', id);
+        if (cicloError) throw cicloError;
     }
 
     if (sessoes) {
         await supabase.from('sessoes_ciclo').delete().eq('ciclo_id', id);
+        
         if (sessoes.length > 0) {
-            const sessoesToInsert = sessoes.map(s => ({
-                ciclo_id: id,
-                user_id: userId,
+             const sessoesToInsert = sessoes.map(s => ({
                 disciplina_id: s.disciplina_id,
                 ordem: s.ordem,
                 tempo_previsto: s.tempo_previsto,
+                user_id: userId,
+                ciclo_id: id,
             }));
-             // FIX: Cast data to any to bypass 'never' type issue.
-             const { error: insertError } = await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
-             if (insertError) throw insertError;
+             await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
         }
     }
     
-    const { data, error } = await supabase.from('ciclos').select('*, sessoes_ciclo(*)').eq('id', id).single();
-    if (error) throw error;
-    // FIX: Handle possible null data and cast to any for spread
-    const { sessoes_ciclo, ...rest } = (data || {}) as any;
-    return { ...rest, sessoes: sessoes_ciclo || [] } as any as Ciclo;
+    const { data: updatedCiclo, error: fetchError } = await supabase
+        .from('ciclos')
+        .select('*, sessoes_ciclo(*)')
+        .eq('id', id)
+        .single();
+
+    if (fetchError) throw fetchError;
+    
+    return {
+        ...updatedCiclo,
+        sessoes: (updatedCiclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
+    } as any as Ciclo;
 };
+
 export const deleteCiclo = async (id: string) => {
+    // A FK em `sessoes_ciclo` não tem `ON DELETE CASCADE` no schema, então deletamos manualmente.
+    await supabase.from('sessoes_ciclo').delete().eq('ciclo_id', id);
     const { error } = await supabase.from('ciclos').delete().eq('id', id);
     if (error) throw error;
 };
 
-
-// Flashcards (assuming a dedicated table)
-export const getFlashcards = async (topicoId: string) => {
-    const { data, error } = await supabase.from('flashcards').select('*').eq('topico_id', topicoId);
+// Note: Flashcards are linked to topics, not study plans directly.
+export const getFlashcards = async (topicId: string): Promise<Flashcard[]> => {
+    const { data, error } = await supabase.from('flashcards').select('*').eq('topico_id', topicId);
     if (error) throw error;
-    return data;
-};
-export const createFlashcards = async (topicoId: string, data: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }) => {
-    const userId = await getUserId();
-    const flashcardsToInsert = data.flashcards.map(fc => ({
+    return (data as any[]).map((fc: any) => ({
         ...fc,
-        topico_id: topicoId,
+        dueDate: fc.due_date,
+        easeFactor: fc.ease_factor,
+    })) as Flashcard[];
+};
+export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
+    const userId = await getUserId();
+    const flashcardsToInsert = flashcards.map(fc => ({
+        ...fc,
+        topico_id: topicId,
         user_id: userId,
         interval: 1,
-        easeFactor: 2.5,
-        dueDate: new Date().toISOString(),
+        ease_factor: 2.5,
+        due_date: new Date().toISOString(),
     }));
     // FIX: Cast data to any to bypass 'never' type issue.
-    const { data: newFlashcards, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
+    const { data, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
     if (error) throw error;
-    return newFlashcards;
+    return data as any as Flashcard[];
 };
 export const updateFlashcardApi = async (id: string, updates: Partial<Flashcard>) => {
     // FIX: Cast data to any to bypass 'never' type issue.
     const { data, error } = await supabase.from('flashcards').update(updates as any).eq('id', id).select().single();
     if (error) throw error;
-    return data;
+    return data as any as Flashcard;
 };
 export const deleteFlashcard = async (id: string) => {
     const { error } = await supabase.from('flashcards').delete().eq('id', id);
     if (error) throw error;
 };
 
-// Simulados have a different foreign key name
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
-export const getSimulados = async (studyPlanId: string) => {
-    const { data, error } = await supabase.from('simulados').select('*').eq('study_plan_id', studyPlanId);
-    if (error) throw error;
-    return data;
+
+// --- FRIENDS SERVICES (Social) ---
+export const getFriends = async (userId: string): Promise<User[]> => {
+    const { data: friendshipsData, error: friendshipsError } = await supabase
+        .from('friendships')
+        .select('user_id_1, user_id_2')
+        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+        .eq('status', 'accepted');
+
+    if (friendshipsError) throw friendshipsError;
+    const friendships = (friendshipsData || []) as any[];
+
+    if (friendships.length === 0) return [];
+    const friendIds = friendships.map(f => f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
+
+    const { data: friendsProfileData, error: friendsError } = await supabase
+        .from('profiles')
+        .select('user_id, name, email')
+        .in('user_id', friendIds);
+    
+    if (friendsError) throw friendsError;
+    const friendsData = (friendsProfileData || []) as any[];
+
+    return friendsData.map(p => ({
+        id: p.user_id,
+        name: p.name,
+        email: p.email,
+    }));
 };
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
-export const createSimulado = async (studyPlanId: string, simuladoData: any) => {
-    const userId = await getUserId();
-    const { studyPlanId: _camelCaseId, ...restOfData } = simuladoData;
-    const payload = { ...restOfData, study_plan_id: studyPlanId, user_id: userId };
-    const { data, error } = await supabase.from('simulados').insert(payload as any).select().single();
-    if (error) throw error;
-    const { study_plan_id, ...rest } = data as any;
-    return { ...rest, studyPlanId: study_plan_id };
+
+export const getFriendRequests = async (userId: string): Promise<FriendRequest[]> => {
+    const { data: requestsData, error: requestsError } = await supabase
+        .from('friendships')
+        .select('id, user_id_1')
+        .eq('user_id_2', userId)
+        .eq('status', 'pending');
+
+    if (requestsError) throw requestsError;
+    const requests = (requestsData || []) as any[];
+    if (requests.length === 0) return [];
+
+    const requesterIds = requests.map(r => r.user_id_1);
+
+    const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total')
+        .in('user_id', requesterIds);
+
+    if (profilesError) throw profilesError;
+    const profiles = (profilesData || []) as any[];
+    
+    const profilesMap = new Map(profiles.map(p => [p.user_id, p]));
+
+    return requests.map(req => {
+        const profile = profilesMap.get(req.user_id_1);
+        return {
+            friendship_id: req.id,
+            requester_id: req.user_id_1,
+            requester_name: profile?.name || 'Usuário desconhecido',
+            requester_level: profile ? calculateLevel(profile.xp_total) : 1,
+        };
+    });
 };
-export const updateSimuladoApi = async (id: string, updates: any) => {
-    const { studyPlanId, ...restOfUpdates } = updates;
-    const { data, error } = await supabase.from('simulados').update(restOfUpdates as any).eq('id', id).select().single();
-    if (error) throw error;
-    const { study_plan_id, ...rest } = data as any;
-    return { ...rest, studyPlanId: study_plan_id };
+
+export const searchUsers = async (query: string, currentUserId: string): Promise<User[]> => {
+    const { data: relData, error: relError } = await supabase
+        .from('friendships')
+        .select('user_id_1, user_id_2')
+        .or(`user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`);
+
+    if (relError) throw relError;
+    const relationships = (relData || []) as any[];
+
+    const existingRelationshipIds = new Set(
+        relationships.flatMap(r => [r.user_id_1, r.user_id_2])
+    );
+    existingRelationshipIds.add(currentUserId);
+
+    const { data: usersData, error: usersError } = await supabase
+        .from('profiles')
+        .select('user_id, name, email')
+        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
+        .not('user_id', 'in', `(${Array.from(existingRelationshipIds).map(id => `'${id}'`).join(',')})`)
+        .limit(10);
+        
+    if (usersError) throw usersError;
+    const users = (usersData || []) as any[];
+
+    return users.map(p => ({
+        id: p.user_id,
+        name: p.name,
+        email: p.email,
+    }));
 };
-export const deleteSimulado = async (id: string) => {
-    const { error } = await supabase.from('simulados').delete().eq('id', id);
+
+export const sendFriendRequest = async (requesterId: string, receiverId: string) => {
+    const { data: existingData, error: checkError } = await supabase
+        .from('friendships')
+        .select('id')
+        .or(`(user_id_1.eq.${requesterId},user_id_2.eq.${receiverId}),(user_id_1.eq.${receiverId},user_id_2.eq.${requesterId})`)
+        .limit(1);
+
+    if (checkError) throw checkError;
+    const existing = (existingData || []) as any[];
+
+    if (existing && existing.length > 0) {
+        throw new Error("Já existe uma amizade ou um pedido pendente.");
+    }
+
+    const { error: insertError } = await supabase
+        .from('friendships')
+        .insert({
+            user_id_1: requesterId,
+            user_id_2: receiverId,
+            status: 'pending',
+        } as any);
+    
+    if (insertError) throw insertError;
+};
+
+export const acceptFriendRequest = async (friendshipId: string) => {
+    const { error } = await supabase
+        .from('friendships')
+        .update({ status: 'accepted' })
+        .eq('id', friendshipId);
+
     if (error) throw error;
 };
 
-// --- FRIENDS SERVICES (Requires table setup in Supabase) ---
-export const getFriends = async (userId: string): Promise<User[]> => { console.warn("getFriends not implemented with Supabase"); return []; };
-export const getFriendRequests = async (userId: string): Promise<FriendRequest[]> => { console.warn("getFriendRequests not implemented with Supabase"); return []; };
-export const searchUsers = async (query: string, currentUserId: string): Promise<User[]> => { console.warn("searchUsers not implemented with Supabase"); return []; };
-export const sendFriendRequest = async (requesterId: string, receiverId: string) => { console.warn("sendFriendRequest not implemented with Supabase"); };
-export const acceptFriendRequest = async (friendshipId: string) => { console.warn("acceptFriendRequest not implemented with Supabase"); };
-export const declineFriendRequest = async (friendshipId: string) => { console.warn("declineFriendRequest not implemented with Supabase"); };
-export const getFriendsRanking = async (userId: string) => { console.warn("getFriendsRanking not implemented with Supabase"); return { ranking: [], currentUserRank: null }; };
+export const declineFriendRequest = async (friendshipId: string) => {
+    const { error } = await supabase
+        .from('friendships')
+        .delete()
+        .eq('id', friendshipId);
+
+    if (error) throw error;
+};
+
+export const getFriendsRanking = async (userId: string): Promise<WeeklyRankingData> => {
+    const { data: friendshipsData, error: friendshipsError } = await supabase
+        .from('friendships')
+        .select('user_id_1, user_id_2')
+        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+        .eq('status', 'accepted');
+
+    if (friendshipsError) throw friendshipsError;
+    const friendships = (friendshipsData || []) as any[];
+    
+    const userAndFriendIds = new Set([userId]);
+    friendships.forEach(f => {
+        userAndFriendIds.add(f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
+    });
+    const idsArray = Array.from(userAndFriendIds);
+
+    if (idsArray.length <= 1) return { ranking: [], currentUserRank: null };
+
+    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+    const { data: xpLogsData, error: logError } = await supabase
+        .from('xp_log')
+        .select('user_id, amount')
+        .in('user_id', idsArray)
+        .gte('created_at', sevenDaysAgo);
+    
+    if (logError) throw logError;
+    const xpLogs = (xpLogsData || []) as any[];
+
+    const weeklyXpMap = new Map<string, number>();
+    for (const log of xpLogs) {
+        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
+    }
+
+    const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total')
+        .in('user_id', idsArray);
+    
+    if (profileError) throw profileError;
+    const profiles = (profilesData || []) as any[];
+
+    const fullRanking = profiles.map(p => ({
+        user_id: p.user_id,
+        name: p.name,
+        level: calculateLevel(p.xp_total),
+        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
+    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
+    
+    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
+    const currentUserRank = currentUserIndex !== -1 
+        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
+        : null;
+
+    return {
+        ranking: fullRanking,
+        currentUserRank,
+    };
+};

@@ -1,3 +1,4 @@
+
 // types/supabase.ts
 // Este arquivo é um placeholder. Para obter a tipagem completa e segura do seu banco de dados,
 // você deve gerar este arquivo usando o Supabase CLI.
@@ -51,58 +52,40 @@ export interface Database {
           id: string
           user_id: string
           study_plan_id: string
-          disciplina: string
-          disciplinaId: string
+          disciplina_id: string
+          topico_id: string | null
           assunto: string
           descricao: string
-          topicoId: string | null
-          topicoTitulo: string | null
           resolvido: boolean
           data: string
-          proximaRevisao: string | null
-          nivelDificuldade: string | null
-          revisoes: Json | null
-          enunciado: string | null
-          alternativaCorreta: string | null
           observacoes: string | null
+          created_at: string
         }
         Insert: {
           id?: string
           user_id: string
           study_plan_id: string
-          disciplina: string
-          disciplinaId: string
+          disciplina_id: string
+          topico_id?: string | null
           assunto: string
           descricao: string
-          topicoId?: string | null
-          topicoTitulo?: string | null
-          resolvido: boolean
+          resolvido?: boolean
           data: string
-          proximaRevisao?: string | null
-          nivelDificuldade?: string | null
-          revisoes?: Json | null
-          enunciado?: string | null
-          alternativaCorreta?: string | null
           observacoes?: string | null
+          created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
           study_plan_id?: string
-          disciplina?: string
-          disciplinaId?: string
+          disciplina_id?: string
+          topico_id?: string | null
           assunto?: string
           descricao?: string
-          topicoId?: string | null
-          topicoTitulo?: string | null
           resolvido?: boolean
           data?: string
-          proximaRevisao?: string | null
-          nivelDificuldade?: string | null
-          revisoes?: Json | null
-          enunciado?: string | null
-          alternativaCorreta?: string | null
           observacoes?: string | null
+          created_at?: string
         }
       }
       ciclos: {
@@ -253,36 +236,39 @@ export interface Database {
           user_id: string
           study_plan_id: string
           topico_id: string
-          disciplinaId: string
+          disciplina_id: string
           conteudo: string
           data_prevista: string
           status: string
           origem: string
           dificuldade: string
+          created_at: string
         }
         Insert: {
           id?: string
           user_id: string
           study_plan_id: string
           topico_id: string
-          disciplinaId: string
+          disciplina_id: string
           conteudo: string
           data_prevista: string
-          status: string
+          status?: string
           origem: string
-          dificuldade: string
+          dificuldade?: string
+          created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
           study_plan_id?: string
           topico_id?: string
-          disciplinaId?: string
+          disciplina_id?: string
           conteudo?: string
           data_prevista?: string
           status?: string
           origem?: string
           dificuldade?: string
+          created_at?: string
         }
       }
       sessoes_ciclo: {

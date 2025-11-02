@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
@@ -120,6 +122,7 @@ const formatStudyDuration = (minutes: number) => {
 }
 
 const DAILY_GOAL_OPTIONS = [60, 90, 120, 150, 180, 210, 240, 300, 360]
+const WEEKLY_GOAL_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40];
 
 interface DashboardProps {
   setActiveView: (view: string) => void;
@@ -131,14 +134,14 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const abrirModalEstudoManual = useEstudosStore((state) => state.abrirModalEstudoManual);
   const openEditalModal = useModalStore((state) => state.openEditalModal);
   
-  const goalMinutes = useDailyGoalStore((state) => state.goalMinutes);
-  const setGoalMinutes = useDailyGoalStore((state) => state.setGoalMinutes);
+  const { goalMinutes, weeklyGoalHours, setGoalMinutes, setWeeklyGoalHours } = useDailyGoalStore();
   const gamificationStats = useGamificationStore((state) => state.stats);
 
   const [motivationalMessage, setMotivationalMessage] = useState<{ frase: string; autor: string | null }>({ frase: '', autor: null });
   const [isMessageLoading, setIsMessageLoading] = useState(true);
 
   const safeGoalMinutes = useMemo(() => (typeof goalMinutes === 'number' ? goalMinutes : 0), [goalMinutes]);
+  const safeWeeklyGoalHours = useMemo(() => (typeof weeklyGoalHours === 'number' ? weeklyGoalHours : 20), [weeklyGoalHours]);
 
   // Edital-aware data from stores
   const sessoes = useEstudosStore((state) => state.sessoes);
@@ -188,7 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       const tempoTotalSegundos = sessoesDaSemana.reduce((acc, s) => acc + s.tempo_estudado, 0);
       const tempoTotalSemanaMinutos = Math.round(tempoTotalSegundos / 60);
       
-      const metaSemanal = Math.max(safeGoalMinutes * 7, 1);
+      const metaSemanal = Math.max(safeWeeklyGoalHours * 60, 1);
       const progressoSemanalPercent = metaSemanal > 0 ? Math.min(100, Math.round((tempoTotalSemanaMinutos / metaSemanal) * 100)) : 0;
 
       const diasDaSemana = eachDayOfInterval({ start: inicioSemana, end: fimSemana });
@@ -233,7 +236,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           dadosGraficoSemanal,
           dadosGraficoDisciplinas,
       };
-  }, [sessoes, disciplinas, safeGoalMinutes]);
+  }, [sessoes, disciplinas, safeWeeklyGoalHours]);
 
 
   const formattedGoal = formatStudyDuration(safeGoalMinutes);
@@ -254,7 +257,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 user.name.split(' ')[0],
                 tempoTotalHoje,
                 metaPercentual,
-                gamificationStats.current_streak_days,
+// FIX: Cast to number to resolve potential type inference issue where gamificationStats.current_streak_days could be 'unknown'.
+                Number(gamificationStats.current_streak_days),
                 revisoesPendentes
             );
             setMotivationalMessage({ frase: message, autor: null });
@@ -322,6 +326,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   ];
   
   const goalOptions = [...new Set([...DAILY_GOAL_OPTIONS, safeGoalMinutes])].sort(
+    (a, b) => a - b,
+  );
+
+  const formatWeeklyGoalDuration = (hours: number) => `${hours}h`;
+  const weeklyGoalOptions = [...new Set([...WEEKLY_GOAL_OPTIONS, safeWeeklyGoalHours])].sort(
     (a, b) => a - b,
   );
 
@@ -394,7 +403,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   <CalendarClockIcon className="h-4 w-4" />
                   Resumo rápido
                 </CardDescription>
-                <CardTitle className="text-2xl mt-1">Status do dia</CardTitle>
+                <CardTitle className="text-2xl mt-1">Metas e Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
@@ -417,6 +426,28 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                     <span className="font-medium text-foreground">{metaPercentual}%</span>
                   </div>
                   <Progress value={metaPercentual} />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Meta semanal</span>
+                      <select
+                        value={safeWeeklyGoalHours}
+                        onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setWeeklyGoalHours(Number(event.target.value))}
+                        aria-label="Definir meta semanal"
+                        className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        {weeklyGoalOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {formatWeeklyGoalDuration(option)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="font-medium text-foreground">{progressoSemanal}%</span>
+                  </div>
+                  <Progress value={progressoSemanal} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-center pt-2">

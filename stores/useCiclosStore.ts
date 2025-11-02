@@ -18,7 +18,7 @@ interface CiclosState {
   addCiclo: (cicloData: Omit<Ciclo, 'id' | 'studyPlanId'>) => Promise<Ciclo>;
   updateCiclo: (id: string, updates: Partial<Omit<Ciclo, 'id'>>) => Promise<void>;
   removeCiclo: (id: string) => void;
-  addSessaoAoCiclo: (cicloId: string, disciplinaId: string, tempoPrevisto: number) => void;
+  addSessaoAoCiclo: (cicloId: string, disciplinaId: string, tempoPrevisto: number) => Promise<void>;
   reordenarSessao: (cicloId: string, sessaoId: string, direcao: 'up' | 'down') => Promise<void>;
   removeSessaoDoCiclo: (cicloId: string, sessaoId: string) => Promise<void>;
   removeSessoesPorDisciplina: (disciplinaId: string) => void;
@@ -85,10 +85,8 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
         }
       },
       updateCiclo: async (id, updates) => {
-        const ciclo = get().ciclos.find(c => c.id === id);
-        if(!ciclo) return;
         try {
-            const cicloAtualizado = await updateCicloApi(id, { ...ciclo, ...updates });
+            const cicloAtualizado = await updateCicloApi(id, updates);
             set(state => ({
                 ciclos: state.ciclos.map(c => c.id === id ? cicloAtualizado : c),
             }));
@@ -109,20 +107,20 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
             toast.error("Falha ao remover ciclo.");
         }
       },
-      addSessaoAoCiclo: (cicloId, disciplinaId, tempoPrevisto) => {
+      addSessaoAoCiclo: async (cicloId, disciplinaId, tempoPrevisto) => {
           const ciclo = get().ciclos.find(c => c.id === cicloId);
           if(!ciclo) return;
-          const novaSessao = {
-              id: `sessao-${Date.now()}`,
+          const sessoesAtuais = ciclo.sessoes || [];
+          const novaSessao: Omit<SessaoCiclo, 'id'> & { id?: string } = {
               disciplina_id: disciplinaId,
               tempo_previsto: tempoPrevisto,
-              ordem: ciclo.sessoes.length,
+              ordem: sessoesAtuais.length,
           };
-          get().updateCiclo(cicloId, { sessoes: [...ciclo.sessoes, novaSessao] });
+          await get().updateCiclo(cicloId, { sessoes: [...sessoesAtuais, novaSessao as SessaoCiclo] });
       },
       reordenarSessao: async (cicloId, sessaoId, direcao) => {
         const ciclo = get().ciclos.find(c => c.id === cicloId);
-        if (!ciclo) return;
+        if (!ciclo || !ciclo.sessoes) return;
 
         const sessoes = [...ciclo.sessoes];
         const index = sessoes.findIndex(s => s.id === sessaoId);
@@ -138,7 +136,7 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       },
       removeSessaoDoCiclo: async (cicloId, sessaoId) => {
           const ciclo = get().ciclos.find(c => c.id === cicloId);
-          if(!ciclo) return;
+          if(!ciclo || !ciclo.sessoes) return;
           const sessoesAtualizadas = ciclo.sessoes
             .filter(s => s.id !== sessaoId)
             .map((s, i) => ({ ...s, ordem: i })); // Reajusta a ordem
@@ -146,8 +144,8 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       },
       removeSessoesPorDisciplina: (disciplinaId) => {
           get().ciclos.forEach(ciclo => {
-              const sessoesFiltradas = ciclo.sessoes.filter(s => s.disciplina_id !== disciplinaId);
-              if(sessoesFiltradas.length < ciclo.sessoes.length) {
+              const sessoesFiltradas = (ciclo.sessoes || []).filter(s => s.disciplina_id !== disciplinaId);
+              if(sessoesFiltradas.length < (ciclo.sessoes || []).length) {
                   get().updateCiclo(ciclo.id, { sessoes: sessoesFiltradas });
               }
           });

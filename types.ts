@@ -94,8 +94,6 @@ export interface CadernoErro {
   proximaRevisao?: string; // ISO string date
   nivelDificuldade?: 'fácil' | 'médio' | 'difícil';
   revisoes?: RevisaoErro[];
-  enunciado?: string;
-  alternativaCorreta?: string;
   observacoes?: string;
   studyPlanId: string;
 }
