@@ -1,0 +1,222 @@
+// This file defines the types for the application.
+
+export interface StudyPlan {
+  id: string;
+  nome: string;
+  descricao: string;
+  data_alvo: string;
+  banca?: string;
+  orgao?: string;
+}
+
+export type NivelDificuldade = 'fácil' | 'médio' | 'difícil' | 'desconhecido';
+
+export interface Topico {
+  id: string;
+  titulo: string;
+  concluido: boolean;
+  nivelDificuldade: NivelDificuldade;
+  ultimaRevisao: string | null;
+  proximaRevisao: string | null;
+}
+
+export interface Disciplina {
+  id: string;
+  nome: string;
+  progresso: number;
+  anotacoes: string;
+  topicos: Topico[];
+  studyPlanId: string;
+}
+
+export interface SessaoEstudo {
+  id: string;
+  topico_id: string;
+  tempo_estudado: number; // in seconds
+  data_estudo: string;
+  comentarios?: string;
+  studyPlanId: string;
+}
+
+export interface SessaoCiclo {
+  id: string;
+  ordem: number;
+  disciplina_id: string;
+  tempo_previsto: number; // in seconds
+}
+
+export interface Ciclo {
+  id: string;
+  nome: string;
+  sessoes: SessaoCiclo[];
+  studyPlanId: string;
+}
+
+export interface Revisao {
+  id: string;
+  topico_id: string;
+  disciplinaId: string;
+  conteudo: string;
+  data_prevista: string;
+  status: 'pendente' | 'concluida' | 'atrasada';
+  origem: 'flashcard' | 'erro' | 'manual' | 'teorica';
+  dificuldade: NivelDificuldade;
+  studyPlanId: string;
+}
+
+export interface Flashcard {
+  id: string;
+  topico_id: string;
+  pergunta: string;
+  resposta: string;
+  // SRS Properties
+  interval: number; // in days
+  easeFactor: number; // multiplier
+  dueDate: string; // ISO string date
+  estilo?: 'direto' | 'explicativo' | 'completar';
+}
+
+export interface RevisaoErro {
+  data: string;
+  status: 'pendente' | 'revisado';
+}
+
+export interface CadernoErro {
+  id: string;
+  disciplina: string;
+  disciplinaId: string;
+  assunto: string;
+  descricao: string;
+  topicoId?: string; // Tópico do edital
+  topicoTitulo?: string;
+  resolvido: boolean;
+  data: string; // ISO string date
+  proximaRevisao?: string; // ISO string date
+  nivelDificuldade?: 'fácil' | 'médio' | 'difícil';
+  revisoes?: RevisaoErro[];
+  observacoes?: string;
+  studyPlanId: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface DashboardStats {
+  dailyGoalHours: number;
+  weeklyGoalHours: number;
+  streakDays: number;
+  revisionsCount: number;
+  errorsResolvedCount: number;
+  activeEdital: string;
+  studiesCompleted: number;
+  activeDisciplines: number;
+  totalTimeToday: string;
+}
+
+export type Theme = 'light' | 'dark';
+
+// Tipos para o Corretor de Redação IA
+export interface CorrecaoErroDetalhado {
+  trecho: string;
+  tipo: string;
+  explicacao: string;
+  sugestao: string;
+}
+
+export interface CorrecaoCriterio {
+  criterio: string;
+  pontuacao: number;
+  maximo: number;
+  feedback: string;
+}
+
+export interface CorrecaoCompleta {
+  banca: string;
+  notaMaxima: number;
+  avaliacaoDetalhada: CorrecaoCriterio[];
+  comentariosGerais: string;
+  notaFinal: number;
+  errosDetalhados: CorrecaoErroDetalhado[];
+}
+
+export interface RedacaoCorrigida {
+  id: string;
+  texto: string;
+  banca: string;
+  notaMaxima: number;
+  correcao: CorrecaoCompleta;
+  data: string; // ISO string
+  tema?: string;
+  studyPlanId: string;
+}
+
+// Tipos para o Gerador de Plano IA
+export interface DisciplinaParaIA {
+  id: string;
+  nome: string;
+  dificuldade: 'facil' | 'medio' | 'dificil';
+  topicos: { id: string; titulo: string }[];
+}
+
+// Tipos para Gamificação
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Should match an icon component name
+  xp: number;
+  is_secret?: boolean;
+}
+
+export interface GamificationStats {
+  user_id: string;
+  xp_total: number;
+  level: number;
+  current_streak_days: number;
+  best_streak_days: number;
+  unlockedBadgeIds: string[];
+}
+
+export type XpLogEvent = 
+  'cronometro_finalizado' |
+  'estudo_manual' |
+  'revisao_concluida' | 
+  'revisao_atrasada' |
+  'revisao_dificil' |
+  'trilha_topico_concluido' | 
+  'estudo_extra' |
+  'meta_semanal_completa' |
+  'missao_diaria_completa' |
+  'conquista_desbloqueada';
+
+export interface XpLogEntry {
+  id: string;
+  user_id: string;
+  event: XpLogEvent;
+  amount: number;
+  meta_json: Record<string, any>;
+  created_at: string;
+  tipo_evento?: 'ativo' | 'manual';
+  multiplicador?: number;
+}
+
+// Tipos para o sistema de Amigos
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
+
+export interface Friendship {
+    id: string;
+    user_id_1: string; // requester
+    user_id_2: string; // receiver
+    status: FriendshipStatus;
+    created_at: string;
+}
+
+export interface FriendRequest {
+    friendship_id: string;
+    requester_id: string;
+    requester_name: string;
+    requester_level: number;
+}
