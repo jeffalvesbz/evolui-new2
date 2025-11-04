@@ -1,20 +1,8 @@
 import { create } from 'zustand';
+import { Simulation } from '../types';
 import { getSimulados, createSimulado, updateSimuladoApi, deleteSimulado } from '../services/geminiService';
 import { toast } from '../components/Sonner';
 import { useEditalStore } from './useEditalStore';
-
-export interface Simulation {
-  id: string;
-  name: string;
-  correct: number;
-  wrong: number;
-  blank?: number;
-  durationMinutes: number;
-  notes?: string;
-  date: string; // ISO string
-  edital_id: string;
-  isCebraspe?: boolean;
-}
 
 interface StudyStore {
   simulations: Simulation[];
