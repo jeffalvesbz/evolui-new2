@@ -19,9 +19,11 @@ import {
   Trash2Icon,
 } from './icons';
 import { toast } from './Sonner';
-import { addDays, startOfDay } from 'date-fns';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
+import { startOfDay } from 'date-fns';
 import { generateFlashcardsFromContent } from '../services/geminiService';
 import { useModalStore } from '../stores/useModalStore';
+import { calculateNextReview } from '../services/srsService';
 
 // --- Helper & Sub-components ---
 
@@ -304,18 +306,18 @@ const StudyView: React.FC = () => {
         const currentCard = session.deck[currentIndex];
         if (!currentCard) return;
         
-        let daysToAdd: number;
+        let quality: 0 | 1 | 2 | 3 | 4 | 5;
         switch (difficulty) {
-            case 'errei': daysToAdd = 1; break; // Reset
-            case 'dificil': daysToAdd = 1; break;
-            case 'bom': daysToAdd = 3; break;
-            case 'facil': daysToAdd = 5; break;
+            case 'errei': quality = 1; break;
+            case 'dificil': quality = 3; break;
+            case 'bom': quality = 4; break;
+            case 'facil': quality = 5; break;
         }
-        
-        const newDueDate = addDays(startOfDay(new Date()), daysToAdd);
+
+        const updates = calculateNextReview(currentCard, quality);
         
         try {
-            await updateFlashcard(currentCard.id, { dueDate: newDueDate.toISOString() });
+            await updateFlashcard(currentCard.id, updates);
             answerCard(difficulty);
         } catch (error) {
             toast.error("Não foi possível salvar seu progresso. Tente novamente.");

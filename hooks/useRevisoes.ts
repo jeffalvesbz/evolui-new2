@@ -1,9 +1,7 @@
-
-
-
 import { useEffect, useMemo } from 'react'
 import { useRevisoesStore } from '../stores/useRevisoesStore'
 import { Revisao } from '../types'
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { isSameDay, isAfter, isBefore, startOfDay, addDays, subDays } from 'date-fns';
 
 
@@ -12,6 +10,9 @@ export interface RevisoesProcessadas {
   revisoes: Revisao[]
   pendentesHoje: Revisao[]
   programadas: Revisao[]
+  programadasAmanha: Revisao[]
+  programadasProximaSemana: Revisao[]
+  programadasFuturas: Revisao[]
   atrasadas: Revisao[]
   concluidas: Revisao[]
   
@@ -71,6 +72,8 @@ export const useRevisoes = (): RevisoesProcessadas => {
   // Processar dados das revisões
   const dadosProcessados = useMemo(() => {
     const hoje = startOfDay(new Date());
+    const amanha = addDays(hoje, 1);
+    const proximos7dias = addDays(hoje, 8); // isBefore is exclusive, so add 8 to include up to day 7
 
     const revisoesProcessadas = revisoes.filter(
       revisao => revisao.origem === 'teorica' || revisao.origem === 'manual'
@@ -82,8 +85,23 @@ export const useRevisoes = (): RevisoesProcessadas => {
     )
 
     const programadas = revisoesProcessadas.filter(revisao => 
-      isAfter(new Date(revisao.data_prevista), hoje) && revisao.status === 'pendente'
+      isAfter(startOfDay(new Date(revisao.data_prevista)), hoje) && revisao.status === 'pendente'
     )
+    
+    // Novas categorias de programadas
+    const programadasAmanha = programadas.filter(r => isSameDay(new Date(r.data_prevista), amanha));
+    const programadasProximaSemana = programadas.filter(r => {
+        const data = startOfDay(new Date(r.data_prevista));
+        // isAfter(data, amanha) -> to exclude tomorrow which is already categorized
+        // isBefore(data, proximos7dias) -> up to day 7
+        return isAfter(data, amanha) && isBefore(data, proximos7dias);
+    });
+    const programadasFuturas = programadas.filter(r => {
+        const data = startOfDay(new Date(r.data_prevista));
+        // Not before 8 days from today, meaning day 8 and onwards
+        return !isBefore(data, proximos7dias);
+    });
+
 
     const atrasadas = revisoesProcessadas.filter(revisao => revisao.status === 'atrasada');
 
@@ -99,22 +117,25 @@ export const useRevisoes = (): RevisoesProcessadas => {
     const totalConcluidas = concluidas.length
 
     // Estatísticas por origem
+    // Fix: Add explicit type and initial value to accumulator to ensure correct type inference.
     const porOrigem = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.origem] = (acc[revisao.origem] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Estatísticas por dificuldade
+    // Fix: Add explicit type and initial value to accumulator to ensure correct type inference.
     const porDificuldade = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.dificuldade] = (acc[revisao.dificuldade] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Estatísticas por status
+    // Fix: Add explicit type and initial value to accumulator to ensure correct type inference.
     const porStatus = revisoesProcessadas.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.status] = (acc[revisao.status] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Taxa de conclusão
     const taxaConclusao = revisoesProcessadas.length > 0 
@@ -125,6 +146,9 @@ export const useRevisoes = (): RevisoesProcessadas => {
       revisoes: revisoesProcessadas,
       pendentesHoje,
       programadas,
+      programadasAmanha,
+      programadasProximaSemana,
+      programadasFuturas,
       atrasadas,
       concluidas,
       totalPendentes,
@@ -232,11 +256,11 @@ export const useEstatisticasRevisoes = () => {
     const distribuicaoDificuldade = revisoes.reduce((acc: Record<string, number>, revisao) => {
       acc[revisao.dificuldade] = (acc[revisao.dificuldade] || 0) + 1
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     // Performance por origem
-// FIX: Add type assertion to the initial value of reduce to ensure correct type inference for `performancePorOrigem`.
-    const performancePorOrigem = revisoes.reduce((acc, revisao) => {
+    // Fix: Provide initial value and type for the accumulator in reduce to prevent type errors.
+    const performancePorOrigem = revisoes.reduce((acc: Record<string, { total: number; concluidas: number }>, revisao) => {
       if (!acc[revisao.origem]) {
         acc[revisao.origem] = { total: 0, concluidas: 0 }
       }
@@ -248,10 +272,11 @@ export const useEstatisticasRevisoes = () => {
     }, {} as Record<string, { total: number; concluidas: number }>)
 
     // Calcular taxa de conclusão por origem
-    const taxaPorOrigem = Object.entries(performancePorOrigem).reduce((acc: Record<string, number>, [origem, dados]) => {
+    // Fix: Add explicit type and initial value to accumulator to ensure correct type inference.
+    const taxaPorOrigem = (Object.entries(performancePorOrigem) as [string, { total: number; concluidas: number }][]).reduce((acc: Record<string, number>, [origem, dados]) => {
       acc[origem] = dados.total > 0 ? Math.round((dados.concluidas / dados.total) * 100) : 0
       return acc
-    }, {})
+    }, {} as Record<string, number>)
 
     return {
       revisoesUltimaSemana: revisoesUltimaSemana.length,

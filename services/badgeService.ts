@@ -1,3 +1,9 @@
+
+
+
+
+
+
 import { useGamificationStore } from '../stores/useGamificationStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
@@ -33,7 +39,7 @@ export const checkAndAwardBadges = () => {
     return acc;
   }, {} as Record<string, number>);
   // FIX: Cast the result of Object.values to number[] to resolve type inference issue with Math.max.
-  const maxHorasDia = Math.max(0, ...(Object.values(sessoesPorDia) as number[])) / 3600;
+  const maxHorasDia = Math.max(0, ...Object.values(sessoesPorDia) as number[]) / 3600;
 
   const revisoesAtrasadasConcluidas = xpLog.filter(log => log.event === 'revisao_atrasada').length;
 

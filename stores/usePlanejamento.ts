@@ -12,6 +12,7 @@ interface PlanningConfig {
 interface PlanejamentoState {
   planningConfig: PlanningConfig | null;
   _hasHydrated: boolean;
+  setHasHydrated: (hydrated: boolean) => void;
   setPlanningConfig: (config: PlanningConfig) => void;
   syncWeightsWithDisciplinas: (disciplinas: Disciplina[]) => void;
 }
@@ -28,6 +29,7 @@ export const usePlanejamento = create<PlanejamentoState>()(
     (set, get) => ({
       planningConfig: initialPlanningConfig,
       _hasHydrated: false,
+      setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
       setPlanningConfig: (config) => set({ planningConfig: config }),
       syncWeightsWithDisciplinas: (disciplinas) => {
         const currentConfig = get().planningConfig;
@@ -53,8 +55,10 @@ export const usePlanejamento = create<PlanejamentoState>()(
     {
       name: 'evolui-planejamento-store',
       storage: createJSONStorage(() => localStorage),
-      onRehydrateStorage: () => (state) => {
-        if (state) state._hasHydrated = true;
+      onRehydrateStorage: () => (state, error) => {
+        if (state) {
+            state.setHasHydrated(true);
+        }
       },
     }
   )

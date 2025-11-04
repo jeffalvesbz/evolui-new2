@@ -38,8 +38,6 @@ const ErroFormModal: React.FC = () => {
                     resolvido: false,
                     data: new Date().toISOString().split('T')[0],
                     nivelDificuldade: 'médio',
-                    enunciado: '',
-                    alternativaCorreta: '',
                     observacoes: ''
                 });
             }

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon, XIcon } from './icons'
 import { toast } from './Sonner'
-import { useStudyStore } from '../stores/useStudyStore'
+import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 
 const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
@@ -11,6 +11,14 @@ const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ 
         </div>
     </div>
 );
+
+const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 const Simulados = () => {
   const { editalAtivo } = useEditalStore()
@@ -24,60 +32,62 @@ const Simulados = () => {
     if (!editalAtivo?.id) {
       return simulados
     }
-    return simulados.filter(s => s.edital_id === editalAtivo.id)
+    return simulados.filter(s => s.studyPlanId === editalAtivo.id)
   }, [simulados, editalAtivo?.id])
   
   const [form, setForm] = useState({
-    name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: '', isCebraspe: false
+    name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: getTodayDateString(), isCebraspe: false
   })
-  const [editingSimulation, setEditingSimulation] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editingSimulation, setEditingSimulation] = useState<Simulation | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Simulation | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const resetForm = () => {
-    setForm({ name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: '', isCebraspe: false })
+    setForm({ name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: getTodayDateString(), isCebraspe: false })
   }
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!form.name.trim() || !editalAtivo?.id) {
-      toast.error('Selecione um edital e preencha o nome do simulado.')
+    if (!form.name.trim() || !editalAtivo?.id || !form.date) {
+      toast.error('Preencha o nome, a data e selecione um edital.')
       return
     }
     
     const payload = {
       ...form,
       name: form.name.trim(),
-      correct: Number(form.correct), wrong: Number(form.wrong), blank: Number(form.blank),
+      correct: Number(form.correct),
+      wrong: Number(form.wrong),
+      blank: Number(form.blank),
       durationMinutes: Number(form.durationMinutes),
-      date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
-      edital_id: editalAtivo.id,
+      date: form.date, // Envia a data como 'YYYY-MM-DD' para ser interpretada como UTC pelo DB
       isCebraspe: form.isCebraspe,
-    }
+    };
 
     try {
       if (editingSimulation) {
-        await updateSimulation(editingSimulation.id, payload)
-        toast.success('Simulado atualizado com sucesso!')
-        setEditingSimulation(null)
+        await updateSimulation(editingSimulation.id, payload);
+        toast.success('Simulado atualizado com sucesso!');
+        setEditingSimulation(null);
       } else {
-        await addSimulation(payload)
-        toast.success('Simulado registrado!')
+        await addSimulation(payload);
+        toast.success('Simulado registrado!');
       }
-      resetForm()
-      setIsCreateOpen(false)
+      resetForm();
+      setIsCreateOpen(false);
     } catch (error) {
-      toast.error('Não foi possível salvar o simulado.')
+      toast.error('Não foi possível salvar o simulado.');
     }
   }
 
-  const openEdit = (simulation) => {
+  const openEdit = (simulation: Simulation) => {
     setEditingSimulation(simulation)
     setForm({
       name: simulation.name, correct: simulation.correct, wrong: simulation.wrong,
-      blank: simulation.blank, durationMinutes: simulation.durationMinutes,
+      blank: simulation.blank || 0, durationMinutes: simulation.durationMinutes,
       notes: simulation.notes ?? '',
-      date: simulation.date ? simulation.date.slice(0, 10) : '',
+      // Converte a data ISO para YYYY-MM-DD, tratando como UTC para evitar erros de fuso
+      date: simulation.date ? new Date(simulation.date).toLocaleDateString('en-CA', { timeZone: 'UTC' }) : getTodayDateString(),
       isCebraspe: simulation.isCebraspe ?? false,
     })
     setIsCreateOpen(true)
@@ -100,15 +110,19 @@ const Simulados = () => {
           {simuladosFiltrados.length > 0 ? (
             simuladosFiltrados.map((simulation) => {
               const totalQuestions = simulation.correct + simulation.wrong + (simulation.blank ?? 0);
-              let scoreDisplay, scoreLabel;
-              
+              let scoreDisplay: number | string;
+              let scoreLabel: string;
+              let scoreClass: string;
+
               if (simulation.isCebraspe) {
                   const netScore = simulation.correct - simulation.wrong;
-                  scoreDisplay = totalQuestions > 0 ? Math.round((Math.max(0, netScore) / totalQuestions) * 100) : 0;
-                  scoreLabel = 'Nota Líquida';
+                  scoreDisplay = netScore;
+                  scoreLabel = 'Pontos Líquidos';
+                  scoreClass = 'bg-yellow-500/20 text-yellow-400';
               } else {
                   scoreDisplay = totalQuestions ? Math.round((simulation.correct / totalQuestions) * 100) : 0;
-                  scoreLabel = 'de acertos';
+                  scoreLabel = '% de acertos';
+                  scoreClass = 'bg-secondary/20 text-secondary';
               }
 
               return (
@@ -122,7 +136,9 @@ const Simulados = () => {
                       <p className="text-xs text-muted-foreground">{new Date(simulation.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})} • {simulation.durationMinutes} min</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-2 rounded-full bg-secondary/20 px-3 py-1 text-xs font-bold text-secondary">{scoreDisplay}% {scoreLabel}</span>
+                      <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${scoreClass}`}>
+                        {scoreDisplay}{!simulation.isCebraspe && '%'} {scoreLabel}
+                      </span>
                       <button type="button" onClick={() => openEdit(simulation)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent bg-muted text-muted-foreground transition hover:border-primary hover:text-primary"><EditIcon className="h-4 w-4" /></button>
                       <button type="button" onClick={() => setDeleteTarget(simulation)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent bg-muted text-muted-foreground transition hover:border-red-500 hover:text-red-500"><Trash2Icon className="h-4 w-4" /></button>
                     </div>
@@ -167,7 +183,7 @@ const Simulados = () => {
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
               <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2" required /></label>
               <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2"></textarea></label>
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="submit" className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"><SaveIcon className="w-4 h-4" /> Salvar</button></div>
@@ -180,7 +196,7 @@ const Simulados = () => {
           <div className="p-6 space-y-4">
             <h3 className="text-lg font-semibold">Excluir Simulado</h3>
             <p className="text-sm text-muted-foreground">Tem certeza que quer excluir "{deleteTarget.name}"? Esta ação é irreversível.</p>
-            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setDeleteTarget(null)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="button" onClick={async () => { await deleteSimulation(deleteTarget.id); setDeleteTarget(null); toast.success('Simulado excluído.'); }} className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600">Excluir</button></div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setDeleteTarget(null)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="button" onClick={async () => { if(deleteTarget) { await deleteSimulation(deleteTarget.id); setDeleteTarget(null); toast.success('Simulado excluído.');} }} className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600">Excluir</button></div>
           </div>
         </Modal>
       )}
@@ -188,4 +204,4 @@ const Simulados = () => {
   )
 }
 
-export default Simulados
+export default Simulados;

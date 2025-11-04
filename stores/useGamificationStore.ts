@@ -5,6 +5,9 @@ import { getGamificationStats, logXpEvent as logXpEventApi, getBadges, getXpLog,
 import { useAuthStore } from './useAuthStore';
 import { toast } from '../components/Sonner';
 import { checkAndAwardBadges } from '../services/badgeService';
+import { useHistoricoStore } from './useHistoricoStore';
+import { useEditalStore } from './useEditalStore';
+import { calculateStreakFromHistory } from '../utils/calculateStreak';
 
 export type WeeklyRankingData = {
     ranking: { user_id: string; name: string; level: number; weekly_xp: number }[];
@@ -25,6 +28,7 @@ interface GamificationState {
   fetchXpLog: (userId: string) => Promise<void>;
   fetchWeeklyRanking: (userId: string) => Promise<void>;
   logXpEvent: (event: XpLogEvent, meta: Record<string, any>, context: any) => Promise<void>;
+  updateStreak: () => Promise<void>;
   unlockBadges: (newlyUnlocked: Badge[]) => void;
   processNextBadgeInQueue: () => void;
   
@@ -138,9 +142,9 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
         toast.success(`+${amount} XP ${getEventMessage(event)}!`);
 
         try {
-            const tipo_evento = event === 'estudo_manual' ? 'manual' : 'ativo';
-            const multiplicador = 1; // Default multiplier
-            await logXpEventApi(userId, event, amount, meta, tipo_evento, multiplicador);
+            
+            // FIX: Removed extra arguments 'tipo_evento' and 'multiplicador' to align with the corrected API function signature.
+            await logXpEventApi(userId, event, amount, meta);
             
             await get().fetchGamificationStats(userId);
             await get().fetchXpLog(userId);
@@ -153,6 +157,33 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
         }
     },
     
+    updateStreak: async () => {
+        const { user } = useAuthStore.getState();
+        const { editalAtivo } = useEditalStore.getState();
+        const { stats } = get();
+
+        if (!user?.id || !editalAtivo?.id) return;
+        
+        // This recalculates history based on other stores, which is fine since it's not a circular store dependency
+        await useHistoricoStore.getState().fetchHistorico(editalAtivo.id);
+        const historico = useHistoricoStore.getState().historico;
+
+        const { streak } = calculateStreakFromHistory(historico);
+
+        if (stats && (stats.current_streak_days !== streak || (streak > (stats.best_streak_days || 0)))) {
+            const updates: Partial<GamificationStats> = { current_streak_days: streak };
+            if (streak > (stats.best_streak_days || 0)) {
+                updates.best_streak_days = streak;
+            }
+            try {
+                await updateGamificationStats(user.id, updates);
+                await get().fetchGamificationStats(user.id); // Refresh stats from DB
+            } catch (error) {
+                console.error("Failed to update streak:", error);
+            }
+        }
+    },
+
     unlockBadges: (newlyUnlocked: Badge[]) => {
         const userId = useAuthStore.getState().user?.id;
         const { stats, fetchXpLog, fetchGamificationStats } = get();
@@ -190,13 +221,12 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             const logPromises = newlyUnlocked.map(badge => {
                 if (badge.xp && badge.xp > 0) {
                     toast.success(`+${badge.xp} XP pela conquista "${badge.name}"!`);
+                     // ✅ Corrigido: Removidos os argumentos `tipo_evento` e `multiplicador`.
                     return logXpEventApi(
                         userId,
                         'conquista_desbloqueada', 
                         badge.xp, 
-                        { badgeId: badge.id, badgeName: badge.name }, 
-                        'manual', 
-                        1
+                        { badgeId: badge.id, badgeName: badge.name }
                     );
                 }
                 return Promise.resolve(null);
@@ -223,6 +253,7 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
 
     unlockedBadges: () => {
         const { stats, badges } = get();
+        // Adicionado um null check para `stats` para evitar erros de runtime.
         if (!stats?.unlockedBadgeIds || !badges) return [];
         const unlockedIds = new Set(stats.unlockedBadgeIds);
         return badges.filter(b => unlockedIds.has(b.id));

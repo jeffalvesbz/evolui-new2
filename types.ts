@@ -94,8 +94,6 @@ export interface CadernoErro {
   proximaRevisao?: string; // ISO string date
   nivelDificuldade?: 'fácil' | 'médio' | 'difícil';
   revisoes?: RevisaoErro[];
-  enunciado?: string;
-  alternativaCorreta?: string;
   observacoes?: string;
   studyPlanId: string;
 }
@@ -153,19 +151,6 @@ export interface RedacaoCorrigida {
   data: string; // ISO string
   tema?: string;
   studyPlanId: string;
-}
-
-export interface Simulation {
-  id: string;
-  name: string;
-  correct: number;
-  wrong: number;
-  blank?: number;
-  durationMinutes: number;
-  notes?: string;
-  date: string;
-  edital_id: string;
-  isCebraspe?: boolean;
 }
 
 // Tipos para o Gerador de Plano IA

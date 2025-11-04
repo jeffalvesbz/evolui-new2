@@ -1,8 +1,8 @@
-
 import { create } from 'zustand';
 import { Flashcard, Disciplina } from '../types';
 import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as deleteFlashcardApi } from '../services/geminiService';
 import { toast } from '../components/Sonner';
+// FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
 
 interface FlashcardStore {
@@ -89,15 +89,20 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
       },
       updateFlashcard: async (id, updates) => {
         const originalFlashcards = get().flashcards;
-        const updatedFlashcard = { ...originalFlashcards.find(f => f.id === id), ...updates } as Flashcard;
         // Optimistic update
         set(state => ({
           flashcards: state.flashcards.map(fc =>
-            fc.id === id ? updatedFlashcard : fc
+            fc.id === id ? { ...fc, ...updates } as Flashcard : fc
           ),
         }));
         try {
-            await updateFlashcardApi(id, updates);
+            const updatedFromDb = await updateFlashcardApi(id, updates);
+            // Sync with db
+            set(state => ({
+                flashcards: state.flashcards.map(fc =>
+                    fc.id === id ? updatedFromDb : fc
+                )
+            }));
         } catch(e) {
             toast.error("Falha ao atualizar flashcard.");
             set({ flashcards: originalFlashcards }); // Revert on failure

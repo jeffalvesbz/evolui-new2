@@ -38,7 +38,8 @@ export const useHistoricoStore = create<HistoricoState>((set, get) => ({
     // As stores dependentes já são sincronizadas pelo hook `useEditalDataSync` no App.tsx
     const sessoes = useEstudosStore.getState().sessoes;
     const { findTopicById } = useDisciplinasStore.getState();
-    const simulados = useStudyStore.getState().simulations.filter(s => s.edital_id === editalId);
+    // ✅ Corrigido: A propriedade `edital_id` não existe no tipo `Simulation`. Alterado para `studyPlanId`.
+    const simulados = useStudyStore.getState().simulations.filter(s => s.studyPlanId === editalId);
 
     const historicoEstudos: HistoricoItem[] = sessoes.map(sessao => {
       const topicoInfo = findTopicById(sessao.topico_id);

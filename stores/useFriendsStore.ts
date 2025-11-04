@@ -1,5 +1,4 @@
 
-
 import { create } from 'zustand';
 import { User, FriendRequest } from '../types';
 import {
@@ -31,7 +30,7 @@ interface FriendsState {
     fetchFriendsRanking: (userId: string) => Promise<void>;
     searchUsers: (query: string, currentUserId: string) => Promise<void>;
     sendFriendRequest: (requesterId: string, receiverId: string) => Promise<void>;
-    acceptFriendRequest: (friendshipId: string, requesterId: string) => Promise<void>;
+    acceptFriendRequest: (friendshipId: string, currentUserId: string) => Promise<void>;
     declineFriendRequest: (friendshipId: string) => Promise<void>;
 }
 
@@ -49,7 +48,7 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
     },
 
     fetchFriends: async (userId) => {
-        set(state => ({ loading: { ...state.loading, friends: true } }));
+        set(state => ({ loading: { ...state.loading, friends: true }}));
         try {
             const friends = await getFriends(userId);
             set({ friends });
@@ -57,33 +56,33 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
             console.error("Failed to fetch friends:", error);
             toast.error("Não foi possível carregar sua lista de amigos.");
         } finally {
-            set(state => ({ loading: { ...state.loading, friends: false } }));
+            set(state => ({ loading: { ...state.loading, friends: false }}));
         }
     },
 
     fetchFriendRequests: async (userId) => {
-        set(state => ({ loading: { ...state.loading, requests: true } }));
+        set(state => ({ loading: { ...state.loading, requests: true }}));
         try {
-            const requests = await getFriendRequests(userId);
-            set({ friendRequests: requests });
+            const friendRequests = await getFriendRequests(userId);
+            set({ friendRequests });
         } catch (error) {
             console.error("Failed to fetch friend requests:", error);
             toast.error("Não foi possível carregar os pedidos de amizade.");
         } finally {
-            set(state => ({ loading: { ...state.loading, requests: false } }));
+            set(state => ({ loading: { ...state.loading, requests: false }}));
         }
     },
-    
+
     fetchFriendsRanking: async (userId) => {
-        set(state => ({ loading: { ...state.loading, ranking: true } }));
+        set(state => ({ loading: { ...state.loading, ranking: true }}));
         try {
-            const ranking = await getFriendsRanking(userId);
-            set({ friendsRanking: ranking });
+            const friendsRanking = await getFriendsRanking(userId);
+            set({ friendsRanking });
         } catch (error) {
             console.error("Failed to fetch friends ranking:", error);
             toast.error("Não foi possível carregar o ranking de amigos.");
         } finally {
-            set(state => ({ loading: { ...state.loading, ranking: false } }));
+            set(state => ({ loading: { ...state.loading, ranking: false }}));
         }
     },
 
@@ -92,54 +91,57 @@ export const useFriendsStore = create<FriendsState>((set, get) => ({
             set({ searchResults: [] });
             return;
         }
-        set(state => ({ loading: { ...state.loading, search: true } }));
+        set(state => ({ loading: { ...state.loading, search: true }}));
         try {
-            const users = await searchUsersApi(query, currentUserId);
-            set({ searchResults: users });
+            const searchResults = await searchUsersApi(query, currentUserId);
+            set({ searchResults });
         } catch (error) {
             console.error("Failed to search users:", error);
+            toast.error("Erro ao buscar usuários.");
         } finally {
-            set(state => ({ loading: { ...state.loading, search: false } }));
+            set(state => ({ loading: { ...state.loading, search: false }}));
         }
     },
-
+    
     sendFriendRequest: async (requesterId, receiverId) => {
         try {
             await sendFriendRequestApi(requesterId, receiverId);
-            set(state => ({ sentRequests: [...state.sentRequests, receiverId] }));
+            set(state => ({
+                sentRequests: [...state.sentRequests, receiverId],
+            }));
             toast.success("Pedido de amizade enviado!");
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to send friend request:", error);
-            toast.error("Não foi possível enviar o pedido.");
+            toast.error(error.message || "Não foi possível enviar o pedido.");
         }
     },
 
-    acceptFriendRequest: async (friendshipId, requesterId) => {
+    acceptFriendRequest: async (friendshipId, currentUserId) => {
         try {
             await acceptFriendRequestApi(friendshipId);
             set(state => ({
                 friendRequests: state.friendRequests.filter(req => req.friendship_id !== friendshipId),
             }));
-            // Re-fetch friends list after accepting
-            get().fetchFriends(requesterId);
             toast.success("Amigo adicionado!");
+            // Refresh friends list and ranking
+            get().fetchFriends(currentUserId);
+            get().fetchFriendsRanking(currentUserId);
         } catch (error) {
             console.error("Failed to accept friend request:", error);
-            toast.error("Erro ao aceitar pedido.");
+            toast.error("Não foi possível aceitar o pedido.");
         }
     },
-    
+
     declineFriendRequest: async (friendshipId) => {
-         try {
+        try {
             await declineFriendRequestApi(friendshipId);
             set(state => ({
                 friendRequests: state.friendRequests.filter(req => req.friendship_id !== friendshipId),
             }));
-            // FIX: The `toast.info` method does not exist. Use the default `toast()` function which defaults to the 'info' type.
             toast("Pedido de amizade recusado.");
         } catch (error) {
             console.error("Failed to decline friend request:", error);
-            toast.error("Erro ao recusar pedido.");
+            toast.error("Não foi possível recusar o pedido.");
         }
     },
 }));

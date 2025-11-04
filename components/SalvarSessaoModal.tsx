@@ -71,7 +71,16 @@ const SalvarSessaoModal: React.FC = () => {
             });
             setSuggestedTopics([]);
 
-            const totalSeconds = sessaoAtual.elapsedSeconds;
+            let totalSeconds = 0;
+            if (sessaoAtual.mode === 'cronometro') {
+                totalSeconds = sessaoAtual.elapsedSeconds;
+            } else { // Pomodoro
+                totalSeconds = sessaoAtual.workSecondsAccumulated;
+                if (sessaoAtual.pomodoroStage === 'work') {
+                    totalSeconds += sessaoAtual.elapsedSeconds;
+                }
+            }
+            
             setEditableHours(Math.floor(totalSeconds / 3600));
             setEditableMinutes(Math.floor((totalSeconds % 3600) / 60));
             

@@ -26,6 +26,9 @@ const RevisoesPage: React.FC = () => {
     revisoes,
     pendentesHoje,
     programadas,
+    programadasAmanha,
+    programadasProximaSemana,
+    programadasFuturas,
     atrasadas,
     concluidas,
     estatisticas,
@@ -184,17 +187,52 @@ const RevisoesPage: React.FC = () => {
       </section>
 
       <div className="mt-8 space-y-6">
-        <details className="group">
-          <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 text-lg font-medium">⏳ Ver revisões programadas ({programadas.length})</summary>
-          <div className="mt-4 space-y-4">{programadas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}</div>
-        </details>
+        {programadasAmanha.length > 0 && (
+          <details className="group" open>
+            <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 text-lg font-medium">🗓️ Amanhã ({programadasAmanha.length})</summary>
+            <div className="mt-4 space-y-4">
+              <AnimatePresence>
+                {programadasAmanha.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+              </AnimatePresence>
+            </div>
+          </details>
+        )}
+        {programadasProximaSemana.length > 0 && (
+          <details className="group">
+            <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 text-lg font-medium">📅 Próxima Semana ({programadasProximaSemana.length})</summary>
+            <div className="mt-4 space-y-4">
+              <AnimatePresence>
+                {programadasProximaSemana.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+              </AnimatePresence>
+            </div>
+          </details>
+        )}
+        {programadasFuturas.length > 0 && (
+          <details className="group">
+            <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 text-lg font-medium">🔭 Futuras ({programadasFuturas.length})</summary>
+            <div className="mt-4 space-y-4">
+              <AnimatePresence>
+                {programadasFuturas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+              </AnimatePresence>
+            </div>
+          </details>
+        )}
+
         <details className="group">
           <summary className="cursor-pointer text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 text-lg font-medium">🚨 Ver revisões atrasadas ({atrasadas.length})</summary>
-          <div className="mt-4 space-y-4">{atrasadas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}</div>
+          <div className="mt-4 space-y-4">
+            <AnimatePresence>
+              {atrasadas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+            </AnimatePresence>
+          </div>
         </details>
         <details className="group">
           <summary className="cursor-pointer text-primary hover:text-primary/80 transition-colors flex items-center gap-2 text-lg font-medium">✅ Ver revisões concluídas ({concluidas.length})</summary>
-          <div className="mt-4 space-y-4">{concluidas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}</div>
+          <div className="mt-4 space-y-4">
+            <AnimatePresence>
+              {concluidas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+            </AnimatePresence>
+          </div>
         </details>
       </div>
     </div>

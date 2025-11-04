@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -164,266 +162,176 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                             />
                         </PieChart>
                     </ResponsiveContainer>
-                ) : <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">...</div>}
+                ) : <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">Nenhuma matéria selecionada.</div>}
             </div>
         </div>
     );
 };
+
 
 const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     const { control, watch, setValue } = formMethods;
-    const { fields, move } = useFieldArray({ control, name: 'sessoesGeradas' });
-    const disciplinas = useDisciplinasStore(state => state.disciplinas);
-
-    const materias: MateriaCiclo[] = watch('materias');
-    const tempoSessao: number = watch('tempoSessao');
+    const { fields, move, remove } = useFieldArray({ control, name: 'sessoesGeradas' });
     const sessoesGeradas: Omit<SessaoCiclo, 'id' | 'ordem'>[] = watch('sessoesGeradas');
 
-    const gerarSessoes = () => {
-        if (tempoSessao <= 0) {
-            toast.error("O tempo da sessão deve ser maior que zero.");
-            return;
-        }
-
-        let blocosEstudo: { disciplina_id: string, tempo_previsto: number }[] = [];
-        materias.forEach(materia => {
-            const tempoTotalSegundos = materia.tempoMinutos * 60;
-            const numSessoesCompletas = Math.floor(tempoTotalSegundos / tempoSessao);
-            const tempoRestante = tempoTotalSegundos % tempoSessao;
-
-            for (let i = 0; i < numSessoesCompletas; i++) {
-                blocosEstudo.push({ disciplina_id: materia.id, tempo_previsto: tempoSessao });
-            }
-            if (tempoRestante > 0) {
-                blocosEstudo.push({ disciplina_id: materia.id, tempo_previsto: tempoRestante });
-            }
-        });
-        
-        // Interleaving logic (simple round-robin for now)
-        const sessoesPorMateria: Record<string, any[]> = {};
-        blocosEstudo.forEach(bloco => {
-            if (!sessoesPorMateria[bloco.disciplina_id]) {
-                sessoesPorMateria[bloco.disciplina_id] = [];
-            }
-            sessoesPorMateria[bloco.disciplina_id].push(bloco);
-        });
-
-        const sessoesIntercaladas = [];
-        let algumaMateriaTemSessao = true;
-        while(algumaMateriaTemSessao) {
-            algumaMateriaTemSessao = false;
-            Object.values(sessoesPorMateria).forEach(sessoes => {
-                if (sessoes.length > 0) {
-                    sessoesIntercaladas.push(sessoes.shift());
-                    algumaMateriaTemSessao = true;
-                }
-            });
-        }
-
-        setValue('sessoesGeradas', sessoesIntercaladas);
-        toast.success(`${sessoesIntercaladas.length} sessões geradas!`);
+    const handleAddSessao = () => {
+        // This function is not implemented in the original code, but we can assume it's for manual additions.
+        // For now, let's keep it simple. It might be that the user has to go back to change times.
     };
 
-    // FIX: Add generic type to useMemo to ensure correct type inference for the map.
-    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
-
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-center p-4 bg-black/20 rounded-lg border border-border">
-                <div className="flex-1 w-full">
-                    <label htmlFor="tempoSessao" className="block text-sm font-medium text-muted-foreground mb-1">Tempo Padrão da Sessão</label>
-                    <Controller
-                        name="tempoSessao"
-                        control={control}
-                        render={({ field }) => (
-                             <select {...field} onChange={e => field.onChange(Number(e.target.value))} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
-                                <option value={1800}>30 minutos</option>
-                                <option value={2700}>45 minutos</option>
-                                <option value={3600}>1 hora</option>
-                                <option value={5400}>1 hora e 30 minutos</option>
-                                <option value={7200}>2 horas</option>
-                             </select>
-                        )}
-                    />
-                </div>
-                <button type="button" onClick={gerarSessoes} className="w-full sm:w-auto h-10 px-6 flex-shrink-0 mt-2 sm:mt-5 flex items-center justify-center gap-2 rounded-lg bg-primary text-black font-bold text-sm hover:opacity-90 transition-opacity">
-                    <SettingsIcon className="w-4 h-4"/> Gerar Sessões
-                </button>
-            </div>
-            
-            <div>
-                 <h3 className="text-lg font-bold mb-2">Plano de Sessões ({sessoesGeradas.length})</h3>
-                 <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-2 border-l-2 border-border pl-4">
-                     {fields.length === 0 && <p className="text-sm text-muted-foreground text-center py-8">Clique em "Gerar Sessões" para ver seu plano.</p>}
-                     {fields.map((field, index) => (
-                         <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-black/20 group">
-                             <span className="font-mono text-sm bg-muted/50 w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground">{index + 1}</span>
-                             <div className="flex-1">
-                                <p className="font-semibold text-foreground">{disciplinasMap.get(sessoesGeradas[index].disciplina_id) || 'Desconhecida'}</p>
-                                <p className="text-xs text-muted-foreground">{formatMinutesToHours(sessoesGeradas[index].tempo_previsto / 60)}</p>
-                             </div>
-                             <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="space-y-4">
+             <h3 className="text-lg font-bold">Revise e Organize seu Ciclo</h3>
+            <p className="text-sm text-muted-foreground">Arraste para reordenar, ajuste os tempos ou remova sessões. O ciclo irá rotacionar nesta ordem.</p>
+            <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
+                {fields.map((field, index) => {
+                    // FIX: Changed type to Map<string, string> to align with Map constructor usage
+                    const disciplinasMap: Map<string, string> = useMemo(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
+                    return (
+                        <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-black/20 border border-border">
+                            <span className="font-bold text-muted-foreground w-6">{index + 1}.</span>
+                            <span className="font-semibold text-foreground flex-1">{disciplinasMap.get(sessoesGeradas[index].disciplina_id)}</span>
+                            <Controller
+                                control={control}
+                                name={`sessoesGeradas.${index}.tempo_previsto`}
+                                render={({ field: { onChange, value } }) => (
+                                     <input type="number" value={value / 60} onChange={e => onChange(Number(e.target.value) * 60)} min="1" className="w-20 bg-muted/50 border border-border rounded-md px-2 py-1 text-sm"/>
+                                )}
+                             />
+                             <span className="text-sm text-muted-foreground">min</span>
+                             <div className="flex flex-col">
                                 <button type="button" onClick={() => move(index, index - 1)} disabled={index === 0} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowUpIcon className="w-3 h-3"/></button>
                                 <button type="button" onClick={() => move(index, index + 1)} disabled={index === fields.length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3"/></button>
-                             </div>
-                         </div>
-                     ))}
-                 </div>
+                            </div>
+                             <button type="button" onClick={() => remove(index)} className="p-1.5 rounded-md hover:bg-background"><Trash2Icon className="w-4 h-4 text-red-500"/></button>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     );
 };
 
-const Etapa4: React.FC<{ formMethods: any }> = ({ formMethods }) => {
-    const { watch } = formMethods;
-    const disciplinas = useDisciplinasStore(state => state.disciplinas);
-    const nomeCiclo: string = watch('nomeCiclo');
-    const sessoesGeradas: Omit<SessaoCiclo, 'id' | 'ordem'>[] = watch('sessoesGeradas');
-    // FIX: Add generic type to useMemo to ensure correct type inference for the map.
-    const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
-    const totalTempo = sessoesGeradas.reduce((acc: number, s) => acc + (s.tempo_previsto || 0), 0);
 
-    return (
-        <div className="text-center space-y-6">
-            <CheckCircle2Icon className="w-16 h-16 text-secondary mx-auto"/>
-            <h2 className="text-2xl font-bold">Ciclo Gerado com Sucesso!</h2>
-            <p className="text-muted-foreground">Confira o resumo do seu novo ciclo de estudos. Se tudo estiver correto, clique em "Salvar Ciclo".</p>
-            <div className="p-4 rounded-lg border border-border bg-black/20 text-left space-y-4">
-                <h3 className="font-bold text-lg text-foreground">{nomeCiclo}</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="text-muted-foreground">Total de Sessões:</span> <span className="font-semibold text-foreground">{sessoesGeradas.length}</span></div>
-                    <div><span className="text-muted-foreground">Duração Total:</span> <span className="font-semibold text-foreground">{formatMinutesToHours(totalTempo / 60)}</span></div>
-                </div>
-                 <div className="max-h-[30vh] overflow-y-auto pr-2 space-y-2">
-                    {sessoesGeradas.map((sessao, index) => (
-                         <div key={index} className="flex items-center gap-3 p-2 rounded-lg bg-background/50">
-                             <span className="font-mono text-xs bg-muted/50 w-6 h-6 flex items-center justify-center rounded-md text-muted-foreground">{index + 1}</span>
-                             <p className="font-medium text-foreground flex-1">{disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}</p>
-                             <p className="text-sm text-muted-foreground">{formatMinutesToHours(sessao.tempo_previsto / 60)}</p>
-                         </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
+// --- Main Modal Component ---
 const CriarCicloModal: React.FC = () => {
     const { isCriarCicloModalOpen, closeCriarCicloModal } = useModalStore();
     const { addCiclo, setCicloAtivoId } = useCiclosStore();
-    const [step, setStep] = useState(1);
-
+    
+    const [etapa, setEtapa] = useState(1);
     const formMethods = useForm<FormData>({
         defaultValues: {
             nomeCiclo: '',
             materias: [],
-            tempoSessao: 3600, // 1 hour
+            tempoSessao: 3600, // 60 minutos
             sessoesGeradas: [],
-        },
+        }
     });
-    const { handleSubmit, watch, reset } = formMethods;
-    
-    const closeModal = () => {
-        reset();
-        setStep(1);
-        closeCriarCicloModal();
-    }
+    const { handleSubmit, watch, setValue, trigger } = formMethods;
 
-    const nextStep = () => setStep(s => Math.min(s + 1, 4));
-    const prevStep = () => setStep(s => Math.max(s - 1, 1));
-    
-    const handleNextValidation = () => {
-        if(step === 1 && (!watch('nomeCiclo') || watch('materias').length === 0)){
-            toast.error("Por favor, dê um nome ao ciclo e selecione pelo menos uma matéria.");
-            return;
-        }
-        if(step === 2 && watch('materias').some(m => m.tempoMinutos <= 0)){
-             toast.error("Todas as matérias devem ter uma duração maior que zero.");
-            return;
-        }
-        if(step === 3 && watch('sessoesGeradas').length === 0){
-             toast.error("Gere as sessões de estudo antes de prosseguir.");
-            return;
-        }
-        nextStep();
-    }
-
-    const onSave = async (data: FormData) => {
-        try {
-            const novoCicloData = {
-                nome: data.nomeCiclo,
-                sessoes: data.sessoesGeradas.map((sessao, index) => ({
-                    ...sessao,
-                    ordem: index,
-                })),
-            };
-            const cicloCriado = await addCiclo(novoCicloData as Omit<Ciclo, 'id' | 'studyPlanId'>);
-            if (cicloCriado) {
-                setCicloAtivoId(cicloCriado.id);
-                toast.success(`Ciclo "${cicloCriado.nome}" criado e ativado!`);
-                closeModal();
+    const handleNext = async () => {
+        let isValid = false;
+        if (etapa === 1) {
+            isValid = await trigger(['nomeCiclo', 'materias']);
+            if (watch('materias').length === 0) {
+                 toast.error('Selecione pelo menos uma matéria.');
+                 isValid = false;
             }
-        } catch (e) {
-            console.error("Failed to save ciclo", e);
+        } else if (etapa === 2) {
+            isValid = true;
+            // Gerar sessões para a etapa 3
+            const materias: MateriaCiclo[] = watch('materias');
+            const tempoSessaoMinutos = watch('tempoSessao') / 60;
+            const sessoes: Omit<SessaoCiclo, 'id' | 'ordem'>[] = [];
+            
+            materias.forEach(materia => {
+                const numSessoes = Math.floor(materia.tempoMinutos / tempoSessaoMinutos);
+                const resto = materia.tempoMinutos % tempoSessaoMinutos;
+                
+                for(let i=0; i < numSessoes; i++) {
+                    sessoes.push({ disciplina_id: materia.id, tempo_previsto: tempoSessaoMinutos * 60 });
+                }
+                if (resto > 0) {
+                    sessoes.push({ disciplina_id: materia.id, tempo_previsto: resto * 60 });
+                }
+            });
+            setValue('sessoesGeradas', sessoes.sort(() => Math.random() - 0.5)); // Shuffle
+        }
+
+        if (isValid) {
+            setEtapa(etapa + 1);
+        }
+    };
+    
+    const onSubmit = async (data: FormData) => {
+        const novoCiclo: Omit<Ciclo, 'id' | 'studyPlanId'> = {
+            nome: data.nomeCiclo,
+            sessoes: data.sessoesGeradas.map((s, i) => ({
+                id: `new-sessao-${i}`,
+                ordem: i,
+                ...s
+            }))
+        };
+        try {
+            const cicloCriado = await addCiclo(novoCiclo);
+            setCicloAtivoId(cicloCriado.id);
+            toast.success("Ciclo de estudos criado com sucesso!");
+            closeCriarCicloModal();
+        } catch (error) {
+            toast.error("Não foi possível criar o ciclo.");
         }
     };
 
-    const steps = [
-        { num: 1, title: 'Matérias', icon: BookOpenIcon },
-        { num: 2, title: 'Duração', icon: ClockIcon },
-        { num: 3, title: 'Sessões', icon: SettingsIcon },
-        { num: 4, title: 'Resumo', icon: CheckCircle2Icon },
-    ];
-    
-    const currentStepInfo = steps[step - 1];
-
     if (!isCriarCicloModalOpen) return null;
 
+    const etapas = [
+        { icon: BookOpenIcon, title: 'Matérias' },
+        { icon: ClockIcon, title: 'Duração' },
+        { icon: SettingsIcon, title: 'Organização' },
+    ];
+
     return (
-         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeModal}>
-            <div className="bg-card/80 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                <header className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
-                    <div>
-                        <h2 className="text-xl font-bold">Criar Ciclo de Estudos</h2>
-                        <p className="text-sm text-muted-foreground">Etapa {step}: {currentStepInfo.title}</p>
-                    </div>
-                     <button type="button" onClick={closeModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeCriarCicloModal}>
+            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl" onClick={e => e.stopPropagation()}>
+                <header className="p-4 border-b border-border flex items-center justify-between">
+                    <h2 className="text-lg font-bold">Criar Novo Ciclo de Estudos</h2>
+                    <button type="button" onClick={closeCriarCicloModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
                 </header>
 
-                <div className="p-6 flex-shrink-0">
-                    <div className="w-full bg-black/20 rounded-full h-1.5 mb-4">
-                        <div className="bg-gradient-to-r from-primary to-secondary h-1.5 rounded-full transition-all duration-500" style={{ width: `${((step -1) / (steps.length - 1)) * 100}%` }}></div>
+                <div className="p-6">
+                    {/* Stepper */}
+                    <div className="flex items-center justify-center mb-6">
+                        {etapas.map((item, index) => (
+                            <React.Fragment key={index}>
+                                <div className="flex flex-col items-center">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${etapa > index + 1 ? 'bg-secondary border-secondary text-black' : etapa === index + 1 ? 'border-primary text-primary scale-110' : 'border-border text-muted-foreground'}`}>
+                                        {etapa > index + 1 ? <CheckCircle2Icon className="w-5 h-5" /> : <item.icon className="w-5 h-5"/>}
+                                    </div>
+                                    <span className={`mt-2 text-xs font-bold ${etapa === index + 1 ? 'text-primary' : 'text-muted-foreground'}`}>{item.title}</span>
+                                </div>
+                                {index < etapas.length - 1 && <div className={`flex-1 h-0.5 mx-4 ${etapa > index + 1 ? 'bg-secondary' : 'bg-border'}`}></div>}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    <div className="min-h-[50vh]">
+                        {etapa === 1 && <Etapa1 formMethods={formMethods} />}
+                        {etapa === 2 && <Etapa2 formMethods={formMethods} />}
+                        {etapa === 3 && <Etapa3 formMethods={formMethods} />}
                     </div>
                 </div>
 
-                <main className="px-6 pb-6 flex-1 overflow-y-auto">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={step}
-                            initial={{ x: 30, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: -30, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            {step === 1 && <Etapa1 formMethods={formMethods} />}
-                            {step === 2 && <Etapa2 formMethods={formMethods} />}
-                            {step === 3 && <Etapa3 formMethods={formMethods} />}
-                            {step === 4 && <Etapa4 formMethods={formMethods} />}
-                        </motion.div>
-                    </AnimatePresence>
-                </main>
-                
-                <footer className="p-4 bg-black/20 border-t border-border flex justify-between items-center flex-shrink-0">
-                    <button onClick={prevStep} disabled={step === 1} className="h-10 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50 flex items-center gap-2">
-                        <ChevronLeftIcon className="w-4 h-4"/> Anterior
+                <footer className="p-4 bg-muted/30 border-t border-border flex justify-between items-center">
+                    <button type="button" onClick={() => etapa > 1 && setEtapa(etapa - 1)} disabled={etapa === 1} className="h-10 px-4 flex items-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50">
+                        <ChevronLeftIcon className="w-4 h-4"/> Voltar
                     </button>
-                    {step < 4 ? (
-                        <button onClick={handleNextValidation} className="h-10 px-4 rounded-lg bg-primary text-black font-bold text-sm hover:opacity-90 transition-opacity flex items-center gap-2">
+                    {etapa < 3 ? (
+                        <button type="button" onClick={handleNext} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
                             Próximo <ChevronRightIcon className="w-4 h-4"/>
                         </button>
                     ) : (
-                        <button onClick={handleSubmit(onSave)} className="h-10 px-4 rounded-lg bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold hover:opacity-90 transition-opacity flex items-center gap-2">
-                           <CheckCircle2Icon className="w-4 h-4"/> Salvar Ciclo
+                        <button type="button" onClick={handleSubmit(onSubmit)} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold hover:bg-secondary/90">
+                            <CheckCircle2Icon className="w-4 h-4"/> Concluir e Salvar Ciclo
                         </button>
                     )}
                 </footer>
@@ -431,6 +339,5 @@ const CriarCicloModal: React.FC = () => {
         </div>
     );
 };
-
 
 export default CriarCicloModal;

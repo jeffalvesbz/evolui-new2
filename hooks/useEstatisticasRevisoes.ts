@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { subDays, isAfter } from 'date-fns';
 
 export const useEstatisticasRevisoes = () => {

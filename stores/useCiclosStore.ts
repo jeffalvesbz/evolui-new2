@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { Ciclo, SessaoCiclo } from '../types';
 import { getCiclos, createCiclo, updateCicloApi, deleteCiclo } from '../services/geminiService';
@@ -10,14 +11,14 @@ interface CiclosState {
   loading: boolean;
   ultimaSessaoConcluidaId: string | null; // Novo estado para rastrear progresso
   
-  fetchCiclos: (editalId: string) => Promise<void>;
+  fetchCiclos: (studyPlanId: string) => Promise<void>;
   getCicloAtivo: () => Ciclo | null;
   setCicloAtivoId: (id: string | null) => void;
   setUltimaSessaoConcluida: (cicloId: string, sessaoId: string) => void;
   addCiclo: (cicloData: Omit<Ciclo, 'id' | 'studyPlanId'>) => Promise<Ciclo>;
   updateCiclo: (id: string, updates: Partial<Omit<Ciclo, 'id'>>) => Promise<void>;
   removeCiclo: (id: string) => void;
-  addSessaoAoCiclo: (cicloId: string, disciplinaId: string, tempoPrevisto: number) => void;
+  addSessaoAoCiclo: (cicloId: string, disciplinaId: string, tempoPrevisto: number) => Promise<void>;
   reordenarSessao: (cicloId: string, sessaoId: string, direcao: 'up' | 'down') => Promise<void>;
   removeSessaoDoCiclo: (cicloId: string, sessaoId: string) => Promise<void>;
   removeSessoesPorDisciplina: (disciplinaId: string) => void;
@@ -29,10 +30,11 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       loading: false,
       ultimaSessaoConcluidaId: null,
 
-      fetchCiclos: async (editalId: string) => {
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchCiclos: async (studyPlanId: string) => {
         set({ loading: true });
         try {
-            const ciclos = await getCiclos(editalId);
+            const ciclos = await getCiclos(studyPlanId);
             set({ ciclos });
             if (!get().cicloAtivoId && ciclos.length > 0) {
                 set({ cicloAtivoId: ciclos[0].id });
@@ -70,11 +72,11 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
           localStorage.setItem(`ciclo-progress-${cicloId}`, JSON.stringify(sessaoId));
       },
       addCiclo: async (cicloData) => {
-        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
-        if (!editalAtivoId) throw new Error("Edital não selecionado.");
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        if (!studyPlanId) throw new Error("Plano de estudo não selecionado.");
 
         try {
-            const novoCiclo = await createCiclo(editalAtivoId, cicloData);
+            const novoCiclo = await createCiclo(studyPlanId, cicloData);
             set(state => ({ ciclos: [...state.ciclos, novoCiclo] }));
             return novoCiclo;
         } catch(e) {
@@ -83,10 +85,8 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
         }
       },
       updateCiclo: async (id, updates) => {
-        const ciclo = get().ciclos.find(c => c.id === id);
-        if(!ciclo) return;
         try {
-            const cicloAtualizado = await updateCicloApi(id, { ...ciclo, ...updates });
+            const cicloAtualizado = await updateCicloApi(id, updates);
             set(state => ({
                 ciclos: state.ciclos.map(c => c.id === id ? cicloAtualizado : c),
             }));
@@ -107,20 +107,20 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
             toast.error("Falha ao remover ciclo.");
         }
       },
-      addSessaoAoCiclo: (cicloId, disciplinaId, tempoPrevisto) => {
+      addSessaoAoCiclo: async (cicloId, disciplinaId, tempoPrevisto) => {
           const ciclo = get().ciclos.find(c => c.id === cicloId);
           if(!ciclo) return;
-          const novaSessao = {
-              id: `sessao-${Date.now()}`,
+          const sessoesAtuais = ciclo.sessoes || [];
+          const novaSessao: Omit<SessaoCiclo, 'id'> & { id?: string } = {
               disciplina_id: disciplinaId,
               tempo_previsto: tempoPrevisto,
-              ordem: ciclo.sessoes.length,
+              ordem: sessoesAtuais.length,
           };
-          get().updateCiclo(cicloId, { sessoes: [...ciclo.sessoes, novaSessao] });
+          await get().updateCiclo(cicloId, { sessoes: [...sessoesAtuais, novaSessao as SessaoCiclo] });
       },
       reordenarSessao: async (cicloId, sessaoId, direcao) => {
         const ciclo = get().ciclos.find(c => c.id === cicloId);
-        if (!ciclo) return;
+        if (!ciclo || !ciclo.sessoes) return;
 
         const sessoes = [...ciclo.sessoes];
         const index = sessoes.findIndex(s => s.id === sessaoId);
@@ -136,7 +136,7 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       },
       removeSessaoDoCiclo: async (cicloId, sessaoId) => {
           const ciclo = get().ciclos.find(c => c.id === cicloId);
-          if(!ciclo) return;
+          if(!ciclo || !ciclo.sessoes) return;
           const sessoesAtualizadas = ciclo.sessoes
             .filter(s => s.id !== sessaoId)
             .map((s, i) => ({ ...s, ordem: i })); // Reajusta a ordem
@@ -144,8 +144,8 @@ export const useCiclosStore = create<CiclosState>((set, get) => ({
       },
       removeSessoesPorDisciplina: (disciplinaId) => {
           get().ciclos.forEach(ciclo => {
-              const sessoesFiltradas = ciclo.sessoes.filter(s => s.disciplina_id !== disciplinaId);
-              if(sessoesFiltradas.length < ciclo.sessoes.length) {
+              const sessoesFiltradas = (ciclo.sessoes || []).filter(s => s.disciplina_id !== disciplinaId);
+              if(sessoesFiltradas.length < (ciclo.sessoes || []).length) {
                   get().updateCiclo(ciclo.id, { sessoes: sessoesFiltradas });
               }
           });

@@ -16,11 +16,17 @@ const generateTopicId = () =>
     : `topico-${Math.random().toString(36).slice(2, 10)}`;
 
 const Edital = () => {
-  const disciplinas = useDisciplinasStore((state) => state.disciplinas);
-  const addDisciplina = useDisciplinasStore((state) => state.addDisciplina);
-  const updateDisciplina = useDisciplinasStore((state) => state.updateDisciplina);
-  const removeDisciplina = useDisciplinasStore((state) => state.removeDisciplina);
-  const getAverageProgress = useDisciplinasStore((state) => state.getAverageProgress);
+  const { 
+    disciplinas, 
+    addDisciplina, 
+    updateDisciplina, 
+    removeDisciplina, 
+    getAverageProgress,
+    addTopico,
+    updateTopico,
+    removeTopico,
+  } = useDisciplinasStore();
+  
   const openAddTopicModal = useModalStore((state) => state.openAddTopicModal);
 
   const [mode, setMode] = useState<PainelMode>('default');
@@ -28,20 +34,31 @@ const Edital = () => {
 
   const averageProgress = useMemo(() => getAverageProgress(), [getAverageProgress, disciplinas]);
 
+  // FIX: Reworked logic to create disciplina first, then add topics to fix type error and ensure UI updates correctly.
   const handleCreateDisciplina = async (payload: PainelDisciplinaPayload) => {
     try {
+      // Step 1: Create the disciplina with an empty topics array.
       const disciplina = await addDisciplina({
         nome: payload.nome,
         anotacoes: payload.anotacoes,
-        topicos: payload.topicos.map((topic) => ({
-          id: '', // será gerado pelo backend
-          titulo: (topic.titulo || '').trim(),
-          concluido: topic.concluido || false,
-          nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
-          ultimaRevisao: topic.ultimaRevisao || null,
-          proximaRevisao: topic.proximaRevisao || null,
-        })),
+        topicos: [],
       });
+      
+      // Step 2: Add topics to the newly created disciplina.
+      const topicPromises = payload.topicos
+        .filter(topic => topic.titulo && topic.titulo.trim())
+        .map(topic => {
+            const newTopic: Omit<Topico, 'id'> = {
+                titulo: (topic.titulo || '').trim(),
+                concluido: topic.concluido || false,
+                nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
+                ultimaRevisao: null,
+                proximaRevisao: null,
+            };
+            return addTopico(disciplina.id, newTopic);
+        });
+
+      await Promise.all(topicPromises);
       
       toast.success(`Disciplina "${disciplina.nome}" adicionada ao edital!`);
       setMode('default');
@@ -56,12 +73,52 @@ const Edital = () => {
     if (!selectedDiscipline) return;
 
     try {
-      await updateDisciplina(selectedDiscipline.id, {
-        nome: payload.nome,
-        anotacoes: payload.anotacoes,
-        progresso: payload.progresso,
-        topicos: payload.topicos,
-      });
+      // Step 1: Update disciplina's own fields (if changed)
+      if (selectedDiscipline.nome !== payload.nome || selectedDiscipline.anotacoes !== payload.anotacoes) {
+        await updateDisciplina(selectedDiscipline.id, {
+          nome: payload.nome,
+          anotacoes: payload.anotacoes,
+        });
+      }
+
+      // Step 2: Diff and update topics
+      const originalTopicos = selectedDiscipline.topicos;
+      const newTopicos = payload.topicos;
+
+      const originalTopicIds = new Set(originalTopicos.map(t => t.id));
+      const newTopicIds = new Set(newTopicos.filter(t => t.id).map(t => t.id as string));
+
+      // Topics to delete
+      const topicsToDelete = originalTopicos.filter(t => !newTopicIds.has(t.id));
+      for (const topic of topicsToDelete) {
+        await removeTopico(selectedDiscipline.id, topic.id);
+      }
+
+      // Topics to add or update
+      for (const newTopic of newTopicos) {
+        if (newTopic.id) { // Existing topic, check for updates
+          const originalTopic = originalTopicos.find(t => t.id === newTopic.id);
+          // Check if any property has changed
+          const hasChanged = originalTopic && (
+            originalTopic.titulo !== newTopic.titulo ||
+            originalTopic.concluido !== newTopic.concluido ||
+            originalTopic.nivelDificuldade !== newTopic.nivelDificuldade
+          );
+          if (hasChanged) {
+            await updateTopico(selectedDiscipline.id, newTopic.id, newTopic);
+          }
+        } else { // New topic
+          if(newTopic.titulo?.trim()) { // Only add if it has a title
+            await addTopico(selectedDiscipline.id, {
+              titulo: newTopic.titulo.trim(),
+              concluido: newTopic.concluido || false,
+              nivelDificuldade: newTopic.nivelDificuldade || 'desconhecido',
+              ultimaRevisao: null,
+              proximaRevisao: null,
+            });
+          }
+        }
+      }
 
       toast.success(`Disciplina "${payload.nome}" atualizada!`);
       setMode('default');

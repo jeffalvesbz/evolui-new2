@@ -7,7 +7,7 @@ import { useEditalStore } from './useEditalStore';
 interface RedacaoStore {
   historico: RedacaoCorrigida[];
   loading: boolean;
-  fetchRedacoes: (editalId: string) => Promise<void>;
+  fetchRedacoes: (studyPlanId: string) => Promise<void>;
   addCorrecao: (data: Omit<RedacaoCorrigida, 'id' | 'data' | 'studyPlanId'>) => Promise<void>;
 }
 
@@ -15,10 +15,11 @@ export const useRedacaoStore = create<RedacaoStore>((set, get) => ({
       historico: [],
       loading: false,
 
-      fetchRedacoes: async (editalId: string) => {
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchRedacoes: async (studyPlanId: string) => {
           set({ loading: true });
           try {
-              const historico = await getRedacoes(editalId);
+              const historico = await getRedacoes(studyPlanId);
               set({ historico });
           } catch (error) {
               console.error("Failed to fetch redacoes:", error);
@@ -29,13 +30,14 @@ export const useRedacaoStore = create<RedacaoStore>((set, get) => ({
       },
 
       addCorrecao: async (data) => {
-        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
-        if (!editalAtivoId) {
-            toast.error("Nenhum edital ativo para salvar a redação.");
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        if (!studyPlanId) {
+            toast.error("Nenhum plano de estudo ativo para salvar a redação.");
             return;
         }
         try {
-            const novaRedacaoCorrigida = await createRedacao(editalAtivoId, data);
+            // ✅ Corrigido: Adicionada a propriedade `data` obrigatória na chamada `createRedacao`.
+            const novaRedacaoCorrigida = await createRedacao(studyPlanId, { ...data, data: new Date().toISOString() });
             set(state => ({
               historico: [novaRedacaoCorrigida, ...state.historico],
             }));

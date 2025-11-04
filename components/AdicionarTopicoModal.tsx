@@ -10,11 +10,9 @@ interface FormData {
   titulo: string;
 }
 
-const generateTopicId = () => `topico-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
 const AdicionarTopicoModal: React.FC = () => {
     const { isAddTopicModalOpen, addTopicTargetDisciplinaId, closeAddTopicModal } = useModalStore();
-    const { disciplinas, updateDisciplina } = useDisciplinasStore();
+    const { disciplinas, addTopico } = useDisciplinasStore();
     
     const [isModoContinuo, setIsModoContinuo] = useState(true);
     const [isBatchMode, setIsBatchMode] = useState(false);
@@ -33,11 +31,10 @@ const AdicionarTopicoModal: React.FC = () => {
         }
     }, [isAddTopicModalOpen, reset, setFocus]);
 
-    const handleAddTopic = useCallback(async (titulo: string) => {
+    const handleAddSingleTopic = useCallback(async (titulo: string) => {
         if (!disciplina || !titulo.trim()) return;
 
-        const novoTopico: Topico = {
-            id: generateTopicId(),
+        const novoTopicoData: Omit<Topico, 'id'> = {
             titulo: titulo.trim(),
             concluido: false,
             nivelDificuldade: 'desconhecido',
@@ -45,13 +42,12 @@ const AdicionarTopicoModal: React.FC = () => {
             proximaRevisao: null,
         };
 
-        const topicosAtualizados = [...disciplina.topicos, novoTopico];
-        await updateDisciplina(disciplina.id, { topicos: topicosAtualizados });
+        await addTopico(disciplina.id, novoTopicoData);
         
-    }, [disciplina, updateDisciplina]);
+    }, [disciplina, addTopico]);
     
     const onSubmit: SubmitHandler<FormData> = async (data) => {
-        await handleAddTopic(data.titulo);
+        await handleAddSingleTopic(data.titulo);
         toast.success(`Tópico "${data.titulo}" adicionado!`);
         
         if (isModoContinuo) {
@@ -67,17 +63,18 @@ const AdicionarTopicoModal: React.FC = () => {
         const titulos = batchTopics.split('\n').map(t => t.trim()).filter(Boolean);
         if(titulos.length === 0) return;
 
-        const novosTopicos: Topico[] = titulos.map(titulo => ({
-            id: generateTopicId(),
-            titulo,
-            concluido: false,
-            nivelDificuldade: 'desconhecido',
-            ultimaRevisao: null,
-            proximaRevisao: null,
-        }));
+        const addPromises = titulos.map(titulo => {
+             const novoTopicoData: Omit<Topico, 'id'> = {
+                titulo: titulo.trim(),
+                concluido: false,
+                nivelDificuldade: 'desconhecido',
+                ultimaRevisao: null,
+                proximaRevisao: null,
+            };
+            return addTopico(disciplina.id, novoTopicoData);
+        });
         
-        const topicosAtualizados = [...disciplina.topicos, ...novosTopicos];
-        await updateDisciplina(disciplina.id, { topicos: topicosAtualizados });
+        await Promise.all(addPromises);
         toast.success(`${titulos.length} tópicos adicionados em lote!`);
         closeAddTopicModal();
     };

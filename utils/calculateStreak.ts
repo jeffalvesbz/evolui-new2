@@ -1,17 +1,18 @@
 
-import { SessaoEstudo } from '../types';
+import { useMemo } from 'react';
+import { useHistoricoStore, HistoricoItem } from '../stores/useHistoricoStore';
 
-export const calculateStreakFromSessoes = (sessoes: SessaoEstudo[]): number => {
-    if (!sessoes || sessoes.length === 0) {
-        return 0;
+export const calculateStreakFromHistory = (historico: HistoricoItem[]): { streak: number, lastDay: Date | null } => {
+    if (!historico || historico.length === 0) {
+        return { streak: 0, lastDay: null };
     }
 
-    const studyDays = [...new Set(sessoes.map(s => s.data_estudo))]
+    const studyDays = [...new Set(historico.map(s => s.data))]
         .map((dateStr: string) => new Date(`${dateStr}T00:00:00`))
         .sort((a, b) => b.getTime() - a.getTime());
 
     if (studyDays.length === 0) {
-        return 0;
+        return { streak: 0, lastDay: null };
     }
 
     const today = new Date();
@@ -23,7 +24,7 @@ export const calculateStreakFromSessoes = (sessoes: SessaoEstudo[]): number => {
     
     // Se o último dia de estudo não for hoje nem ontem, o streak é 0
     if (lastStudyDay.getTime() < yesterday.getTime()) {
-        return 0;
+        return { streak: 0, lastDay: lastStudyDay };
     }
 
     let currentStreak = 1;
@@ -41,5 +42,11 @@ export const calculateStreakFromSessoes = (sessoes: SessaoEstudo[]): number => {
         }
     }
     
-    return currentStreak;
+    return { streak: currentStreak, lastDay: lastStudyDay };
+};
+
+
+export const useUnifiedStreak = () => {
+    const historico = useHistoricoStore((state) => state.historico);
+    return useMemo(() => calculateStreakFromHistory(historico), [historico]);
 };

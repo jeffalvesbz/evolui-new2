@@ -18,7 +18,7 @@ const TopicoItem: React.FC<{
     topico: Topico;
     disciplinaId: string;
 }> = ({ topico, disciplinaId }) => {
-    const { updateTopico, updateDisciplina, disciplinas } = useDisciplinasStore();
+    const { updateTopico, removeTopico, disciplinas } = useDisciplinasStore();
     const [isEditing, setIsEditing] = useState(false);
     const [editValue, setEditValue] = useState(topico.titulo);
 
@@ -53,12 +53,10 @@ const TopicoItem: React.FC<{
     };
 
     const handleDelete = () => {
-        const disciplina = disciplinas.find(d => d.id === disciplinaId);
-        if(!disciplina) return;
         if(window.confirm(`Tem certeza que deseja remover o tópico "${topico.titulo}"?`)){
-            const topicosAtualizados = disciplina.topicos.filter(t => t.id !== topico.id);
-            updateDisciplina(disciplinaId, { topicos: topicosAtualizados });
-            toast.success("Tópico removido.");
+            removeTopico(disciplinaId, topico.id)
+                .then(() => toast.success("Tópico removido."))
+                .catch(() => {}); // Error is already toasted in the store
         }
     };
 
