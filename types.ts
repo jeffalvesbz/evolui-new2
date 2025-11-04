@@ -155,6 +155,19 @@ export interface RedacaoCorrigida {
   studyPlanId: string;
 }
 
+export interface Simulation {
+  id: string;
+  name: string;
+  correct: number;
+  wrong: number;
+  blank?: number;
+  durationMinutes: number;
+  notes?: string;
+  date: string;
+  edital_id: string;
+  isCebraspe?: boolean;
+}
+
 // Tipos para o Gerador de Plano IA
 export interface DisciplinaParaIA {
   id: string;
