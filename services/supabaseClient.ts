@@ -1,16 +1,13 @@
-import { createClient } from '@supabase/supabase-js'
-import type { Database } from '../types/supabase'
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '../types/supabase'; // Este tipo será gerado pelo Supabase CLI
 
-// 🔒 Variáveis carregadas do ambiente do Vite/Vercel
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// ATENÇÃO: Substitua pelos valores do seu projeto Supabase!
+// Vá para Project Settings > API no seu dashboard Supabase.
+const supabaseUrl = process.env.SUPABASE_URL || 'YOUR_SUPABASE_URL';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
-// 🔐 Garante que não suba sem configuração
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('❌ Supabase environment variables are missing')
+if (supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
+    console.warn('Variáveis de ambiente do Supabase não configuradas. A aplicação usará placeholders e falhará ao conectar.');
 }
 
-// ✅ Criação do cliente Supabase (frontend seguro)
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-  auth: { persistSession: true },
-})
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

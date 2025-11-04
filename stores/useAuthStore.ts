@@ -1,74 +1,53 @@
 import { create } from 'zustand';
 import { User } from '../types';
-import { login as loginApi, signup as signupApi } from '../services/geminiService';
+import { login as loginApi } from '../services/geminiService';
 import { toast } from '../components/Sonner';
-import { supabase } from '../services/supabaseClient';
-import type { Session } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
-  session: Session | null;
+  token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  session: null,
+  token: null,
   isAuthenticated: false,
   loading: false,
   
   login: async (email, password) => {
     set({ loading: true });
     try {
-      await loginApi(email, password);
-      // onAuthStateChange will handle setting the user state
+      const { token, user } = await loginApi(email, password);
+      localStorage.setItem('authToken', token);
+      set({ user, token, isAuthenticated: true, loading: false });
     } catch (error) {
       console.error("Login failed:", error);
       set({ loading: false });
       throw error;
-    } finally {
-        set({ loading: false });
     }
   },
 
-  signup: async (email, password, name) => {
-    set({ loading: true });
-    try {
-        await signupApi(email, password, name);
-    } catch (error) {
-        console.error("Signup failed:", error);
-        throw error;
-    } finally {
-        set({ loading: false });
-    }
-  },
-
-  logout: async () => {
-    await supabase.auth.signOut();
-    set({ user: null, session: null, isAuthenticated: false });
+  logout: () => {
+    localStorage.removeItem('authToken');
+    set({ user: null, token: null, isAuthenticated: false });
+    // Opcional: redirecionar para a página de login
+    window.location.reload();
   },
   
   checkAuth: () => {
-    supabase.auth.onAuthStateChange((_event, session) => {
-        const user = session?.user;
-        if (user) {
-            set({ 
-                user: {
-                    id: user.id,
-                    name: user.user_metadata.name || 'Usuário',
-                    email: user.email || ''
-                },
-                session, 
-                isAuthenticated: true 
-            });
-        } else {
-            set({ user: null, session: null, isAuthenticated: false });
-        }
-    });
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        // Em um app real, você validaria o token com o backend aqui
+        // e buscaria os dados do usuário.
+        const MOCK_USER: User = { id: 'user-1', name: 'Jefferson Alves', email: 'test@evolui.app' };
+        set({ user: MOCK_USER, token, isAuthenticated: true });
+    } else {
+        set({ user: null, token: null, isAuthenticated: false });
+    }
   },
 }));

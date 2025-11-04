@@ -1,5 +1,3 @@
-
-
 import React, { useMemo } from 'react';
 import {
     BarChart3Icon,
@@ -21,7 +19,6 @@ import { useStudyStore } from '../stores/useStudyStore';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { subDays, format } from 'date-fns';
 
 const formatStudyDuration = (minutes: number) => {
@@ -195,7 +192,7 @@ const Estatisticas: React.FC = () => {
                                         ))}
                                     </Pie>
                                     <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} formatter={(value: number) => `${formatStudyDuration(value)}`} />
-                                    <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}}/>
+                                    <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}} />
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (

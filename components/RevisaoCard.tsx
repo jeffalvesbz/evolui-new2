@@ -4,7 +4,6 @@ import { ClockIcon, CheckCircle2Icon, AlertCircleIcon, CalendarDaysIcon, BookCop
 import { Revisao } from '../types';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { formatDistanceToNow } from 'date-fns';
-// FIX: Changed date-fns/locale import to a subpath import to resolve module export error.
 import { ptBR } from 'date-fns/locale';
 
 interface RevisaoCardProps {
@@ -51,7 +50,6 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
     const { Icon: OrigemIcon, label: origemLabel } = getOrigemInfo(revisao.origem);
 
     const dataFormatada = useMemo(() => {
-        // FIX: Changed locale import to a named import.
         return formatDistanceToNow(new Date(revisao.data_prevista), { addSuffix: true, locale: ptBR });
     }, [revisao.data_prevista]);
 

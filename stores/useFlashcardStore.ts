@@ -1,8 +1,8 @@
+
 import { create } from 'zustand';
 import { Flashcard, Disciplina } from '../types';
 import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as deleteFlashcardApi } from '../services/geminiService';
 import { toast } from '../components/Sonner';
-// FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
 
 interface FlashcardStore {

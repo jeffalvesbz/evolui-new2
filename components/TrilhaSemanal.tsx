@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, SearchIcon } from './icons';
+import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon } from './icons';
 import { Topico } from '../types';
 import { useModalStore } from '../stores/useModalStore';
 
@@ -102,7 +102,7 @@ const TrilhaSemanal: React.FC = () => {
     const { openGeradorPlanoModal } = useModalStore();
 
     const [draggingOverDay, setDraggingOverDay] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [filtroDisciplina, setFiltroDisciplina] = useState<string>('todas');
 
     const allTopics = useMemo(() => 
         disciplinas.flatMap(d => 
@@ -119,13 +119,12 @@ const TrilhaSemanal: React.FC = () => {
             const isUnscheduled = !scheduledTopicIds.has(t.id);
             if (!isUnscheduled) return false;
 
-            if (searchTerm.trim() === '') {
+            if (filtroDisciplina === 'todas') {
                 return true;
             }
-            return t.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                   t.disciplinaNome.toLowerCase().includes(searchTerm.toLowerCase());
+            return t.disciplinaId === filtroDisciplina;
         });
-    }, [allTopics, scheduledTopicIds, searchTerm]);
+    }, [allTopics, scheduledTopicIds, filtroDisciplina]);
 
     const topicsByDay = useMemo(() => {
         const result: { [key: string]: DraggableTopic[] } = {};
@@ -194,63 +193,76 @@ const TrilhaSemanal: React.FC = () => {
                     Gerar Plano com IA
                 </button>
             </header>
-            <div className="flex-1 p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[22rem_1fr] gap-6 overflow-hidden">
-                {/* Backlog Column */}
-                <div className="flex flex-col">
-                    <Card className="flex-1 flex flex-col overflow-hidden">
-                        <div className="p-3 border-b border-border flex justify-between items-center flex-shrink-0">
-                            <h2 className="text-xl font-bold">Backlog de Tópicos ({unscheduledTopics.length})</h2>
-                            <div className="relative">
-                                <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-40 rounded-md border border-border bg-background py-1.5 pl-8 pr-2 text-sm focus:border-primary focus:ring-primary"
-                                />
-                            </div>
+            <div className="flex-1 p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden">
+                {/* Unscheduled Topics */}
+                <div className="lg:col-span-1 flex flex-col h-full overflow-y-hidden">
+                    <Card className="flex-1 flex flex-col h-full overflow-y-hidden p-4">
+                        <div className="sticky top-0 bg-card z-10 pb-4">
+                            <h2 className="text-lg font-semibold text-card-foreground mb-2">Tópicos não agendados</h2>
+                            <select
+                                id="disciplina-filter"
+                                value={filtroDisciplina}
+                                onChange={(e) => setFiltroDisciplina(e.target.value)}
+                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
+                                aria-label="Filtrar por disciplina"
+                            >
+                                <option value="todas">Todas as Disciplinas</option>
+                                {disciplinas.map(d => (
+                                    <option key={d.id} value={d.id}>{d.nome}</option>
+                                ))}
+                            </select>
                         </div>
-                        <div
-                            className={`flex-1 p-3 overflow-y-auto transition-colors ${draggingOverDay === 'backlog' ? 'bg-primary/10' : ''}`}
-                            onDragOver={handleDragOver}
-                            onDrop={(e) => handleDrop(e, 'backlog')}
-                            onDragEnter={() => setDraggingOverDay('backlog')}
-                            onDragLeave={() => setDraggingOverDay(null)}
-                        >
-                            {unscheduledTopics.map((topic, index) => (
-                                <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, 'backlog', index)} />
-                            ))}
+                        <div className="overflow-y-auto flex-1 -mr-4 pr-4">
+                            {unscheduledTopics.length > 0 ? (
+                                unscheduledTopics.map((topic) => (
+                                    <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, 'backlog', -1)} />
+                                ))
+                            ) : (
+                                <div className="text-center text-muted-foreground p-8">
+                                    <p>Nenhum tópico encontrado.</p>
+                                </div>
+                            )}
                         </div>
                     </Card>
                 </div>
 
-
-                {/* Week Columns */}
-                <div className="overflow-x-auto">
-                    <div className="grid grid-cols-7 gap-4 min-w-[56rem]">
-                        {DIAS_SEMANA.map(dia => (
-                            <div key={dia.id} className="flex flex-col">
-                                <h3 className="font-bold text-center mb-4">{dia.nome} ({topicsByDay[dia.id].length})</h3>
-                                <Card
-                                    className={`flex-1 p-3 overflow-y-auto transition-colors ${draggingOverDay === dia.id ? 'bg-primary/10' : ''}`}
-                                    onDragOver={handleDragOver}
-                                    onDrop={(e) => handleDrop(e, dia.id)}
-                                    onDragEnter={() => setDraggingOverDay(dia.id)}
-                                    onDragLeave={() => setDraggingOverDay(null)}
-                                >
-                                    {isPlanoVazio && dia.id === 'seg' && (
-                                        <div className="text-center p-4 border-2 border-dashed border-border rounded-lg text-muted-foreground text-sm">
-                                            <p>Seu plano está vazio!</p>
-                                            <p>Arraste os tópicos do backlog para cá para começar.</p>
-                                        </div>
-                                    )}
-                                    {topicsByDay[dia.id].map((topic, index) => (
-                                        <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, dia.id, index)} />
-                                    ))}
-                                </Card>
+                {/* Weekly Grid */}
+                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-4 h-full overflow-y-auto">
+                    {DIAS_SEMANA.map(dia => (
+                        <div
+                            key={dia.id}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, dia.id)}
+                            onDragEnter={() => setDraggingOverDay(dia.id)}
+                            onDragLeave={() => setDraggingOverDay(null)}
+                            className={`p-2 rounded-lg transition-colors h-full flex flex-col ${draggingOverDay === dia.id ? 'bg-primary/10' : 'bg-muted/50'}`}
+                        >
+                            <h3 className="font-bold text-center text-primary mb-3 p-2">{dia.nome}</h3>
+                            <div className="flex-1 space-y-2 min-h-[100px]">
+                                {topicsByDay[dia.id].map((topic, index) => (
+                                    <TopicCard key={topic.id} topic={topic} onDragStart={(e) => handleDragStart(e, topic.id, dia.id, index)} />
+                                ))}
+                                {topicsByDay[dia.id].length === 0 && (
+                                    <div className="text-center text-xs text-muted-foreground pt-8">
+                                        Arraste um tópico aqui
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
+                    {isPlanoVazio && (
+                         <div className="md:col-span-4 xl:col-span-7 flex items-center justify-center -mt-32">
+                            <div className="text-center p-8">
+                                <FootprintsIcon className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-foreground">Seu planejamento está vazio.</h3>
+                                <p className="text-muted-foreground mt-2 mb-6">Arraste os tópicos da esquerda ou deixe que a nossa IA crie um plano para você.</p>
+                                <button onClick={openGeradorPlanoModal} className="h-11 px-6 flex items-center mx-auto gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                                    <SparklesIcon className="w-5 h-5" />
+                                    Gerar plano de estudos com IA
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

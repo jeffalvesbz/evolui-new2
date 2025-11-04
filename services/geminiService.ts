@@ -1,900 +1,786 @@
 
+
+
 import { GoogleGenAI, Type } from '@google/genai';
-import { supabase } from './supabaseClient';
-import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship, FriendRequest, NivelDificuldade } from '../types';
+import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship } from '../types';
 import { TrilhaSemanalData } from '../stores/useEstudosStore';
-import { Simulation } from '../stores/useStudyStore';
-import { subDays } from 'date-fns';
-import { WeeklyRankingData } from '../stores/useGamificationStore';
+import * as mockData from '../data/mockData';
+import { calculateStreakFromSessoes } from '../utils/calculateStreak';
+import { subDays, isAfter } from 'date-fns';
+
+// --- CONFIGURAÇÃO DO BACKEND ---
+// Mude para 'false' para tentar usar o backend real em http://localhost:4000
+const USE_MOCK_API = true;
+const API_BASE_URL = 'http://localhost:4000/api';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// --- Helper para obter o user_id ---
-const getUserId = async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session?.user.id) throw new Error("Usuário não autenticado.");
-    return data.session.user.id;
-}
+// #region MOCK API IMPLEMENTATION
+// =================================================================================
+// Esta seção simula um backend usando o localStorage do navegador.
+// Isso permite que o aplicativo funcione offline e contorna erros de conexão
+// com um backend local (http) a partir de um site seguro (https).
+// =================================================================================
 
-// --- Helper para calcular nível ---
-const calculateLevel = (xp: number): number => {
-    if (xp <= 0) return 1;
-    return Math.floor(Math.pow(xp / 100, 0.6)) + 1;
+const uuid = () => crypto.randomUUID();
+
+let db: any = null;
+
+const getDb = () => {
+    if (db) return db;
+    const savedDb = localStorage.getItem('evolui-db');
+    if (savedDb) {
+        db = JSON.parse(savedDb);
+        return db;
+    }
+    db = {
+        users: mockData.MOCK_USERS,
+        editais: mockData.MOCK_EDITAIS,
+        disciplinas: mockData.MOCK_DISCIPLINAS,
+        sessoes: mockData.MOCK_SESSOES,
+        revisoes: mockData.MOCK_REVISOES,
+        erros: mockData.MOCK_ERROS,
+        ciclos: mockData.MOCK_CICLOS,
+        redacoes: mockData.MOCK_REDACOES,
+        simulados: mockData.MOCK_SIMULADOS,
+        flashcards: mockData.MOCK_FLASHCARDS,
+        gamification_user_stats: mockData.MOCK_GAMIFICATION_STATS_LIST,
+        gamification_xp_log: mockData.MOCK_XP_LOG,
+        badges: mockData.MOCK_BADGES,
+        friendships: mockData.MOCK_FRIENDSHIPS,
+    };
+    persist();
+    return db;
 };
+
+const persist = () => {
+    if (db) {
+        localStorage.setItem('evolui-db', JSON.stringify(db));
+    }
+};
+
+const mockApiFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const method = options.method || 'GET';
+    const body = options.body ? JSON.parse(options.body as string) : {};
+    const db = getDb();
+    const url = new URL(`http://mock.api${endpoint}`);
+    const pathParts = url.pathname.split('/').filter(Boolean);
+
+    console.log(`[MOCK API] ${method} ${endpoint}`, body);
+    await new Promise(res => setTimeout(res, 200)); // Simular latência de rede
+
+    // --- Auth ---
+    if (endpoint === '/auth/login' && method === 'POST') {
+        const user = db.users.find(u => u.email === body.email);
+        if (user && body.password === 'password') {
+            return { token: `mock-token-${uuid()}`, user };
+        }
+        throw new Error("Credenciais inválidas (mock).");
+    }
+
+    // --- AI Proxies ---
+    if (endpoint.startsWith('/ai/')) {
+        if (endpoint === '/ai/generate-flashcards') return [{ pergunta: 'Qual a capital do Brasil?', resposta: 'Brasília.' }, { pergunta: 'Quanto é 2+2?', resposta: '4.' }];
+        if (endpoint === '/ai/generate-flashcards-from-content') {
+            await new Promise(res => setTimeout(res, 1500)); // Simulate AI thinking
+            return [
+                { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto'},
+                { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima.', estilo: 'explicativo' },
+                { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' },
+                { pergunta: 'Qual a finalidade da prisão preventiva?', resposta: 'Garantia da ordem pública, da ordem econômica, por conveniência da instrução criminal ou para assegurar a aplicação da lei penal.', estilo: 'direto' },
+                { pergunta: 'Diferencie dolo direto de dolo eventual.', resposta: 'No dolo direto, o agente quer o resultado. No dolo eventual, o agente assume o risco de produzi-lo.', estilo: 'explicativo' },
+            ];
+        }
+        if (endpoint === '/ai/suggest-topics') return ['Tópico Sugerido 1', 'Tópico Sugerido 2'];
+        // A correção de redação agora usa a API real, então este mock não será chamado por padrão.
+        if (endpoint === '/ai/corrigir-redacao') return mockData.MOCK_CORRECAO_COMPLETA;
+        if (endpoint === '/ai/extrair-texto-de-imagem') return { text: "Texto extraído da imagem com sucesso." };
+        if (endpoint === '/ai/gerar-plano-estudos') {
+            const { disciplinasComTopicos } = body;
+            const allTopicIds = disciplinasComTopicos.flatMap((d: DisciplinaParaIA) => d.topicos.map((t: Topico) => t.id));
+            if (allTopicIds.length === 0) return { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+
+            const mockPlan: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+            const dias = ['seg', 'ter', 'qua', 'qui', 'sex']; // Estudo em dias úteis (exemplo)
+            
+            // Embaralha e distribui os tópicos
+            const shuffledTopics = allTopicIds.sort(() => 0.5 - Math.random());
+            shuffledTopics.forEach((topicId, index) => {
+                const dia = dias[index % dias.length];
+                mockPlan[dia].push(topicId);
+            });
+            await new Promise(res => setTimeout(res, 1500)); // Simular tempo de processamento da IA
+            return mockPlan;
+        }
+    }
+    
+    // --- Generic CRUD ---
+    const [resource, id, subResource] = pathParts;
+    
+    try {
+        switch (resource) {
+            case 'users':
+                if (method === 'GET' && id === 'search') {
+                    const query = url.searchParams.get('q')?.toLowerCase() || '';
+                    const currentUserId = url.searchParams.get('currentUserId');
+                    const friends = db.friendships.filter((f: Friendship) => f.user_id_1 === currentUserId || f.user_id_2 === currentUserId);
+                    const friendIds = new Set(friends.map((f: Friendship) => f.user_id_1 === currentUserId ? f.user_id_2 : f.user_id_1));
+                    
+                    return db.users.filter((u: User) => 
+                        u.id !== currentUserId &&
+                        !friendIds.has(u.id) &&
+                        u.name.toLowerCase().includes(query)
+                    );
+                }
+                break;
+            case 'friends':
+                if (method === 'GET' && id) { // getFriends
+                    const userId = id;
+                    const friendIds = db.friendships
+                        .filter((f: Friendship) => (f.user_id_1 === userId || f.user_id_2 === userId) && f.status === 'accepted')
+                        .map((f: Friendship) => f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
+                    return db.users.filter((u: User) => friendIds.includes(u.id));
+                }
+                break;
+            case 'friend-requests':
+                if (method === 'GET' && id) { // getFriendRequests
+                    const userId = id;
+                    return db.friendships
+                        .filter((f: Friendship) => f.user_id_2 === userId && f.status === 'pending')
+                        .map((f: Friendship) => {
+                            const requester = db.users.find((u: User) => u.id === f.user_id_1);
+                            const requesterStats = db.gamification_user_stats.find((s: GamificationStats) => s.user_id === f.user_id_1);
+                            return {
+                                friendship_id: f.id,
+                                requester_id: f.user_id_1,
+                                requester_name: requester?.name || 'Usuário',
+                                requester_level: requesterStats?.level || 1,
+                            };
+                        });
+                }
+                if (method === 'POST') { // sendFriendRequest
+                    const { requesterId, receiverId } = body;
+                    const newRequest = { id: uuid(), user_id_1: requesterId, user_id_2: receiverId, status: 'pending', created_at: new Date().toISOString() };
+                    db.friendships.push(newRequest);
+                    return newRequest;
+                }
+                if (method === 'PUT' && id && subResource === 'accept') { // acceptFriendRequest
+                    db.friendships = db.friendships.map((f: Friendship) => f.id === id ? { ...f, status: 'accepted' } : f);
+                    return db.friendships.find((f: Friendship) => f.id === id);
+                }
+                if (method === 'PUT' && id && subResource === 'decline') { // declineFriendRequest
+                    db.friendships = db.friendships.map((f: Friendship) => f.id === id ? { ...f, status: 'declined' } : f);
+                    return db.friendships.find((f: Friendship) => f.id === id);
+                }
+                break;
+            case 'badges':
+                if (method === 'GET') return db.badges;
+                break;
+            case 'gamification':
+                if (method === 'GET' && id === 'stats') {
+                    const userId = subResource;
+                    return db.gamification_user_stats.find(s => s.user_id === userId) || null;
+                }
+                 if (method === 'GET' && id === 'log') {
+                    const userId = subResource;
+// FIX: Use .getTime() for proper date comparison in sort to avoid arithmetic operations on Date objects.
+                    return db.gamification_xp_log.filter((l: XpLogEntry) => l.user_id === userId).sort((a: XpLogEntry, b: XpLogEntry) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                }
+                if (method === 'GET' && id === 'ranking' && subResource === 'weekly') {
+                    const sevenDaysAgo = subDays(new Date(), 7);
+                    const weeklyLogs = db.gamification_xp_log.filter((log: XpLogEntry) => isAfter(new Date(log.created_at), sevenDaysAgo));
+                    
+                    const weeklyXpByUser = weeklyLogs.reduce((acc: Record<string, number>, log: XpLogEntry) => {
+                        acc[log.user_id] = (acc[log.user_id] || 0) + log.amount;
+                        return acc;
+                    }, {} as Record<string, number>);
+
+                    const allUsers = [...db.users, ...mockData.MOCK_USERS_FOR_RANKING];
+                    
+                    const fullRanking = Object.entries(weeklyXpByUser).map(([userId, weekly_xp]) => {
+                        const user = allUsers.find(u => u.id === userId);
+                        const userStats = db.gamification_user_stats.find(s => s.user_id === userId);
+                        return {
+                            user_id: userId,
+                            name: user?.name || 'Usuário Anônimo',
+                            level: userStats?.level || 1,
+                            weekly_xp,
+                        };
+                    })
+                    .sort((a, b) => b.weekly_xp - a.weekly_xp);
+
+                    const topRanking = fullRanking.slice(0, 10);
+                    
+                    const currentUserId = url.searchParams.get('userId');
+                    let currentUserRank = null;
+                    if (currentUserId) {
+                        const rankIndex = fullRanking.findIndex(u => u.user_id === currentUserId);
+                        if (rankIndex !== -1) {
+                            currentUserRank = { ...fullRanking[rankIndex], rank: rankIndex + 1 };
+                        }
+                    }
+
+                    return { ranking: topRanking, currentUserRank };
+                }
+                if (method === 'GET' && id === 'ranking' && subResource === 'friends') {
+                    const userId = url.searchParams.get('userId');
+                    if (!userId) throw new Error("userId is required for friends ranking");
+                    const friendIds = db.friendships
+                        .filter((f: Friendship) => (f.user_id_1 === userId || f.user_id_2 === userId) && f.status === 'accepted')
+                        .map((f: Friendship) => f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
+                    const allRelevantUserIds = [...friendIds, userId];
+
+                    const sevenDaysAgo = subDays(new Date(), 7);
+                    const weeklyLogs = db.gamification_xp_log.filter((log: XpLogEntry) => 
+                        isAfter(new Date(log.created_at), sevenDaysAgo) && allRelevantUserIds.includes(log.user_id)
+                    );
+                    
+                    const weeklyXpByUser = weeklyLogs.reduce((acc: Record<string, number>, log: XpLogEntry) => {
+                        acc[log.user_id] = (acc[log.user_id] || 0) + log.amount;
+                        return acc;
+                    }, {} as Record<string, number>);
+
+                    const allUsers: User[] = [...db.users, ...mockData.MOCK_USERS_FOR_RANKING];
+                    
+                    const fullRanking = allRelevantUserIds.map(uid => {
+                        const user = allUsers.find(u => u.id === uid);
+                        const userStats = db.gamification_user_stats.find((s: GamificationStats) => s.user_id === uid);
+                        return {
+                            user_id: uid,
+                            name: user?.name || 'Usuário Anônimo',
+                            level: userStats?.level || 1,
+                            weekly_xp: weeklyXpByUser[uid] || 0,
+                        };
+                    })
+                    .sort((a, b) => b.weekly_xp - a.weekly_xp);
+
+                    const currentUserRankData = fullRanking.find(u => u.user_id === userId);
+                    const currentUserRank = currentUserRankData ? { ...currentUserRankData, rank: fullRanking.findIndex(u => u.user_id === userId) + 1 } : null;
+                    
+                    return { ranking: fullRanking, currentUserRank };
+                }
+                if (method === 'POST' && id === 'log') {
+                    const { userId, event, amount, meta, tipo_evento, multiplicador } = body;
+                    const logEntry: XpLogEntry = { 
+                        id: uuid(), 
+                        user_id: userId, 
+                        event, 
+                        amount, 
+                        meta_json: meta, 
+                        created_at: new Date().toISOString(),
+                        tipo_evento,
+                        multiplicador,
+                    };
+                    db.gamification_xp_log.push(logEntry);
+                    
+                    let userStats = db.gamification_user_stats.find(s => s.user_id === userId);
+                    if (userStats) {
+                        userStats.xp_total += amount;
+                        // --- Streak Logic ---
+                        // Apenas eventos de estudo ativo contam para o streak
+                        if (event === 'cronometro_finalizado') {
+                            const userSessoes = db.sessoes;
+                            const streak = calculateStreakFromSessoes(userSessoes);
+                            userStats.current_streak_days = streak;
+                            if (streak > userStats.best_streak_days) {
+                                userStats.best_streak_days = streak;
+                            }
+                        }
+
+                    } else {
+                        const initialStreak = tipo_evento === 'ativo' ? 1 : 0;
+                        userStats = { user_id: userId, xp_total: amount, level: 1, current_streak_days: initialStreak, best_streak_days: initialStreak, unlockedBadgeIds: [] };
+                        db.gamification_user_stats.push(userStats);
+                    }
+                    return logEntry;
+                }
+                if (method === 'PUT' && id === 'stats') {
+                    const userId = subResource;
+                    let userStats = db.gamification_user_stats.find(s => s.user_id === userId);
+                    if (userStats) {
+                        // Only update fields provided in the body (xp_total, unlockedBadgeIds)
+                        if (body.xp_total) userStats.xp_total = body.xp_total;
+                        if (body.unlockedBadgeIds) userStats.unlockedBadgeIds = body.unlockedBadgeIds;
+                    }
+                    return userStats;
+                }
+                break;
+            case 'editais':
+                if (method === 'GET' && !id) return db.editais;
+                if (method === 'POST') {
+                    const alreadyExists = db.editais.some((e: StudyPlan) => e.nome === body.nome && e.data_alvo === body.data_alvo);
+                    if (alreadyExists) {
+                        console.warn(`[MOCK API] Duplicate edital creation prevented: "${body.nome}"`);
+                        return db.editais.find((e: StudyPlan) => e.nome === body.nome && e.data_alvo === body.data_alvo);
+                    }
+                    const newEdital = { ...body, id: uuid() };
+                    db.editais.push(newEdital);
+                    return newEdital;
+                }
+                if (method === 'PUT' && id) {
+                    db.editais = db.editais.map(e => e.id === id ? { ...e, ...body, id } : e);
+                    return db.editais.find(e => e.id === id);
+                }
+                if (method === 'DELETE' && id) {
+                    db.editais = db.editais.filter(e => e.id !== id);
+                    // Cascade delete
+                    db.disciplinas = db.disciplinas.filter(d => d.studyPlanId !== id);
+                    db.sessoes = db.sessoes.filter(s => s.studyPlanId !== id);
+                    return null;
+                }
+                if (method === 'GET' && id && subResource) {
+                    const parentId = id;
+                     if (subResource === 'disciplinas') return db.disciplinas.filter(d => d.studyPlanId === parentId);
+                     if (subResource === 'sessoes') return db.sessoes.filter(s => s.studyPlanId === parentId);
+                     if (subResource === 'revisoes') return db.revisoes.filter(r => r.studyPlanId === parentId);
+                     if (subResource === 'erros') return db.erros.filter(e => e.studyPlanId === parentId);
+                     if (subResource === 'ciclos') return db.ciclos.filter(c => c.studyPlanId === parentId);
+                     if (subResource === 'redacoes') return db.redacoes.filter(r => r.studyPlanId === parentId);
+                     if (subResource === 'simulados') return db.simulados.filter(s => s.edital_id === parentId);
+                }
+                if(method === 'POST' && id && subResource){
+                    const parentId = id;
+                    const newSubItem = { ...body, id: uuid(), studyPlanId: parentId };
+                    if (subResource === 'disciplinas') newSubItem.progresso = 0;
+                    if (subResource === 'simulados') newSubItem.edital_id = parentId; // compatibility with simulado type
+                    db[subResource].push(newSubItem);
+                    return newSubItem;
+                }
+                break;
+            case 'disciplinas':
+                 if (method === 'PUT' && id) {
+                    db.disciplinas = db.disciplinas.map(d => d.id === id ? { ...d, ...body, id } : d);
+                    return db.disciplinas.find(d => d.id === id);
+                }
+                if (method === 'DELETE' && id) {
+                    db.disciplinas = db.disciplinas.filter(d => d.id !== id);
+                    return null;
+                }
+                if(method === 'POST' && id && subResource === 'topicos'){
+                     const newTopico = { ...body, id: uuid() };
+                     const disciplina = db.disciplinas.find(d => d.id === id);
+                     disciplina.topicos.push(newTopico);
+                     return newTopico;
+                }
+                break;
+            case 'topicos':
+                if (method === 'PUT' && id) {
+                    let updatedTopico;
+                    db.disciplinas.forEach(d => {
+                        d.topicos = d.topicos.map(t => {
+                            if(t.id === id) {
+                                updatedTopico = { ...t, ...body, id};
+                                return updatedTopico;
+                            }
+                            return t;
+                        });
+                    });
+                    return updatedTopico;
+                }
+                if (method === 'GET' && id && subResource === 'flashcards') {
+                    return db.flashcards.filter(f => f.topico_id === id);
+                }
+                if (method === 'POST' && id && subResource === 'flashcards') {
+                    const newFlashcards = body.flashcards.map(fc => ({
+                        ...fc,
+                        id: uuid(),
+                        topico_id: id,
+                        interval: 1,
+                        easeFactor: 2.5,
+                        dueDate: new Date().toISOString()
+                    }));
+                    db.flashcards.push(...newFlashcards);
+                    return newFlashcards;
+                }
+                break;
+            case 'sessoes':
+            case 'revisoes':
+            case 'erros':
+            case 'ciclos':
+            case 'flashcards':
+            case 'simulados':
+                const resourceDb = resource === 'simulados' ? 'simulados' : resource;
+                 if (method === 'PUT' && id) {
+                    db[resourceDb] = db[resourceDb].map(item => item.id === id ? { ...item, ...body, id } : item);
+                    return db[resourceDb].find(item => item.id === id);
+                }
+                if (method === 'DELETE' && id) {
+                    db[resourceDb] = db[resourceDb].filter(item => item.id !== id);
+                    return null;
+                }
+                break;
+        }
+
+        throw new Error(`[MOCK API] Rota não encontrada: ${method} ${endpoint}`);
+    } finally {
+        persist();
+    }
+};
+
+// #endregion
+
+// =================================================================================
+// Esta seção é para o backend real. Ela tentará fazer uma chamada `fetch`.
+// Será usada se `USE_MOCK_API` for `false`.
+// =================================================================================
+const realApiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  const headers: HeadersInit = { ...options.headers };
+  
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  if (options.body) {
+      headers['Content-Type'] = 'application/json';
+  }
+
+  const config: RequestInit = { ...options, headers };
+
+  try {
+    const response = await fetch(url, config);
+    if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(errorBody.message || `Erro ${response.status}`);
+    }
+    if (response.status === 204) {
+      return null;
+    }
+    return response.json();
+  } catch (error) {
+    console.error(`[API FETCH ERROR] ${options.method || 'GET'} ${url}:`, error);
+    throw error;
+  }
+};
+
+// --- API Fetch Abstraction ---
+const apiFetch = USE_MOCK_API ? mockApiFetch : realApiFetch;
 
 
 // --- AUTH SERVICE ---
-export const login = async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-};
-
-export const signup = async (email, password, name) => {
-    const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: {
-                name: name,
-            }
-        }
-    });
-    if (error) throw error;
-}
+export const login = (email, password) => apiFetch('/auth/login', {
+  method: 'POST',
+  body: JSON.stringify({ email, password }),
+});
 
 
-// --- AI PROXY SERVICES (Estes não mudam, pois já usam a API Gemini real) ---
+// --- AI PROXY SERVICES ---
 export const generateFlashcards = async (topicName: string): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-  // Simulação, pois não temos um backend para o proxy. Em um app real, isso seria uma chamada fetch.
-  return [{ pergunta: `Qual a capital do Brasil para o tópico ${topicName}?`, resposta: 'Brasília.' }];
+  return apiFetch('/ai/generate-flashcards', {
+    method: 'POST',
+    body: JSON.stringify({ topicName }),
+  });
 };
 
 export const generateFlashcardsFromContent = async (disciplinaId: string): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-    await new Promise(res => setTimeout(res, 1500)); // Simulate AI thinking
-    return [
-        { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto'},
-        { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima.', estilo: 'explicativo' },
-        { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' },
-    ];
+    return apiFetch('/ai/generate-flashcards-from-content', {
+        method: 'POST',
+        body: JSON.stringify({ disciplinaId })
+    });
 };
 
 export const suggestTopics = async (comment: string): Promise<string[]> => {
-  return ['Tópico Sugerido 1', 'Tópico Sugerido 2'];
+  return apiFetch('/ai/suggest-topics', {
+    method: 'POST',
+    body: JSON.stringify({ comment }),
+  });
 };
 
 const correcaoSchema = {
     type: Type.OBJECT,
     properties: {
-        banca: { type: Type.STRING }, notaMaxima: { type: Type.NUMBER },
-        avaliacaoDetalhada: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { criterio: { type: Type.STRING }, pontuacao: { type: Type.NUMBER }, maximo: { type: Type.NUMBER }, feedback: { type: Type.STRING } } } },
-        comentariosGerais: { type: Type.STRING }, notaFinal: { type: Type.NUMBER },
-        errosDetalhados: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { trecho: { type: Type.STRING }, tipo: { type: Type.STRING }, explicacao: { type: Type.STRING }, sugestao: { type: Type.STRING } } } }
-    }
+        banca: { type: Type.STRING, description: "A banca examinadora para a qual a redação foi corrigida." },
+        notaMaxima: { type: Type.NUMBER, description: "A nota máxima possível para a redação." },
+        avaliacaoDetalhada: {
+            type: Type.ARRAY,
+            description: "Uma lista de avaliações para cada critério da banca.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    criterio: { type: Type.STRING, description: "O nome do critério de avaliação." },
+                    pontuacao: { type: Type.NUMBER, description: "A pontuação obtida no critério." },
+                    maximo: { type: Type.NUMBER, description: "A pontuação máxima do critério." },
+                    feedback: { type: Type.STRING, description: "Feedback detalhado sobre o desempenho no critério." },
+                },
+                required: ['criterio', 'pontuacao', 'maximo', 'feedback']
+            }
+        },
+        comentariosGerais: { type: Type.STRING, description: "Um feedback geral sobre a redação, com pontos fortes e fracos." },
+        notaFinal: { type: Type.NUMBER, description: "A nota final atribuída à redação." },
+        errosDetalhados: {
+            type: Type.ARRAY,
+            description: "Uma lista de erros específicos encontrados no texto.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    trecho: { type: Type.STRING, description: "O trecho exato do texto onde o erro foi encontrado." },
+                    tipo: { type: Type.STRING, description: "O tipo de erro (ex: Gramática, Coerência)." },
+                    explicacao: { type: Type.STRING, description: "Uma explicação clara sobre o erro." },
+                    sugestao: { type: Type.STRING, description: "Uma sugestão de como corrigir o trecho." },
+                },
+                required: ['trecho', 'tipo', 'explicacao', 'sugestao']
+            }
+        }
+    },
+    required: ['banca', 'notaMaxima', 'avaliacaoDetalhada', 'comentariosGerais', 'notaFinal', 'errosDetalhados']
 };
 
 export const corrigirRedacao = async (redacao: string, banca: string, notaMaxima: number, tema?: string): Promise<CorrecaoCompleta> => {
-    const prompt = `Corrija a redação a seguir para a banca "${banca}" com nota máxima ${notaMaxima} e tema "${tema || 'Não especificado'}":\n\n${redacao}\n\nRetorne JSON.`;
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt, config: { responseMimeType: 'application/json', responseSchema: correcaoSchema } });
-    let jsonText = response.text.trim().replace(/^```json\n?|```$/g, '');
-    return JSON.parse(jsonText) as CorrecaoCompleta;
+    try {
+        const prompt = `
+            Por favor, atue como um corretor de redação experiente. Analise a seguinte redação com base nos critérios da banca examinadora "${banca}".
+            A nota máxima para esta redação é ${notaMaxima}.
+            
+            O tema da redação é: "${tema || 'Não especificado'}".
+            
+            Texto da Redação:
+            ---
+            ${redacao}
+            ---
+            
+            Sua análise deve ser detalhada, apontando erros gramaticais, de coesão, coerência, argumentação e adequação ao tema e à proposta.
+            Forneça um feedback construtivo para cada critério de avaliação da banca "${banca}".
+            
+            Retorne sua análise estritamente no formato JSON, seguindo o schema fornecido.
+            - "banca": Deve ser a string "${banca}".
+            - "notaMaxima": Deve ser o número ${notaMaxima}.
+            - "avaliacaoDetalhada": Forneça a pontuação e feedback para cada critério da banca. A soma das pontuações máximas dos critérios deve ser igual à nota máxima.
+            - "comentariosGerais": Um parágrafo com um feedback geral sobre o texto, pontos fortes e fracos, e sugestões de melhoria.
+            - "notaFinal": A nota final calculada com base na sua avaliação.
+            - "errosDetalhados": Uma lista de erros específicos encontrados no texto, com o trecho exato, o tipo de erro, uma explicação e uma sugestão de correção. Identifique os erros mais importantes. Se não houver erros, retorne uma lista vazia.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: correcaoSchema
+            },
+        });
+        
+        let jsonText = response.text.trim();
+        // Limpa o bloco de código markdown se a API o retornar
+        if (jsonText.startsWith('```json')) {
+            jsonText = jsonText.slice(7, -3).trim();
+        }
+        
+        const correcao = JSON.parse(jsonText) as CorrecaoCompleta;
+        return correcao;
+
+    } catch (error) {
+        console.error("Erro ao corrigir redação com a API Gemini:", error);
+        throw new Error("Não foi possível processar a correção da redação. A resposta da IA pode ser inválida.");
+    }
 };
 
 export const extrairTextoDeImagem = async (base64Image: string, mimeType: string): Promise<string> => {
-    const imagePart = { inlineData: { mimeType, data: base64Image } };
-    const textPart = { text: "Transcreva o texto contido nesta imagem." };
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [imagePart, textPart] } });
-    return response.text;
+    try {
+        const imagePart = {
+            inlineData: {
+                mimeType,
+                data: base64Image,
+            },
+        };
+
+        const textPart = {
+            text: "Transcreva o texto contido nesta imagem. Se for uma redação manuscrita, transcreva o texto completo. Se não houver texto legível, retorne uma string vazia.",
+        };
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [imagePart, textPart] },
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error("Erro ao extrair texto com a API Gemini:", error);
+        throw new Error("Não foi possível extrair o texto da imagem.");
+    }
 };
 
 export const gerarPlanoDeEstudosIA = async (objetivo: string, horasSemanais: number, disciplinasComTopicos: DisciplinaParaIA[]): Promise<TrilhaSemanalData> => {
-     // Esta lógica pode ser mais complexa, mas aqui está uma simulação.
-    const allTopicIds = disciplinasComTopicos.flatMap(d => d.topicos.map(t => t.id));
-    const mockPlan: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
-    const dias = ['seg', 'ter', 'qua', 'qui', 'sex'];
-    allTopicIds.sort(() => 0.5 - Math.random()).forEach((topicId, index) => {
-        mockPlan[dias[index % dias.length]].push(topicId);
+    return apiFetch('/ai/gerar-plano-estudos', {
+        method: 'POST',
+        body: JSON.stringify({ objetivo, horasSemanais, disciplinasComTopicos }),
     });
-    await new Promise(res => setTimeout(res, 1500));
-    return mockPlan;
 };
 
 export const sugerirCicloIA = async (disciplinas: { id: string, nome: string, dificuldade: string }[], tempoTotalMinutos: number): Promise<{disciplina_id: string, tempo_previsto: number}[]> => {
-    const prompt = `Crie uma sugestão de ciclo de estudos com ${tempoTotalMinutos} minutos totais para as matérias: ${disciplinas.map(d => `${d.nome} (dificuldade: ${d.dificuldade})`).join(', ')}. Retorne um array JSON com "disciplina_id" e "tempo_previsto" em minutos.`;
-    const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { disciplina_id: { type: Type.STRING }, tempo_previsto: { type: Type.NUMBER } } } };
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json', responseSchema: schema } });
-    let jsonText = response.text.trim().replace(/^```json\n?|```$/g, '');
-    const sugestao = JSON.parse(jsonText) as {disciplina_id: string, tempo_previsto: number}[];
-    return sugestao.map(s => ({ ...s, tempo_previsto: s.tempo_previsto * 60 }));
+    const prompt = `
+        Como um especialista em planejamento de estudos, crie uma sugestão de distribuição de tempo para um ciclo de estudos.
+        O tempo total para uma rotação completa do ciclo é de ${tempoTotalMinutos} minutos.
+        As matérias e suas dificuldades percebidas pelo estudante são:
+        ${disciplinas.map(d => `- ${d.nome} (ID: ${d.id}, Dificuldade: ${d.dificuldade})`).join('\n')}
+
+        Regras:
+        1. Distribua os ${tempoTotalMinutos} minutos totais entre as matérias. Matérias "difíceis" devem receber mais tempo que as "médias", e "médias" mais que as "fáceis".
+        2. A soma dos tempos alocados deve ser exatamente ${tempoTotalMinutos} minutos.
+        3. Retorne o resultado como um array JSON de objetos, onde cada objeto contém "disciplina_id" (string) e "tempo_previsto" (número em minutos).
+        4. Não inclua nenhuma outra informação ou texto explicativo na sua resposta, apenas o array JSON.
+    `;
+
+    const schema = {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                disciplina_id: { type: Type.STRING },
+                tempo_previsto: { type: Type.NUMBER },
+            },
+            required: ['disciplina_id', 'tempo_previsto']
+        }
+    };
+
+     try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: schema
+            },
+        });
+        
+        let jsonText = response.text.trim();
+        if (jsonText.startsWith('```json')) {
+            jsonText = jsonText.slice(7, -3).trim();
+        }
+        
+        const sugestao = JSON.parse(jsonText) as {disciplina_id: string, tempo_previsto: number}[];
+        // Converter minutos para segundos
+        return sugestao.map(s => ({ ...s, tempo_previsto: s.tempo_previsto * 60 }));
+
+    } catch (error) {
+        console.error("Erro ao sugerir ciclo com a API Gemini:", error);
+        throw new Error("Não foi possível gerar a sugestão de ciclo.");
+    }
 };
 
-export const gerarMensagemMotivacionalIA = async (userName: string, tempoHojeMin: number, metaPercentual: number, streakDays: number, revisoesPendentes: number): Promise<string> => {
-    const prompt = `Crie uma mensagem motivacional curta para ${userName} que estudou ${tempoHojeMin} min hoje (${metaPercentual}% da meta), tem ${streakDays} dias de streak e ${revisoesPendentes} revisões pendentes.`;
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-    return response.text.trim();
+export const gerarMensagemMotivacionalIA = async (
+    userName: string, 
+    tempoHojeMin: number, 
+    metaPercentual: number,
+    streakDays: number,
+    revisoesPendentes: number
+): Promise<string> => {
+    try {
+        const prompt = `
+            Você é um coach de estudos amigável e motivador chamado Evolui.
+            Seu objetivo é gerar uma mensagem curta e personalizada para o usuário ${userName}, com base em seu progresso de hoje.
+            Seja encorajador e inspirador. Use uma linguagem informal e positiva. Fale diretamente com ${userName}.
+            A mensagem deve ter no máximo 2 ou 3 frases.
+
+            Aqui estão os dados do usuário hoje:
+            - Nome: ${userName}
+            - Tempo total de estudo hoje: ${tempoHojeMin} minutos.
+            - Percentual da meta diária concluída: ${metaPercentual}%.
+            - Dias seguidos estudando (streak): ${streakDays} dias.
+            - Revisões pendentes para hoje: ${revisoesPendentes} revisões.
+
+            Analise os dados e crie uma mensagem.
+            - Se o progresso for bom (ex: mais de 50% da meta, ou estudou bastante), elogie o esforço.
+            - Se o progresso for baixo, incentive-o a começar, lembrando que cada passo conta.
+            - Mencione o streak de forma positiva se for maior que 1.
+            - Se houver revisões pendentes, mencione-as de forma encorajadora, como um próximo passo.
+            - Não use "Olá" ou saudações, vá direto para a mensagem.
+            - Não inclua aspas na sua resposta. Retorne apenas o texto da mensagem.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+
+        return response.text.trim();
+    } catch (error) {
+        console.error("Erro ao gerar mensagem motivacional com a API Gemini:", error);
+        // Fallback message
+        return "Continue focado nos seus objetivos. Cada passo que você dá hoje te aproxima da sua aprovação!";
+    }
 };
 
 
 // --- GAMIFICATION SERVICES ---
-export const getGamificationStats = async (userId: string): Promise<GamificationStats | null> => {
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data: profileData, error: profileError } = await supabase.from('profiles').select('xp_total, current_streak_days, best_streak_days').eq('user_id', userId).single<any>();
-    if (profileError && profileError.code !== 'PGRST116') throw profileError;
-
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data: badgesData, error: badgesError } = await supabase.from('user_badges').select('badge_id').eq('user_id', userId);
-    if (badgesError) throw badgesError;
-
-    if (!profileData) return null;
-
-    return {
-        user_id: userId,
-        xp_total: profileData.xp_total,
-        current_streak_days: profileData.current_streak_days,
-        best_streak_days: profileData.best_streak_days,
-        unlockedBadgeIds: (badgesData as any[]).map(b => b.badge_id),
-        level: 0 // O nível é calculado no store
-    };
-};
-
-export const updateGamificationStats = async (userId: string, statsUpdates: Partial<GamificationStats>) => {
-    // FIX: Exclude the 'level' property as it is not part of the 'profiles' table.
-    const { unlockedBadgeIds, level, ...profileUpdates } = statsUpdates;
-
-    if (Object.keys(profileUpdates).length > 0) {
-        // FIX: Cast data to any to bypass 'never' type issue.
-        const { error: profileError } = await supabase.from('profiles').update(profileUpdates as any).eq('user_id', userId);
-        if (profileError) throw profileError;
-    }
-
-    if (unlockedBadgeIds) {
-        const { data: existingBadges, error: getError } = await supabase
-            .from('user_badges')
-            .select('badge_id')
-            .eq('user_id', userId);
-        if (getError) throw getError;
-
-        const existingBadgeIds = new Set((existingBadges as any[]).map(b => b.badge_id));
-        const newBadgesToInsert = unlockedBadgeIds
-            .filter(id => !existingBadgeIds.has(id))
-            .map(badge_id => ({ user_id: userId, badge_id }));
-
-        if (newBadgesToInsert.length > 0) {
-            // FIX: Cast data to any to bypass 'never' type issue.
-            const { error: insertError } = await supabase.from('user_badges').insert(newBadgesToInsert as any);
-            if (insertError) throw insertError;
-        }
-    }
-    
-    return getGamificationStats(userId);
-};
-
-// ✅ Corrigido: Assinatura da função alinhada com a tabela `xp_log` do SQL (sem `tipo_evento` ou `multiplicador`).
-export const logXpEvent = async (userId: string, event: XpLogEvent, amount: number, meta: Record<string, any> = {}) => {
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data: logData, error: logError } = await supabase.from('xp_log').insert({ user_id: userId, event, amount, meta_json: meta } as any).select().single();
-    if (logError) throw logError;
-
-    // A database function/trigger would be better here, but for now we update manually.
-    const { data: profile, error: fetchError } = await supabase.from('profiles').select('xp_total').eq('user_id', userId).single<any>();
-    if (fetchError) throw fetchError;
-    
-    const newXpTotal = (profile?.xp_total || 0) + amount;
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { error: updateError } = await supabase.from('profiles').update({ xp_total: newXpTotal } as any).eq('user_id', userId);
-    if (updateError) throw updateError;
-
-    return logData;
-};
-
-export const getBadges = async () => {
-    const { data, error } = await supabase.from('badges').select('*');
-    if (error) throw error;
-    return data;
-};
-export const getXpLog = async (userId: string) => {
-    const { data, error } = await supabase.from('xp_log').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-    if (error) throw error;
-    return data;
-};
-export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingData> => {
-    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-
-    const { data: xpLogsData, error: logError } = await supabase
-        .from('xp_log')
-        .select('user_id, amount')
-        .gte('created_at', sevenDaysAgo);
-    
-    if (logError) throw logError;
-    const xpLogs = (xpLogsData || []) as any[];
-
-    const weeklyXpMap = new Map<string, number>();
-    for (const log of xpLogs) {
-        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
-    }
-    
-    const userIdsInRanking = new Set(weeklyXpMap.keys());
-    userIdsInRanking.add(userId); // Ensure current user is always included
-    
-    const userIdsArray = Array.from(userIdsInRanking);
-
-    if (userIdsArray.length === 0) {
-        return { ranking: [], currentUserRank: null };
-    }
-    
-    const { data: profilesData, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id, name, xp_total')
-        .in('user_id', userIdsArray);
-    
-    if (profileError) throw profileError;
-    const profiles = (profilesData || []) as any[];
-    
-    const fullRanking = profiles.map(p => ({
-        user_id: p.user_id,
-        name: p.name,
-        level: calculateLevel(p.xp_total),
-        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
-    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
-    
-    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
-    const currentUserRank = currentUserIndex !== -1 
-        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
-        : null;
-
-    return {
-        ranking: fullRanking.slice(0, 50),
-        currentUserRank,
-    };
-};
+export const getGamificationStats = (userId: string) => apiFetch(`/gamification/stats/${userId}`);
+export const updateGamificationStats = (userId: string, data: Partial<GamificationStats>) => apiFetch(`/gamification/stats/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+});
+export const logXpEvent = (userId: string, event: XpLogEvent, amount: number, meta: Record<string, any> = {}, tipo_evento: 'ativo' | 'manual', multiplicador: number) => apiFetch('/gamification/log', {
+    method: 'POST',
+    body: JSON.stringify({ userId, event, amount, meta, tipo_evento, multiplicador }),
+});
+export const getBadges = () => apiFetch('/badges');
+export const getXpLog = (userId: string) => apiFetch(`/gamification/log/${userId}`);
+export const getWeeklyRanking = (userId: string) => apiFetch(`/gamification/ranking/weekly?userId=${userId}`);
 
 
 // --- DATA SERVICES ---
+// A interface dessas funções permanece a mesma. Apenas a implementação de `apiFetch` mudou.
 
-// StudyPlans (Editais)
-export const getStudyPlans = async () => {
-    const userId = await getUserId();
-    const { data, error } = await supabase.from('study_plans').select('*').eq('user_id', userId);
-    if (error) throw error;
-    return data;
-};
-export const createStudyPlan = async (studyPlanData: Omit<StudyPlan, 'id'>) => {
-    const userId = await getUserId();
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('study_plans').insert({ ...studyPlanData, user_id: userId } as any).select().single();
-    if (error) throw error;
-    return data;
-};
-export const updateStudyPlanApi = async (id: string, updates: Partial<StudyPlan>) => {
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('study_plans').update(updates as any).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
-};
-export const deleteStudyPlan = async (id: string) => {
-    const { error } = await supabase.from('study_plans').delete().eq('id', id);
-    if (error) throw error;
-};
+// Editais (StudyPlan)
+export const getEditais = () => apiFetch('/editais');
+export const createEdital = (data: any) => apiFetch('/editais', { method: 'POST', body: JSON.stringify(data) });
+export const updateEditalApi = (id: string, data: any) => apiFetch(`/editais/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteEdital = (id: string) => apiFetch(`/editais/${id}`, { method: 'DELETE' });
 
-// Disciplinas (with nested topicos)
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
-export const getDisciplinas = async (studyPlanId: string): Promise<Disciplina[]> => {
-    const { data, error } = await supabase
-        .from('disciplinas')
-        .select('*, topicos(*)')
-        .eq('study_plan_id', studyPlanId);
-    if (error) throw error;
-    
-    // Manual mapping to fix snake_case from DB to camelCase for the app
-    const disciplinesWithMappedTopics = data.map((d: any) => {
-        if (!d.topicos) {
-            return d;
-        }
-        const mappedTopics = d.topicos.map((t: any) => {
-            const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...rest } = t;
-            return { 
-                ...rest, 
-                nivelDificuldade: nivel_dificuldade,
-                ultimaRevisao: ultima_revisao,
-                proximaRevisao: proxima_revisao,
-            };
-        });
-        return { ...d, topicos: mappedTopics };
-    });
+// Disciplinas
+export const getDisciplinas = (editalId: string) => apiFetch(`/editais/${editalId}/disciplinas`);
+export const createDisciplina = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/disciplinas`, { method: 'POST', body: JSON.stringify(data) });
+export const updateDisciplinaApi = (id: string, data: any) => apiFetch(`/disciplinas/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteDisciplina = (id: string) => apiFetch(`/disciplinas/${id}`, { method: 'DELETE' });
 
-    return disciplinesWithMappedTopics as any as Disciplina[];
-};
-// ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
-export const createDisciplina = async (studyPlanId: string, disciplinaData: Omit<Disciplina, 'id' | 'progresso' | 'studyPlanId'>) => {
-    const userId = await getUserId();
-    // Topicos are managed separately now
-    const { topicos, ...rest } = disciplinaData;
-    const payload = { ...rest, study_plan_id: studyPlanId, progresso: 0, user_id: userId };
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('disciplinas').insert(payload as any).select().single();
-    if (error) throw error;
-    // FIX: Cast data to any to allow spread.
-    return { ...(data as any), topicos: [] }; // Return with empty topics array
-};
-export const updateDisciplinaApi = async (id: string, updates: Partial<Disciplina>) => {
-    // We only update disciplina's own fields here. Topics are handled by their own functions.
-    const { topicos, ...disciplinaUpdates } = updates;
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('disciplinas').update(disciplinaUpdates as any).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
-};
-export const deleteDisciplina = async (id: string) => {
-    const { error } = await supabase.from('disciplinas').delete().eq('id', id);
-    if (error) throw error;
-};
+// Tópicos
+export const createTopico = (disciplinaId: string, data: any) => apiFetch(`/disciplinas/${disciplinaId}/topicos`, { method: 'POST', body: JSON.stringify(data) });
+export const updateTopicoApi = (id: string, data: any) => apiFetch(`/topicos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteTopico = (id: string) => apiFetch(`/topicos/${id}`, { method: 'DELETE' });
 
-// Tópicos (separate table)
-export const createTopico = async (disciplinaId: string, topicoData: Omit<Topico, 'id'>): Promise<Topico> => {
-    const userId = await getUserId();
-    const { nivelDificuldade, ultimaRevisao, proximaRevisao, ...rest } = topicoData;
-    const payload = { 
-        ...rest, 
-        disciplina_id: disciplinaId, 
-        user_id: userId,
-        nivel_dificuldade: nivelDificuldade,
-        ultima_revisao: ultimaRevisao,
-        proxima_revisao: proximaRevisao,
-    };
-    
-    // FIX: Cast payload to 'any' to resolve Supabase client 'never' type error.
-    const { data, error } = await supabase.from('topicos').insert(payload as any).select().single();
+// Sessões de Estudo
+export const getSessoes = (editalId: string) => apiFetch(`/editais/${editalId}/sessoes`);
+export const createSessao = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/sessoes`, { method: 'POST', body: JSON.stringify(data) });
+export const updateSessaoApi = (id: string, data: any) => apiFetch(`/sessoes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteSessao = (id: string) => apiFetch(`/sessoes/${id}`, { method: 'DELETE' });
 
-    if (error) {
-        console.error("Failed to add topico:", error);
-        throw error;
-    }
-    if (!data) throw new Error("Failed to create topic, no data returned.");
-    
-    // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
-    const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...returnData } = data as any;
-    return { 
-        ...returnData, 
-        nivelDificuldade: nivel_dificuldade,
-        ultimaRevisao: ultima_revisao,
-        proximaRevisao: proxima_revisao,
-    } as Topico;
-};
-export const updateTopicoApi = async (topicoId: string, updates: Partial<Topico>): Promise<Topico> => {
-    const { nivelDificuldade, ultimaRevisao, proximaRevisao, ...restOfUpdates } = updates;
-    const payload: { [key: string]: any } = { ...restOfUpdates };
-    
-    if (nivelDificuldade !== undefined) {
-        payload.nivel_dificuldade = nivelDificuldade;
-    }
-    if (ultimaRevisao !== undefined) {
-        payload.ultima_revisao = ultimaRevisao;
-    }
-    if (proximaRevisao !== undefined) {
-        payload.proxima_revisao = proximaRevisao;
-    }
+// Revisões, Caderno de Erros, Ciclos, Flashcards, Redações, Simulados...
+export const getRevisoes = (editalId: string) => apiFetch(`/editais/${editalId}/revisoes`);
+export const createRevisao = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/revisoes`, { method: 'POST', body: JSON.stringify(data) });
+export const updateRevisaoApi = (id: string, data: any) => apiFetch(`/revisoes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteRevisao = (id: string) => apiFetch(`/revisoes/${id}`, { method: 'DELETE' });
 
-    // FIX: Cast payload to 'any' to resolve Supabase client 'never' type error.
-    const { data, error } = await supabase.from('topicos').update(payload as any).eq('id', topicoId).select().single();
-     
-    if (error) {
-        console.error("Failed to update topico:", error);
-        throw error;
-    }
-    if (!data) throw new Error("Failed to update topic, no data returned.");
-     
-     // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
-     const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...restOfData } = data as any;
-     return { 
-         ...restOfData, 
-         nivelDificuldade: nivel_dificuldade,
-         ultimaRevisao: ultima_revisao,
-         proximaRevisao: proxima_revisao,
-    } as Topico;
-};
-export const deleteTopico = async (id: string) => {
-    const { error } = await supabase.from('topicos').delete().eq('id', id);
-    if (error) throw error;
-};
+export const getErros = (editalId: string) => apiFetch(`/editais/${editalId}/erros`);
+export const createErro = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/erros`, { method: 'POST', body: JSON.stringify(data) });
+export const updateErroApi = (id: string, data: any) => apiFetch(`/erros/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteErro = (id: string) => apiFetch(`/erros/${id}`, { method: 'DELETE' });
 
-// Generic CRUD functions for simple tables
-const createGenericCrud = <T extends { id: string }>(tableName: string) => ({
-    get: async (studyPlanId: string): Promise<T[]> => {
-        const { data, error } = await supabase.from(tableName).select('*').eq('study_plan_id', studyPlanId);
-        if (error) throw error;
-        return data as T[];
-    },
-    create: async (studyPlanId: string, itemData: Omit<T, 'id' | 'studyPlanId'>): Promise<T> => {
-        const userId = await getUserId();
-        const payload = { ...itemData, study_plan_id: studyPlanId, user_id: userId };
-        // FIX: Cast data to any to bypass 'never' type issue.
-        const { data, error } = await supabase.from(tableName).insert(payload as any).select().single();
-        if (error) throw error;
-        return data as T;
-    },
-    update: async (id: string, updates: Partial<Omit<T, 'id'>>): Promise<T> => {
-        // FIX: Cast data to any to bypass 'never' type issue.
-        const { data, error } = await supabase.from(tableName).update(updates as any).eq('id', id).select().single();
-        if (error) throw error;
-        return data as T;
-    },
-    delete: async (id: string) => {
-        const { error } = await supabase.from(tableName).delete().eq('id', id);
-        if (error) throw error;
-    },
+export const getCiclos = (editalId: string) => apiFetch(`/editais/${editalId}/ciclos`);
+export const createCiclo = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/ciclos`, { method: 'POST', body: JSON.stringify(data) });
+export const updateCicloApi = (id: string, data: any) => apiFetch(`/ciclos/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteCiclo = (id: string) => apiFetch(`/ciclos/${id}`, { method: 'DELETE' });
+
+export const getFlashcards = (topicoId: string) => apiFetch(`/topicos/${topicoId}/flashcards`);
+export const createFlashcards = (topicoId: string, data: any) => apiFetch(`/topicos/${topicoId}/flashcards`, { method: 'POST', body: JSON.stringify(data) });
+export const updateFlashcardApi = (id: string, data: any) => apiFetch(`/flashcards/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteFlashcard = (id: string) => apiFetch(`/flashcards/${id}`, { method: 'DELETE' });
+
+export const getRedacoes = (editalId: string) => apiFetch(`/editais/${editalId}/redacoes`);
+export const createRedacao = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/redacoes`, { method: 'POST', body: JSON.stringify(data) });
+
+export const getSimulados = (editalId: string) => apiFetch(`/editais/${editalId}/simulados`);
+export const createSimulado = (editalId: string, data: any) => apiFetch(`/editais/${editalId}/simulados`, { method: 'POST', body: JSON.stringify(data) });
+export const updateSimuladoApi = (id: string, data: any) => apiFetch(`/simulados/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteSimulado = (id: string) => apiFetch(`/simulados/${id}`, { method: 'DELETE' });
+
+// --- FRIENDS SERVICES ---
+export const getFriends = (userId: string) => apiFetch(`/friends/${userId}`);
+export const getFriendRequests = (userId: string) => apiFetch(`/friend-requests/${userId}`);
+export const searchUsers = (query: string, currentUserId: string) => apiFetch(`/users/search?q=${query}&currentUserId=${currentUserId}`);
+export const sendFriendRequest = (requesterId: string, receiverId: string) => apiFetch('/friend-requests', {
+    method: 'POST',
+    body: JSON.stringify({ requesterId, receiverId }),
 });
-
-export const { get: getSessoes, create: createSessao, update: updateSessaoApi, delete: deleteSessao } = createGenericCrud<SessaoEstudo>('sessoes_estudo');
-export const { get: getSimulados, create: createSimulado, update: updateSimuladoApi, delete: deleteSimulado } = createGenericCrud<Simulation>('simulados');
-export const { get: getRedacoes, create: createRedacao } = createGenericCrud<RedacaoCorrigida>('redacoes_corrigidas');
-
-
-// --- Custom CRUD for Revisoes to fix schema mismatch ---
-const mapRevisaoToDb = (revisaoData: Partial<Revisao>) => {
-    const { disciplinaId, ...rest } = revisaoData;
-    const dbPayload: any = { ...rest };
-    if (disciplinaId !== undefined) {
-        dbPayload.disciplina_id = disciplinaId;
-    }
-    // The other fields like topico_id, data_prevista are already snake_case in the Revisao type
-    return dbPayload;
-};
-
-const mapDbToRevisao = (dbData: any): Revisao => {
-    const { disciplina_id, ...rest } = dbData;
-    return {
-        ...rest,
-        disciplinaId: disciplina_id,
-    } as Revisao;
-};
-
-export const getRevisoes = async (studyPlanId: string): Promise<Revisao[]> => {
-    const { data, error } = await supabase
-        .from('revisoes')
-        .select('*')
-        .eq('study_plan_id', studyPlanId);
-    if (error) throw error;
-    // FIX: Type 'never' cannot be mapped. Cast to any[] first.
-    return (data as any[]).map(mapDbToRevisao);
-};
-
-export const createRevisao = async (studyPlanId: string, revisaoData: Omit<Revisao, 'id' | 'studyPlanId'>): Promise<Revisao> => {
-    const userId = await getUserId();
-    const dbPayload = mapRevisaoToDb(revisaoData);
-    dbPayload.study_plan_id = studyPlanId;
-    dbPayload.user_id = userId;
-
-    const { data, error } = await supabase.from('revisoes').insert(dbPayload).select().single();
-    if (error) {
-        console.error("Failed to create revisao:", error);
-        throw error;
-    }
-    return mapDbToRevisao(data);
-};
-
-export const updateRevisaoApi = async (id: string, updates: Partial<Omit<Revisao, 'id'>>): Promise<Revisao> => {
-    const dbPayload = mapRevisaoToDb(updates);
-
-    const { data, error } = await supabase.from('revisoes').update(dbPayload).eq('id', id).select().single();
-    if (error) {
-        console.error("Failed to update revisao:", error);
-        throw error;
-    }
-    return mapDbToRevisao(data);
-};
-
-export const deleteRevisao = async (id: string) => {
-    const { error } = await supabase.from('revisoes').delete().eq('id', id);
-    if (error) throw error;
-};
-
-
-// --- Custom CRUD for Caderno de Erros to fix schema mismatch ---
-const mapCadernoErroToDb = (erroData: Partial<CadernoErro>) => {
-    const dbPayload: any = {};
-    if (erroData.assunto !== undefined) dbPayload.assunto = erroData.assunto;
-    if (erroData.descricao !== undefined) dbPayload.descricao = erroData.descricao;
-    if (erroData.resolvido !== undefined) dbPayload.resolvido = erroData.resolvido;
-    if (erroData.data !== undefined) dbPayload.data = erroData.data;
-    if (erroData.observacoes !== undefined) dbPayload.observacoes = erroData.observacoes;
-    if (erroData.disciplinaId !== undefined) dbPayload.disciplina_id = erroData.disciplinaId;
-    if (erroData.topicoId !== undefined) dbPayload.topico_id = erroData.topicoId;
-    return dbPayload;
-};
-
-export const getErros = async (studyPlanId: string): Promise<CadernoErro[]> => {
-    const { data, error } = await supabase
-        .from('caderno_erros')
-        .select('*, disciplina:disciplinas(nome), topico:topicos(titulo)')
-        .eq('study_plan_id', studyPlanId);
-    
-    if (error) throw error;
-
-    return (data as any[]).map((e: any) => ({
-        ...e,
-        disciplina: e.disciplina?.nome || 'Disciplina Desconhecida',
-        disciplinaId: e.disciplina_id,
-        topicoId: e.topico_id,
-        topicoTitulo: e.topico?.titulo || ''
-    })) as CadernoErro[];
-};
-
-export const createErro = async (studyPlanId: string, erroData: Omit<CadernoErro, 'id' | 'studyPlanId'>): Promise<CadernoErro> => {
-    const userId = await getUserId();
-    const dbPayload = mapCadernoErroToDb(erroData);
-    
-    dbPayload.study_plan_id = studyPlanId;
-    dbPayload.user_id = userId;
-
-    if (!dbPayload.disciplina_id) {
-        throw new Error("disciplinaId is required to create an error entry.");
-    }
-
-    const { data, error } = await supabase.from('caderno_erros').insert(dbPayload).select().single();
-    
-    if (error) {
-        console.error("Failed to add erro:", error);
-        throw error;
-    }
-    
-    return {
-        ...(data as any),
-        ...erroData,
-        disciplina: erroData.disciplina,
-        disciplinaId: data.disciplina_id,
-        topicoId: data.topico_id,
-        topicoTitulo: erroData.topicoTitulo,
-    } as CadernoErro;
-};
-
-export const updateErroApi = async (id: string, updates: Partial<Omit<CadernoErro, 'id'>>): Promise<CadernoErro> => {
-    const dbPayload = mapCadernoErroToDb(updates);
-
-    const { data, error } = await supabase.from('caderno_erros').update(dbPayload).eq('id', id).select('*, disciplina:disciplinas(nome), topico:topicos(titulo)').single();
-    if (error) {
-        console.error("Failed to update erro:", error);
-        throw error;
-    }
-    
-    const { disciplina, topico, disciplina_id, topico_id, ...rest } = data as any;
-
-    return {
-        ...rest,
-        ...updates,
-        disciplina: disciplina?.nome || updates.disciplina || 'Disciplina Desconhecida',
-        disciplinaId: disciplina_id,
-        topicoId: topico_id,
-        topicoTitulo: topico?.titulo || updates.topicoTitulo || '',
-    } as CadernoErro;
-};
-
-export const deleteErro = async (id: string) => {
-    const { error } = await supabase.from('caderno_erros').delete().eq('id', id);
-    if (error) throw error;
-};
-
-
-// ✅ Corrigido: Funções CRUD para Ciclos movidas para implementações customizadas para lidar com a relação com `sessoes_ciclo`.
-export const getCiclos = async (studyPlanId: string): Promise<Ciclo[]> => {
-    const { data, error } = await supabase
-        .from('ciclos')
-        .select('*, sessoes_ciclo(*)')
-        .eq('study_plan_id', studyPlanId);
-
-    if (error) throw error;
-    
-    return (data || []).map((ciclo: any) => ({
-        ...ciclo,
-        sessoes: (ciclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
-    })) as any as Ciclo[];
-};
-
-export const createCiclo = async (studyPlanId: string, cicloData: Omit<Ciclo, 'id' | 'studyPlanId'>): Promise<Ciclo> => {
-    const userId = await getUserId();
-    const { sessoes, ...cicloInfo } = cicloData;
-
-    const { data: ciclo, error: cicloError } = await supabase
-        .from('ciclos')
-        .insert({ ...cicloInfo, user_id: userId, study_plan_id: studyPlanId } as any)
-        .select()
-        .single();
-    if (cicloError) throw cicloError;
-
-    if (sessoes && sessoes.length > 0) {
-        const sessoesToInsert = sessoes.map(s => ({
-            disciplina_id: s.disciplina_id,
-            ordem: s.ordem,
-            tempo_previsto: s.tempo_previsto,
-            user_id: userId,
-            ciclo_id: ciclo.id,
-        }));
-        const { data: insertedSessoes, error: sessoesError } = await supabase
-            .from('sessoes_ciclo')
-            .insert(sessoesToInsert as any)
-            .select();
-        if (sessoesError) throw sessoesError;
-        return { ...ciclo, sessoes: (insertedSessoes || []).sort((a: any, b: any) => a.ordem - b.ordem) } as any as Ciclo;
-    }
-    
-    return { ...ciclo, sessoes: [] } as any as Ciclo;
-};
-
-export const updateCicloApi = async (id: string, updates: Partial<Omit<Ciclo, 'id'>>): Promise<Ciclo> => {
-    const userId = await getUserId();
-    const { sessoes, ...cicloInfo } = updates;
-
-    if (Object.keys(cicloInfo).length > 0) {
-        const { error: cicloError } = await supabase
-            .from('ciclos')
-            .update(cicloInfo as any)
-            .eq('id', id);
-        if (cicloError) throw cicloError;
-    }
-
-    if (sessoes) {
-        await supabase.from('sessoes_ciclo').delete().eq('ciclo_id', id);
-        
-        if (sessoes.length > 0) {
-             const sessoesToInsert = sessoes.map(s => ({
-                disciplina_id: s.disciplina_id,
-                ordem: s.ordem,
-                tempo_previsto: s.tempo_previsto,
-                user_id: userId,
-                ciclo_id: id,
-            }));
-             await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
-        }
-    }
-    
-    const { data: updatedCiclo, error: fetchError } = await supabase
-        .from('ciclos')
-        .select('*, sessoes_ciclo(*)')
-        .eq('id', id)
-        .single();
-
-    if (fetchError) throw fetchError;
-    
-    return {
-        ...updatedCiclo,
-        sessoes: (updatedCiclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
-    } as any as Ciclo;
-};
-
-export const deleteCiclo = async (id: string) => {
-    // A FK em `sessoes_ciclo` não tem `ON DELETE CASCADE` no schema, então deletamos manualmente.
-    await supabase.from('sessoes_ciclo').delete().eq('ciclo_id', id);
-    const { error } = await supabase.from('ciclos').delete().eq('id', id);
-    if (error) throw error;
-};
-
-// Note: Flashcards are linked to topics, not study plans directly.
-export const getFlashcards = async (topicId: string): Promise<Flashcard[]> => {
-    const { data, error } = await supabase.from('flashcards').select('*').eq('topico_id', topicId);
-    if (error) throw error;
-    return (data as any[]).map((fc: any) => ({
-        ...fc,
-        dueDate: fc.due_date,
-        easeFactor: fc.ease_factor,
-    })) as Flashcard[];
-};
-export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
-    const userId = await getUserId();
-    const flashcardsToInsert = flashcards.map(fc => ({
-        ...fc,
-        topico_id: topicId,
-        user_id: userId,
-        interval: 1,
-        ease_factor: 2.5,
-        due_date: new Date().toISOString(),
-    }));
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
-    if (error) throw error;
-    return data as any as Flashcard[];
-};
-export const updateFlashcardApi = async (id: string, updates: Partial<Flashcard>) => {
-    // FIX: Cast data to any to bypass 'never' type issue.
-    const { data, error } = await supabase.from('flashcards').update(updates as any).eq('id', id).select().single();
-    if (error) throw error;
-    return data as any as Flashcard;
-};
-export const deleteFlashcard = async (id: string) => {
-    const { error } = await supabase.from('flashcards').delete().eq('id', id);
-    if (error) throw error;
-};
-
-
-// --- FRIENDS SERVICES (Social) ---
-export const getFriends = async (userId: string): Promise<User[]> => {
-    const { data: friendshipsData, error: friendshipsError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2')
-        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
-        .eq('status', 'accepted');
-
-    if (friendshipsError) throw friendshipsError;
-    const friendships = (friendshipsData || []) as any[];
-
-    if (friendships.length === 0) return [];
-    const friendIds = friendships.map(f => f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
-
-    const { data: friendsProfileData, error: friendsError } = await supabase
-        .from('profiles')
-        .select('user_id, name, email')
-        .in('user_id', friendIds);
-    
-    if (friendsError) throw friendsError;
-    const friendsData = (friendsProfileData || []) as any[];
-
-    return friendsData.map(p => ({
-        id: p.user_id,
-        name: p.name,
-        email: p.email,
-    }));
-};
-
-export const getFriendRequests = async (userId: string): Promise<FriendRequest[]> => {
-    const { data: requestsData, error: requestsError } = await supabase
-        .from('friendships')
-        .select('id, user_id_1')
-        .eq('user_id_2', userId)
-        .eq('status', 'pending');
-
-    if (requestsError) throw requestsError;
-    const requests = (requestsData || []) as any[];
-    if (requests.length === 0) return [];
-
-    const requesterIds = requests.map(r => r.user_id_1);
-
-    const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, name, xp_total')
-        .in('user_id', requesterIds);
-
-    if (profilesError) throw profilesError;
-    const profiles = (profilesData || []) as any[];
-    
-    const profilesMap = new Map(profiles.map(p => [p.user_id, p]));
-
-    return requests.map(req => {
-        const profile = profilesMap.get(req.user_id_1);
-        return {
-            friendship_id: req.id,
-            requester_id: req.user_id_1,
-            requester_name: profile?.name || 'Usuário desconhecido',
-            requester_level: profile ? calculateLevel(profile.xp_total) : 1,
-        };
-    });
-};
-
-export const searchUsers = async (query: string, currentUserId: string): Promise<User[]> => {
-    const { data: relData, error: relError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2')
-        .or(`user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`);
-
-    if (relError) throw relError;
-    const relationships = (relData || []) as any[];
-
-    const existingRelationshipIds = new Set(
-        relationships.flatMap(r => [r.user_id_1, r.user_id_2])
-    );
-    existingRelationshipIds.add(currentUserId);
-
-    const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select('user_id, name, email')
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
-        .not('user_id', 'in', `(${Array.from(existingRelationshipIds).map(id => `'${id}'`).join(',')})`)
-        .limit(10);
-        
-    if (usersError) throw usersError;
-    const users = (usersData || []) as any[];
-
-    return users.map(p => ({
-        id: p.user_id,
-        name: p.name,
-        email: p.email,
-    }));
-};
-
-export const sendFriendRequest = async (requesterId: string, receiverId: string) => {
-    const { data: existingData, error: checkError } = await supabase
-        .from('friendships')
-        .select('id')
-        .or(`(user_id_1.eq.${requesterId},user_id_2.eq.${receiverId}),(user_id_1.eq.${receiverId},user_id_2.eq.${requesterId})`)
-        .limit(1);
-
-    if (checkError) throw checkError;
-    const existing = (existingData || []) as any[];
-
-    if (existing && existing.length > 0) {
-        throw new Error("Já existe uma amizade ou um pedido pendente.");
-    }
-
-    const { error: insertError } = await supabase
-        .from('friendships')
-        .insert({
-            user_id_1: requesterId,
-            user_id_2: receiverId,
-            status: 'pending',
-        } as any);
-    
-    if (insertError) throw insertError;
-};
-
-export const acceptFriendRequest = async (friendshipId: string) => {
-    const { error } = await supabase
-        .from('friendships')
-        .update({ status: 'accepted' })
-        .eq('id', friendshipId);
-
-    if (error) throw error;
-};
-
-export const declineFriendRequest = async (friendshipId: string) => {
-    const { error } = await supabase
-        .from('friendships')
-        .delete()
-        .eq('id', friendshipId);
-
-    if (error) throw error;
-};
-
-export const getFriendsRanking = async (userId: string): Promise<WeeklyRankingData> => {
-    const { data: friendshipsData, error: friendshipsError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2')
-        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
-        .eq('status', 'accepted');
-
-    if (friendshipsError) throw friendshipsError;
-    const friendships = (friendshipsData || []) as any[];
-    
-    const userAndFriendIds = new Set([userId]);
-    friendships.forEach(f => {
-        userAndFriendIds.add(f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
-    });
-    const idsArray = Array.from(userAndFriendIds);
-
-    if (idsArray.length <= 1) return { ranking: [], currentUserRank: null };
-
-    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-    const { data: xpLogsData, error: logError } = await supabase
-        .from('xp_log')
-        .select('user_id, amount')
-        .in('user_id', idsArray)
-        .gte('created_at', sevenDaysAgo);
-    
-    if (logError) throw logError;
-    const xpLogs = (xpLogsData || []) as any[];
-
-    const weeklyXpMap = new Map<string, number>();
-    for (const log of xpLogs) {
-        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
-    }
-
-    const { data: profilesData, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id, name, xp_total')
-        .in('user_id', idsArray);
-    
-    if (profileError) throw profileError;
-    const profiles = (profilesData || []) as any[];
-
-    const fullRanking = profiles.map(p => ({
-        user_id: p.user_id,
-        name: p.name,
-        level: calculateLevel(p.xp_total),
-        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
-    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
-    
-    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
-    const currentUserRank = currentUserIndex !== -1 
-        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
-        : null;
-
-    return {
-        ranking: fullRanking,
-        currentUserRank,
-    };
-};
+export const acceptFriendRequest = (friendshipId: string) => apiFetch(`/friend-requests/${friendshipId}/accept`, { method: 'PUT' });
+export const declineFriendRequest = (friendshipId: string) => apiFetch(`/friend-requests/${friendshipId}/decline`, { method: 'PUT' });
+export const getFriendsRanking = (userId: string) => apiFetch(`/gamification/ranking/friends?userId=${userId}`);

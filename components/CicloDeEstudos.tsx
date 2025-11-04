@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -48,7 +47,7 @@ const CicloDeEstudos: React.FC = () => {
     const { totalTempoCiclo, dadosGrafico, proximaSessao } = useMemo(() => {
         if (!cicloAtivo) return { totalTempoCiclo: 0, dadosGrafico: [], proximaSessao: null };
         
-        const sessoesOrdenadas = [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
+        const sessoesOrdenadas = [...cicloAtivo.sessoes].sort((a, b) => a.ordem - b.ordem);
         
         const tempoTotal = sessoesOrdenadas.reduce((acc: number, s) => acc + Number(s.tempo_previsto || 0), 0);
         
@@ -86,9 +85,9 @@ const CicloDeEstudos: React.FC = () => {
         }
     }
     
-    const handleAddSessao = async () => {
+    const handleAddSessao = () => {
         if (cicloAtivo && novaSessaoData.disciplinaId && parseInt(novaSessaoData.tempoMinutos) > 0) {
-            await addSessaoAoCiclo(cicloAtivo.id, novaSessaoData.disciplinaId, parseInt(novaSessaoData.tempoMinutos) * 60);
+            addSessaoAoCiclo(cicloAtivo.id, novaSessaoData.disciplinaId, parseInt(novaSessaoData.tempoMinutos) * 60);
             toast.success("Sessão adicionada ao ciclo.");
             setNovaSessaoData({ disciplinaId: '', tempoMinutos: '60' });
             setIsAddingSessao(false);
@@ -165,7 +164,7 @@ const CicloDeEstudos: React.FC = () => {
                             </div>
                         </header>
                         <div className="divide-y divide-border max-h-[60vh] overflow-y-auto">
-                            {(cicloAtivo.sessoes || []).map((sessao, index) => {
+                            {cicloAtivo.sessoes.map((sessao, index) => {
                                 const isNext = sessao.id === proximaSessao?.id;
                                 return (
                                 <div key={sessao.id} className={`p-4 flex items-center justify-between group transition-colors ${isNext ? 'bg-primary/10 border-l-4 border-primary' : ''}`}>
@@ -188,7 +187,7 @@ const CicloDeEstudos: React.FC = () => {
                                         )}
                                         <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button onClick={() => reordenarSessao(cicloAtivo.id, sessao.id, 'up')} disabled={index === 0} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowUpIcon className="w-3 h-3"/></button>
-                                            <button onClick={() => reordenarSessao(cicloAtivo.id, sessao.id, 'down')} disabled={index === (cicloAtivo.sessoes || []).length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3"/></button>
+                                            <button onClick={() => reordenarSessao(cicloAtivo.id, sessao.id, 'down')} disabled={index === cicloAtivo.sessoes.length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3"/></button>
                                         </div>
                                         <button onClick={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)} className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Trash2Icon className="w-4 h-4"/>

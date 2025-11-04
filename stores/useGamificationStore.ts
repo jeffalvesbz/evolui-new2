@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { GamificationStats, XpLogEvent, Badge, XpLogEntry } from '../types';
 import { getGamificationStats, logXpEvent as logXpEventApi, getBadges, getXpLog, updateGamificationStats, getWeeklyRanking } from '../services/geminiService';
@@ -137,9 +138,9 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
         toast.success(`+${amount} XP ${getEventMessage(event)}!`);
 
         try {
-            
-            // FIX: Removed extra arguments 'tipo_evento' and 'multiplicador' to align with the corrected API function signature.
-            await logXpEventApi(userId, event, amount, meta);
+            const tipo_evento = event === 'estudo_manual' ? 'manual' : 'ativo';
+            const multiplicador = 1; // Default multiplier
+            await logXpEventApi(userId, event, amount, meta, tipo_evento, multiplicador);
             
             await get().fetchGamificationStats(userId);
             await get().fetchXpLog(userId);
@@ -189,12 +190,13 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             const logPromises = newlyUnlocked.map(badge => {
                 if (badge.xp && badge.xp > 0) {
                     toast.success(`+${badge.xp} XP pela conquista "${badge.name}"!`);
-                     // ✅ Corrigido: Removidos os argumentos `tipo_evento` e `multiplicador`.
                     return logXpEventApi(
                         userId,
                         'conquista_desbloqueada', 
                         badge.xp, 
-                        { badgeId: badge.id, badgeName: badge.name }
+                        { badgeId: badge.id, badgeName: badge.name }, 
+                        'manual', 
+                        1
                     );
                 }
                 return Promise.resolve(null);
@@ -221,7 +223,6 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
 
     unlockedBadges: () => {
         const { stats, badges } = get();
-        // Adicionado um null check para `stats` para evitar erros de runtime.
         if (!stats?.unlockedBadgeIds || !badges) return [];
         const unlockedIds = new Set(stats.unlockedBadgeIds);
         return badges.filter(b => unlockedIds.has(b.id));

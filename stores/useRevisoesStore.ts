@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { Revisao, NivelDificuldade, XpLogEvent } from '../types';
 import { addDays } from 'date-fns';
@@ -21,7 +20,7 @@ interface RevisoesStore {
   loading: boolean;
   error: string | null;
 
-  fetchRevisoes: (studyPlanId: string) => Promise<void>;
+  fetchRevisoes: (editalId: string) => Promise<void>;
   addRevisao: (revisaoData: Omit<Revisao, 'id' | 'studyPlanId'>) => Promise<Revisao>;
   updateRevisao: (id: string, updates: Partial<Revisao>) => Promise<void>;
   removeRevisao: (id: string) => Promise<void>;
@@ -35,11 +34,10 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
       loading: false,
       error: null,
 
-      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
-      fetchRevisoes: async (studyPlanId: string) => {
+      fetchRevisoes: async (editalId: string) => {
         set({ loading: true, error: null });
         try {
-            const revisoes = await getRevisoes(studyPlanId);
+            const revisoes = await getRevisoes(editalId);
             set({ revisoes, loading: false });
         } catch (e) {
             console.error("Failed to fetch revisoes:", e);
@@ -48,11 +46,11 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
         }
       },
       addRevisao: async (revisaoData) => {
-        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
-        if (!studyPlanId) throw new Error("Plano de estudo não selecionado");
+        const editalAtivoId = useEditalStore.getState().editalAtivo?.id;
+        if (!editalAtivoId) throw new Error("Edital não selecionado");
         
         try {
-            const newRevisao = await createRevisao(studyPlanId, revisaoData);
+            const newRevisao = await createRevisao(editalAtivoId, revisaoData);
             set(state => ({ revisoes: [...state.revisoes, newRevisao] }));
             return newRevisao;
         } catch(e) {
