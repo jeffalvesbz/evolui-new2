@@ -163,7 +163,7 @@ const SalvarSessaoModal: React.FC = () => {
 
     return (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={descartarSessao}>
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-[rgba(15,23,42,0.95)] backdrop-blur-lg rounded-xl border border-border shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card backdrop-blur-lg rounded-xl border border-border shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <BookOpenIcon className="w-6 h-6 text-primary" />
@@ -179,7 +179,7 @@ const SalvarSessaoModal: React.FC = () => {
                                 const hours = parseInt(e.target.value, 10);
                                 setEditableHours(isNaN(hours) || hours < 0 ? 0 : hours);
                             }}
-                            className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1"
+                            className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
                             min="0"
                         />
                         <span className="font-bold text-muted-foreground">:</span>
@@ -192,7 +192,7 @@ const SalvarSessaoModal: React.FC = () => {
                                 const minutes = parseInt(e.target.value, 10);
                                 setEditableMinutes(isNaN(minutes) || minutes < 0 ? 0 : Math.min(minutes, 59));
                             }}
-                           className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1"
+                           className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
                             min="0" max="59"
                         />
                     </div>
@@ -208,13 +208,13 @@ const SalvarSessaoModal: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Categoria *</label>
-                            <select {...register('categoria')} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+                            <select {...register('categoria')} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
                                 <option>Teoria</option><option>Questões</option><option>Revisão</option><option>Simulado</option>
                             </select>
                         </div>
                         <div>
                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
-                            <select {...register('disciplinaId', { required: true })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary">
+                            <select {...register('disciplinaId', { required: true })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
                                 <option value="">Selecione a disciplina</option>
                                 {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
                             </select>
@@ -222,7 +222,7 @@ const SalvarSessaoModal: React.FC = () => {
                         </div>
                         <div className="md:col-span-2">
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
-                            <select {...register('topico', { required: true })} disabled={!disciplinaIdSelecionada} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary disabled:opacity-50">
+                            <select {...register('topico', { required: true })} disabled={!disciplinaIdSelecionada} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary disabled:opacity-50">
                                 <option value="">Selecione o tópico</option>
                                 {topicosDaDisciplina.map(t => <option key={t.id} value={t.titulo}>{t.titulo}</option>)}
                             </select>
@@ -230,16 +230,16 @@ const SalvarSessaoModal: React.FC = () => {
                         </div>
                          <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Material utilizado</label>
-                            <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                            <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                              <div>
                                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. inicial</label>
-                                <input {...register('paginaInicial')} type="number" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                                <input {...register('paginaInicial')} type="number" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                             </div>
                              <div>
                                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. final</label>
-                                <input {...register('paginaFinal')} type="number" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                                <input {...register('paginaFinal')} type="number" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                             </div>
                         </div>
                         <div className="md:col-span-2 space-y-2">
@@ -249,7 +249,7 @@ const SalvarSessaoModal: React.FC = () => {
                                     <SparklesIcon className="w-3 h-3" /> {isLoadingSuggestions ? 'Analisando...' : 'Sugerir Tópicos com IA'}
                                 </button>
                             </div>
-                            <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"></textarea>
+                            <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
                             {suggestedTopics.length > 0 && (
                                 <div className="space-y-1">
                                     <p className="text-xs font-semibold text-muted-foreground">Tópicos Sugeridos:</p>

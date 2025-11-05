@@ -71,18 +71,18 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
         <div className="space-y-6">
             <div>
                 <label htmlFor="nomeCiclo" className="block text-sm font-medium text-muted-foreground mb-1">Nome do Ciclo *</label>
-                <input {...register('nomeCiclo', { required: 'O nome do ciclo é obrigatório.' })} id="nomeCiclo" placeholder="Ex: Ciclo de Estudos para Concurso X" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"/>
+                <input {...register('nomeCiclo', { required: 'O nome do ciclo é obrigatório.' })} id="nomeCiclo" placeholder="Ex: Ciclo de Estudos para Concurso X" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
                 {errors.nomeCiclo && <p className="text-xs text-red-500 mt-1">{errors.nomeCiclo.message as string}</p>}
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-2">Matérias Selecionadas ({selectedMaterias.length}) *</label>
-                <div className="p-3 bg-black/20 rounded-lg min-h-[4rem] flex flex-wrap gap-2 border border-border">
+                <div className="p-3 bg-muted/30 rounded-lg min-h-[4rem] flex flex-wrap gap-2 border border-border">
                     {selectedMaterias.length === 0 && <p className="text-sm text-muted-foreground">Selecione as matérias abaixo.</p>}
                     {selectedMaterias.map(materia => (
                         <span key={materia.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold">
                             {materia.nome}
-                            <button type="button" onClick={() => handleRemoveMateria(materia.id)} className="p-0.5 rounded-full hover:bg-black/20"><XIcon className="w-3.5 h-3.5"/></button>
+                            <button type="button" onClick={() => handleRemoveMateria(materia.id)} className="p-0.5 rounded-full hover:bg-muted/50"><XIcon className="w-3.5 h-3.5"/></button>
                         </span>
                     ))}
                 </div>
@@ -101,7 +101,7 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                 <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Adicionar Matéria Personalizada</h4>
                     <div className="flex gap-2">
-                        <input value={customMateria} onChange={e => setCustomMateria(e.target.value)} placeholder="Digite o nome da matéria" className="flex-1 bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                        <input value={customMateria} onChange={e => setCustomMateria(e.target.value)} placeholder="Digite o nome da matéria" className="flex-1 bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                         <button type="button" onClick={handleAddCustomMateria} className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30">
                             <PlusIcon className="w-4 h-4"/> Adicionar
                         </button>
@@ -127,13 +127,13 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                 <p className="text-sm text-muted-foreground">Determine o tempo total (em minutos) que você dedicará a cada matéria em uma rotação completa do ciclo.</p>
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                     {fields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-black/20">
+                        <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
                              <span className="font-semibold text-foreground flex-1">{watchedMaterias[index]?.nome}</span>
                              <Controller
                                 control={control}
                                 name={`materias.${index}.tempoMinutos`}
                                 render={({ field: { onChange, value } }) => (
-                                    <input type="number" value={value} onChange={e => onChange(Number(e.target.value))} min="0" className="w-24 bg-muted/50 border border-border rounded-md px-3 py-1.5 text-sm"/>
+                                    <input type="number" value={value} onChange={e => onChange(Number(e.target.value))} min="0" className="w-24 bg-muted/50 border border-border rounded-md px-3 py-1.5 text-sm text-foreground"/>
                                 )}
                              />
                              <span className="text-sm text-muted-foreground">minutos</span>
@@ -195,7 +195,7 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                                 control={control}
                                 name={`sessoesGeradas.${index}.tempo_previsto`}
                                 render={({ field: { onChange, value } }) => (
-                                     <input type="number" value={value / 60} onChange={e => onChange(Number(e.target.value) * 60)} min="1" className="w-20 bg-muted/50 border border-border rounded-md px-2 py-1 text-sm"/>
+                                     <input type="number" value={value / 60} onChange={e => onChange(Number(e.target.value) * 60)} min="1" className="w-20 bg-muted/50 border border-border rounded-md px-2 py-1 text-sm text-foreground"/>
                                 )}
                              />
                              <span className="text-sm text-muted-foreground">min</span>

@@ -156,7 +156,7 @@ const GamificationPage = () => {
                                 <span>Progresso</span>
                                 <span>{xpInCurrentLevel.toLocaleString()} / {xpNeededForLevel.toLocaleString()} XP</span>
                             </div>
-                            <div className="w-full bg-black/20 rounded-full h-3"><motion.div className="h-3 rounded-full bg-yellow-300" initial={{ width: 0 }} animate={{ width: `${progressPercentage}%` }} transition={{ duration: 0.5, ease: "easeOut" }} /></div>
+                            <div className="w-full bg-muted/50 rounded-full h-3"><motion.div className="h-3 rounded-full bg-yellow-300" initial={{ width: 0 }} animate={{ width: `${progressPercentage}%` }} transition={{ duration: 0.5, ease: "easeOut" }} /></div>
                         </div>
                     </Card>
                     

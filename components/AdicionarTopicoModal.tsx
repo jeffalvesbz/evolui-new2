@@ -121,7 +121,7 @@ const AdicionarTopicoModal: React.FC = () => {
                                 onChange={(e) => setBatchTopics(e.target.value)}
                                 rows={8}
                                 placeholder="Tópico 1&#10;Tópico 2&#10;Tópico 3"
-                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary resize-y"
+                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary resize-y"
                             />
                         </div>
                     ) : (
@@ -132,7 +132,7 @@ const AdicionarTopicoModal: React.FC = () => {
                                 {...register('titulo', { required: true })}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Digite o título do tópico"
-                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-y"
+                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-y"
                                 rows={2}
                             />
                              <ul className="text-xs text-muted-foreground space-y-1 pl-1">

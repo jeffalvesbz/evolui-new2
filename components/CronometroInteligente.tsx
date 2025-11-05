@@ -46,15 +46,15 @@ const PomodoroSettings: React.FC = () => {
             <h4 className="font-bold text-sm text-foreground">Configurações Pomodoro</h4>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Foco (min)</label>
-                <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs"/>
+                <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
             </div>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Pausa Curta (min)</label>
-                <input type="number" value={pomodoroSettings.shortBreak / 60} onChange={e => handleUpdate('shortBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs"/>
+                <input type="number" value={pomodoroSettings.shortBreak / 60} onChange={e => handleUpdate('shortBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
             </div>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Pausa Longa (min)</label>
-                <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs"/>
+                <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
             </div>
         </div>
     );

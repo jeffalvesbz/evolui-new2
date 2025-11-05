@@ -103,11 +103,11 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
       <div className="p-6 space-y-4 max-h-[calc(100vh-350px)] overflow-y-auto">
         <div>
           <label htmlFor="nome" className="block text-sm font-medium text-muted-foreground mb-1">Nome da Disciplina</label>
-          <input {...register('nome', { required: true })} id="nome" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+          <input {...register('nome', { required: true })} id="nome" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
         </div>
         <div>
           <label htmlFor="anotacoes" className="block text-sm font-medium text-muted-foreground mb-1">Anotações</label>
-          <textarea {...register('anotacoes')} id="anotacoes" rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+          <textarea {...register('anotacoes')} id="anotacoes" rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
         </div>
         
         <h4 className="text-lg font-semibold pt-4 border-t border-border">Tópicos</h4>
@@ -115,7 +115,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
           {fields.map((field, index) => (
             <div key={field.id} className="p-3 bg-muted/50 rounded-lg border border-border space-y-2">
               <div className="flex items-center gap-2">
-                <input {...register(`topicos.${index}.titulo`, { required: true })} placeholder={`Tópico ${index + 1}`} className="flex-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm" />
+                <input {...register(`topicos.${index}.titulo`, { required: true })} placeholder={`Tópico ${index + 1}`} className="flex-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm text-foreground" />
                 <button type="button" onClick={() => remove(index)} className="p-1.5 text-muted-foreground hover:text-red-500"><Trash2Icon className="w-4 h-4" /></button>
               </div>
               <div className="flex items-center justify-between">
@@ -140,7 +140,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
                   control={control}
                   defaultValue="desconhecido"
                   render={({ field }) => (
-                    <select {...field} className="text-xs bg-background border border-border rounded-md px-2 py-1">
+                    <select {...field} className="text-xs bg-background border border-border rounded-md px-2 py-1 text-foreground">
                       {NIVEIS_DIFICULDADE.map(nivel => <option key={nivel} value={nivel}>{nivel.charAt(0).toUpperCase() + nivel.slice(1)}</option>)}
                     </select>
                   )}

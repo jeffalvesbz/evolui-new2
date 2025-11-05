@@ -130,16 +130,30 @@ export interface CorrecaoCriterio {
   criterio: string;
   pontuacao: number;
   maximo: number;
+  peso: number;
   feedback: string;
 }
 
 export interface CorrecaoCompleta {
   banca: string;
   notaMaxima: number;
+  avaliacaoGeral: string;
   avaliacaoDetalhada: CorrecaoCriterio[];
   comentariosGerais: string;
   notaFinal: number;
   errosDetalhados: CorrecaoErroDetalhado[];
+  textoCorrigido?: string;
+  sinteseFinal: string;
+}
+
+// Entrada para correção (pesos e notas definidos pelo usuário)
+export interface NotasPesosEntrada {
+  conteudo?: { nota: number; peso: number; maximo: number };
+  estrutura?: { nota: number; peso: number; maximo: number };
+  linguagem?: { nota: number; peso: number; maximo: number };
+  argumentacao?: { nota: number; peso: number; maximo: number };
+  coesao?: { nota: number; peso: number; maximo: number };
+  observacaoAvaliador?: string;
 }
 
 export interface RedacaoCorrigida {

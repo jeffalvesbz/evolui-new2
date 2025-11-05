@@ -93,6 +93,10 @@ export const checkAndAwardBadges = () => {
         break;
       
       // Secret Achievements
+      case 'badge-secret-1': // Matrix
+        // Esta conquista é desbloqueada manualmente quando o usuário alterna o tema 5 vezes em 3 segundos
+        // (ver App.tsx - toggleTheme). Não pode ser verificada automaticamente aqui.
+        break;
       case 'badge-secret-2': // Interestelar (5 hour session)
         if (sessoes.some(s => s.tempo_estudado >= 5 * 3600)) {
           criteriaMet = true;

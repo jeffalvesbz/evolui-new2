@@ -372,7 +372,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 </Button>
               </div>
             </div>
-            <div className="space-y-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="space-y-4 rounded-2xl border border-white/10 bg-muted/30 p-4">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>Edital ativo</span>
                 <span className="font-medium text-foreground">{editalAtivo?.nome || 'Nenhum'}</span>

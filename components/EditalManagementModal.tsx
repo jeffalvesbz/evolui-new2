@@ -138,26 +138,26 @@ const EditalManagementModal: React.FC = () => {
             <div className="p-6 space-y-4">
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Nome do Edital *</label>
-                    <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                    <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Órgão</label>
-                        <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                        <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     </div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Banca</label>
-                        <input {...register('banca')} placeholder="Ex: Cebraspe" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                        <input {...register('banca')} placeholder="Ex: Cebraspe" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     </div>
                 </div>
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Descrição</label>
-                    <textarea {...register('descricao')} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                    <textarea {...register('descricao')} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Data Alvo *</label>
-                    <input type="date" {...register('data_alvo', { required: 'A data é obrigatória' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" />
+                    <input type="date" {...register('data_alvo', { required: 'A data é obrigatória' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.data_alvo && <p className="text-xs text-red-500 mt-1">{errors.data_alvo.message}</p>}
                 </div>
             </div>

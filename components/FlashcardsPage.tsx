@@ -50,13 +50,13 @@ const FlippableCard: React.FC<{
                 transition={{ duration: 0.4, ease: 'easeInOut' }}
             >
                 {/* Front */}
-                <div className="absolute w-full h-full backface-hidden bg-white rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer shadow-2xl text-slate-800">
-                    <p className="text-sm text-slate-500 mb-2">Pergunta</p>
+                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer shadow-2xl text-foreground border border-border">
+                    <p className="text-sm text-muted-foreground mb-2">Pergunta</p>
                     <p className="text-center text-xl font-semibold">{flashcard.pergunta}</p>
                 </div>
                 {/* Back */}
-                <div className="absolute w-full h-full backface-hidden bg-white rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer rotate-y-180 shadow-2xl text-slate-800">
-                    <p className="text-sm text-violet-600 mb-2 font-bold">Resposta</p>
+                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer rotate-y-180 shadow-2xl text-foreground border border-border">
+                    <p className="text-sm text-primary mb-2 font-bold">Resposta</p>
                     <p className="text-center font-medium">{flashcard.resposta}</p>
                 </div>
             </motion.div>
@@ -141,7 +141,7 @@ const GeradorIA: React.FC = () => {
             <select
                 value={selectedDisciplinaId}
                 onChange={e => setSelectedDisciplinaId(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"
+                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"
             >
                 {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>

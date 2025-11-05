@@ -107,14 +107,14 @@ const CriarFlashcardModal: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
-                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="">Selecione...</option>
                         {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
                     </select>
                 </div>
                  <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
-                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="">Selecione...</option>
                         {topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)}
                     </select>
@@ -122,11 +122,11 @@ const CriarFlashcardModal: React.FC = () => {
             </div>
              <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Pergunta *</label>
-                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"/>
+                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
             </div>
              <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Resposta *</label>
-                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm"/>
+                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
             </div>
           </main>
 

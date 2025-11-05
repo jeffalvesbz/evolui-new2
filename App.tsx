@@ -62,8 +62,7 @@ const useEditalDataSync = () => {
         if (editalAtivo?.id) {
             console.log(`Buscando todos os dados para o plano de estudo: ${editalAtivo.nome}`);
             // ✅ Corrigido: As funções de fetch agora recebem `editalAtivo.id` que representa o `studyPlanId`.
-            // Usando Promise.allSettled para que um erro não quebre todas as outras requisições
-            Promise.allSettled([
+            Promise.all([
                 fetchDisciplinas(editalAtivo.id),
                 fetchRevisoes(editalAtivo.id),
                 fetchErros(editalAtivo.id),
@@ -71,12 +70,9 @@ const useEditalDataSync = () => {
                 fetchCiclos(editalAtivo.id),
                 fetchRedacoes(editalAtivo.id),
                 fetchSimulados(editalAtivo.id),
-            ]).then(results => {
-                const errors = results.filter(r => r.status === 'rejected');
-                if (errors.length > 0) {
-                    console.warn("Alguns dados não foram carregados:", errors);
-                    // Não mostrar toast para cada erro individual, pois cada função já trata seu próprio erro
-                }
+            ]).catch(err => {
+                console.error("Falha ao buscar dados do plano de estudo", err);
+                toast.error("Não foi possível carregar os dados do plano de estudo.");
             });
         }
     }, [editalAtivo?.id]);
@@ -236,16 +232,7 @@ const App: React.FC = () => {
   
   // Initialize auth state listener
   useEffect(() => {
-    const initAuth = async () => {
-      setIsAppLoading(true);
-      try {
-        await checkAuth();
-      } catch (error) {
-        console.error("Failed to check auth:", error);
-        setIsAppLoading(false);
-      }
-    };
-    initAuth();
+    checkAuth();
   }, [checkAuth]);
   
   // Fetch initial data once authenticated

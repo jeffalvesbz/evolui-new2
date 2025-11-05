@@ -5,7 +5,7 @@ import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 
 const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={onClose}>
         <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
             {children}
         </div>
@@ -172,19 +172,19 @@ const Simulados = () => {
               <button type="button" onClick={() => setIsCreateOpen(false)} className="p-1 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
             </header>
             <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Nome</span><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2" required /></label>
+              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Nome</span><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" required /></label>
               
               <label className="flex items-center gap-2 text-sm md:col-span-2 text-muted-foreground">
                   <input type="checkbox" checked={form.isCebraspe} onChange={e => setForm(p => ({ ...p, isCebraspe: e.target.checked }))} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" />
                   Estilo Cebraspe (uma errada anula uma certa)
               </label>
               
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Acertos</span><input type="number" min="0" value={form.correct} onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2" required /></label>
-              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2"></textarea></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Acertos</span><input type="number" min="0" value={form.correct} onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" required /></label>
+              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground"></textarea></label>
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="submit" className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"><SaveIcon className="w-4 h-4" /> Salvar</button></div>
           </form>

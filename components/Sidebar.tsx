@@ -65,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-30 lg:hidden"
+            className="fixed inset-0 bg-background/60 backdrop-blur-sm z-30 lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -92,12 +92,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
         </nav>
         {user && (
           <div className="p-4 border-t border-white/10 space-y-4">
-              <div className="p-3 bg-black/20 rounded-lg">
+              <div className="p-3 bg-muted/30 rounded-lg">
                   <p className="font-semibold text-sm text-foreground">{user.name}</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
               </div>
               <div className="flex items-center gap-2">
-                  <button className="flex-1 flex items-center justify-between p-3 bg-black/20 rounded-lg hover:bg-black/30 transition-colors">
+                  <button className="flex-1 flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                       <span className="font-semibold text-sm text-foreground">Configurações</span>
                       <SettingsIcon className="w-4 h-4 text-muted-foreground"/>
                   </button>

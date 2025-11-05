@@ -53,25 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, session: null, isAuthenticated: false });
   },
   
-  checkAuth: async () => {
-    // Verifica a sessão atual primeiro
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (user) {
-      set({ 
-        user: {
-          id: user.id,
-          name: user.user_metadata.name || 'Usuário',
-          email: user.email || ''
-        },
-        session, 
-        isAuthenticated: true 
-      });
-    } else {
-      set({ user: null, session: null, isAuthenticated: false });
-    }
-    
-    // Configura o listener para mudanças futuras
+  checkAuth: () => {
     supabase.auth.onAuthStateChange((_event, session) => {
         const user = session?.user;
         if (user) {

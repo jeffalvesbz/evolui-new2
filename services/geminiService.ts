@@ -2,7 +2,7 @@
 
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabase } from './supabaseClient';
-import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship, FriendRequest, NivelDificuldade } from '../types';
+import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship, FriendRequest, NivelDificuldade, NotasPesosEntrada } from '../types';
 import { TrilhaSemanalData } from '../stores/useEstudosStore';
 import { Simulation } from '../stores/useStudyStore';
 import { subDays } from 'date-fns';
@@ -81,21 +81,275 @@ export const suggestTopics = async (comment: string): Promise<string[]> => {
 const correcaoSchema = {
     type: Type.OBJECT,
     properties: {
-        banca: { type: Type.STRING }, notaMaxima: { type: Type.NUMBER },
-        avaliacaoDetalhada: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { criterio: { type: Type.STRING }, pontuacao: { type: Type.NUMBER }, maximo: { type: Type.NUMBER }, feedback: { type: Type.STRING } } } },
-        comentariosGerais: { type: Type.STRING }, notaFinal: { type: Type.NUMBER },
-        errosDetalhados: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { trecho: { type: Type.STRING }, tipo: { type: Type.STRING }, explicacao: { type: Type.STRING }, sugestao: { type: Type.STRING } } } }
+        banca: { type: Type.STRING },
+        notaMaxima: { type: Type.NUMBER },
+        avaliacaoGeral: { type: Type.STRING },
+        avaliacaoDetalhada: { 
+            type: Type.ARRAY, 
+            items: { 
+                type: Type.OBJECT, 
+                properties: { 
+                    criterio: { type: Type.STRING }, 
+                    pontuacao: { type: Type.NUMBER }, 
+                    maximo: { type: Type.NUMBER },
+                    peso: { type: Type.NUMBER },
+                    feedback: { type: Type.STRING } 
+                } 
+            } 
+        },
+        comentariosGerais: { type: Type.STRING },
+        notaFinal: { type: Type.NUMBER },
+        errosDetalhados: { 
+            type: Type.ARRAY, 
+            items: { 
+                type: Type.OBJECT, 
+                properties: { 
+                    trecho: { type: Type.STRING }, 
+                    tipo: { type: Type.STRING }, 
+                    explicacao: { type: Type.STRING }, 
+                    sugestao: { type: Type.STRING } 
+                } 
+            } 
+        },
+        textoCorrigido: { type: Type.STRING },
+        sinteseFinal: { type: Type.STRING }
     }
 };
 
-export const corrigirRedacao = async (redacao: string, banca: string, notaMaxima: number, tema?: string): Promise<CorrecaoCompleta> => {
+export const corrigirRedacao = async (
+    redacao: string, 
+    banca: string, 
+    notaMaxima: number, 
+    tema?: string,
+    notasPesos?: NotasPesosEntrada
+): Promise<CorrecaoCompleta> => {
     if (!ai) {
         throw new Error('API Key do Gemini não configurada. Configure a variável GEMINI_API_KEY no arquivo .env');
     }
-    const prompt = `Corrija a redação a seguir para a banca "${banca}" com nota máxima ${notaMaxima} e tema "${tema || 'Não especificado'}":\n\n${redacao}\n\nRetorne JSON.`;
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt, config: { responseMimeType: 'application/json', responseSchema: correcaoSchema } });
+
+    // Determinar critérios e notas/pesos baseado na entrada do usuário
+    const criteriosEntrada: Array<{ nome: string; nota: number; peso: number; maximo: number }> = [];
+    
+    if (notasPesos) {
+        if (notasPesos.conteudo) criteriosEntrada.push({ nome: 'Conteúdo / Argumentação', ...notasPesos.conteudo });
+        if (notasPesos.estrutura) criteriosEntrada.push({ nome: 'Estrutura / Coesão', ...notasPesos.estrutura });
+        if (notasPesos.linguagem) criteriosEntrada.push({ nome: 'Linguagem / Norma Culta', ...notasPesos.linguagem });
+        if (notasPesos.argumentacao) criteriosEntrada.push({ nome: 'Argumentação', ...notasPesos.argumentacao });
+        if (notasPesos.coesao) criteriosEntrada.push({ nome: 'Coesão', ...notasPesos.coesao });
+    }
+
+    // Se não há notas/pesos definidos, criar critérios padrão baseados na banca
+    // Neste caso, a IA calculará as notas
+    let notaFinalCalculada = 0;
+    if (criteriosEntrada.length === 0) {
+        // Sem notas/pesos definidos, a IA calculará tudo
+        notaFinalCalculada = 0; // Será calculado pela IA
+    } else {
+        // Calcular nota final baseada nos pesos e notas definidos pelo usuário
+        notaFinalCalculada = criteriosEntrada.reduce((sum, c) => sum + (c.nota * c.peso), 0);
+    }
+
+    // Estilos de avaliação por banca
+    const estiloBanca: Record<string, string> = {
+        'CESPE': 'Estilo técnico e objetivo; correção analítica. Valorize clareza, concisão e densidade argumentativa. Penalize repetições e desvios da norma culta. Use linguagem impessoal e avaliativa.',
+        'Cebraspe': 'Estilo técnico e objetivo; correção analítica. Valorize clareza, concisão e densidade argumentativa. Penalize repetições e desvios da norma culta. Use linguagem impessoal e avaliativa.',
+        'FGV': 'Estilo crítico e interpretativo. Valorize reflexão social e originalidade argumentativa. Penalize superficialidade ou discurso genérico. Tom analítico com foco na profundidade das ideias.',
+        'FCC': 'Estilo formalista e técnico. Valorize coesão, paralelismo sintático e precisão gramatical. Penalize erros de concordância, ambiguidades e pobreza vocabular. Tom metódico e avaliativo.',
+        'VUNESP': 'Estilo direto e objetivo. Valorize clareza e adequação ao tema. Penalize erros básicos e conclusões vagas. Tom de parecer didático e equilibrado.',
+        'ENEM': 'Estilo pedagógico e detalhado, com 5 competências. Linguagem acessível, mas técnica, com foco em autodesenvolvimento. Atenção especial à proposta de intervenção.',
+        'IBFC': 'Estilo neutro e padronizado. Valorize cumprimento integral da proposta e linguagem formal. Penalize repetição de ideias e argumentação rasa. Feedback direto, com observações pontuais.',
+        'QUADRIX': 'Estilo neutro e padronizado. Valorize cumprimento integral da proposta e linguagem formal. Penalize repetição de ideias e argumentação rasa. Feedback direto, com observações pontuais.',
+        'IDECAN': 'Estilo neutro e padronizado. Valorize cumprimento integral da proposta e linguagem formal. Penalize repetição de ideias e argumentação rasa. Feedback direto, com observações pontuais.',
+        'AOCP': 'Estilo neutro e padronizado. Valorize cumprimento integral da proposta e linguagem formal. Penalize repetição de ideias e argumentação rasa. Feedback direto, com observações pontuais.'
+    };
+
+    const estilo = estiloBanca[banca] || 'Siga os critérios padrão da banca, valorizando correção, coerência e adequação ao tema.';
+
+    // Construir seção de critérios para o prompt
+    const secoesCriterios = criteriosEntrada.length > 0
+        ? criteriosEntrada.map(c => 
+            `- ${c.nome}: Nota atribuída ${c.nota.toFixed(1)} / ${c.maximo.toFixed(1)} (peso: ${(c.peso * 100).toFixed(0)}%)`
+        ).join('\n')
+        : `A IA deve calcular as notas para os critérios padrão da banca ${banca}.`;
+
+    const prompt = `Você é um corretor especializado em redações de concursos públicos, com conhecimento profundo dos critérios de avaliação da banca "${banca}".
+
+FUNÇÃO: ${criteriosEntrada.length > 0 
+    ? 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, INTERPRETANDO E EXPLICANDO as notas já atribuídas pelo avaliador. Você NÃO atribui notas, apenas explica e justifica as notas dadas.'
+    : 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, ATRIBUINDO NOTAS para cada critério baseado na avaliação do texto. Calcule a nota final somando as pontuações dos critérios.'
+}
+
+╔════════════════════════════════════════════════════════════════╗
+║  DADOS DA AVALIAÇÃO (JÁ DEFINIDOS PELO AVALIADOR)            ║
+╚════════════════════════════════════════════════════════════════╝
+
+BANCA: ${banca}
+TEMA: ${tema || 'Não especificado'}
+NOTA MÁXIMA: ${notaMaxima} pontos
+
+CRITÉRIOS E NOTAS ATRIBUÍDAS:
+${secoesCriterios}
+
+${criteriosEntrada.length > 0 ? `NOTA FINAL CALCULADA: ${notaFinalCalculada.toFixed(1)} / ${notaMaxima}` : 'A IA deve calcular a nota final baseada na avaliação dos critérios.'}
+
+${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.observacaoAvaliador}\n` : ''}
+
+╔════════════════════════════════════════════════════════════════╗
+║  INSTRUÇÕES PARA A CORREÇÃO                                    ║
+╚════════════════════════════════════════════════════════════════╝
+
+1. USE O ESTILO DE CORREÇÃO DA BANCA INDICADA:
+   ${estilo}
+
+2. INTERPRETE E EXPLIQUE AS NOTAS DADAS:
+   - Justifique por que o texto MERECE a nota informada em cada critério
+   - Identifique os elementos que justificam essa pontuação (ou poderiam elevá-la)
+   - Explique o que precisa ser melhorado em cada eixo para atingir pontuação máxima
+   - Seja técnico e objetivo, usando linguagem de avaliador oficial
+
+3. MANTENHA TOM TÉCNICO DE CORRETOR:
+   - Linguagem formal e objetiva, mas pedagógica e construtiva
+   - Use termos e critérios característicos da banca ${banca}
+   - Evite subjetividade excessiva; seja preciso e fundamentado
+
+4. APRESENTE O PARECER FINAL EM 6 PARTES:
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   📊 1️⃣ AVALIAÇÃO GERAL
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Síntese global do desempenho, apontando se o texto cumpre o tema e o formato exigido pela banca ${banca}. 
+   ${criteriosEntrada.length > 0 ? `Contextualize a nota final calculada (${notaFinalCalculada.toFixed(1)}/${notaMaxima}) em relação ao desempenho geral.` : 'Apresente uma visão geral do desempenho antes da análise detalhada.'}
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   📋 2️⃣ ANÁLISE POR CRITÉRIO ${criteriosEntrada.length > 0 ? '(com base nas notas atribuídas)' : '(avaliar e atribuir notas)'}
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ${criteriosEntrada.length > 0 
+    ? `Para cada critério abaixo, forneça:
+   - Justificativa técnica da nota atribuída
+   - Elementos que justificam a pontuação (acertos, pontos fortes)
+   - Lacunas e aspectos que impedem pontuação máxima
+   - Sugestões específicas de melhoria
+
+${criteriosEntrada.map(c => `
+   • ${c.nome} (${c.nota.toFixed(1)}/${c.maximo.toFixed(1)} - peso ${(c.peso * 100).toFixed(0)}%):
+     Justifique a nota atribuída, mencione acertos, lacunas, exemplos e relevância.`).join('')}`
+    : `Avalie e atribua notas para os critérios padrão da banca ${banca}. Para cada critério, forneça:
+   - Pontuação atribuída (justificada)
+   - Elementos que justificam a pontuação (acertos, pontos fortes)
+   - Lacunas e aspectos que impedem pontuação máxima
+   - Sugestões específicas de melhoria`
+}
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ✏️ 3️⃣ EXEMPLOS DE CORREÇÕES E SUGESTÕES DE MELHORIA
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Identifique e detalhe TODOS os erros encontrados:
+   - Erros gramaticais (concordância, regência, pontuação, etc.)
+   - Erros ortográficos
+   - Problemas de coesão (uso inadequado de conectivos, repetições, etc.)
+   - Problemas de coerência (contradições, falta de lógica, etc.)
+   - Desvios da norma culta
+   - Problemas de estruturação (parágrafos, desenvolvimento, conclusão)
+   
+   Para cada erro, forneça:
+   - Trecho exato do texto
+   - Tipo do erro
+   - Explicação clara do problema
+   - Sugestão de correção (reescreva o trecho corrigido)
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   📝 4️⃣ TEXTO CORRIGIDO (OPCIONAL)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Apresente uma versão revisada do texto, mantendo o estilo original do candidato, 
+   aplicando todas as correções sugeridas. Se o texto estiver muito bom, pode omitir esta seção.
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   💡 5️⃣ SÍNTESE FINAL (FEEDBACK PEDAGÓGICO)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Liste:
+   - Pontos fortes do texto
+   - Aspectos a desenvolver urgentemente
+   - Sugestões personalizadas para a próxima redação
+   - Foco nos critérios que mais impactam a nota na banca ${banca}
+
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   🏛️ 6️⃣ ESTILO E VOCABULÁRIO ESPECÍFICOS DA BANCA
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Adapte o tom e os comentários para refletir o perfil avaliativo real da ${banca}.
+
+╔════════════════════════════════════════════════════════════════╗
+║  REDAÇÃO A SER CORRIGIDA                                      ║
+╚════════════════════════════════════════════════════════════════╝
+
+${redacao}
+
+╔════════════════════════════════════════════════════════════════╗
+║  FORMATO DE SAÍDA                                               ║
+╚════════════════════════════════════════════════════════════════╝
+
+Retorne a resposta APENAS em formato JSON, seguindo rigorosamente o schema fornecido:
+
+- "avaliacaoGeral": Síntese global (seção 1)
+- "avaliacaoDetalhada": Array com análise de cada critério (seção 2), incluindo "peso" no objeto
+- "errosDetalhados": Array com todos os erros identificados (seção 3)
+- "textoCorrigido": Versão revisada (seção 4) - opcional
+- "comentariosGerais": Comentários gerais consolidados
+- "sinteseFinal": Feedback pedagógico final (seção 5)
+
+IMPORTANTE: 
+- Use a linguagem característica da banca ${banca}
+- Seja detalhado, específico e pedagógico em todos os feedbacks
+- JUSTIFIQUE as notas dadas, não as calcule
+- Mantenha tom técnico de corretor oficial`;
+
+    const response = await ai.models.generateContent({ 
+        model: 'gemini-2.5-pro', 
+        contents: prompt, 
+        config: { 
+            responseMimeType: 'application/json', 
+            responseSchema: correcaoSchema 
+        } 
+    });
+    
     let jsonText = response.text.trim().replace(/^```json\n?|```$/g, '');
-    return JSON.parse(jsonText) as CorrecaoCompleta;
+    const resultado = JSON.parse(jsonText) as any;
+    
+    // Garantir que os dados de entrada sejam preservados na resposta
+    // Se a IA calculou a nota, usar o valor retornado; senão, usar o calculado
+    const notaFinalRetornada = resultado.notaFinal ?? notaFinalCalculada;
+    
+    const correcaoCompleta: CorrecaoCompleta = {
+        banca: banca,
+        notaMaxima: notaMaxima,
+        notaFinal: criteriosEntrada.length > 0 ? notaFinalCalculada : notaFinalRetornada,
+        avaliacaoGeral: resultado.avaliacaoGeral || '',
+        comentariosGerais: resultado.comentariosGerais || '',
+        sinteseFinal: resultado.sinteseFinal || '',
+        textoCorrigido: resultado.textoCorrigido || undefined,
+        errosDetalhados: resultado.errosDetalhados || [],
+        avaliacaoDetalhada: resultado.avaliacaoDetalhada?.map((item: any, index: number) => {
+            // Se há critérios definidos pelo usuário, usar os valores definidos
+            if (criteriosEntrada.length > 0 && criteriosEntrada[index]) {
+                return {
+                    criterio: item.criterio || criteriosEntrada[index].nome,
+                    pontuacao: criteriosEntrada[index].nota,
+                    maximo: criteriosEntrada[index].maximo,
+                    peso: criteriosEntrada[index].peso,
+                    feedback: item.feedback || ''
+                };
+            }
+            // Se a IA calculou, usar os valores retornados
+            return {
+                criterio: item.criterio || '',
+                pontuacao: item.pontuacao ?? 0,
+                maximo: item.maximo ?? 0,
+                peso: item.peso ?? 0,
+                feedback: item.feedback || ''
+            };
+        }) || []
+    };
+    
+    return correcaoCompleta;
 };
 
 export const extrairTextoDeImagem = async (base64Image: string, mimeType: string): Promise<string> => {
@@ -334,6 +588,49 @@ export const updateStudyPlanApi = async (id: string, updates: Partial<StudyPlan>
 export const deleteStudyPlan = async (id: string) => {
     const { error } = await supabase.from('study_plans').delete().eq('id', id);
     if (error) throw error;
+};
+
+// Planejamento e Trilha Semanal
+export const saveTrilhaSemanal = async (studyPlanId: string, trilha: any) => {
+    const { data, error } = await supabase
+        .from('study_plans')
+        .update({ trilha_semanal: trilha } as any)
+        .eq('id', studyPlanId)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+};
+
+export const getTrilhaSemanal = async (studyPlanId: string) => {
+    const { data, error } = await supabase
+        .from('study_plans')
+        .select('trilha_semanal')
+        .eq('id', studyPlanId)
+        .single();
+    if (error) throw error;
+    return (data as any)?.trilha_semanal || null;
+};
+
+export const savePlanningConfig = async (studyPlanId: string, planningConfig: any) => {
+    const { data, error } = await supabase
+        .from('study_plans')
+        .update({ planning_config: planningConfig } as any)
+        .eq('id', studyPlanId)
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+};
+
+export const getPlanningConfig = async (studyPlanId: string) => {
+    const { data, error } = await supabase
+        .from('study_plans')
+        .select('planning_config')
+        .eq('id', studyPlanId)
+        .single();
+    if (error) throw error;
+    return (data as any)?.planning_config || null;
 };
 
 // Disciplinas (with nested topicos)

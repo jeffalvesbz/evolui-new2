@@ -4,7 +4,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, 
 import { PencilRulerIcon, SparklesIcon, CameraIcon, HistoryIcon } from './icons';
 import { corrigirRedacao, extrairTextoDeImagem } from '../services/geminiService';
 import { toast } from './Sonner';
-import { CorrecaoCompleta, CorrecaoErroDetalhado, RedacaoCorrigida } from '../types';
+import { CorrecaoCompleta, CorrecaoErroDetalhado, RedacaoCorrigida, NotasPesosEntrada } from '../types';
 import { useRedacaoStore } from '../stores/useRedacaoStore';
 
 // --- Helper Functions & Types ---
@@ -68,27 +68,58 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
                 <p className="text-xs p-2 bg-muted/30 rounded-md">{tema}</p>
             </div>
         )}
+        
+        {correcao.avaliacaoGeral && (
+            <div>
+                <h3 className="text-lg font-bold text-foreground mb-2">📊 Avaliação Geral</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.avaliacaoGeral}</p>
+            </div>
+        )}
+        
         <div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Avaliação por Critério</h3>
+            <h3 className="text-lg font-bold text-foreground mb-2">📋 Análise por Critério</h3>
             <div className="space-y-4">
                 {correcao.avaliacaoDetalhada.map((item, i) => (
                     <div key={i} className="p-3 bg-muted/30 rounded-lg border border-border">
                         <div className="flex justify-between items-center mb-1">
                             <h4 className="font-semibold text-sm text-foreground">{item.criterio.split(':')[0]}</h4>
-                            <span className="font-bold text-sm text-primary">{item.pontuacao} / {item.maximo}</span>
+                            <div className="flex items-center gap-2">
+                                {item.peso && (
+                                    <span className="text-xs text-muted-foreground">Peso: {(item.peso * 100).toFixed(0)}%</span>
+                                )}
+                                <span className="font-bold text-sm text-primary">{item.pontuacao.toFixed(1)} / {item.maximo.toFixed(1)}</span>
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{item.feedback}</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{item.feedback}</p>
                     </div>
                 ))}
             </div>
         </div>
+        
+        {correcao.textoCorrigido && (
+            <div>
+                <h3 className="text-lg font-bold text-foreground mb-2">📝 Texto Corrigido</h3>
+                <div className="p-4 bg-muted/30 rounded-lg border border-border max-h-[400px] overflow-y-auto">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.textoCorrigido}</p>
+                </div>
+            </div>
+        )}
+        
         <div>
             <h3 className="text-lg font-bold text-foreground mb-2">Comentários Gerais</h3>
-            <p className="text-sm text-muted-foreground">{correcao.comentariosGerais}</p>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.comentariosGerais}</p>
         </div>
+        
+        {correcao.sinteseFinal && (
+            <div>
+                <h3 className="text-lg font-bold text-foreground mb-2">💡 Síntese Final (Feedback Pedagógico)</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.sinteseFinal}</p>
+            </div>
+        )}
+        
         <div className="text-center pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground">Nota Final</p>
-            <p className="text-5xl font-bold text-primary">{correcao.notaFinal} / {correcao.notaMaxima}</p>
+            <p className="text-5xl font-bold text-primary">{correcao.notaFinal.toFixed(1)} / {correcao.notaMaxima}</p>
         </div>
     </div>
 );
@@ -223,6 +254,9 @@ const CorretorRedacao: React.FC = () => {
     const [correcao, setCorrecao] = useState<CorrecaoCompleta | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isOcrLoading, setIsOcrLoading] = useState(false);
+    const [usarAvaliacaoManual, setUsarAvaliacaoManual] = useState(false);
+    const [notasPesos, setNotasPesos] = useState<NotasPesosEntrada>({});
+    const [observacaoAvaliador, setObservacaoAvaliador] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { addCorrecao } = useRedacaoStore();
@@ -266,10 +300,32 @@ const CorretorRedacao: React.FC = () => {
             toast.error("Por favor, insira um texto com pelo menos 50 caracteres.");
             return;
         }
+        
+        // Validar pesos se avaliação manual estiver ativa
+        if (usarAvaliacaoManual) {
+            const pesos = [
+                notasPesos.conteudo?.peso || 0,
+                notasPesos.estrutura?.peso || 0,
+                notasPesos.linguagem?.peso || 0,
+                notasPesos.argumentacao?.peso || 0,
+                notasPesos.coesao?.peso || 0
+            ].filter(p => p > 0);
+            
+            const somaPesos = pesos.reduce((sum, p) => sum + p, 0);
+            if (Math.abs(somaPesos - 1.0) > 0.01) {
+                toast.error(`A soma dos pesos deve ser 1.0 (atual: ${somaPesos.toFixed(2)})`);
+                return;
+            }
+        }
+        
         setIsLoading(true);
         setCorrecao(null);
         try {
-            const result = await corrigirRedacao(redacao, banca, notaMaxima, tema);
+            const notasPesosComObservacao = usarAvaliacaoManual 
+                ? { ...notasPesos, observacaoAvaliador: observacaoAvaliador || undefined }
+                : undefined;
+            
+            const result = await corrigirRedacao(redacao, banca, notaMaxima, tema, notasPesosComObservacao);
             setCorrecao(result);
             addCorrecao({ texto: redacao, banca, notaMaxima, correcao: result, tema });
             toast.success("Redação corrigida com sucesso!");
@@ -326,13 +382,113 @@ const CorretorRedacao: React.FC = () => {
                                 <div>
                                     <label htmlFor="banca" className="block text-sm font-medium text-muted-foreground mb-1">Banca</label>
                                     <select id="banca" value={banca} onChange={e => setBanca(e.target.value)} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
-                                        <option>Enem</option><option>Cebraspe</option><option>FGV</option><option>Outras</option>
+                                        <option>Enem</option>
+                                        <option>CESPE</option>
+                                        <option>Cebraspe</option>
+                                        <option>FGV</option>
+                                        <option>FCC</option>
+                                        <option>VUNESP</option>
+                                        <option>IBFC</option>
+                                        <option>QUADRIX</option>
+                                        <option>IDECAN</option>
+                                        <option>AOCP</option>
+                                        <option>CESGRANRIO</option>
+                                        <option>Outras</option>
                                     </select>
                                 </div>
                                  <div>
                                     <label htmlFor="notaMaxima" className="block text-sm font-medium text-muted-foreground mb-1">Nota Máxima</label>
                                     <input type="number" id="notaMaxima" value={notaMaxima} onChange={e => setNotaMaxima(Number(e.target.value))} disabled={banca === 'Enem'} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50"/>
                                 </div>
+                            </div>
+                            
+                            {/* Avaliação Manual (Opcional) */}
+                            <div className="border-t border-border pt-4">
+                                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={usarAvaliacaoManual}
+                                        onChange={(e) => setUsarAvaliacaoManual(e.target.checked)}
+                                        className="w-4 h-4 rounded border-border"
+                                    />
+                                    <span className="text-sm font-medium text-foreground">Definir notas e pesos manualmente (IA irá interpretar e explicar)</span>
+                                </label>
+                                
+                                {usarAvaliacaoManual && (
+                                    <div className="space-y-4 mt-4 p-4 bg-muted/30 rounded-lg border border-border">
+                                        <p className="text-xs text-muted-foreground mb-3">
+                                            Defina as notas e pesos para cada critério. A IA irá interpretar e explicar essas notas, não calculá-las.
+                                        </p>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            {['conteudo', 'estrutura', 'linguagem'].map((criterio) => {
+                                                const key = criterio as keyof NotasPesosEntrada;
+                                                const maximo = notaMaxima * (key === 'conteudo' ? 0.4 : key === 'estrutura' ? 0.3 : 0.3);
+                                                return (
+                                                    <div key={criterio} className="space-y-2">
+                                                        <label className="block text-xs font-medium text-foreground capitalize">
+                                                            {criterio === 'conteudo' ? 'Conteúdo' : criterio === 'estrutura' ? 'Estrutura' : 'Linguagem'}
+                                                        </label>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                placeholder="Nota"
+                                                                value={notasPesos[key]?.nota || ''}
+                                                                onChange={(e) => setNotasPesos({
+                                                                    ...notasPesos,
+                                                                    [key]: {
+                                                                        nota: Number(e.target.value),
+                                                                        peso: notasPesos[key]?.peso || (key === 'conteudo' ? 0.4 : key === 'estrutura' ? 0.3 : 0.3),
+                                                                        maximo: maximo
+                                                                    }
+                                                                })}
+                                                                className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
+                                                            />
+                                                            <input
+                                                                type="number"
+                                                                step="0.05"
+                                                                placeholder="Peso"
+                                                                value={notasPesos[key]?.peso || ''}
+                                                                onChange={(e) => setNotasPesos({
+                                                                    ...notasPesos,
+                                                                    [key]: {
+                                                                        nota: notasPesos[key]?.nota || 0,
+                                                                        peso: Number(e.target.value),
+                                                                        maximo: maximo
+                                                                    }
+                                                                })}
+                                                                className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
+                                                            />
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">Máx: {maximo.toFixed(1)}</p>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-xs font-medium text-foreground mb-1">Observação do Avaliador (Opcional)</label>
+                                            <textarea
+                                                value={observacaoAvaliador}
+                                                onChange={(e) => setObservacaoAvaliador(e.target.value)}
+                                                rows={2}
+                                                className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs"
+                                                placeholder="Comentários gerais sobre a redação..."
+                                            />
+                                        </div>
+                                        
+                                        <div className="text-xs text-muted-foreground">
+                                            Soma dos pesos: {(
+                                                (notasPesos.conteudo?.peso || 0) +
+                                                (notasPesos.estrutura?.peso || 0) +
+                                                (notasPesos.linguagem?.peso || 0) +
+                                                (notasPesos.argumentacao?.peso || 0) +
+                                                (notasPesos.coesao?.peso || 0)
+                                            ).toFixed(2)} (deve ser 1.0)
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <button type="submit" disabled={isLoading || isOcrLoading} className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
                                 <SparklesIcon className="w-5 h-5"/>

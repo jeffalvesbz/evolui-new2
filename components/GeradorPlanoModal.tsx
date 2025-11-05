@@ -91,12 +91,12 @@ const GeradorPlanoModal: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Qual seu objetivo principal? *</label>
-                  <input {...register('objetivo', { required: 'O objetivo é obrigatório.' })} placeholder="Ex: Passar no ENEM 2024" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                  <input {...register('objetivo', { required: 'O objetivo é obrigatório.' })} placeholder="Ex: Passar no ENEM 2024" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                   {errors.objetivo && <p className="text-xs text-red-500 mt-1">{errors.objetivo.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Quantas horas por semana você pode estudar?</label>
-                  <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm" />
+                  <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">Qual a sua dificuldade em cada matéria?</label>
