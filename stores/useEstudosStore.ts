@@ -1,9 +1,10 @@
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { SessaoEstudo, XpLogEvent } from '../types';
 import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
-import { getSessoes, createSessao, updateSessaoApi, deleteSessao } from '../services/geminiService';
+import { getSessoes, createSessao, updateSessaoApi, deleteSessao, saveTrilhasPorSemana, getTrilhasPorSemana } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
 import { useGamificationStore } from './useGamificationStore';
 import { checkAndAwardBadges } from '../services/badgeService';
@@ -49,6 +50,8 @@ interface EstudosStore {
   sessaoAtual: SessaoAtual | null;
   timerInterval: number | null;
   pomodoroSettings: PomodoroSettings;
+  trilhaConclusao: Record<string, boolean>; // Chave: "weekKey-diaId-topicId", valor: true se concluído
+  semanaAtualKey: string; // Chave da semana atual
   
   fetchSessoes: (studyPlanId: string) => Promise<void>;
   
@@ -74,15 +77,24 @@ interface EstudosStore {
   trilhasPorSemana: Record<string, TrilhaSemanalData>;
   setTrilhaSemana: (weekKey: string, trilha: TrilhaSemanalData) => void;
   getTrilhaSemana: (weekKey: string) => TrilhaSemanalData;
+  setSemanaAtualKey: (weekKey: string) => void;
+  toggleTopicoConcluidoNaTrilha: (weekKey: string, diaId: string, topicId: string) => void;
+  isTopicoConcluidoNaTrilha: (weekKey: string, diaId: string, topicId: string) => boolean;
+  fetchTrilhas: (studyPlanId: string) => Promise<void>;
+  saveTrilhasToDb: () => Promise<void>;
   _tick: () => void;
 }
 
 const emptyTrilha: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
 
-export const useEstudosStore = create<EstudosStore>((set, get) => ({
+export const useEstudosStore = create<EstudosStore>()(
+  persist(
+    (set, get) => ({
       sessoes: [],
       trilha: emptyTrilha,
       trilhasPorSemana: {},
+      trilhaConclusao: {},
+      semanaAtualKey: '',
       loading: false,
       sessaoAtual: null,
       timerInterval: null,
@@ -401,12 +413,60 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
                 trilhaValidada[dia] = novaTrilha[dia];
             }
         }
-        set({ trilha: trilhaValidada });
+        set(state => {
+          // Verificar se a trilha realmente mudou para evitar atualizações desnecessárias
+          const trilhaAtualSerializada = JSON.stringify(state.trilha);
+          const trilhaNovaSerializada = JSON.stringify(trilhaValidada);
+          
+          if (trilhaAtualSerializada === trilhaNovaSerializada && state.semanaAtualKey) {
+            // Se a trilha não mudou e já temos a semana atual, não precisa atualizar trilhasPorSemana
+            return {};
+          }
+          
+          // Atualizar também a trilha da semana atual
+          const weekKey = state.semanaAtualKey;
+          const novasTrilhas = { ...state.trilhasPorSemana };
+          if (weekKey) {
+            const trilhaSemanaAtualSerializada = JSON.stringify(novasTrilhas[weekKey] || {});
+            // Só atualiza se for diferente
+            if (trilhaSemanaAtualSerializada !== trilhaNovaSerializada) {
+              novasTrilhas[weekKey] = trilhaValidada;
+              // Salvar no banco de dados em segundo plano (com debounce)
+              const saveFunction = get().saveTrilhasToDb;
+              setTimeout(() => {
+                saveFunction().catch(err => {
+                  console.error("Erro ao salvar trilhas no banco:", err);
+                });
+              }, 500);
+            }
+          }
+          
+          return { 
+            trilha: trilhaValidada,
+            trilhasPorSemana: novasTrilhas
+          };
+        });
       },
       setTrilhaSemana: (weekKey, trilha) => {
         set(state => {
           const novasTrilhas = { ...state.trilhasPorSemana };
-          novasTrilhas[weekKey] = trilha;
+          const trilhaAnterior = novasTrilhas[weekKey] || {};
+          const trilhaAnteriorSerializada = JSON.stringify(trilhaAnterior);
+          const trilhaNovaSerializada = JSON.stringify(trilha);
+          
+          // Só atualiza se for diferente
+          if (trilhaAnteriorSerializada !== trilhaNovaSerializada) {
+            novasTrilhas[weekKey] = trilha;
+            // Salvar no banco de dados em segundo plano (com debounce)
+            const saveFunction = get().saveTrilhasToDb;
+            // Usar setTimeout para fazer debounce e evitar muitas chamadas
+            setTimeout(() => {
+              saveFunction().catch(err => {
+                console.error("Erro ao salvar trilhas no banco:", err);
+              });
+            }, 500);
+          }
+          
           return { trilhasPorSemana: novasTrilhas };
         });
       },
@@ -414,5 +474,91 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
         const state = get();
         return state.trilhasPorSemana[weekKey] || emptyTrilha;
       },
-    })
+      setSemanaAtualKey: (weekKey) => {
+        set({ semanaAtualKey: weekKey });
+      },
+      toggleTopicoConcluidoNaTrilha: (weekKey, diaId, topicId) => {
+        set(state => {
+          const key = `${weekKey}-${diaId}-${topicId}`;
+          const novasConclusoes = { ...state.trilhaConclusao };
+          if (novasConclusoes[key]) {
+            delete novasConclusoes[key];
+          } else {
+            novasConclusoes[key] = true;
+          }
+          // Salvar no banco de dados em segundo plano (com debounce)
+          const saveFunction = get().saveTrilhasToDb;
+          setTimeout(() => {
+            saveFunction().catch(err => {
+              console.error("Erro ao salvar trilhas no banco:", err);
+            });
+          }, 500);
+          return { trilhaConclusao: novasConclusoes };
+        });
+      },
+      isTopicoConcluidoNaTrilha: (weekKey, diaId, topicId) => {
+        const state = get();
+        const key = `${weekKey}-${diaId}-${topicId}`;
+        return !!state.trilhaConclusao[key];
+      },
+      fetchTrilhas: async (studyPlanId: string) => {
+        try {
+          const { trilhasPorSemana, trilhaConclusao } = await getTrilhasPorSemana(studyPlanId);
+          set({ 
+            trilhasPorSemana: trilhasPorSemana || {},
+            trilhaConclusao: trilhaConclusao || {}
+          });
+        } catch (error) {
+          console.error("Failed to fetch trilhas:", error);
+          // Não mostra erro para o usuário, apenas usa estado vazio
+        }
+      },
+      saveTrilhasToDb: async () => {
+        const studyPlanId = useEditalStore.getState().editalAtivo?.id;
+        const state = get();
+        if (!studyPlanId) {
+          console.warn("Não há plano de estudo ativo para salvar trilhas");
+          return;
+        }
+        
+        const trilhasParaSalvar = state.trilhasPorSemana || {};
+        const conclusaoParaSalvar = state.trilhaConclusao || {};
+        
+        console.log("Salvando trilhas no banco:", {
+          studyPlanId,
+          trilhasKeys: Object.keys(trilhasParaSalvar),
+          conclusaoKeys: Object.keys(conclusaoParaSalvar).length
+        });
+        
+        try {
+          await saveTrilhasPorSemana(
+            studyPlanId,
+            trilhasParaSalvar,
+            conclusaoParaSalvar
+          );
+          console.log("✅ Trilhas salvas no banco com sucesso");
+        } catch (error: any) {
+          console.error("❌ Failed to save trilhas to database:", error);
+          // Se for erro de coluna não existente, vamos tentar usar a coluna antiga
+          if (error?.message?.includes('column') || error?.code === '42703') {
+            console.warn("⚠️ Colunas trilhas_por_semana ou trilha_conclusao podem não existir no banco. Execute o script de migração.");
+            toast.error("Erro ao salvar trilha. Verifique se as colunas existem no banco de dados.");
+          } else {
+            toast.error("Erro ao salvar trilha no banco de dados.");
+          }
+        }
+      },
+    }),
+    {
+      name: 'evolui-estudos-store',
+      storage: createJSONStorage(() => localStorage),
+      // Persistir apenas trilhasPorSemana e trilhaConclusao no localStorage como fallback
+      // O banco de dados é a fonte principal
+      partialize: (state) => ({
+        trilhasPorSemana: state.trilhasPorSemana,
+        trilhaConclusao: state.trilhaConclusao,
+        semanaAtualKey: state.semanaAtualKey,
+      }),
+    }
+  )
 );

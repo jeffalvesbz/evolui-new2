@@ -414,7 +414,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         value={safeGoalMinutes}
                         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
                         aria-label="Definir meta diaria"
-                        className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="rounded-md border border-border bg-input px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         {goalOptions.map((option) => (
                           <option key={option} value={option}>
@@ -436,7 +436,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         value={safeWeeklyGoalHours}
                         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setWeeklyGoalHours(Number(event.target.value))}
                         aria-label="Definir meta semanal"
-                        className="rounded-md border border-border bg-background/50 px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="rounded-md border border-border bg-input px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         {weeklyGoalOptions.map((option) => (
                           <option key={option} value={option}>

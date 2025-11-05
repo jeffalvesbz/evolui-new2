@@ -185,8 +185,13 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             height: rect.height
           });
 
-          // Scroll para o elemento se necessário
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll para o elemento se necessário (com comportamento diferente para mobile)
+          const isMobile = window.innerWidth < 768;
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: isMobile ? 'center' : 'center',
+            inline: 'center'
+          });
         } else {
           // Se o elemento não estiver visível, usar posição central
           setHighlightPosition({
@@ -236,38 +241,163 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
 
   if (!isOpen || !step) return null;
 
-  // Calcular posição do tooltip baseado na posição do step
+  // Calcular posição do tooltip baseado na posição do step e tamanho da tela
   const getTooltipStyle = () => {
-    const gap = 20;
-    const tooltipWidth = 320;
-    const tooltipHeight = 200;
+    const gap = 16;
+    const isMobile = window.innerWidth < 768;
+    const tooltipWidth = isMobile ? Math.min(320, window.innerWidth - 32) : 360;
+    const tooltipHeight = isMobile ? 250 : 200;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 16;
 
+    // Função para calcular posição segura
+    const calculatePosition = (preferredPosition: { top: number; left: number }) => {
+      let { top, left } = preferredPosition;
+
+      // Garantir que não saia da tela horizontalmente
+      if (left < padding) {
+        left = padding;
+      } else if (left + tooltipWidth > viewportWidth - padding) {
+        left = viewportWidth - tooltipWidth - padding;
+      }
+
+      // Garantir que não saia da tela verticalmente
+      if (top < padding) {
+        top = padding;
+      } else if (top + tooltipHeight > viewportHeight - padding) {
+        top = viewportHeight - tooltipHeight - padding;
+      }
+
+      // Em mobile, centralizar horizontalmente se o elemento for muito grande
+      if (isMobile && highlightPosition.width > viewportWidth * 0.8) {
+        left = (viewportWidth - tooltipWidth) / 2;
+      }
+
+      return { top: `${top}px`, left: `${left}px`, width: `${tooltipWidth}px` };
+    };
+
+    // Em mobile, sempre usar posição bottom ou center
+    if (isMobile) {
+      const spaceBelow = viewportHeight - (highlightPosition.top + highlightPosition.height);
+      const spaceAbove = highlightPosition.top;
+
+      if (spaceBelow >= tooltipHeight + gap) {
+        // Colocar abaixo
+        return calculatePosition({
+          top: highlightPosition.top + highlightPosition.height + gap,
+          left: (viewportWidth - tooltipWidth) / 2,
+        });
+      } else if (spaceAbove >= tooltipHeight + gap) {
+        // Colocar acima
+        return calculatePosition({
+          top: highlightPosition.top - tooltipHeight - gap,
+          left: (viewportWidth - tooltipWidth) / 2,
+        });
+      } else {
+        // Centralizar na tela
+        return calculatePosition({
+          top: (viewportHeight - tooltipHeight) / 2,
+          left: (viewportWidth - tooltipWidth) / 2,
+        });
+      }
+    }
+
+    // Desktop: usar posição preferida do step
     switch (step.position) {
-      case 'right':
-        return {
-          top: `${highlightPosition.top}px`,
-          left: `${highlightPosition.left + highlightPosition.width + gap}px`,
-        };
-      case 'left':
-        return {
-          top: `${highlightPosition.top}px`,
-          left: `${highlightPosition.left - tooltipWidth - gap}px`,
-        };
-      case 'bottom':
-        return {
-          top: `${highlightPosition.top + highlightPosition.height + gap}px`,
-          left: `${highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2)}px`,
-        };
-      case 'top':
-        return {
-          top: `${highlightPosition.top - tooltipHeight - gap}px`,
-          left: `${highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2)}px`,
-        };
+      case 'right': {
+        const rightSpace = viewportWidth - (highlightPosition.left + highlightPosition.width);
+        if (rightSpace >= tooltipWidth + gap) {
+          return calculatePosition({
+            top: highlightPosition.top,
+            left: highlightPosition.left + highlightPosition.width + gap,
+          });
+        }
+        // Se não há espaço à direita, tentar à esquerda
+        const leftSpace = highlightPosition.left;
+        if (leftSpace >= tooltipWidth + gap) {
+          return calculatePosition({
+            top: highlightPosition.top,
+            left: highlightPosition.left - tooltipWidth - gap,
+          });
+        }
+        // Se não há espaço em nenhum lado, colocar abaixo
+        return calculatePosition({
+          top: highlightPosition.top + highlightPosition.height + gap,
+          left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+        });
+      }
+      case 'left': {
+        const leftSpace = highlightPosition.left;
+        if (leftSpace >= tooltipWidth + gap) {
+          return calculatePosition({
+            top: highlightPosition.top,
+            left: highlightPosition.left - tooltipWidth - gap,
+          });
+        }
+        // Se não há espaço à esquerda, tentar à direita
+        const rightSpace = viewportWidth - (highlightPosition.left + highlightPosition.width);
+        if (rightSpace >= tooltipWidth + gap) {
+          return calculatePosition({
+            top: highlightPosition.top,
+            left: highlightPosition.left + highlightPosition.width + gap,
+          });
+        }
+        // Se não há espaço em nenhum lado, colocar abaixo
+        return calculatePosition({
+          top: highlightPosition.top + highlightPosition.height + gap,
+          left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+        });
+      }
+      case 'bottom': {
+        const spaceBelow = viewportHeight - (highlightPosition.top + highlightPosition.height);
+        if (spaceBelow >= tooltipHeight + gap) {
+          return calculatePosition({
+            top: highlightPosition.top + highlightPosition.height + gap,
+            left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+          });
+        }
+        // Se não há espaço abaixo, colocar acima
+        const spaceAbove = highlightPosition.top;
+        if (spaceAbove >= tooltipHeight + gap) {
+          return calculatePosition({
+            top: highlightPosition.top - tooltipHeight - gap,
+            left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+          });
+        }
+        // Último recurso: centralizar
+        return calculatePosition({
+          top: (viewportHeight - tooltipHeight) / 2,
+          left: (viewportWidth - tooltipWidth) / 2,
+        });
+      }
+      case 'top': {
+        const spaceAbove = highlightPosition.top;
+        if (spaceAbove >= tooltipHeight + gap) {
+          return calculatePosition({
+            top: highlightPosition.top - tooltipHeight - gap,
+            left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+          });
+        }
+        // Se não há espaço acima, colocar abaixo
+        const spaceBelow = viewportHeight - (highlightPosition.top + highlightPosition.height);
+        if (spaceBelow >= tooltipHeight + gap) {
+          return calculatePosition({
+            top: highlightPosition.top + highlightPosition.height + gap,
+            left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+          });
+        }
+        // Último recurso: centralizar
+        return calculatePosition({
+          top: (viewportHeight - tooltipHeight) / 2,
+          left: (viewportWidth - tooltipWidth) / 2,
+        });
+      }
       default:
-        return {
-          top: `${highlightPosition.top + highlightPosition.height + gap}px`,
-          left: `${highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2)}px`,
-        };
+        return calculatePosition({
+          top: highlightPosition.top + highlightPosition.height + gap,
+          left: highlightPosition.left + (highlightPosition.width / 2) - (tooltipWidth / 2),
+        });
     }
   };
 
@@ -326,19 +456,21 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
           </motion.div>
 
           {/* Highlight do elemento */}
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="fixed z-[9999] border-4 border-primary rounded-lg shadow-2xl shadow-primary/50 pointer-events-none"
-            style={{
-              top: `${highlightPosition.top}px`,
-              left: `${highlightPosition.left}px`,
-              width: `${highlightPosition.width}px`,
-              height: `${highlightPosition.height}px`,
-              boxShadow: '0 0 0 4px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3)'
-            }}
-          />
+          {highlightPosition.width > 0 && highlightPosition.height > 0 && (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="fixed z-[9999] border-2 md:border-4 border-primary rounded-lg shadow-2xl shadow-primary/50 pointer-events-none"
+              style={{
+                top: `${Math.max(0, highlightPosition.top)}px`,
+                left: `${Math.max(0, highlightPosition.left)}px`,
+                width: `${Math.max(0, highlightPosition.width)}px`,
+                height: `${Math.max(0, highlightPosition.height)}px`,
+                boxShadow: '0 0 0 2px rgba(255, 215, 0, 0.5), 0 0 15px rgba(255, 215, 0, 0.3)'
+              }}
+            />
+          )}
 
           {/* Tooltip com informações */}
           <motion.div
@@ -346,33 +478,33 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-6 max-w-sm"
+            className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-4 md:p-6 mx-auto"
             style={getTooltipStyle()}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+            <div className="flex items-start justify-between mb-3 md:mb-4">
+              <div className="flex-1 pr-2">
+                <h3 className="text-base md:text-lg font-bold text-foreground mb-1 md:mb-2">{step.title}</h3>
+                <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
               <button
                 onClick={onSkip}
-                className="ml-4 p-1 hover:bg-muted rounded-md transition-colors"
+                className="flex-shrink-0 ml-2 p-1 hover:bg-muted rounded-md transition-colors"
                 aria-label="Fechar tutorial"
               >
-                <XIcon className="w-5 h-5 text-muted-foreground" />
+                <XIcon className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
               </button>
             </div>
 
-            <div className="flex items-center justify-between mt-6">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 md:gap-0 mt-4 md:mt-6">
+              <div className="flex items-center gap-2 order-2 sm:order-1">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {currentStep + 1} de {tutorialSteps.length}
                 </span>
-                <div className="flex gap-1">
+                <div className="flex gap-1 overflow-x-auto">
                   {tutorialSteps.map((_, index) => (
                     <div
                       key={index}
-                      className={`h-1.5 rounded-full transition-all ${
+                      className={`h-1.5 rounded-full transition-all flex-shrink-0 ${
                         index === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-muted'
                       }`}
                     />
@@ -380,29 +512,29 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 order-1 sm:order-2">
                 {currentStep > 0 && (
                   <button
                     onClick={handlePrevious}
-                    className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors flex items-center gap-1"
+                    className="px-3 py-1.5 text-xs md:text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors flex items-center gap-1 flex-shrink-0"
                   >
-                    <ChevronLeftIcon className="w-4 h-4" />
-                    Anterior
+                    <ChevronLeftIcon className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden sm:inline">Anterior</span>
                   </button>
                 )}
                 <button
                   onClick={handleNext}
-                  className="px-4 py-1.5 text-sm font-bold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-1"
+                  className="px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-1 flex-shrink-0"
                 >
-                  {isLastStep ? 'Concluir' : 'Próximo'}
-                  {!isLastStep && <ChevronRightIcon className="w-4 h-4" />}
+                  {isLastStep ? 'Concluir' : <><span className="hidden sm:inline">Próximo</span><span className="sm:hidden">Próx</span></>}
+                  {!isLastStep && <ChevronRightIcon className="w-3 h-3 md:w-4 md:h-4" />}
                 </button>
               </div>
             </div>
 
             <button
               onClick={onSkip}
-              className="mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors underline"
+              className="mt-3 md:mt-4 text-xs text-muted-foreground hover:text-foreground transition-colors underline text-center w-full"
             >
               Pular tutorial
             </button>

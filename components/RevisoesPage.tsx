@@ -16,12 +16,14 @@ import { useRevisoes } from '../hooks/useRevisoes';
 import RevisaoCard from './RevisaoCard';
 import { toast } from './Sonner';
 import { useEditalStore } from '../stores/useEditalStore';
+import { useRevisoesStore } from '../stores/useRevisoesStore';
 
 type FiltroStatus = 'todas' | 'pendentes' | 'programadas' | 'atrasadas' | 'concluidas';
 type FiltroDificuldade = 'todas' | 'fácil' | 'médio' | 'difícil';
 
 const RevisoesPage: React.FC = () => {
   const editalAtivo = useEditalStore((state) => state.editalAtivo);
+  const { fetchRevisoes } = useRevisoesStore();
   const {
     revisoes,
     pendentesHoje,
@@ -43,6 +45,16 @@ const RevisoesPage: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todas');
   const [filtroDificuldade, setFiltroDificuldade] = useState<FiltroDificuldade>('todas');
   const [mostrarEstatisticas, setMostrarEstatisticas] = useState(false);
+
+  // Garantir que as revisões sejam carregadas quando o componente é montado ou quando o edital muda
+  useEffect(() => {
+    if (editalAtivo?.id) {
+      fetchRevisoes(editalAtivo.id).catch(err => {
+        console.error("Erro ao carregar revisões:", err);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editalAtivo?.id]);
 
   const revisoesFiltradas = (revisoes || []).filter(revisao => {
     if (filtroStatus !== 'todas') {

@@ -33,7 +33,11 @@ const Edital = () => {
   const [mode, setMode] = useState<PainelMode>('default');
   const [selectedDiscipline, setSelectedDiscipline] = useState<Disciplina | null>(null);
 
-  const averageProgress = useMemo(() => getAverageProgress(), [getAverageProgress, disciplinas]);
+  const averageProgress = useMemo(() => {
+    if (disciplinas.length === 0) return 0;
+    const totalProgress = disciplinas.reduce((acc, d) => acc + d.progresso, 0);
+    return totalProgress / disciplinas.length;
+  }, [disciplinas]);
 
   // FIX: Reworked logic to create disciplina first, then add topics to fix type error and ensure UI updates correctly.
   const handleCreateDisciplina = async (payload: PainelDisciplinaPayload) => {

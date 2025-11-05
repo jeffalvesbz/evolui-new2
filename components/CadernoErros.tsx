@@ -5,6 +5,7 @@ import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useModalStore } from '../stores/useModalStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
+import { useEditalStore } from '../stores/useEditalStore';
 import { CadernoErro, NivelDificuldade, Topico } from '../types';
 import { BookCopyIcon, PlusCircleIcon, SearchIcon, FilterIcon, EditIcon, Trash2Icon, CheckCircle2Icon, AlertCircleIcon, XIcon, SaveIcon, AlertTriangleIcon } from './icons';
 import { toast } from './Sonner';
@@ -88,8 +89,8 @@ const ErroFormModal: React.FC = () => {
     if (!isErroModalOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeErroModal}>
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeErroModal}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <h2 className="text-lg font-bold">{erroEmEdicao ? 'Editar Erro' : 'Registrar Novo Erro'}</h2>
                     <button type="button" onClick={closeErroModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
@@ -103,7 +104,7 @@ const ErroFormModal: React.FC = () => {
                             render={({ field, fieldState }) => (
                                 <div>
                                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
-                                    <select {...field} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground">
+                                    <select {...field} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground">
                                         <option value="">-- Selecione --</option>
                                         {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
                                     </select>
@@ -118,7 +119,7 @@ const ErroFormModal: React.FC = () => {
                             render={({ field, fieldState }) => (
                                 <div>
                                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico do Edital *</label>
-                                    <select {...field} disabled={!disciplinaIdSelecionada} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50">
+                                    <select {...field} disabled={!disciplinaIdSelecionada} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50">
                                         <option value="">-- Selecione --</option>
                                         {topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)}
                                     </select>
@@ -129,26 +130,26 @@ const ErroFormModal: React.FC = () => {
                     </div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Assunto *</label>
-                        <input {...register('assunto', { required: true })} placeholder="Ex: Crase facultativa" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+                        <input {...register('assunto', { required: true })} placeholder="Ex: Crase facultativa" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
                     </div>
                      <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Descrição do Erro *</label>
-                        <textarea {...register('descricao', { required: true })} rows={3} placeholder="Descreva o que você errou, qual foi seu raciocínio, etc." className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
+                        <textarea {...register('descricao', { required: true })} rows={3} placeholder="Descreva o que você errou, qual foi seu raciocínio, etc." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
                     </div>
                      <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Observações / Como resolver</label>
-                        <textarea {...register('observacoes')} rows={3} placeholder="Anote a forma correta, um macete, ou o que for preciso para não errar mais." className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
+                        <textarea {...register('observacoes')} rows={3} placeholder="Anote a forma correta, um macete, ou o que for preciso para não errar mais." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                              <label className="text-sm font-medium text-muted-foreground mb-1 block">Nível de Dificuldade</label>
-                            <select {...register('nivelDificuldade')} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground">
+                            <select {...register('nivelDificuldade')} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground">
                                 {NIVEIS_DIFICULDADE.map(n => <option key={n} value={n}>{n.charAt(0).toUpperCase() + n.slice(1)}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Data</label>
-                            <input type="date" {...register('data')} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+                            <input type="date" {...register('data')} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
                         </div>
                     </div>
                     <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('resolvido')} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" /> Marcar como resolvido</label>
@@ -206,7 +207,8 @@ const ErroCard: React.FC<{ erro: CadernoErro; onEdit: (e: CadernoErro) => void; 
 
 // --- Componente Principal ---
 const CadernoErros: React.FC = () => {
-    const { erros, removeErro, updateErro } = useCadernoErrosStore();
+    const { editalAtivo } = useEditalStore();
+    const { erros, removeErro, updateErro, fetchErros } = useCadernoErrosStore();
     const { addRevisao } = useRevisoesStore();
     const { openErroModal } = useModalStore();
     
@@ -214,6 +216,16 @@ const CadernoErros: React.FC = () => {
     const [filtroDisciplina, setFiltroDisciplina] = useState('todas');
     const [busca, setBusca] = useState('');
     const [erroParaExcluir, setErroParaExcluir] = useState<CadernoErro | null>(null);
+
+    // Garantir que os erros sejam carregados quando o componente é montado ou quando o edital muda
+    useEffect(() => {
+        if (editalAtivo?.id) {
+            fetchErros(editalAtivo.id).catch(err => {
+                console.error("Erro ao carregar erros:", err);
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editalAtivo?.id]);
 
     const disciplinas = useMemo(() => [...new Set(erros.map(e => e.disciplina))], [erros]);
 
@@ -283,12 +295,12 @@ const CadernoErros: React.FC = () => {
             <div className="bg-card p-4 rounded-xl border border-border space-y-4">
                 <div className="relative">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"/>
-                    <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por assunto, descrição..." className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 pl-9 text-sm text-foreground"/>
+                    <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por assunto, descrição..." className="w-full bg-input border border-border rounded-md px-3 py-2 pl-9 text-sm text-foreground"/>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex items-center gap-2">
                          <label className="text-sm font-semibold text-muted-foreground">Status:</label>
-                         <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as any)} className="bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground">
+                         <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value as any)} className="bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground">
                              <option value="todos">Todos</option>
                              <option value="pendente">Pendentes</option>
                              <option value="resolvido">Resolvidos</option>
@@ -296,7 +308,7 @@ const CadernoErros: React.FC = () => {
                     </div>
                      <div className="flex items-center gap-2">
                          <label className="text-sm font-semibold text-muted-foreground">Disciplina:</label>
-                         <select value={filtroDisciplina} onChange={e => setFiltroDisciplina(e.target.value)} className="bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground">
+                         <select value={filtroDisciplina} onChange={e => setFiltroDisciplina(e.target.value)} className="bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground">
                              <option value="todas">Todas</option>
                              {disciplinas.map(d => <option key={d} value={d}>{d}</option>)}
                          </select>

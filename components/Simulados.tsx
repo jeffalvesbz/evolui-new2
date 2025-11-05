@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon, XIcon } from './icons'
 import { toast } from './Sonner'
 import { useStudyStore, Simulation } from '../stores/useStudyStore'
@@ -26,6 +26,7 @@ const Simulados = () => {
   const addSimulation = useStudyStore((state) => state.addSimulation)
   const updateSimulation = useStudyStore((state) => state.updateSimulation)
   const deleteSimulation = useStudyStore((state) => state.deleteSimulation)
+  const fetchSimulados = useStudyStore((state) => state.fetchSimulados)
   
   const simuladosFiltrados = useMemo(() => {
     if (!simulados || simulados.length === 0) return []
@@ -41,6 +42,16 @@ const Simulados = () => {
   const [editingSimulation, setEditingSimulation] = useState<Simulation | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Simulation | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  // Garantir que os simulados sejam carregados quando o componente é montado ou quando o edital muda
+  useEffect(() => {
+    if (editalAtivo?.id) {
+      fetchSimulados(editalAtivo.id).catch(err => {
+        console.error("Erro ao carregar simulados:", err);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editalAtivo?.id]);
 
   const resetForm = () => {
     setForm({ name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: getTodayDateString(), isCebraspe: false })

@@ -636,14 +636,40 @@ export const extrairTextoDeImagem = async (base64Image: string, mimeType: string
     return response.text;
 };
 
-export const gerarPlanoDeEstudosIA = async (objetivo: string, horasSemanais: number, disciplinasComTopicos: DisciplinaParaIA[]): Promise<TrilhaSemanalData> => {
+export const gerarPlanoDeEstudosIA = async (
+    objetivo: string, 
+    horasSemanais: number, 
+    disciplinasComTopicos: DisciplinaParaIA[],
+    diasSemana: string[] = ['seg', 'ter', 'qua', 'qui', 'sex']
+): Promise<TrilhaSemanalData> => {
      // Esta lógica pode ser mais complexa, mas aqui está uma simulação.
     const allTopicIds = disciplinasComTopicos.flatMap(d => d.topicos.map(t => t.id));
     const mockPlan: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
-    const dias = ['seg', 'ter', 'qua', 'qui', 'sex'];
-    allTopicIds.sort(() => 0.5 - Math.random()).forEach((topicId, index) => {
-        mockPlan[dias[index % dias.length]].push(topicId);
-    });
+    const dias = diasSemana.length > 0 ? diasSemana : ['seg', 'ter', 'qua', 'qui', 'sex'];
+    const MAX_TOPICOS_POR_DIA = 4; // Limite máximo de tópicos por dia na geração automática
+    
+    // Embaralhar os tópicos
+    const topicosEmbaralhados = allTopicIds.sort(() => 0.5 - Math.random());
+    
+    // Distribuir os tópicos limitando a 4 por dia apenas nos dias selecionados
+    let diaIndex = 0;
+    for (const topicId of topicosEmbaralhados) {
+        // Encontrar o próximo dia selecionado que ainda não atingiu o limite
+        let tentativas = 0;
+        while (mockPlan[dias[diaIndex]] && mockPlan[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA && tentativas < dias.length) {
+            diaIndex = (diaIndex + 1) % dias.length;
+            tentativas++;
+        }
+        
+        // Se todos os dias selecionados estão cheios, parar (usuário pode adicionar mais manualmente)
+        if (!mockPlan[dias[diaIndex]] || mockPlan[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA) {
+            break;
+        }
+        
+        mockPlan[dias[diaIndex]].push(topicId);
+        diaIndex = (diaIndex + 1) % dias.length;
+    }
+    
     await new Promise(res => setTimeout(res, 1500));
     return mockPlan;
 };
@@ -806,38 +832,51 @@ const _getRankingForUserIds = async (userIds: string[], currentUserId: string): 
 export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingData> => {
     const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
-    // Buscar XP da última semana
+    // Buscar todos os perfis de usuários
+    const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total');
+        
+    if (profileError) throw profileError;
+    const profiles = (profilesData || []) as any[];
+
+    if (profiles.length === 0) {
+        return { ranking: [], currentUserRank: null };
+    }
+
+    // Buscar XP da última semana para todos os usuários
+    const userIds = profiles.map(p => p.user_id);
     const { data: xpLogsData, error: logError } = await supabase
         .from('xp_log')
         .select('user_id, amount')
+        .in('user_id', userIds)
         .gte('created_at', sevenDaysAgo);
     
     if (logError) throw logError;
     const xpLogs = (xpLogsData || []) as any[];
 
-    // Calcular XP semanal de cada usuário (apenas os que ganharam XP)
+    // Calcular XP semanal de cada usuário
     const weeklyXpMap = new Map<string, number>();
     for (const log of xpLogs) {
         weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
     }
-    
-    // Incluir usuário atual mesmo se não ganhou XP na semana
-    const userIdsInRanking = new Set(weeklyXpMap.keys());
-    userIdsInRanking.add(userId);
-    
-    const userIdsArray = Array.from(userIdsInRanking);
 
-    if (userIdsArray.length === 0) {
-        return { ranking: [], currentUserRank: null };
-    }
+    // Criar ranking completo com todos os usuários (incluindo os com 0 XP)
+    const fullRanking = profiles.map(p => ({
+        user_id: p.user_id,
+        name: p.name,
+        level: calculateLevel(p.xp_total),
+        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
+    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
     
-    // Usar a função helper para buscar perfis e criar ranking
-    const rankingData = await _getRankingForUserIds(userIdsArray, userId);
+    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
+    const currentUserRank = currentUserIndex !== -1 
+        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
+        : null;
 
-    // Limitar a top 100 para performance
     return {
-        ...rankingData,
-        ranking: rankingData.ranking.slice(0, 100),
+        ranking: fullRanking,
+        currentUserRank,
     };
 };
 
@@ -889,6 +928,75 @@ export const getTrilhaSemanal = async (studyPlanId: string) => {
         .single();
     if (error) throw error;
     return (data as any)?.trilha_semanal || null;
+};
+
+// Salvar trilhas por semana e estado de conclusão
+export const saveTrilhasPorSemana = async (
+    studyPlanId: string, 
+    trilhasPorSemana: Record<string, any>, 
+    trilhaConclusao: Record<string, boolean>
+) => {
+    try {
+        const { data, error } = await supabase
+            .from('study_plans')
+            .update({ 
+                trilhas_por_semana: trilhasPorSemana,
+                trilha_conclusao: trilhaConclusao
+            } as any)
+            .eq('id', studyPlanId)
+            .select()
+            .single();
+        
+        if (error) {
+            // Se for erro de coluna não encontrada, tentar usar trilha_semanal como fallback
+            if (error.code === '42703' || error.message?.includes('column')) {
+                console.warn("Colunas novas não existem, usando trilha_semanal como fallback");
+                // Pegar a primeira trilha (semana atual) ou criar objeto com todas
+                const weekKey = Object.keys(trilhasPorSemana)[0];
+                const trilhaAtual = weekKey ? trilhasPorSemana[weekKey] : { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+                
+                const { data: fallbackData, error: fallbackError } = await supabase
+                    .from('study_plans')
+                    .update({ trilha_semanal: trilhaAtual } as any)
+                    .eq('id', studyPlanId)
+                    .select()
+                    .single();
+                
+                if (fallbackError) throw fallbackError;
+                return fallbackData;
+            }
+            throw error;
+        }
+        return data;
+    } catch (error: any) {
+        console.error("Erro ao salvar trilhas:", error);
+        throw error;
+    }
+};
+
+export const getTrilhasPorSemana = async (studyPlanId: string) => {
+    const { data, error } = await supabase
+        .from('study_plans')
+        .select('trilhas_por_semana, trilha_conclusao')
+        .eq('id', studyPlanId)
+        .single();
+    
+    // Se der erro de coluna não encontrada, retorna vazio (colunas podem não existir ainda)
+    if (error) {
+        if (error.code === '42703' || error.message?.includes('column')) {
+            console.warn("Colunas trilhas_por_semana ou trilha_conclusao não existem no banco. Retornando valores vazios.");
+            return {
+                trilhasPorSemana: {},
+                trilhaConclusao: {}
+            };
+        }
+        throw error;
+    }
+    
+    return {
+        trilhasPorSemana: (data as any)?.trilhas_por_semana || {},
+        trilhaConclusao: (data as any)?.trilha_conclusao || {}
+    };
 };
 
 export const savePlanningConfig = async (studyPlanId: string, planningConfig: any) => {

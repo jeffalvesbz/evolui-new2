@@ -162,14 +162,14 @@ const SalvarSessaoModal: React.FC = () => {
     if (!isSaveModalOpen || !sessaoAtual) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-card backdrop-blur-lg rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <BookOpenIcon className="w-6 h-6 text-primary" />
                         <h2 className="text-lg font-bold">Salvar e Encerrar Estudo</h2>
                     </div>
-                    <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-lg">
+                    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg">
                         <ClockIcon className="w-4 h-4 text-muted-foreground" />
                         <input
                             type="number"
@@ -179,7 +179,7 @@ const SalvarSessaoModal: React.FC = () => {
                                 const hours = parseInt(e.target.value, 10);
                                 setEditableHours(isNaN(hours) || hours < 0 ? 0 : hours);
                             }}
-                            className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                            className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
                             min="0"
                         />
                         <span className="font-bold text-muted-foreground">:</span>
@@ -192,7 +192,7 @@ const SalvarSessaoModal: React.FC = () => {
                                 const minutes = parseInt(e.target.value, 10);
                                 setEditableMinutes(isNaN(minutes) || minutes < 0 ? 0 : Math.min(minutes, 59));
                             }}
-                           className="w-12 bg-background/50 border border-transparent focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                           className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
                             min="0" max="59"
                         />
                     </div>

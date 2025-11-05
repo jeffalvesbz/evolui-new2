@@ -431,7 +431,7 @@ const CicloDeEstudos: React.FC = () => {
                     id="ciclo-select"
                     value={cicloAtivoId || ''}
                     onChange={(e) => setCicloAtivoId(e.target.value)}
-                    className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary"
+                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary"
                 >
                     {ciclos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
@@ -446,7 +446,7 @@ const CicloDeEstudos: React.FC = () => {
                                     <input
                                         value={editedCicloName}
                                         onChange={(e) => setEditedCicloName(e.target.value)}
-                                        className="bg-muted/50 border border-border rounded-md px-3 py-1.5 text-lg font-bold"
+                                        className="bg-input border border-border rounded-md px-3 py-1.5 text-lg font-bold text-foreground"
                                         autoFocus
                                         onBlur={handleUpdateCicloName}
                                         onKeyDown={e => e.key === 'Enter' && handleUpdateCicloName()}

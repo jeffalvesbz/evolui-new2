@@ -52,7 +52,7 @@ const useEditalDataSync = () => {
     const { fetchDisciplinas } = useDisciplinasStore();
     const { fetchRevisoes } = useRevisoesStore();
     const { fetchErros } = useCadernoErrosStore();
-    const { fetchSessoes } = useEstudosStore();
+    const { fetchSessoes, fetchTrilhas } = useEstudosStore();
     const { fetchCiclos } = useCiclosStore();
     const { fetchRedacoes } = useRedacaoStore();
     const { fetchSimulados } = useStudyStore();
@@ -69,6 +69,7 @@ const useEditalDataSync = () => {
                 fetchCiclos(editalAtivo.id),
                 fetchRedacoes(editalAtivo.id),
                 fetchSimulados(editalAtivo.id),
+                fetchTrilhas(editalAtivo.id),
             ]).catch(err => {
                 console.error("Falha ao buscar dados do plano de estudo", err);
                 toast.error("Não foi possível carregar os dados do plano de estudo.");

@@ -39,7 +39,12 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
     set({ loading: true });
     try {
       const disciplinas = await getDisciplinas(studyPlanId);
-      set({ disciplinas, loading: false });
+      // Recalcular progresso baseado no estado atual dos tópicos
+      const disciplinasComProgresso = disciplinas.map(d => ({
+        ...d,
+        progresso: calculateProgress(d.topicos || [])
+      }));
+      set({ disciplinas: disciplinasComProgresso, loading: false });
     } catch (error) {
       console.error("Failed to fetch disciplinas:", error);
       toast.error("Não foi possível carregar as disciplinas.");
@@ -53,8 +58,13 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
 
     try {
       const novaDisciplina = await createDisciplina(studyPlanId, disciplinaData);
-      set(state => ({ disciplinas: [...state.disciplinas, novaDisciplina] }));
-      return novaDisciplina;
+      // Garantir que o progresso está correto baseado nos tópicos
+      const disciplinaComProgresso = {
+        ...novaDisciplina,
+        progresso: calculateProgress(novaDisciplina.topicos || [])
+      };
+      set(state => ({ disciplinas: [...state.disciplinas, disciplinaComProgresso] }));
+      return disciplinaComProgresso;
     } catch (error) {
       console.error("Failed to add disciplina:", error);
       toast.error("Falha ao adicionar disciplina.");
@@ -65,11 +75,20 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
   updateDisciplina: async (id, updates) => {
     try {
       const disciplinaDB = await updateDisciplinaApi(id, updates);
-      set(state => ({
-        disciplinas: state.disciplinas.map(d => 
-          d.id === id ? { ...d, ...updates, ...(disciplinaDB || {}) } : d
-        )
-      }));
+      set(state => {
+        const disciplinaAtualizada = state.disciplinas.find(d => d.id === id);
+        if (!disciplinaAtualizada) return state;
+        
+        // Se os tópicos foram atualizados, recalcular progresso
+        const topicosAtualizados = disciplinaDB?.topicos || disciplinaAtualizada.topicos;
+        const progresso = calculateProgress(topicosAtualizados);
+        
+        return {
+          disciplinas: state.disciplinas.map(d => 
+            d.id === id ? { ...d, ...updates, ...(disciplinaDB || {}), topicos: topicosAtualizados, progresso } : d
+          )
+        };
+      });
     } catch (error) {
       console.error("Failed to update disciplina:", error);
       toast.error("Falha ao atualizar disciplina.");
