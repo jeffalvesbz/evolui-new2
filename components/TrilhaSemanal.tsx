@@ -28,11 +28,14 @@ const TopicCard: React.FC<{
     weekKey: string;
     onToggleConcluido: () => void;
 }> = ({ topic, onDragStart, onDragEnd, isDragging = false, isDragOver = false, dragOverPosition = null, onRemove, diaId, weekKey, onToggleConcluido }) => {
-    const { iniciarSessaoParaConclusaoRapida, iniciarSessao } = useEstudosStore();
+    const { iniciarSessao, iniciarSessaoParaConclusaoRapida } = useEstudosStore();
     
     const concluidoNaTrilha = topic.concluidoNaTrilha || false;
 
     const handleConcluir = () => {
+        // Marca como concluído na trilha
+        onToggleConcluido();
+        // Abre o modal de salvar com 1 hora pré-preenchida
         iniciarSessaoParaConclusaoRapida({
             id: topic.id,
             nome: topic.titulo,
@@ -170,7 +173,8 @@ const TrilhaSemanal: React.FC = () => {
         getTrilhaSemana,
         toggleTopicoConcluidoNaTrilha,
         isTopicoConcluidoNaTrilha,
-        setSemanaAtualKey
+        setSemanaAtualKey,
+        trilhaConclusao
     } = useEstudosStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const { openGeradorPlanoModal } = useModalStore();
@@ -287,7 +291,7 @@ const TrilhaSemanal: React.FC = () => {
             result[dia.id] = [...pendentes, ...concluidos];
         }
         return result;
-    }, [trilha, allTopicsMap, weekKey, isTopicoConcluidoNaTrilha]);
+    }, [trilha, allTopicsMap, weekKey, isTopicoConcluidoNaTrilha, trilhaConclusao]);
 
     // Estatísticas gerais
     const estatisticas = useMemo(() => {

@@ -7,6 +7,8 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { suggestTopics } from '../services/geminiService';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
 import { BookOpenIcon, XIcon, ClockIcon, SaveIcon, SparklesIcon } from './icons';
+import { startOfWeek, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface SalvarSessaoFormData {
   categoria: 'Teoria' | 'Questões' | 'Revisão' | 'Simulado';
@@ -23,7 +25,16 @@ interface SalvarSessaoFormData {
 
 const SalvarSessaoModal: React.FC = () => {
     const { isSaveModalOpen, closeSaveModal } = useUiStore();
-    const { sessaoAtual, salvarSessao, descartarSessao } = useEstudosStore();
+    const { 
+        sessaoAtual, 
+        salvarSessao, 
+        descartarSessao, 
+        getTrilhaSemana, 
+        toggleTopicoConcluidoNaTrilha,
+        isTopicoConcluidoNaTrilha,
+        semanaAtualKey,
+        trilhasPorSemana
+    } = useEstudosStore();
     const { disciplinas, updateTopico } = useDisciplinasStore();
 
     const [editableHours, setEditableHours] = useState(0);
@@ -93,6 +104,8 @@ const SalvarSessaoModal: React.FC = () => {
             }
              if (sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-')) {
                 setValue('teoriaFinalizada', true);
+                // Em conclusão rápida, marcar "contabilizarPlanejamento" por padrão
+                setValue('contabilizarPlanejamento', true);
             }
         }
     }, [isSaveModalOpen, reset, sessaoAtual, setValue, disciplinas]);
@@ -156,14 +169,86 @@ const SalvarSessaoModal: React.FC = () => {
             });
         }
 
+        // Marcar como concluído na trilha se "contabilizarPlanejamento" estiver marcado
+        if (data.contabilizarPlanejamento) {
+            // Obter a chave da semana atual
+            const weekKeyAtual = semanaAtualKey || format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww', { locale: ptBR });
+            
+            // IDs de tópico a verificar (o selecionado no formulário e o original da sessão)
+            const topicIdsToCheck = [targetTopic.id];
+            if (sessaoAtual.topico.id && sessaoAtual.topico.id !== targetTopic.id && !sessaoAtual.topico.id.startsWith('manual-')) {
+                topicIdsToCheck.push(sessaoAtual.topico.id);
+            }
+            
+            const diasSemana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+            let encontrado = false;
+            
+            // Função auxiliar para marcar como concluído (não faz toggle, apenas marca)
+            const marcarComoConcluido = (weekKey: string, diaId: string, topicId: string) => {
+                const state = useEstudosStore.getState();
+                const key = `${weekKey}-${diaId}-${topicId}`;
+                // Só atualiza se não estiver já marcado
+                if (!state.trilhaConclusao[key]) {
+                    const novasConclusoes = { ...state.trilhaConclusao };
+                    novasConclusoes[key] = true;
+                    useEstudosStore.setState({ trilhaConclusao: novasConclusoes });
+                    
+                    // Salvar no banco de dados em segundo plano
+                    const saveFunction = useEstudosStore.getState().saveTrilhasToDb;
+                    setTimeout(() => {
+                        saveFunction().catch(err => {
+                            console.error("Erro ao salvar trilhas no banco:", err);
+                        });
+                    }, 500);
+                    
+                    // Estado atualizado com sucesso
+                }
+            };
+            
+            // Primeiro, verificar na semana atual
+            const trilhaAtual = getTrilhaSemana(weekKeyAtual);
+            for (const diaId of diasSemana) {
+                const topicosDoDia = trilhaAtual[diaId] || [];
+                for (const topicId of topicIdsToCheck) {
+                    if (topicosDoDia.includes(topicId)) {
+                        marcarComoConcluido(weekKeyAtual, diaId, topicId);
+                        encontrado = true;
+                        break;
+                    }
+                }
+                if (encontrado) break;
+            }
+            
+            // Se não encontrou na semana atual, buscar em todas as semanas
+            if (!encontrado) {
+                for (const [weekKey, trilha] of Object.entries(trilhasPorSemana)) {
+                    for (const diaId of diasSemana) {
+                        const topicosDoDia = trilha[diaId] || [];
+                        for (const topicId of topicIdsToCheck) {
+                            if (topicosDoDia.includes(topicId)) {
+                                marcarComoConcluido(weekKey, diaId, topicId);
+                                encontrado = true;
+                                break;
+                            }
+                        }
+                        if (encontrado) break;
+                    }
+                    if (encontrado) break;
+                }
+            }
+        }
+
         toast.success("Estudo salvo com sucesso!");
+        
+        // Fechar o modal após salvar
+        closeSaveModal();
     };
 
     if (!isSaveModalOpen || !sessaoAtual) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/98 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <BookOpenIcon className="w-6 h-6 text-primary" />

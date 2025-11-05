@@ -215,9 +215,24 @@ const CicloDeEstudos: React.FC = () => {
         // Calcular tempo concluído (sessões do ciclo que foram estudadas hoje)
         const tempoConcluido = sessoesHojeDoCiclo.reduce((acc, s) => acc + s.tempo_estudado, 0);
         
+        // Criar mapeamento estável de disciplina para cor (ordenado por nome para consistência)
+        const disciplinasUnicas = Array.from(new Set(sessoesOrdenadas.map(s => s.disciplina_id)))
+            .sort((a, b) => {
+                const nomeA = disciplinasMap.get(a) || '';
+                const nomeB = disciplinasMap.get(b) || '';
+                return nomeA.localeCompare(nomeB);
+            });
+        const disciplinaCorMap = new Map<string, string>();
+        disciplinasUnicas.forEach((disciplinaId, index) => {
+            disciplinaCorMap.set(disciplinaId, COLORS[index % COLORS.length]);
+        });
+
         const dadosGrafico = sessoesOrdenadas.map(sessao => ({
+            id: sessao.id,
+            disciplinaId: sessao.disciplina_id,
             name: disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida',
-            value: Math.round(Number(sessao.tempo_previsto || 0) / 60)
+            value: Math.round(Number(sessao.tempo_previsto || 0) / 60),
+            color: disciplinaCorMap.get(sessao.disciplina_id) || COLORS[0]
         }));
         
         // Lógica para encontrar a próxima sessão
@@ -566,7 +581,7 @@ const CicloDeEstudos: React.FC = () => {
                             <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
                                     <Pie data={dadosGrafico} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
-                                        {dadosGrafico.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                                        {dadosGrafico.map((entry) => <Cell key={`cell-${entry.id}`} fill={entry.color} />)}
                                     </Pie>
                                     <Tooltip contentStyle={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)'}} formatter={(value: number) => `${value} min`}/>
                                     <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}}/>
