@@ -65,17 +65,259 @@ export const generateFlashcards = async (topicName: string): Promise<Omit<Flashc
   return [{ pergunta: `Qual a capital do Brasil para o tópico ${topicName}?`, resposta: 'Brasília.' }];
 };
 
-export const generateFlashcardsFromContent = async (disciplinaId: string): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-    await new Promise(res => setTimeout(res, 1500)); // Simulate AI thinking
-    return [
-        { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto'},
-        { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima.', estilo: 'explicativo' },
-        { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' },
+export const generateFlashcardsFromContent = async (
+    disciplinaId: string,
+    topicoId: string,
+    topicoTitulo: string,
+    quantidade: number = 5,
+    estilos: ('direto' | 'explicativo' | 'completar')[] = ['direto', 'explicativo', 'completar'],
+    contexto: string = ''
+): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
+    await new Promise(res => setTimeout(res, 1500 + quantidade * 200)); // Simulate AI thinking (more time for more cards)
+    
+    // Base de flashcards variados por estilo
+    const flashcardsDireto = [
+        { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto' as const },
+        { pergunta: 'Qual o prazo para apresentação de defesa prévia?', resposta: 'O prazo é de 10 dias, contados da publicação da portaria de instauração.', estilo: 'direto' as const },
+        { pergunta: 'O que é habeas corpus?', resposta: 'Remédio constitucional que visa proteger a liberdade de locomoção.', estilo: 'direto' as const },
+        { pergunta: 'Qual a diferença entre crime e contravenção?', resposta: 'Crime é infração penal punida com reclusão ou detenção; contravenção é punida com prisão simples ou multa.', estilo: 'direto' as const },
     ];
+    
+    const flashcardsExplicativo = [
+        { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima e não justifica a aplicação da sanção penal.', estilo: 'explicativo' as const },
+        { pergunta: 'Descreva o processo de investigação criminal.', resposta: 'Inicia-se com a notitia criminis, passa pela fase investigatória (inquérito policial ou procedimento investigatório), e culmina com a denúncia ou arquivamento.', estilo: 'explicativo' as const },
+        { pergunta: 'Como funciona o sistema acusatório?', resposta: 'Sistema processual onde há separação entre as funções de acusar, defender e julgar, garantindo imparcialidade e contraditório.', estilo: 'explicativo' as const },
+        { pergunta: 'Explique a teoria do domínio do fato.', resposta: 'Teoria que identifica o autor como aquele que domina o fato delitivo, controlando a execução do crime de forma direta ou indireta.', estilo: 'explicativo' as const },
+    ];
+    
+    const flashcardsCompletar = [
+        { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' as const },
+        { pergunta: 'A competência para julgamento de crimes militares é da ______.', resposta: 'Justiça Militar', estilo: 'completar' as const },
+        { pergunta: 'O princípio do contraditório garante o direito de ______ e ______.', resposta: 'ser ouvido e se defender', estilo: 'completar' as const },
+        { pergunta: 'O art. 5º, inciso LVII da CF garante que ninguém será considerado culpado até o trânsito em julgado de sentença ______.', resposta: 'penal condenatória', estilo: 'completar' as const },
+    ];
+    
+    // Seleciona flashcards baseado nos estilos escolhidos
+    const allFlashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] = [];
+    
+    if (estilos.includes('direto')) {
+        allFlashcards.push(...flashcardsDireto);
+    }
+    if (estilos.includes('explicativo')) {
+        allFlashcards.push(...flashcardsExplicativo);
+    }
+    if (estilos.includes('completar')) {
+        allFlashcards.push(...flashcardsCompletar);
+    }
+    
+    // Se contexto foi fornecido, tenta personalizar os flashcards
+    if (contexto.trim()) {
+        // Em uma implementação real, isso seria processado pela IA
+        // Por enquanto, apenas adicionamos variação baseada no contexto
+        const contextualized = allFlashcards.map(card => ({
+            ...card,
+            pergunta: `${card.pergunta} (Contexto: ${topicoTitulo})`,
+        }));
+        allFlashcards.push(...contextualized);
+    }
+    
+    // Seleciona aleatoriamente a quantidade solicitada
+    const selected: typeof allFlashcards = [];
+    const shuffled = [...allFlashcards].sort(() => Math.random() - 0.5);
+    
+    for (let i = 0; i < Math.min(quantidade, shuffled.length); i++) {
+        selected.push(shuffled[i]);
+    }
+    
+    // Se não houver suficientes, preenche com variações
+    while (selected.length < quantidade) {
+        const base = allFlashcards[selected.length % allFlashcards.length];
+        selected.push({
+            ...base,
+            pergunta: `${base.pergunta} (${selected.length + 1})`,
+        });
+    }
+    
+    return selected.slice(0, quantidade);
 };
 
 export const suggestTopics = async (comment: string): Promise<string[]> => {
   return ['Tópico Sugerido 1', 'Tópico Sugerido 2'];
+};
+
+// Converte File para base64
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
+// Extrai texto de PDF usando Gemini
+export const extractTextFromPdf = async (file: File): Promise<string> => {
+    if (!ai) {
+        throw new Error('API Key do Gemini não configurada.');
+    }
+
+    try {
+        const base64 = await fileToBase64(file);
+
+        // Usa Gemini 2.5 Flash para extrair texto (mais rápido e barato)
+        const prompt = "Extraia o texto completo deste PDF de forma estruturada, mantendo a hierarquia de títulos e parágrafos. Retorne apenas o texto, sem formatação adicional.";
+        
+        const response = await ai.models.generateContent({ 
+            model: 'gemini-2.5-flash',
+            contents: {
+                parts: [
+                    { text: prompt },
+                    { inlineData: { mimeType: 'application/pdf', data: base64 } }
+                ]
+            }
+        });
+
+        return response.text;
+    } catch (error) {
+        console.error('Erro ao extrair texto do PDF:', error);
+        throw new Error('Não foi possível extrair texto do PDF. Verifique se o arquivo é válido.');
+    }
+};
+
+// Gera flashcards a partir de PDF com otimização de tokens
+export const generateFlashcardsFromPdf = async (
+    pdfFile: File,
+    pdfText: string,
+    topicoTitulo: string,
+    quantidade: number = 5,
+    estilos: ('direto' | 'explicativo' | 'completar')[] = ['direto', 'explicativo', 'completar'],
+    contextoAdicional: string = ''
+): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
+    if (!ai) {
+        throw new Error('API Key do Gemini não configurada.');
+    }
+
+    // OTIMIZAÇÃO: Limita o tamanho do texto para reduzir tokens
+    // Pega os primeiros 50.000 caracteres (aproximadamente 12.500 tokens)
+    const maxChars = 50000;
+    const truncatedText = pdfText.length > maxChars 
+        ? pdfText.substring(0, maxChars) + '\n\n[... conteúdo truncado para economizar tokens ...]'
+        : pdfText;
+
+    // OTIMIZAÇÃO: Primeiro pede um resumo dos conceitos principais
+    const resumoPrompt = `Analise o seguinte texto extraído de um PDF sobre "${topicoTitulo}".
+    
+Texto (primeiros ${truncatedText.length} caracteres):
+${truncatedText}
+
+${contextoAdicional ? `\nContexto adicional: ${contextoAdicional}` : ''}
+
+Crie um resumo estruturado com os 10-15 conceitos principais mais importantes para estudo. 
+Cada conceito deve ter: (1) Nome/Título do conceito, (2) Explicação breve (2-3 frases).
+Retorne em formato JSON: { "conceitos": [{ "titulo": "...", "explicacao": "..." }] }`;
+
+    let conceitosResumidos: Array<{ titulo: string; explicacao: string }> = [];
+
+    try {
+        // Passo 1: Obter resumo dos conceitos (economiza tokens)
+        const schemaResumo = {
+            type: Type.OBJECT,
+            properties: {
+                conceitos: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            titulo: { type: Type.STRING },
+                            explicacao: { type: Type.STRING }
+                        }
+                    }
+                }
+            }
+        };
+
+        const resumoResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: resumoPrompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: schemaResumo
+            }
+        });
+
+        const resumoData = JSON.parse(resumoResponse.text);
+        conceitosResumidos = resumoData.conceitos || [];
+
+        // Se não conseguiu resumir, usa o texto completo
+        if (conceitosResumidos.length === 0) {
+            conceitosResumidos = [{ titulo: topicoTitulo, explicacao: truncatedText.substring(0, 500) }];
+        }
+    } catch (error) {
+        console.warn('Erro ao resumir PDF, usando texto completo:', error);
+        conceitosResumidos = [{ titulo: topicoTitulo, explicacao: truncatedText.substring(0, 500) }];
+    }
+
+    // Passo 2: Gerar flashcards baseado nos conceitos resumidos (muito mais eficiente)
+    const estilosStr = estilos.join(', ');
+    const flashcardsPrompt = `Com base nos seguintes conceitos extraídos de um PDF sobre "${topicoTitulo}", 
+gere exatamente ${quantidade} flashcards de alta qualidade.
+
+Conceitos:
+${conceitosResumidos.map((c, i) => `${i + 1}. ${c.titulo}: ${c.explicacao}`).join('\n')}
+
+${contextoAdicional ? `\nContexto adicional: ${contextoAdicional}` : ''}
+
+Requisitos:
+- Gere flashcards nos estilos: ${estilosStr}
+- Distribua os estilos de forma equilibrada
+- Cada flashcard deve ter pergunta e resposta claras
+- Foque nos conceitos mais importantes
+- Use termos técnicos quando apropriado
+
+Retorne em formato JSON:
+{
+  "flashcards": [
+    { "pergunta": "...", "resposta": "...", "estilo": "direto|explicativo|completar" }
+  ]
+}`;
+
+    const schemaFlashcards = {
+        type: Type.OBJECT,
+        properties: {
+            flashcards: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        pergunta: { type: Type.STRING },
+                        resposta: { type: Type.STRING },
+                        estilo: { type: Type.STRING }
+                    }
+                }
+            }
+        }
+    };
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: flashcardsPrompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: schemaFlashcards
+        }
+    });
+
+    const data = JSON.parse(response.text);
+    const flashcards = (data.flashcards || []).slice(0, quantidade).map((fc: any) => ({
+        pergunta: fc.pergunta,
+        resposta: fc.resposta,
+        estilo: (fc.estilo || 'direto') as 'direto' | 'explicativo' | 'completar'
+    }));
+
+    return flashcards;
 };
 
 const correcaoSchema = {
@@ -149,9 +391,20 @@ export const corrigirRedacao = async (
         notaFinalCalculada = criteriosEntrada.reduce((sum, c) => sum + (c.nota * c.peso), 0);
     }
 
+    // Critérios específicos do Enem (5 competências)
+    const criteriosEnem = [
+        { nome: 'Competência 1: Domínio da modalidade escrita formal da Língua Portuguesa', maximo: 200, peso: 0.2 },
+        { nome: 'Competência 2: Compreender a proposta de redação e aplicar conceitos', maximo: 200, peso: 0.2 },
+        { nome: 'Competência 3: Selecionar, relacionar, organizar e interpretar informações', maximo: 200, peso: 0.2 },
+        { nome: 'Competência 4: Demonstrar conhecimento dos mecanismos linguísticos para argumentação', maximo: 200, peso: 0.2 },
+        { nome: 'Competência 5: Elaborar proposta de intervenção respeitando direitos humanos', maximo: 200, peso: 0.2 }
+    ];
+
+    // Normalizar CESPE para Cebraspe (mesma banca)
+    const bancaNormalizada = (banca === 'CESPE' || banca === 'Cebraspe') ? 'Cebraspe' : banca;
+
     // Estilos de avaliação por banca
     const estiloBanca: Record<string, string> = {
-        'CESPE': 'Estilo técnico e objetivo; correção analítica. Valorize clareza, concisão e densidade argumentativa. Penalize repetições e desvios da norma culta. Use linguagem impessoal e avaliativa.',
         'Cebraspe': 'Estilo técnico e objetivo; correção analítica. Valorize clareza, concisão e densidade argumentativa. Penalize repetições e desvios da norma culta. Use linguagem impessoal e avaliativa.',
         'FGV': 'Estilo crítico e interpretativo. Valorize reflexão social e originalidade argumentativa. Penalize superficialidade ou discurso genérico. Tom analítico com foco na profundidade das ideias.',
         'FCC': 'Estilo formalista e técnico. Valorize coesão, paralelismo sintático e precisão gramatical. Penalize erros de concordância, ambiguidades e pobreza vocabular. Tom metódico e avaliativo.',
@@ -163,16 +416,20 @@ export const corrigirRedacao = async (
         'AOCP': 'Estilo neutro e padronizado. Valorize cumprimento integral da proposta e linguagem formal. Penalize repetição de ideias e argumentação rasa. Feedback direto, com observações pontuais.'
     };
 
-    const estilo = estiloBanca[banca] || 'Siga os critérios padrão da banca, valorizando correção, coerência e adequação ao tema.';
+    const estilo = estiloBanca[bancaNormalizada] || 'Siga os critérios padrão da banca, valorizando correção, coerência e adequação ao tema.';
 
     // Construir seção de critérios para o prompt
     const secoesCriterios = criteriosEntrada.length > 0
         ? criteriosEntrada.map(c => 
             `- ${c.nome}: Nota atribuída ${c.nota.toFixed(1)} / ${c.maximo.toFixed(1)} (peso: ${(c.peso * 100).toFixed(0)}%)`
         ).join('\n')
-        : `A IA deve calcular as notas para os critérios padrão da banca ${banca}.`;
+        : banca === 'Enem' || banca === 'ENEM'
+            ? `A IA deve calcular as notas para as 5 COMPETÊNCIAS DO ENEM:
+${criteriosEnem.map(c => `- ${c.nome}: Máximo ${c.maximo} pontos (peso ${(c.peso * 100).toFixed(0)}%)`).join('\n')}
+Total: 1000 pontos (200 pontos por competência)`
+            : `A IA deve calcular as notas para os critérios padrão da banca ${bancaNormalizada}.`;
 
-    const prompt = `Você é um corretor especializado em redações de concursos públicos, com conhecimento profundo dos critérios de avaliação da banca "${banca}".
+    const prompt = `Você é um corretor especializado em redações de concursos públicos, com conhecimento profundo dos critérios de avaliação da banca "${bancaNormalizada}".
 
 FUNÇÃO: ${criteriosEntrada.length > 0 
     ? 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, INTERPRETANDO E EXPLICANDO as notas já atribuídas pelo avaliador. Você NÃO atribui notas, apenas explica e justifica as notas dadas.'
@@ -183,7 +440,7 @@ FUNÇÃO: ${criteriosEntrada.length > 0
 ║  DADOS DA AVALIAÇÃO (JÁ DEFINIDOS PELO AVALIADOR)            ║
 ╚════════════════════════════════════════════════════════════════╝
 
-BANCA: ${banca}
+BANCA: ${bancaNormalizada}
 TEMA: ${tema || 'Não especificado'}
 NOTA MÁXIMA: ${notaMaxima} pontos
 
@@ -209,7 +466,7 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
 
 3. MANTENHA TOM TÉCNICO DE CORRETOR:
    - Linguagem formal e objetiva, mas pedagógica e construtiva
-   - Use termos e critérios característicos da banca ${banca}
+   - Use termos e critérios característicos da banca ${bancaNormalizada}
    - Evite subjetividade excessiva; seja preciso e fundamentado
 
 4. APRESENTE O PARECER FINAL EM 6 PARTES:
@@ -217,7 +474,7 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    📊 1️⃣ AVALIAÇÃO GERAL
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Síntese global do desempenho, apontando se o texto cumpre o tema e o formato exigido pela banca ${banca}. 
+   Síntese global do desempenho, apontando se o texto cumpre o tema e o formato exigido pela banca ${bancaNormalizada}. 
    ${criteriosEntrada.length > 0 ? `Contextualize a nota final calculada (${notaFinalCalculada.toFixed(1)}/${notaMaxima}) em relação ao desempenho geral.` : 'Apresente uma visão geral do desempenho antes da análise detalhada.'}
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -233,7 +490,15 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
 ${criteriosEntrada.map(c => `
    • ${c.nome} (${c.nota.toFixed(1)}/${c.maximo.toFixed(1)} - peso ${(c.peso * 100).toFixed(0)}%):
      Justifique a nota atribuída, mencione acertos, lacunas, exemplos e relevância.`).join('')}`
-    : `Avalie e atribua notas para os critérios padrão da banca ${banca}. Para cada critério, forneça:
+    : banca === 'Enem' || banca === 'ENEM'
+        ? `Avalie e atribua notas para as 5 COMPETÊNCIAS DO ENEM. Para cada competência, forneça:
+   - Pontuação atribuída (0 a 200 pontos, justificada)
+   - Elementos que justificam a pontuação (acertos, pontos fortes)
+   - Lacunas e aspectos que impedem pontuação máxima
+   - Sugestões específicas de melhoria
+
+${criteriosEnem.map(c => `   • ${c.nome} (0-200 pontos, peso ${(c.peso * 100).toFixed(0)}%):`).join('\n')}`
+        : `Avalie e atribua notas para os critérios padrão da banca ${bancaNormalizada}. Para cada critério, forneça:
    - Pontuação atribuída (justificada)
    - Elementos que justificam a pontuação (acertos, pontos fortes)
    - Lacunas e aspectos que impedem pontuação máxima
@@ -270,12 +535,12 @@ ${criteriosEntrada.map(c => `
    - Pontos fortes do texto
    - Aspectos a desenvolver urgentemente
    - Sugestões personalizadas para a próxima redação
-   - Foco nos critérios que mais impactam a nota na banca ${banca}
+   - Foco nos critérios que mais impactam a nota na banca ${bancaNormalizada}
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    🏛️ 6️⃣ ESTILO E VOCABULÁRIO ESPECÍFICOS DA BANCA
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Adapte o tom e os comentários para refletir o perfil avaliativo real da ${banca}.
+   Adapte o tom e os comentários para refletir o perfil avaliativo real da ${bancaNormalizada}.
 
 ╔════════════════════════════════════════════════════════════════╗
 ║  REDAÇÃO A SER CORRIGIDA                                      ║
@@ -297,9 +562,18 @@ Retorne a resposta APENAS em formato JSON, seguindo rigorosamente o schema forne
 - "sinteseFinal": Feedback pedagógico final (seção 5)
 
 IMPORTANTE: 
-- Use a linguagem característica da banca ${banca}
+- Use a linguagem característica da banca ${bancaNormalizada}
 - Seja detalhado, específico e pedagógico em todos os feedbacks
 - JUSTIFIQUE as notas dadas, não as calcule
+${(banca === 'Enem' || banca === 'ENEM') && criteriosEntrada.length === 0 ? `
+- OBRIGATÓRIO: Retorne EXATAMENTE 5 competências do Enem na "avaliacaoDetalhada":
+  1. Competência 1: Domínio da modalidade escrita formal da Língua Portuguesa (0-200)
+  2. Competência 2: Compreender a proposta de redação e aplicar conceitos (0-200)
+  3. Competência 3: Selecionar, relacionar, organizar e interpretar informações (0-200)
+  4. Competência 4: Demonstrar conhecimento dos mecanismos linguísticos para argumentação (0-200)
+  5. Competência 5: Elaborar proposta de intervenção respeitando direitos humanos (0-200)
+- Cada competência deve ter máximo de 200 pontos e peso de 0.2 (20%)
+- A nota final deve ser a soma das 5 competências (máximo 1000 pontos)` : ''}
 - Mantenha tom técnico de corretor oficial`;
 
     const response = await ai.models.generateContent({ 
@@ -319,7 +593,7 @@ IMPORTANTE:
     const notaFinalRetornada = resultado.notaFinal ?? notaFinalCalculada;
     
     const correcaoCompleta: CorrecaoCompleta = {
-        banca: banca,
+        banca: bancaNormalizada,
         notaMaxima: notaMaxima,
         notaFinal: criteriosEntrada.length > 0 ? notaFinalCalculada : notaFinalRetornada,
         avaliacaoGeral: resultado.avaliacaoGeral || '',
@@ -532,6 +806,7 @@ const _getRankingForUserIds = async (userIds: string[], currentUserId: string): 
 export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingData> => {
     const sevenDaysAgo = subDays(new Date(), 7).toISOString();
 
+    // Buscar XP da última semana
     const { data: xpLogsData, error: logError } = await supabase
         .from('xp_log')
         .select('user_id, amount')
@@ -540,13 +815,15 @@ export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingDat
     if (logError) throw logError;
     const xpLogs = (xpLogsData || []) as any[];
 
+    // Calcular XP semanal de cada usuário (apenas os que ganharam XP)
     const weeklyXpMap = new Map<string, number>();
     for (const log of xpLogs) {
         weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
     }
     
+    // Incluir usuário atual mesmo se não ganhou XP na semana
     const userIdsInRanking = new Set(weeklyXpMap.keys());
-    userIdsInRanking.add(userId); // Ensure current user is always included
+    userIdsInRanking.add(userId);
     
     const userIdsArray = Array.from(userIdsInRanking);
 
@@ -554,11 +831,13 @@ export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingDat
         return { ranking: [], currentUserRank: null };
     }
     
+    // Usar a função helper para buscar perfis e criar ranking
     const rankingData = await _getRankingForUserIds(userIdsArray, userId);
 
+    // Limitar a top 100 para performance
     return {
         ...rankingData,
-        ranking: rankingData.ranking.slice(0, 50), // Slice for global ranking
+        ranking: rankingData.ranking.slice(0, 100),
     };
 };
 
@@ -1265,50 +1544,129 @@ export const getFriendRequests = async (userId: string): Promise<FriendRequest[]
 };
 
 export const searchUsers = async (query: string, currentUserId: string): Promise<User[]> => {
-    const { data: relData, error: relError } = await supabase
-        .from('friendships')
-        .select('user_id_1, user_id_2')
-        .or(`user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`);
+    // Sanitizar e validar a query para evitar problemas com caracteres especiais
+    const sanitizedQuery = query
+        .trim()
+        .slice(0, 100) // Limitar tamanho máximo para prevenir DoS
+        .replace(/[%_\\]/g, '') // Remover caracteres especiais do SQL LIKE
+        .replace(/[<>]/g, '') // Remover caracteres que podem causar problemas
+        .trim();
+    
+    // Validação rigorosa
+    if (!sanitizedQuery || sanitizedQuery.length < 2) {
+        return [];
+    }
+    
+    // Validar que não é apenas espaços ou caracteres especiais
+    // Permitir letras, números, espaços, @, ponto e hífen (para emails e nomes)
+    if (!/^[\w\s@.-]+$/.test(sanitizedQuery)) {
+        console.warn('Query de busca contém caracteres inválidos, ignorando');
+        return [];
+    }
 
-    if (relError) throw relError;
-    const relationships = (relData || []) as any[];
+    try {
+        const { data: relData, error: relError } = await supabase
+            .from('friendships')
+            .select('user_id_1, user_id_2')
+            .or(`user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`);
 
-    const existingRelationshipIds = new Set(
-        relationships.flatMap(r => [r.user_id_1, r.user_id_2])
-    );
-    existingRelationshipIds.add(currentUserId);
-
-    const { data: usersData, error: usersError } = await supabase
-        .from('profiles')
-        .select('user_id, name, email')
-        .or(`name.ilike.%${query}%,email.ilike.%${query}%`)
-        .not('user_id', 'in', `(${Array.from(existingRelationshipIds).map(id => `'${id}'`).join(',')})`)
-        .limit(10);
+        if (relError) {
+            console.error('Error fetching friendships:', relError);
+            throw relError;
+        }
         
-    if (usersError) throw usersError;
-    const users = (usersData || []) as any[];
+        const relationships = (relData || []) as any[];
 
-    return users.map(p => ({
-        id: p.user_id,
-        name: p.name,
-        email: p.email,
-    }));
+        const existingRelationshipIds = new Set(
+            relationships.flatMap(r => [r.user_id_1, r.user_id_2])
+        );
+        existingRelationshipIds.add(currentUserId);
+
+        // Buscar usuários que correspondem à query
+        // O Supabase trata automaticamente caracteres especiais na query
+        const { data: usersData, error: usersError } = await supabase
+            .from('profiles')
+            .select('user_id, name, email')
+            .or(`name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%`)
+            .limit(50); // Buscar mais para depois filtrar
+            
+        if (usersError) {
+            console.error('Error searching users:', usersError);
+            throw usersError;
+        }
+        
+        const users = (usersData || []) as any[];
+
+        // Filtrar usuários que já são amigos ou o próprio usuário
+        const filteredUsers = users
+            .filter(p => !existingRelationshipIds.has(p.user_id))
+            .slice(0, 10); // Limitar a 10 resultados
+
+        return filteredUsers.map(p => ({
+            id: p.user_id,
+            name: p.name,
+            email: p.email,
+        }));
+    } catch (error) {
+        console.error('Failed to search users:', error);
+        throw error;
+    }
 };
 
 export const sendFriendRequest = async (requesterId: string, receiverId: string) => {
-    const { data: existingData, error: checkError } = await supabase
+    // Verificar se já existe uma relação entre os dois usuários
+    // Precisamos verificar ambas as direções: (A->B) e (B->A)
+    // E também verificar todos os status (pending, accepted, declined, blocked)
+    const { data: existingData1, error: checkError1 } = await supabase
         .from('friendships')
-        .select('id')
-        .or(`(user_id_1.eq.${requesterId},user_id_2.eq.${receiverId}),(user_id_1.eq.${receiverId},user_id_2.eq.${requesterId})`)
+        .select('id, status')
+        .eq('user_id_1', requesterId)
+        .eq('user_id_2', receiverId)
         .limit(1);
 
-    if (checkError) throw checkError;
-    const existing = (existingData || []) as any[];
-
-    if (existing && existing.length > 0) {
-        throw new Error("Já existe uma amizade ou um pedido pendente.");
+    if (checkError1) {
+        console.error('Error checking friendship (direction 1):', checkError1);
+        throw checkError1;
     }
 
+    const { data: existingData2, error: checkError2 } = await supabase
+        .from('friendships')
+        .select('id, status')
+        .eq('user_id_1', receiverId)
+        .eq('user_id_2', requesterId)
+        .limit(1);
+
+    if (checkError2) {
+        console.error('Error checking friendship (direction 2):', checkError2);
+        throw checkError2;
+    }
+
+    const existing = [...(existingData1 || []), ...(existingData2 || [])] as any[];
+
+    if (existing && existing.length > 0) {
+        const existingStatus = existing[0].status;
+        if (existingStatus === 'accepted') {
+            throw new Error("Vocês já são amigos.");
+        } else if (existingStatus === 'pending') {
+            throw new Error("Já existe um pedido de amizade pendente.");
+        } else if (existingStatus === 'declined') {
+            // Se foi recusado anteriormente, podemos permitir criar um novo pedido
+            // Mas primeiro vamos deletar o registro antigo
+            try {
+                await supabase
+                    .from('friendships')
+                    .delete()
+                    .eq('id', existing[0].id);
+            } catch (deleteError) {
+                console.error('Error deleting declined friendship:', deleteError);
+                // Continua mesmo se não conseguir deletar
+            }
+        } else {
+            throw new Error("Já existe uma relação entre vocês.");
+        }
+    }
+
+    // Inserir novo pedido de amizade
     const { error: insertError } = await supabase
         .from('friendships')
         .insert({
@@ -1317,7 +1675,16 @@ export const sendFriendRequest = async (requesterId: string, receiverId: string)
             status: 'pending',
         } as any);
     
-    if (insertError) throw insertError;
+    if (insertError) {
+        // Se o erro for 409 (Conflict), provavelmente houve uma race condition
+        // ou existe uma constraint unique que não foi capturada na verificação
+        if (insertError.code === '23505' || insertError.message?.includes('409') || insertError.message?.includes('duplicate')) {
+            console.warn('Friendship already exists (race condition):', insertError);
+            throw new Error("Já existe uma amizade ou um pedido pendente. Por favor, recarregue a página.");
+        }
+        console.error('Error inserting friendship:', insertError);
+        throw insertError;
+    }
 };
 
 export const acceptFriendRequest = async (friendshipId: string) => {

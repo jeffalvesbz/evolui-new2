@@ -147,7 +147,7 @@ const Estatisticas: React.FC = () => {
     const COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7', '#EC4899', '#6366F1', '#F59E0B'];
 
     return (
-        <div className="space-y-6">
+        <div data-tutorial="estatisticas-content" className="space-y-6">
             <header>
                 <h1 className="text-3xl font-bold text-foreground">Estatísticas</h1>
                 <p className="text-muted-foreground mt-1">Analise seu desempenho e otimize sua rotina de estudos.</p>

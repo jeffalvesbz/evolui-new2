@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, BarChart, Bar, Legend, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
-import { PencilRulerIcon, SparklesIcon, CameraIcon, HistoryIcon } from './icons';
+import { PencilRulerIcon, SparklesIcon, CameraIcon, HistoryIcon, AlertTriangleIcon } from './icons';
 import { corrigirRedacao, extrairTextoDeImagem } from '../services/geminiService';
 import { toast } from './Sonner';
 import { CorrecaoCompleta, CorrecaoErroDetalhado, RedacaoCorrigida, NotasPesosEntrada } from '../types';
@@ -135,20 +135,23 @@ const HistoricoProgresso: React.FC = () => {
         return ['todas', ...Array.from(bancas)];
     }, [historico]);
 
-    const evolutionData = useMemo(() => historico
+    // Helper para filtrar histórico por banca
+    const historicoFiltrado = useMemo(() => {
+        return bancaFiltro === 'todas'
+            ? historico
+            : historico.filter(h => h.banca === bancaFiltro);
+    }, [historico, bancaFiltro]);
+
+    const evolutionData = useMemo(() => historicoFiltrado
         .map(h => ({
             data: new Date(h.data).toLocaleDateString('pt-br'),
             nota: h.correcao.notaFinal,
             notaMaxima: h.correcao.notaMaxima,
             notaPercentual: (h.correcao.notaFinal / h.correcao.notaMaxima) * 100
         }))
-        .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [historico]);
+        .sort((a,b) => new Date(a.data).getTime() - new Date(b.data).getTime()), [historicoFiltrado]);
 
     const criteriaData = useMemo(() => {
-        const historicoFiltrado = bancaFiltro === 'todas'
-            ? historico
-            : historico.filter(h => h.banca === bancaFiltro);
-
         const criteriaMap = new Map<string, { total: number, count: number }>();
         historicoFiltrado.forEach(h => {
             h.correcao.avaliacaoDetalhada.forEach(c => {
@@ -164,17 +167,17 @@ const HistoricoProgresso: React.FC = () => {
             name,
             media: parseFloat((total / count).toFixed(1))
         }));
-    }, [historico, bancaFiltro]);
+    }, [historicoFiltrado]);
     
      const errorTypesData = useMemo(() => {
         const errorMap = new Map<string, number>();
-        historico.forEach(h => {
+        historicoFiltrado.forEach(h => {
             h.correcao.errosDetalhados.forEach(e => {
                 errorMap.set(e.tipo, (errorMap.get(e.tipo) || 0) + 1);
             });
         });
         return Array.from(errorMap.entries()).map(([name, value]) => ({ name, value }));
-    }, [historico]);
+    }, [historicoFiltrado]);
 
     const COLORS = ['#10b981', '#8b5cf6', '#ef4444', '#f59e0b', '#3b82f6'];
 
@@ -188,9 +191,40 @@ const HistoricoProgresso: React.FC = () => {
     
     return (
         <div className="space-y-8">
+            {/* Filtro de Banca Global */}
+            {bancasDisponiveis.length > 2 && (
+                <div className="bg-card rounded-xl border border-border p-4">
+                    <div className="flex items-center gap-3">
+                        <label className="text-sm font-semibold text-foreground">Filtrar por Banca:</label>
+                        <select
+                            value={bancaFiltro}
+                            onChange={(e) => setBancaFiltro(e.target.value)}
+                            className="bg-muted/50 border border-border rounded-md px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                            aria-label="Filtrar por banca"
+                        >
+                            {bancasDisponiveis.map(b => (
+                                <option key={b} value={b}>{b === 'todas' ? 'Todas as Bancas' : b}</option>
+                            ))}
+                        </select>
+                        {bancaFiltro !== 'todas' && (
+                            <span className="text-xs text-muted-foreground">
+                                ({historicoFiltrado.length} {historicoFiltrado.length === 1 ? 'redação' : 'redações'})
+                            </span>
+                        )}
+                    </div>
+                </div>
+            )}
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-card rounded-xl border border-border p-6">
-                     <h3 className="text-lg font-bold text-foreground mb-4">Evolução das Notas</h3>
+                     <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-foreground">Evolução das Notas</h3>
+                        {bancaFiltro !== 'todas' && (
+                            <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">
+                                {bancaFiltro}
+                            </span>
+                        )}
+                     </div>
                      <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={evolutionData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -204,17 +238,10 @@ const HistoricoProgresso: React.FC = () => {
                  <div className="bg-card rounded-xl border border-border p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold text-foreground">Média por Critério</h3>
-                        {bancasDisponiveis.length > 2 && (
-                            <select
-                                value={bancaFiltro}
-                                onChange={(e) => setBancaFiltro(e.target.value)}
-                                className="bg-muted/50 border border-border rounded-md px-3 py-1.5 text-xs focus:ring-primary focus:border-primary"
-                                aria-label="Filtrar por banca"
-                            >
-                                {bancasDisponiveis.map(b => (
-                                    <option key={b} value={b}>{b === 'todas' ? 'Todas as Bancas' : b}</option>
-                                ))}
-                            </select>
+                        {bancaFiltro !== 'todas' && (
+                            <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">
+                                {bancaFiltro}
+                            </span>
                         )}
                     </div>
                      <ResponsiveContainer width="100%" height={300}>
@@ -228,7 +255,14 @@ const HistoricoProgresso: React.FC = () => {
                      </ResponsiveContainer>
                 </div>
                 <div className="bg-card rounded-xl border border-border p-6 lg:col-span-2">
-                    <h3 className="text-lg font-bold text-foreground mb-4">Tipos de Erros Frequentes</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-bold text-foreground">Tipos de Erros Frequentes</h3>
+                        {bancaFiltro !== 'todas' && (
+                            <span className="text-xs text-muted-foreground bg-primary/10 px-2 py-1 rounded">
+                                {bancaFiltro}
+                            </span>
+                        )}
+                    </div>
                      <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie data={errorTypesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
@@ -259,7 +293,24 @@ const CorretorRedacao: React.FC = () => {
     const [observacaoAvaliador, setObservacaoAvaliador] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { addCorrecao } = useRedacaoStore();
+    const { addCorrecao, historico } = useRedacaoStore();
+    
+    // Constante para limite de redações por mês
+    const LIMITE_REDACOES_MES = 10;
+    
+    // Função para contar redações do mês atual
+    const redacoesNoMes = useMemo(() => {
+        const agora = new Date();
+        const mesAtual = agora.getMonth();
+        const anoAtual = agora.getFullYear();
+        
+        return historico.filter(h => {
+            const dataRedacao = new Date(h.data);
+            return dataRedacao.getMonth() === mesAtual && dataRedacao.getFullYear() === anoAtual;
+        }).length;
+    }, [historico]);
+    
+    const redacoesRestantes = LIMITE_REDACOES_MES - redacoesNoMes;
 
     useEffect(() => {
         setBanca('Enem');
@@ -296,6 +347,13 @@ const CorretorRedacao: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Validar limite de redações por mês
+        if (redacoesNoMes >= LIMITE_REDACOES_MES) {
+            toast.error(`Limite de ${LIMITE_REDACOES_MES} redações por mês atingido! O limite será resetado no próximo mês.`);
+            return;
+        }
+        
         if (redacao.trim().length < 50) {
             toast.error("Por favor, insira um texto com pelo menos 50 caracteres.");
             return;
@@ -325,9 +383,12 @@ const CorretorRedacao: React.FC = () => {
                 ? { ...notasPesos, observacaoAvaliador: observacaoAvaliador || undefined }
                 : undefined;
             
-            const result = await corrigirRedacao(redacao, banca, notaMaxima, tema, notasPesosComObservacao);
+            // Normalizar CESPE para Cebraspe (mesma banca)
+            const bancaNormalizada = (banca === 'CESPE' || banca === 'Cebraspe') ? 'Cebraspe' : banca;
+            
+            const result = await corrigirRedacao(redacao, bancaNormalizada, notaMaxima, tema, notasPesosComObservacao);
             setCorrecao(result);
-            addCorrecao({ texto: redacao, banca, notaMaxima, correcao: result, tema });
+            addCorrecao({ texto: redacao, banca: bancaNormalizada, notaMaxima, correcao: result, tema });
             toast.success("Redação corrigida com sucesso!");
         } catch (error) {
             toast.error("Ocorreu um erro ao processar a correção.");
@@ -345,7 +406,7 @@ const CorretorRedacao: React.FC = () => {
     );
 
     return (
-        <div className="space-y-6">
+        <div data-tutorial="corretor-content" className="space-y-6">
             <style>{`.tooltip-container:hover .tooltip-content { opacity: 1; }`}</style>
             <header>
                 <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><PencilRulerIcon className="w-8 h-8"/> Corretor de Redação IA</h1>
@@ -361,12 +422,40 @@ const CorretorRedacao: React.FC = () => {
             <motion.div key={activeTab} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -10, opacity: 0 }} transition={{ duration: 0.2 }}>
             {activeTab === 'corrigir' ? (
                 <div className="space-y-8">
+                    {/* Aviso de Limite de Redações */}
+                    {redacoesNoMes >= LIMITE_REDACOES_MES ? (
+                        <div className="bg-red-500/10 border-2 border-red-500/50 rounded-xl p-4 flex items-center gap-3">
+                            <AlertTriangleIcon className="w-6 h-6 text-red-500 flex-shrink-0" />
+                            <div className="flex-1">
+                                <p className="font-semibold text-red-500">Limite de {LIMITE_REDACOES_MES} redações por mês atingido!</p>
+                                <p className="text-sm text-muted-foreground mt-1">O limite será resetado automaticamente no próximo mês.</p>
+                            </div>
+                        </div>
+                    ) : redacoesRestantes <= 3 ? (
+                        <div className="bg-yellow-500/10 border-2 border-yellow-500/50 rounded-xl p-4 flex items-center gap-3">
+                            <AlertTriangleIcon className="w-6 h-6 text-yellow-500 flex-shrink-0" />
+                            <div className="flex-1">
+                                <p className="font-semibold text-yellow-500">Atenção: {redacoesRestantes} {redacoesRestantes === 1 ? 'redação restante' : 'redações restantes'} este mês</p>
+                                <p className="text-sm text-muted-foreground mt-1">Você já corrigiu {redacoesNoMes} de {LIMITE_REDACOES_MES} redações permitidas este mês.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 flex items-center gap-3">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-foreground">
+                                    Redações este mês: <span className="font-bold text-primary">{redacoesNoMes}</span> / {LIMITE_REDACOES_MES} 
+                                    {' '}({redacoesRestantes} {redacoesRestantes === 1 ? 'restante' : 'restantes'})
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                    
                     {/* Form Section */}
                     <div className="bg-card rounded-xl border border-border p-6">
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label htmlFor="tema" className="block text-sm font-medium text-muted-foreground mb-1">Tema / Tópicos da Redação (Opcional)</label>
-                                <textarea id="tema" value={tema} onChange={(e) => setTema(e.target.value)} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" placeholder="Cole o tema da redação ou os textos de apoio aqui para uma correção mais precisa..."/>
+                                <textarea id="tema" value={tema} onChange={(e) => setTema(e.target.value)} rows={3} className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary placeholder:text-muted-foreground" placeholder="Cole o tema da redação ou os textos de apoio aqui para uma correção mais precisa..."/>
                             </div>
                             <div>
                                 <div className="flex justify-between items-center mb-1">
@@ -376,14 +465,13 @@ const CorretorRedacao: React.FC = () => {
                                         <CameraIcon className="w-4 h-4" /> {isOcrLoading ? 'Lendo...' : 'Enviar Foto'}
                                     </button>
                                 </div>
-                                <textarea id="redacao" value={redacao} onChange={(e) => setRedacao(e.target.value)} rows={12} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm focus:ring-primary focus:border-primary" placeholder="Cole sua redação aqui ou envie uma foto..."/>
+                                <textarea id="redacao" value={redacao} onChange={(e) => setRedacao(e.target.value)} rows={12} className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary placeholder:text-muted-foreground" placeholder="Cole sua redação aqui ou envie uma foto..."/>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="banca" className="block text-sm font-medium text-muted-foreground mb-1">Banca</label>
-                                    <select id="banca" value={banca} onChange={e => setBanca(e.target.value)} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm">
+                                    <select id="banca" value={banca} onChange={e => setBanca(e.target.value)} className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground">
                                         <option>Enem</option>
-                                        <option>CESPE</option>
                                         <option>Cebraspe</option>
                                         <option>FGV</option>
                                         <option>FCC</option>
@@ -398,7 +486,7 @@ const CorretorRedacao: React.FC = () => {
                                 </div>
                                  <div>
                                     <label htmlFor="notaMaxima" className="block text-sm font-medium text-muted-foreground mb-1">Nota Máxima</label>
-                                    <input type="number" id="notaMaxima" value={notaMaxima} onChange={e => setNotaMaxima(Number(e.target.value))} disabled={banca === 'Enem'} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm disabled:opacity-50"/>
+                                    <input type="number" id="notaMaxima" value={notaMaxima} onChange={e => setNotaMaxima(Number(e.target.value))} disabled={banca === 'Enem'} className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50"/>
                                 </div>
                             </div>
                             
@@ -443,7 +531,7 @@ const CorretorRedacao: React.FC = () => {
                                                                         maximo: maximo
                                                                     }
                                                                 })}
-                                                                className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
+                                                                className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground"
                                                             />
                                                             <input
                                                                 type="number"
@@ -458,7 +546,7 @@ const CorretorRedacao: React.FC = () => {
                                                                         maximo: maximo
                                                                     }
                                                                 })}
-                                                                className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs"
+                                                                className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-xs text-foreground"
                                                             />
                                                         </div>
                                                         <p className="text-xs text-muted-foreground">Máx: {maximo.toFixed(1)}</p>
@@ -473,7 +561,7 @@ const CorretorRedacao: React.FC = () => {
                                                 value={observacaoAvaliador}
                                                 onChange={(e) => setObservacaoAvaliador(e.target.value)}
                                                 rows={2}
-                                                className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs"
+                                                className="w-full bg-card border border-border rounded-md px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground"
                                                 placeholder="Comentários gerais sobre a redação..."
                                             />
                                         </div>
@@ -490,7 +578,7 @@ const CorretorRedacao: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            <button type="submit" disabled={isLoading || isOcrLoading} className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
+                            <button type="submit" disabled={isLoading || isOcrLoading || redacoesNoMes >= LIMITE_REDACOES_MES} className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50">
                                 <SparklesIcon className="w-5 h-5"/>
                                 {isLoading ? 'Corrigindo...' : 'Corrigir com IA'}
                             </button>

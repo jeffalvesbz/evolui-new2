@@ -31,6 +31,7 @@ DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can insert own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can view friends profiles" ON profiles;
+DROP POLICY IF EXISTS "Users can view public profiles for ranking" ON profiles;
 
 CREATE POLICY "Users can view own profile"
     ON profiles FOR SELECT
@@ -57,6 +58,11 @@ CREATE POLICY "Users can view friends profiles"
             WHERE user_id_1 = auth.uid() AND status = 'accepted'
         )
     );
+
+-- Permitir que usuários autenticados vejam perfis públicos (apenas dados básicos) para o ranking global
+CREATE POLICY "Users can view public profiles for ranking"
+    ON profiles FOR SELECT
+    USING (auth.uid() IS NOT NULL);
 
 -- ============================================
 -- 3. POLÍTICAS PARA TABELA: badges

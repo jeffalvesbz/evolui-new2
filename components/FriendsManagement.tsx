@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { UsersIcon, SearchIcon, UserPlusIcon, UserCheckIcon, UserXIcon, EllipsisIcon } from './icons';
 import { useFriendsStore } from '../stores/useFriendsStore';
@@ -10,7 +10,16 @@ type ActiveTab = 'friends' | 'search' | 'requests';
 
 const FriendsManagement: React.FC = () => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('friends');
-    const { friendRequests } = useFriendsStore();
+    const { friendRequests, fetchFriends, fetchFriendRequests } = useFriendsStore();
+    const user = useAuthStore(state => state.user);
+
+    // Carregar amigos e pedidos quando o componente for montado
+    useEffect(() => {
+        if (user?.id) {
+            fetchFriends(user.id);
+            fetchFriendRequests(user.id);
+        }
+    }, [user?.id, fetchFriends, fetchFriendRequests]);
 
     const TabButton: React.FC<{ label: string; tab: ActiveTab; count?: number }> = ({ label, tab, count }) => (
         <button
@@ -65,15 +74,44 @@ const FriendsList: React.FC = () => {
 
 const SearchFriends: React.FC = () => {
     const [query, setQuery] = useState('');
+    const [sendingRequest, setSendingRequest] = useState<string | null>(null); // ID do usuário que está sendo enviado pedido
     const user = useAuthStore(state => state.user);
     const { searchUsers, searchResults, loading, sendFriendRequest, sentRequests, friends } = useFriendsStore();
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null);
     
     const friendIds = new Set(friends.map(f => f.id));
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setQuery(e.target.value);
-        if(user?.id) searchUsers(e.target.value, user.id);
+        const value = e.target.value;
+        setQuery(value);
+        
+        // Limpar timer anterior
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+        
+        // Se a query estiver vazia, limpar resultados imediatamente
+        if (!value.trim()) {
+            searchUsers('', user?.id || ''); // Isso limpa os resultados no store
+            return;
+        }
+        
+        // Aguardar 500ms antes de buscar (debounce)
+        debounceTimer.current = setTimeout(() => {
+            if (user?.id && value.trim().length >= 2) {
+                searchUsers(value.trim(), user.id);
+            }
+        }, 500);
     };
+
+    // Limpar timer ao desmontar
+    useEffect(() => {
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
+    }, []);
 
     return (
         <div className="space-y-4">
@@ -92,16 +130,36 @@ const SearchFriends: React.FC = () => {
                 {!loading.search && searchResults.map(result => {
                     const isFriend = friendIds.has(result.id);
                     const requestSent = sentRequests.includes(result.id);
+                    const isSending = sendingRequest === result.id;
                     return (
                         <div key={result.id} className="p-2.5 rounded-lg flex items-center gap-3 bg-background/50">
                             <Avatar name={result.name} size="sm" />
                             <p className="text-sm font-bold text-foreground flex-1 truncate">{result.name}</p>
                             {isFriend ? (
                                 <span className="text-xs font-semibold text-secondary">Amigo</span>
-                            ) : requestSent ? (
-                                <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-muted text-muted-foreground" disabled>Pedido Enviado</button>
+                            ) : requestSent || isSending ? (
+                                <button className="px-3 py-1.5 text-xs font-semibold rounded-md bg-muted text-muted-foreground" disabled>
+                                    {isSending ? 'Enviando...' : 'Pedido Enviado'}
+                                </button>
                             ) : (
-                                <button onClick={() => user && sendFriendRequest(user.id, result.id)} className="p-2 text-muted-foreground hover:text-primary"><UserPlusIcon className="w-5 h-5"/></button>
+                                <button 
+                                    onClick={async () => {
+                                        if (user && !isSending && !requestSent) {
+                                            setSendingRequest(result.id);
+                                            try {
+                                                await sendFriendRequest(user.id, result.id);
+                                            } catch (error) {
+                                                // Erro já é tratado no store com toast
+                                            } finally {
+                                                setSendingRequest(null);
+                                            }
+                                        }
+                                    }}
+                                    disabled={isSending || requestSent}
+                                    className="p-2 text-muted-foreground hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <UserPlusIcon className="w-5 h-5"/>
+                                </button>
                             )}
                         </div>
                     );
@@ -113,8 +171,23 @@ const SearchFriends: React.FC = () => {
 };
 
 const FriendRequests: React.FC = () => {
-    const { friendRequests, loading, acceptFriendRequest, declineFriendRequest } = useFriendsStore();
+    const { friendRequests, loading, acceptFriendRequest, declineFriendRequest, fetchFriendRequests } = useFriendsStore();
     const user = useAuthStore(state => state.user);
+
+    // Recarregar pedidos quando aceitar/recusar
+    const handleAccept = async (friendshipId: string) => {
+        if (user?.id) {
+            await acceptFriendRequest(friendshipId, user.id);
+            fetchFriendRequests(user.id);
+        }
+    };
+
+    const handleDecline = async (friendshipId: string) => {
+        await declineFriendRequest(friendshipId);
+        if (user?.id) {
+            fetchFriendRequests(user.id);
+        }
+    };
 
     if (loading.requests) return <p className="text-center text-sm text-muted-foreground py-8">Carregando pedidos...</p>;
     if (friendRequests.length === 0) return <p className="text-center text-sm text-muted-foreground py-8">Nenhum pedido de amizade pendente.</p>;
@@ -128,8 +201,8 @@ const FriendRequests: React.FC = () => {
                          <p className="text-sm font-bold text-foreground truncate">{req.requester_name}</p>
                          <p className="text-xs text-muted-foreground">Nível {req.requester_level}</p>
                     </div>
-                    <button onClick={() => declineFriendRequest(req.friendship_id)} className="p-2 text-muted-foreground hover:text-red-500"><UserXIcon className="w-5 h-5"/></button>
-                    <button onClick={() => user && acceptFriendRequest(req.friendship_id, user.id)} className="p-2 text-muted-foreground hover:text-green-500"><UserCheckIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleDecline(req.friendship_id)} className="p-2 text-muted-foreground hover:text-red-500"><UserXIcon className="w-5 h-5"/></button>
+                    <button onClick={() => handleAccept(req.friendship_id)} className="p-2 text-muted-foreground hover:text-green-500"><UserCheckIcon className="w-5 h-5"/></button>
                 </div>
             ))}
         </div>

@@ -5,8 +5,8 @@ import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 
 const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4" onClick={onClose}>
-        <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
+        <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {children}
         </div>
     </div>
@@ -94,7 +94,7 @@ const Simulados = () => {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div data-tutorial="simulados-content" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <section className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="space-y-2">

@@ -83,6 +83,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
         <button
             onClick={onStartCreate}
             className="w-full h-11 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            data-tutorial="adicionar-disciplina-button"
         >
             <PlusIcon className="w-5 h-5" />
             Adicionar Disciplina

@@ -92,7 +92,7 @@ const GamificationPage = () => {
     const rankingToDisplay = activeRanking === 'global' ? weeklyRanking : friendsRanking;
     
     return (
-        <div className="space-y-8">
+        <div data-tutorial="gamificacao-content" className="space-y-8">
             <header>
                 <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><TrophyIcon className="w-8 h-8"/> Jornada do Herói</h1>
                 <p className="text-muted-foreground mt-1">Acompanhe seu progresso, compita com amigos e ganhe conquistas.</p>

@@ -188,7 +188,7 @@ export const MOCK_BADGES: Badge[] = [
     { id: 'badge-2', name: 'Maratonista', description: 'Estude por mais de 10 horas no total.', icon: 'TrendingUpIcon', xp: 50 },
     { id: 'badge-3', name: 'Sequência de 7 Dias', description: 'Mantenha uma sequência de 7 dias de estudos.', icon: 'FlameIcon', xp: 70 },
     { id: 'badge-4', name: 'Revisor Dedicado', description: 'Complete 10 revisões agendadas.', icon: 'RepeatIcon', xp: 30 },
-    { id: 'badge-5', name: 'Caça-Erros', description: 'Registre 5 erros no seu caderno.', icon: 'BookCopyIcon', xp: 25 },
+    { id: 'badge-5', name: 'Caça-Erros', description: 'Resolva 5 erros no seu caderno.', icon: 'BookCopyIcon', xp: 15 },
     { id: 'badge-6', name: 'Edital Concluído', description: 'Conclua 100% de um edital.', icon: 'TrophyIcon', xp: 200 },
     // New public achievements
     { id: 'badge-7', name: 'Mestre do Tempo', description: 'Estude por um total de 50 horas.', icon: 'ClockIcon', xp: 100 },
@@ -198,7 +198,7 @@ export const MOCK_BADGES: Badge[] = [
     { id: 'badge-11', name: 'Imparável', description: 'Estude por 10 horas em um único dia.', icon: 'ZapIcon', xp: 120 },
     { id: 'badge-12', name: 'Exterminador de Débitos', description: 'Conclua 20 revisões que estavam atrasadas.', icon: 'CheckCircle2Icon', xp: 80 },
     // Secret Achievements
-    { id: 'badge-secret-1', name: 'Matrix', description: 'Qual realidade você escolheu?', icon: 'RefreshCwIcon', xp: 150, is_secret: true },
+    { id: 'badge-secret-1', name: 'Matrix', description: 'Qual realidade você escolheu?', icon: 'RefreshCwIcon', xp: 50, is_secret: true },
     { id: 'badge-secret-2', name: 'Interestelar', description: 'O tempo é relativo. Você estudou por 5 horas seguidas.', icon: 'HistoryIcon', xp: 300, is_secret: true },
     { id: 'badge-secret-3', name: 'Memento Vivere', description: 'A vida é constância. Você manteve um streak de 30 dias.', icon: 'SunIcon', xp: 250, is_secret: true },
     { id: 'badge-secret-4', name: 'O Sábio', description: 'Você não teme o conhecimento. Resolveu 10 erros difíceis.', icon: 'BookOpenCheckIcon', xp: 200, is_secret: true },

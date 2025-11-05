@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useModalStore } from '../stores/useModalStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -11,12 +11,13 @@ interface FormData {
 }
 
 const AdicionarTopicoModal: React.FC = () => {
-    const { isAddTopicModalOpen, addTopicTargetDisciplinaId, closeAddTopicModal } = useModalStore();
+    const { isAddTopicModalOpen, addTopicTargetDisciplinaId, shouldOpenInBatchMode, closeAddTopicModal } = useModalStore();
     const { disciplinas, addTopico } = useDisciplinasStore();
     
     const [isModoContinuo, setIsModoContinuo] = useState(true);
     const [isBatchMode, setIsBatchMode] = useState(false);
     const [batchTopics, setBatchTopics] = useState("");
+    const batchTextareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { register, handleSubmit, reset, setFocus, getValues } = useForm<FormData>();
     
@@ -25,11 +26,18 @@ const AdicionarTopicoModal: React.FC = () => {
     useEffect(() => {
         if (isAddTopicModalOpen) {
             reset({ titulo: '' });
-            setIsBatchMode(false);
+            setIsBatchMode(shouldOpenInBatchMode);
             setBatchTopics("");
-            setTimeout(() => setFocus('titulo'), 100);
+            if (!shouldOpenInBatchMode) {
+                setTimeout(() => setFocus('titulo'), 100);
+            } else {
+                // Focus on batch textarea when opened in batch mode
+                setTimeout(() => {
+                    batchTextareaRef.current?.focus();
+                }, 100);
+            }
         }
-    }, [isAddTopicModalOpen, reset, setFocus]);
+    }, [isAddTopicModalOpen, shouldOpenInBatchMode, reset, setFocus]);
 
     const handleAddSingleTopic = useCallback(async (titulo: string) => {
         if (!disciplina || !titulo.trim()) return;
@@ -92,8 +100,8 @@ const AdicionarTopicoModal: React.FC = () => {
     if (!isAddTopicModalOpen || !disciplina) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeAddTopicModal}>
-            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeAddTopicModal}>
+            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-border flex items-start justify-between">
                     <div>
                         <h2 className="text-xl font-bold text-foreground">Adicionar Tópicos</h2>
@@ -102,7 +110,7 @@ const AdicionarTopicoModal: React.FC = () => {
                     <button onClick={closeAddTopicModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
                 </div>
 
-                <div className="p-5">
+                <div className="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0">
                     <div className="flex justify-between items-center mb-4">
                         <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                             <input type="checkbox" checked={isModoContinuo} onChange={(e) => setIsModoContinuo(e.target.checked)} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary"/>
@@ -117,11 +125,12 @@ const AdicionarTopicoModal: React.FC = () => {
                         <div className="space-y-3">
                             <label className="block text-sm font-medium text-muted-foreground">Cole os tópicos abaixo (um por linha):</label>
                              <textarea 
+                                ref={batchTextareaRef}
                                 value={batchTopics}
                                 onChange={(e) => setBatchTopics(e.target.value)}
                                 rows={8}
                                 placeholder="Tópico 1&#10;Tópico 2&#10;Tópico 3"
-                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary resize-y"
+                                className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary resize-y"
                             />
                         </div>
                     ) : (
@@ -132,7 +141,7 @@ const AdicionarTopicoModal: React.FC = () => {
                                 {...register('titulo', { required: true })}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Digite o título do tópico"
-                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-y"
+                                className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-y"
                                 rows={2}
                             />
                              <ul className="text-xs text-muted-foreground space-y-1 pl-1">

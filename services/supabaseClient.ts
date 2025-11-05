@@ -2,16 +2,39 @@ import { createClient } from "@supabase/supabase-js";
 import { Database } from "../types/supabase";
 
 // ⚙️ Configuração com variáveis de ambiente (recomendado para produção)
-// Fallback para valores padrão se as variáveis não estiverem definidas (modo desenvolvimento)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://ilzbcfamqkfcochldtxn.supabase.co";
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsemJjZmFtcWtmY29jaGxkdHhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTUzNTIsImV4cCI6MjA3NzE5MTM1Mn0.ywCtrjlKOIN6OYBDdvP7f5o5L7_rPUhMZXRDv2DczDk";
+// SEM fallback - variáveis de ambiente são obrigatórias
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validação das variáveis de ambiente
+const isProduction = import.meta.env.PROD;
+
+// Validação rigorosa das variáveis de ambiente
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('⚠️ Variáveis de ambiente do Supabase não configuradas!');
-  console.error('Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY');
+  const errorMessage = 
+    'CRÍTICO: Variáveis de ambiente do Supabase não configuradas! ' +
+    'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.';
+  
+  if (isProduction) {
+    // Em produção, lançar erro para evitar execução com credenciais inválidas
+    throw new Error(errorMessage);
+  } else {
+    // Em desenvolvimento, apenas avisar (mas ainda assim não funcionará)
+    console.error('⚠️', errorMessage);
+    console.error('💡 Crie um arquivo .env.local com as variáveis necessárias');
+  }
+}
+
+// Validação de formato básico das credenciais
+if (supabaseUrl && !supabaseUrl.startsWith('https://')) {
+  throw new Error('VITE_SUPABASE_URL deve ser uma URL HTTPS válida');
+}
+
+if (supabaseAnonKey && supabaseAnonKey.length < 100) {
+  console.warn('⚠️ VITE_SUPABASE_ANON_KEY parece estar incompleta ou inválida');
 }
 
 // Cria o cliente Supabase
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(
+  supabaseUrl || '', 
+  supabaseAnonKey || ''
+);

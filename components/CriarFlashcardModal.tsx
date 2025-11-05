@@ -92,8 +92,8 @@ const CriarFlashcardModal: React.FC = () => {
   if (!isCriarFlashcardModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeCriarFlashcardModal}>
-      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarFlashcardModal}>
+      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <header className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -103,18 +103,18 @@ const CriarFlashcardModal: React.FC = () => {
             <button type="button" onClick={closeCriarFlashcardModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
           </header>
 
-          <main className="p-6 space-y-4">
+          <main className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
-                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="">Selecione...</option>
                         {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
                     </select>
                 </div>
                  <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
-                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
                         <option value="">Selecione...</option>
                         {topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)}
                     </select>
@@ -122,11 +122,11 @@ const CriarFlashcardModal: React.FC = () => {
             </div>
              <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Pergunta *</label>
-                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
             </div>
              <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Resposta *</label>
-                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
             </div>
           </main>
 

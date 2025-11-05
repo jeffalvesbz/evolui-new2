@@ -352,7 +352,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-card/50 transition-colors duration-300">
+    <div data-tutorial="historico-content" className="min-h-screen bg-gradient-to-br from-background via-background to-card/50 transition-colors duration-300">
       {showNotification && (
         <div className="fixed top-4 right-4 z-[101] animate-in slide-in-from-top-5">
           <Card className="border border-primary bg-card shadow-2xl max-w-md">

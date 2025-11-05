@@ -1,10 +1,12 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, PlusIcon, XIcon, Trash2Icon, SearchIcon } from './icons';
+import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, PlusIcon, XIcon, Trash2Icon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { Topico } from '../types';
 import { useModalStore } from '../stores/useModalStore';
 import { toast } from './Sonner';
+import { startOfWeek, endOfWeek, format, addWeeks, subWeeks, isSameWeek, addMonths, subMonths, startOfMonth, endOfMonth, eachWeekOfInterval } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = '' }) => (
   <div className={`bg-card rounded-xl border border-muted/50 shadow-sm ${className}`}>
@@ -141,24 +143,63 @@ const DIAS_SEMANA = [
 ];
 
 const TrilhaSemanal: React.FC = () => {
-    const { trilha, moveTopicoNaTrilha, setTrilhaCompleta } = useEstudosStore();
+    const { trilha, moveTopicoNaTrilha, setTrilhaCompleta, trilhasPorSemana, setTrilhaSemana, getTrilhaSemana } = useEstudosStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const { openGeradorPlanoModal } = useModalStore();
 
-    const [draggingOverDay, setDraggingOverDay] = useState<string | null>(null);
-    const [draggingTopicId, setDraggingTopicId] = useState<string | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    // Estado para semana atual
+    const [semanaAtual, setSemanaAtual] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [diaParaAdicionar, setDiaParaAdicionar] = useState<string | null>(null);
     const [topicosSelecionados, setTopicosSelecionados] = useState<Set<string>>(new Set());
     const [buscaModal, setBuscaModal] = useState('');
     const [disciplinaFiltro, setDisciplinaFiltro] = useState<string | null>(null);
+    const [draggingOverDay, setDraggingOverDay] = useState<string | null>(null);
+    const [draggingTopicId, setDraggingTopicId] = useState<string | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-    const allTopics = useMemo(() => 
-        disciplinas.flatMap(d => 
-            d.topicos.map(t => ({ ...t, disciplinaNome: d.nome, disciplinaId: d.id }))
-        ), 
-    [disciplinas]);
+    // Gerar chave da semana (YYYY-WW)
+    const getWeekKey = (date: Date) => {
+        const start = startOfWeek(date, { weekStartsOn: 1 });
+        return format(start, 'yyyy-ww', { locale: ptBR });
+    };
+
+    // Carregar trilha da semana atual
+    const trilhaSemanaAtual = useMemo(() => {
+        const weekKey = getWeekKey(semanaAtual);
+        return getTrilhaSemana(weekKey);
+    }, [semanaAtual, trilhasPorSemana]);
+
+    // Atualizar trilha quando semana mudar
+    useEffect(() => {
+        const weekKey = getWeekKey(semanaAtual);
+        const trilhaCarregada = getTrilhaSemana(weekKey);
+        if (trilhaCarregada && Object.values(trilhaCarregada).some(arr => arr.length > 0)) {
+            setTrilhaCompleta(trilhaCarregada);
+        } else {
+            setTrilhaCompleta({ seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] });
+        }
+    }, [semanaAtual]);
+
+    const navegarSemana = (direcao: 'anterior' | 'proxima') => {
+        const novaSemana = direcao === 'proxima' 
+            ? addWeeks(semanaAtual, 1)
+            : subWeeks(semanaAtual, 1);
+        setSemanaAtual(novaSemana);
+    };
+
+    const irParaSemanaAtual = () => {
+        setSemanaAtual(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    };
+
+    const isSemanaAtual = isSameWeek(semanaAtual, new Date(), { weekStartsOn: 1 });
+
+    const allTopics = useMemo(() => {
+        if (!disciplinas || disciplinas.length === 0) return [];
+        return disciplinas.flatMap(d => 
+            (d.topicos || []).map(t => ({ ...t, disciplinaNome: d.nome, disciplinaId: d.id }))
+        );
+    }, [disciplinas]);
 
     const allTopicsMap = useMemo(() => new Map(allTopics.map(t => [t.id, t])), [allTopics]);
 
@@ -258,6 +299,23 @@ const TrilhaSemanal: React.FC = () => {
         }
     };
 
+    const handleMoveTopico = (topicId: string, fromDia: string, toDia: string, fromIndex: number, toIndex: number) => {
+        const newTrilha = JSON.parse(JSON.stringify(trilha));
+        let itemToMove = topicId;
+        if (fromDia !== 'backlog') {
+            const sourceColumn = newTrilha[fromDia];
+            [itemToMove] = sourceColumn.splice(fromIndex, 1);
+        }
+        const destinationColumn = newTrilha[toDia];
+        destinationColumn.splice(toIndex, 0, itemToMove);
+        
+        setTrilhaCompleta(newTrilha);
+        
+        // Salvar trilha da semana
+        const weekKey = getWeekKey(semanaAtual);
+        setTrilhaSemana(weekKey, newTrilha);
+    };
+
     const handleDrop = (e: React.DragEvent, toDia: string) => {
         e.preventDefault();
         e.stopPropagation();
@@ -288,7 +346,7 @@ const TrilhaSemanal: React.FC = () => {
 
             if (fromDia === toDia && fromIndex === toIndex) return;
 
-            moveTopicoNaTrilha(topicId, fromDia, toDia, fromIndex, toIndex);
+            handleMoveTopico(topicId, fromDia, toDia, fromIndex, toIndex);
         } catch (error) {
             console.error("Failed to parse dragged data:", error);
         }
@@ -318,6 +376,10 @@ const TrilhaSemanal: React.FC = () => {
         });
         
         setTrilhaCompleta(newTrilha);
+        
+        // Salvar trilha da semana
+        const weekKey = getWeekKey(semanaAtual);
+        setTrilhaSemana(weekKey, newTrilha);
         
         const diaNome = DIAS_SEMANA.find(d => d.id === diaParaAdicionar)?.nome;
         if (adicionados.length > 0) {
@@ -357,6 +419,11 @@ const TrilhaSemanal: React.FC = () => {
             const topico = allTopicsMap.get(topicId);
             newTrilha[diaId] = newTrilha[diaId].filter((id: string) => id !== topicId);
             setTrilhaCompleta(newTrilha);
+            
+            // Salvar trilha da semana
+            const weekKey = getWeekKey(semanaAtual);
+            setTrilhaSemana(weekKey, newTrilha);
+            
             toast.success(`Tópico "${topico?.titulo || 'removido'}" removido de ${DIAS_SEMANA.find(d => d.id === diaId)?.nome}`);
         }
     };
@@ -368,11 +435,13 @@ const TrilhaSemanal: React.FC = () => {
 
     // Filtrar tópicos no modal
     const topicosFiltrados = useMemo(() => {
+        if (!disciplinas || disciplinas.length === 0) return [];
+        
         return disciplinas
             .filter(d => !disciplinaFiltro || d.id === disciplinaFiltro)
             .map(disciplina => ({
                 disciplina,
-                topicos: disciplina.topicos.filter(topico => {
+                topicos: (disciplina.topicos || []).filter(topico => {
                     const matchBusca = buscaModal.trim() === '' || 
                         topico.titulo.toLowerCase().includes(buscaModal.toLowerCase()) ||
                         disciplina.nome.toLowerCase().includes(buscaModal.toLowerCase());
@@ -407,20 +476,58 @@ const TrilhaSemanal: React.FC = () => {
     }, [modalAdicionarAberto]);
 
     return (
-        <div className="flex flex-col h-full">
+        <div data-tutorial="planejamento-content" className="flex flex-col h-full">
             <header className="px-4 sm:px-6 lg:px-8 py-4 border-b border-muted/50">
                 <div className="flex items-center justify-between mb-3">
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <FootprintsIcon className="w-7 h-7 text-primary" />
-                            <h1 className="text-2xl font-bold text-foreground">Trilha Semanal</h1>
-                        </div>
+                <div>
+                    <div className="flex items-center gap-3">
+                        <FootprintsIcon className="w-7 h-7 text-primary" />
+                        <h1 className="text-2xl font-bold text-foreground">Trilha Semanal</h1>
+                    </div>
                         <p className="text-muted-foreground mt-1 text-sm">Organize seus estudos arrastando os tópicos para os dias da semana.</p>
                     </div>
                     <button onClick={openGeradorPlanoModal} className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
                         <SparklesIcon className="w-4 h-4" />
                         Gerar Plano com IA
                     </button>
+                </div>
+                {/* Navegação de semanas */}
+                <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navegarSemana('anterior')}
+                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                            title="Semana anterior"
+                        >
+                            <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-foreground">
+                                {format(semanaAtual, "dd 'de' MMMM", { locale: ptBR })} - {format(endOfWeek(semanaAtual, { weekStartsOn: 1 }), "dd 'de' MMMM", { locale: ptBR })}
+                            </span>
+                            {isSemanaAtual && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                                    Esta semana
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => navegarSemana('proxima')}
+                            className="p-2 rounded-lg hover:bg-muted transition-colors"
+                            title="Próxima semana"
+                        >
+                            <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                        {!isSemanaAtual && (
+                <button 
+                                onClick={irParaSemanaAtual}
+                                className="px-3 py-1.5 text-xs rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                                title="Voltar para semana atual"
+                >
+                                Hoje
+                </button>
+                        )}
+                    </div>
                 </div>
                 {/* Estatísticas gerais */}
                 <div className="flex items-center gap-4 text-sm">
@@ -469,8 +576,8 @@ const TrilhaSemanal: React.FC = () => {
                                             <div 
                                                 className="h-full bg-primary transition-all duration-300"
                                                 style={{ width: `${stats.progresso}%` }}
-                                            />
-                                        </div>
+                    />
+                </div>
                                     )}
                                 </div>
                                 <Card
@@ -485,14 +592,8 @@ const TrilhaSemanal: React.FC = () => {
                                     onDragLeave={handleDragLeave}
                                     style={{ minHeight: '400px' }}
                                 >
-                                    {isPlanoVazio && dia.id === 'seg' && (
-                                        <div className="text-center p-4 border-2 border-dashed border-border rounded-lg text-muted-foreground text-sm">
-                                            <p>Seu plano está vazio!</p>
-                                            <p className="text-xs mt-1">Clique no botão + para adicionar tópicos</p>
-                                        </div>
-                                    )}
-                                    {topicsByDay[dia.id].length === 0 && !isPlanoVazio && (
-                                        <div className="flex-1 flex items-center justify-center">
+                                    {topicsByDay[dia.id].length === 0 ? (
+                                        <div className="flex-1 flex items-center justify-center min-h-[200px]">
                                             <button
                                                 onClick={() => abrirModalAdicionar(dia.id)}
                                                 className="p-4 rounded-lg hover:bg-muted transition-all duration-200 text-muted-foreground hover:text-primary border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-2 w-full hover:scale-105"
@@ -502,8 +603,7 @@ const TrilhaSemanal: React.FC = () => {
                                                 <span className="text-sm font-medium">Adicionar tópicos</span>
                                             </button>
                                         </div>
-                                    )}
-                                    {topicsByDay[dia.id].length > 0 && (
+                                    ) : (
                                         <>
                                             {topicsByDay[dia.id].map((topic, index) => {
                                                 const isDragOver = draggingOverDay === dia.id && dragOverIndex === index;
@@ -525,6 +625,7 @@ const TrilhaSemanal: React.FC = () => {
                                             {draggingOverDay === dia.id && dragOverIndex === topicsByDay[dia.id].length && (
                                                 <div className="h-0.5 bg-primary rounded-full mt-2 mx-2 animate-pulse" />
                                             )}
+                                            {/* Botão + apenas quando há tópicos */}
                                             <div className="flex justify-center mt-2 pt-2 border-t border-border">
                                                 <button
                                                     onClick={() => abrirModalAdicionar(dia.id)}
@@ -601,19 +702,23 @@ const TrilhaSemanal: React.FC = () => {
                                 >
                                     Todas
                                 </button>
-                                {disciplinas.map(d => (
-                                    <button
-                                        key={d.id}
-                                        onClick={() => setDisciplinaFiltro(d.id)}
-                                        className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                            disciplinaFiltro === d.id
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                        }`}
-                                    >
-                                        {d.nome}
-                                    </button>
-                                ))}
+                                {disciplinas && disciplinas.length > 0 ? (
+                                    disciplinas.map(d => (
+                                        <button
+                                            key={d.id}
+                                            onClick={() => setDisciplinaFiltro(d.id)}
+                                            className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                                disciplinaFiltro === d.id
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                        >
+                                            {d.nome}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <span className="text-xs text-muted-foreground">Nenhuma disciplina disponível</span>
+                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
@@ -676,8 +781,17 @@ const TrilhaSemanal: React.FC = () => {
                             
                             {topicosFiltrados.length === 0 && (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    <p>Nenhum tópico encontrado.</p>
-                                    <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
+                                    {disciplinas.length === 0 ? (
+                                        <>
+                                            <p>Nenhuma disciplina cadastrada.</p>
+                                            <p className="text-sm mt-2">Adicione disciplinas primeiro.</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p>Nenhum tópico encontrado.</p>
+                                            <p className="text-sm mt-2">Tente ajustar os filtros de busca.</p>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>

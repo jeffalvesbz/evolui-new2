@@ -132,14 +132,21 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
 
     try {
       const novoTopico = await createTopico(disciplinaId, topicoData);
-      const topicosAtualizados = [...disciplina.topicos, novoTopico];
-      const progresso = calculateProgress(topicosAtualizados);
       
-      set(state => ({
-        disciplinas: state.disciplinas.map(d => 
-          d.id === disciplinaId ? { ...d, topicos: topicosAtualizados, progresso } : d
-        )
-      }));
+      // Use functional update to get the latest state, ensuring concurrent additions work correctly
+      set(state => {
+        const disciplinaAtual = state.disciplinas.find(d => d.id === disciplinaId);
+        if (!disciplinaAtual) return state;
+        
+        const topicosAtualizados = [...disciplinaAtual.topicos, novoTopico];
+        const progresso = calculateProgress(topicosAtualizados);
+        
+        return {
+          disciplinas: state.disciplinas.map(d => 
+            d.id === disciplinaId ? { ...d, topicos: topicosAtualizados, progresso } : d
+          )
+        };
+      });
       return novoTopico;
     } catch (error) {
       console.error("Failed to add topico:", error);

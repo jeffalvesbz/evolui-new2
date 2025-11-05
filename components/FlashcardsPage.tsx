@@ -17,11 +17,14 @@ import {
   EllipsisIcon,
   EditIcon,
   Trash2Icon,
+  XIcon,
+  FileTextIcon,
+  UploadIcon,
 } from './icons';
 import { toast } from './Sonner';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfDay } from 'date-fns';
-import { generateFlashcardsFromContent } from '../services/geminiService';
+import { generateFlashcardsFromContent, extractTextFromPdf, generateFlashcardsFromPdf } from '../services/geminiService';
 import { useModalStore } from '../stores/useModalStore';
 import { calculateNextReview } from '../services/srsService';
 
@@ -94,7 +97,24 @@ const GeradorIA: React.FC = () => {
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const { addFlashcards } = useFlashcardsStore();
     const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
+    const [selectedTopicoId, setSelectedTopicoId] = useState<string>('');
+    const [quantidade, setQuantidade] = useState<number>(5);
+    const [estilos, setEstilos] = useState<('direto' | 'explicativo' | 'completar')[]>(['direto', 'explicativo', 'completar']);
+    const [contexto, setContexto] = useState<string>('');
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [pdfText, setPdfText] = useState<string>('');
+    const [isExtractingPdf, setIsExtractingPdf] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [generatedFlashcards, setGeneratedFlashcards] = useState<Omit<FlashcardType, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]>([]);
+    const [showPreview, setShowPreview] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const topicosFiltrados = useMemo(() => {
+        if (!selectedDisciplinaId) return [];
+        const disciplina = disciplinas.find(d => d.id === selectedDisciplinaId);
+        return disciplina?.topicos || [];
+    }, [selectedDisciplinaId, disciplinas]);
 
     useEffect(() => {
         if(disciplinas.length > 0 && !selectedDisciplinaId) {
@@ -102,25 +122,70 @@ const GeradorIA: React.FC = () => {
         }
     }, [disciplinas, selectedDisciplinaId]);
 
+    useEffect(() => {
+        if (selectedDisciplinaId && topicosFiltrados.length > 0 && !selectedTopicoId) {
+            setSelectedTopicoId(topicosFiltrados[0].id);
+        }
+    }, [selectedDisciplinaId, topicosFiltrados, selectedTopicoId]);
+
     const handleGenerate = async () => {
         const disciplina = disciplinas.find(d => d.id === selectedDisciplinaId);
         if (!disciplina) {
             toast.error("Por favor, selecione uma disciplina.");
             return;
         }
-        if (disciplina.topicos.length === 0) {
+        if (topicosFiltrados.length === 0) {
             toast.error(`A disciplina "${disciplina.nome}" não possui tópicos. Adicione um tópico primeiro no menu 'Edital'.`);
+            return;
+        }
+        if (!selectedTopicoId) {
+            toast.error("Por favor, selecione um tópico.");
+            return;
+        }
+        if (estilos.length === 0) {
+            toast.error("Selecione pelo menos um estilo de flashcard.");
             return;
         }
 
         setIsLoading(true);
-        toast("Gerando flashcards com IA... Isso pode levar um momento.");
+        setShowPreview(false);
+        
+        // Se há PDF, avisa sobre custos
+        if (pdfFile) {
+            toast("Processando PDF e gerando flashcards... Isso pode levar alguns minutos e consumir tokens.");
+        } else {
+            toast("Gerando flashcards com IA... Isso pode levar um momento.");
+        }
+
         try {
-            const generated = await generateFlashcardsFromContent(disciplina.id);
-            // Associa os flashcards gerados ao primeiro tópico da disciplina
-            const targetTopicId = disciplina.topicos[0].id;
-            await addFlashcards(generated, targetTopicId);
-            toast.success(`${generated.length} flashcards gerados para ${disciplina.nome}!`);
+            const topico = topicosFiltrados.find(t => t.id === selectedTopicoId);
+            let generated: Omit<FlashcardType, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[];
+            
+            if (pdfFile && pdfText) {
+                // Gera flashcards do PDF
+                generated = await generateFlashcardsFromPdf(
+                    pdfFile,
+                    pdfText,
+                    topico?.titulo || '',
+                    quantidade,
+                    estilos,
+                    contexto
+                );
+            } else {
+                // Gera flashcards normalmente
+                generated = await generateFlashcardsFromContent(
+                    disciplina.id,
+                    selectedTopicoId,
+                    topico?.titulo || '',
+                    quantidade,
+                    estilos,
+                    contexto
+                );
+            }
+            
+            setGeneratedFlashcards(generated);
+            setShowPreview(true);
+            toast.success(`${generated.length} flashcards gerados! Revise antes de salvar.`);
         } catch (error) {
             toast.error("Falha ao gerar flashcards com IA.");
             console.error(error);
@@ -129,26 +194,333 @@ const GeradorIA: React.FC = () => {
         }
     };
 
+    const handleSave = async () => {
+        if (!selectedTopicoId || generatedFlashcards.length === 0) return;
+        
+        setIsLoading(true);
+        try {
+            await addFlashcards(generatedFlashcards, selectedTopicoId);
+            toast.success(`${generatedFlashcards.length} flashcards salvos com sucesso!`);
+            setGeneratedFlashcards([]);
+            setShowPreview(false);
+            setContexto('');
+            // Limpa o PDF após salvar
+            setPdfFile(null);
+            setPdfText('');
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            toast.error("Falha ao salvar flashcards.");
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleRemoveCard = (index: number) => {
+        setGeneratedFlashcards(prev => prev.filter((_, i) => i !== index));
+        toast.success("Flashcard removido do preview.");
+    };
+
+    const toggleEstilo = (estilo: 'direto' | 'explicativo' | 'completar') => {
+        setEstilos(prev => 
+            prev.includes(estilo) 
+                ? prev.filter(e => e !== estilo)
+                : [...prev, estilo]
+        );
+    };
+
+    const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/pdf') {
+            toast.error("Por favor, envie apenas arquivos PDF.");
+            return;
+        }
+
+        if (file.size > 20 * 1024 * 1024) { // 20MB limit
+            toast.error("O arquivo PDF deve ter no máximo 20MB.");
+            return;
+        }
+
+        setPdfFile(file);
+        setIsExtractingPdf(true);
+        toast("Extraindo texto do PDF... Isso pode levar alguns segundos.");
+
+        try {
+            const text = await extractTextFromPdf(file);
+            setPdfText(text);
+            toast.success("Texto extraído do PDF com sucesso!");
+        } catch (error) {
+            toast.error("Erro ao extrair texto do PDF. Tente novamente.");
+            console.error(error);
+            setPdfFile(null);
+        } finally {
+            setIsExtractingPdf(false);
+        }
+    };
+
+    const handleRemovePdf = () => {
+        setPdfFile(null);
+        setPdfText('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     return (
-        <div className="bg-card/60 backdrop-blur-xl border border-dashed border-primary/50 rounded-xl p-4 space-y-3">
-             <div className="flex items-center gap-3">
-                <SparklesIcon className="w-6 h-6 text-primary"/>
-                <div>
-                    <h3 className="font-bold text-foreground">Gerador de Flashcards com IA</h3>
-                    <p className="text-sm text-muted-foreground">Gere cards a partir de seus PDFs (simulado).</p>
+        <div className="bg-card/60 backdrop-blur-xl border border-dashed border-primary/50 rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <SparklesIcon className="w-6 h-6 text-primary"/>
+                    <div>
+                        <h3 className="font-bold text-foreground">Gerador de Flashcards com IA</h3>
+                        <p className="text-sm text-muted-foreground">Gere cards personalizados com inteligência artificial</p>
+                    </div>
                 </div>
+                <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                    title={isExpanded ? "Recolher" : "Expandir opções"}
+                >
+                    <ChevronLeftIcon className={`w-5 h-5 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
+                </button>
             </div>
-            <select
-                value={selectedDisciplinaId}
-                onChange={e => setSelectedDisciplinaId(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"
+
+            <div className="space-y-3">
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
+                    <select
+                        value={selectedDisciplinaId}
+                        onChange={e => {
+                            setSelectedDisciplinaId(e.target.value);
+                            setSelectedTopicoId('');
+                        }}
+                        className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                    >
+                        {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
+                    <select
+                        value={selectedTopicoId}
+                        onChange={e => setSelectedTopicoId(e.target.value)}
+                        className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                        disabled={topicosFiltrados.length === 0}
+                    >
+                        {topicosFiltrados.length === 0 ? (
+                            <option value="">Nenhum tópico disponível</option>
+                        ) : (
+                            topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)
+                        )}
+                    </select>
+                </div>
+
+                {isExpanded && (
+                    <>
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                                Quantidade: {quantidade} flashcards
+                            </label>
+                            <input
+                                type="range"
+                                min="1"
+                                max="20"
+                                value={quantidade}
+                                onChange={e => setQuantidade(Number(e.target.value))}
+                                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                            />
+                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                                <span>1</span>
+                                <span>20</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-2 block">Estilos de Flashcards *</label>
+                            <div className="flex flex-wrap gap-2">
+                                {(['direto', 'explicativo', 'completar'] as const).map(estilo => (
+                                    <button
+                                        key={estilo}
+                                        type="button"
+                                        onClick={() => toggleEstilo(estilo)}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                            estilos.includes(estilo)
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                                        }`}
+                                    >
+                                        {estilo.charAt(0).toUpperCase() + estilo.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {estilos.length === 0 && 'Selecione pelo menos um estilo'}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                                Upload de PDF (Opcional)
+                            </label>
+                            <div className="space-y-2">
+                                {!pdfFile ? (
+                                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                        <div className="flex flex-col items-center justify-center pt-2">
+                                            <UploadIcon className="w-6 h-6 text-muted-foreground mb-2" />
+                                            <p className="text-xs text-muted-foreground text-center px-2">
+                                                Clique para fazer upload de PDF
+                                            </p>
+                                            <p className="text-xs text-muted-foreground/70 mt-1">
+                                                Máx. 20MB
+                                            </p>
+                                        </div>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="application/pdf"
+                                            onChange={handlePdfUpload}
+                                            className="hidden"
+                                            disabled={isExtractingPdf}
+                                        />
+                                    </label>
+                                ) : (
+                                    <div className="bg-muted/30 rounded-lg p-3 border border-border">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <FileTextIcon className="w-5 h-5 text-primary flex-shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">
+                                                        {pdfFile.name}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {(pdfFile.size / 1024 / 1024).toFixed(2)} MB
+                                                        {pdfText && ` • ${pdfText.length.toLocaleString()} caracteres extraídos`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleRemovePdf}
+                                                disabled={isExtractingPdf || isLoading}
+                                                className="p-1.5 rounded-lg hover:bg-muted text-red-400 disabled:opacity-50"
+                                                title="Remover PDF"
+                                            >
+                                                <XIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                {isExtractingPdf && (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                                        Extraindo texto do PDF...
+                                    </div>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                    {pdfFile 
+                                        ? "⚠️ PDFs grandes podem consumir muitos tokens. Use com moderação."
+                                        : "A IA lerá o PDF e gerará flashcards baseados no conteúdo."}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                                Contexto Adicional (Opcional)
+                            </label>
+                            <textarea
+                                value={contexto}
+                                onChange={e => setContexto(e.target.value)}
+                                placeholder="Ex: Focar em conceitos de Direito Penal, artigos específicos do Código Penal..."
+                                rows={2}
+                                className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground resize-none"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Forneça informações adicionais para melhorar a geração
+                            </p>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            <button 
+                onClick={handleGenerate} 
+                disabled={isLoading || isExtractingPdf || !selectedTopicoId || estilos.length === 0} 
+                className="w-full h-10 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-            </select>
-            <button onClick={handleGenerate} disabled={isLoading} className="w-full h-10 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50">
-                {isLoading ? 'Gerando...' : 'Gerar 5 Flashcards'}
+                {isLoading ? (
+                    <>
+                        <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        {pdfFile ? 'Processando PDF...' : 'Gerando...'}
+                    </>
+                ) : (
+                    <>
+                        <SparklesIcon className="w-4 h-4" />
+                        {pdfFile ? `Gerar ${quantidade} Flashcards do PDF` : `Gerar ${quantidade} Flashcards`}
+                    </>
+                )}
             </button>
-             <p className="text-center text-xs text-muted-foreground">Você gerou 742 / 1000 flashcards este mês.</p>
+
+            {showPreview && generatedFlashcards.length > 0 && (
+                <div className="border-t border-border pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h4 className="font-semibold text-foreground">Preview ({generatedFlashcards.length} cards)</h4>
+                        <button
+                            onClick={() => {
+                                setShowPreview(false);
+                                setGeneratedFlashcards([]);
+                            }}
+                            className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Fechar
+                        </button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto space-y-2 pr-2">
+                        {generatedFlashcards.map((card, index) => (
+                            <div key={index} className="bg-muted/30 rounded-lg p-3 border border-border">
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                    <span className="text-xs px-2 py-0.5 rounded bg-primary/20 text-primary font-medium">
+                                        {card.estilo || 'direto'}
+                                    </span>
+                                    <button
+                                        onClick={() => handleRemoveCard(index)}
+                                        className="text-red-400 hover:text-red-300 text-xs"
+                                        title="Remover"
+                                    >
+                                        <XIcon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <p className="text-sm font-semibold text-foreground mb-1">Q: {card.pergunta}</p>
+                                <p className="text-xs text-muted-foreground">R: {card.resposta}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isLoading}
+                            className="flex-1 h-9 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+                        >
+                            Regenerar
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={isLoading || generatedFlashcards.length === 0}
+                            className="flex-1 h-9 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/90 disabled:opacity-50"
+                        >
+                            Salvar {generatedFlashcards.length} Cards
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <p className="text-center text-xs text-muted-foreground pt-2 border-t border-border">
+                Você gerou 742 / 1000 flashcards este mês.
+            </p>
         </div>
     );
 };
@@ -441,7 +813,7 @@ const FlashcardsPage: React.FC = () => {
     const { session, startSession } = useFlashcardStudyStore();
 
     return (
-        <div className="w-full">
+        <div data-tutorial="flashcards-content" className="w-full">
             <PurpleBackground />
             <AnimatePresence mode="wait">
                 <motion.div

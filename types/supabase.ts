@@ -209,6 +209,7 @@ export interface Database {
           current_streak_days: number
           best_streak_days: number
           created_at: string
+          has_seen_onboarding?: boolean
         }
         Insert: {
           user_id: string
@@ -218,6 +219,7 @@ export interface Database {
           current_streak_days?: number
           best_streak_days?: number
           created_at?: string
+          has_seen_onboarding?: boolean
         }
         Update: {
           user_id?: string
@@ -227,6 +229,7 @@ export interface Database {
           current_streak_days?: number
           best_streak_days?: number
           created_at?: string
+          has_seen_onboarding?: boolean
         }
       }
       redacoes_corrigidas: {

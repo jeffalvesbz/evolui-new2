@@ -9,6 +9,7 @@ import {
     LandmarkIcon, 
     CheckIcon,
     SaveIcon,
+    UploadIcon,
 } from './icons';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
 import { toast } from './Sonner';
@@ -110,8 +111,9 @@ const DisciplinaCard: React.FC<{
     disciplina: Disciplina;
     onEdit: () => void;
     onAddTopic: () => void;
+    onAddTopicBatch: () => void;
     onDelete: () => void;
-}> = ({ disciplina, onEdit, onAddTopic, onDelete }) => {
+}> = ({ disciplina, onEdit, onAddTopic, onAddTopicBatch, onDelete }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     
     return (
@@ -136,12 +138,17 @@ const DisciplinaCard: React.FC<{
                         )) : (
                             <div className="text-center py-8">
                                <p className="text-sm text-muted-foreground">Nenhum tópico adicionado.</p>
-                               <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="mt-2 text-sm font-semibold text-primary hover:underline">Adicionar primeiro tópico</button>
+                               <div className="mt-3 flex items-center justify-center gap-2">
+                                   <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar tópico</button>
+                                   <span className="text-muted-foreground">ou</span>
+                                   <button onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar em lote</button>
+                               </div>
                             </div>
                         )}
                     </div>
                     <div className="p-2 flex items-center justify-end gap-1 border-t border-border bg-muted/30">
                         <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópico"><FilePlus2Icon className="w-4 h-4" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópicos em Lote"><UploadIcon className="w-4 h-4" /></button>
                         <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Editar Disciplina"><EditIcon className="w-4 h-4" /></button>
                         <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500" title="Excluir Disciplina"><Trash2Icon className="w-4 h-4" /></button>
                     </div>
@@ -154,10 +161,11 @@ const DisciplinaCard: React.FC<{
 interface EditalVerticalizadoProps {
     onEditDisciplina: (disciplina: Disciplina) => void;
     onAddTopic: (disciplinaId: string) => void;
+    onAddTopicBatch: (disciplinaId: string) => void;
     onDeleteDisciplina: (id: string) => void;
 }
 
-const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({ onEditDisciplina, onAddTopic, onDeleteDisciplina }) => {
+const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({ onEditDisciplina, onAddTopic, onAddTopicBatch, onDeleteDisciplina }) => {
     const disciplinas = useDisciplinasStore((state) => state.disciplinas);
 
     if (disciplinas.length === 0) {
@@ -178,6 +186,7 @@ const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({ onEditDiscipl
                     disciplina={disciplina}
                     onEdit={() => onEditDisciplina(disciplina)}
                     onAddTopic={() => onAddTopic(disciplina.id)}
+                    onAddTopicBatch={() => onAddTopicBatch(disciplina.id)}
                     onDelete={() => onDeleteDisciplina(disciplina.id)}
                 />
             ))}

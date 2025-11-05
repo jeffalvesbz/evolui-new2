@@ -12,7 +12,7 @@ const EditalSelector: React.FC<{ className?: string }> = ({ className }) => {
   };
 
   return (
-    <div className={`relative ${className || ''}`}>
+    <div data-tutorial="edital-selector" className={`relative ${className || ''}`}>
       <select
         value={editalAtivo?.id || ''}
         onChange={handleSelect}

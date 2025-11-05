@@ -71,6 +71,9 @@ interface EstudosStore {
   removeSessao: (id: string) => Promise<void>;
   moveTopicoNaTrilha: (topicoId: string, fromDia: string, toDia: string, fromIndex: number, toIndex: number) => void;
   setTrilhaCompleta: (novaTrilha: TrilhaSemanalData) => void;
+  trilhasPorSemana: Record<string, TrilhaSemanalData>;
+  setTrilhaSemana: (weekKey: string, trilha: TrilhaSemanalData) => void;
+  getTrilhaSemana: (weekKey: string) => TrilhaSemanalData;
   _tick: () => void;
 }
 
@@ -79,6 +82,7 @@ const emptyTrilha: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex
 export const useEstudosStore = create<EstudosStore>((set, get) => ({
       sessoes: [],
       trilha: emptyTrilha,
+      trilhasPorSemana: {},
       loading: false,
       sessaoAtual: null,
       timerInterval: null,
@@ -398,6 +402,17 @@ export const useEstudosStore = create<EstudosStore>((set, get) => ({
             }
         }
         set({ trilha: trilhaValidada });
+      },
+      setTrilhaSemana: (weekKey, trilha) => {
+        set(state => {
+          const novasTrilhas = { ...state.trilhasPorSemana };
+          novasTrilhas[weekKey] = trilha;
+          return { trilhasPorSemana: novasTrilhas };
+        });
+      },
+      getTrilhaSemana: (weekKey) => {
+        const state = get();
+        return state.trilhasPorSemana[weekKey] || emptyTrilha;
       },
     })
 );

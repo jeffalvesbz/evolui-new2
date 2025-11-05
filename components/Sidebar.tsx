@@ -43,17 +43,17 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
   const { user, logout } = useAuthStore();
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutGridIcon /> },
+    { id: 'edital', label: 'Edital', icon: <LandmarkIcon /> },
     { id: 'planejamento', label: 'Planejamento', icon: <ClipboardListIcon /> },
     { id: 'ciclos', label: 'Ciclos de Estudos', icon: <RepeatIcon /> },
-    { id: 'edital', label: 'Edital', icon: <LandmarkIcon /> },
-    { id: 'estatisticas', label: 'Estatísticas', icon: <BarChart3Icon /> },
+    { id: 'corretor', label: 'Corretor de Redação', icon: <PencilRulerIcon /> },
     { id: 'gamificacao', label: 'Jornada do Herói', icon: <TrophyIcon /> },
     { id: 'flashcards', label: 'Flashcards', icon: <LayersIcon /> },
-    { id: 'revisoes', label: 'Revisões', icon: <CalendarClockIcon /> },
     { id: 'erros', label: 'Caderno de Erros', icon: <BookCopyIcon /> },
-    { id: 'historico', label: 'Histórico', icon: <HistoryIcon /> },
+    { id: 'revisoes', label: 'Revisões', icon: <CalendarClockIcon /> },
     { id: 'simulados', label: 'Simulados', icon: <FileTextIcon /> },
-    { id: 'corretor', label: 'Corretor de Redação', icon: <PencilRulerIcon /> },
+    { id: 'estatisticas', label: 'Estatísticas', icon: <BarChart3Icon /> },
+    { id: 'historico', label: 'Histórico', icon: <HistoryIcon /> },
   ];
 
   return (
@@ -69,7 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
           />
         )}
       </AnimatePresence>
-      <aside className={`w-64 bg-card/40 backdrop-blur-xl border-r border-white/10 flex-shrink-0 flex flex-col fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside data-tutorial="sidebar" className={`w-64 bg-card/40 backdrop-blur-xl border-r border-white/10 flex-shrink-0 flex flex-col fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out lg:sticky lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center space-x-3 p-5 h-[73px] border-b border-white/10 flex-shrink-0">
           <div className="bg-gradient-to-br from-primary to-secondary text-black w-10 h-10 flex items-center justify-center rounded-lg font-bold text-2xl shadow-lg shadow-primary/20">E</div>
           <div>

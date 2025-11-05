@@ -69,8 +69,8 @@ const GeradorPlanoModal: React.FC = () => {
   if (!isGeradorPlanoModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeGeradorPlanoModal}>
-      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeGeradorPlanoModal}>
+      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <header className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ const GeradorPlanoModal: React.FC = () => {
             <button type="button" onClick={closeGeradorPlanoModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
           </header>
 
-          <main className="p-6 max-h-[70vh] overflow-y-auto">
+          <main className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-96 text-center">
                 <SparklesIcon className="w-12 h-12 text-primary animate-pulse mb-4" />
@@ -91,12 +91,12 @@ const GeradorPlanoModal: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Qual seu objetivo principal? *</label>
-                  <input {...register('objetivo', { required: 'O objetivo é obrigatório.' })} placeholder="Ex: Passar no ENEM 2024" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                  <input {...register('objetivo', { required: 'O objetivo é obrigatório.' })} placeholder="Ex: Passar no ENEM 2024" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                   {errors.objetivo && <p className="text-xs text-red-500 mt-1">{errors.objetivo.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-1 block">Quantas horas por semana você pode estudar?</label>
-                  <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                  <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">Qual a sua dificuldade em cada matéria?</label>

@@ -118,7 +118,7 @@ const RevisoesPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div data-tutorial="revisoes-content" className="max-w-7xl mx-auto space-y-6">
       <header className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-1">Sistema de Revisões</h1>

@@ -96,7 +96,7 @@ const EditalManagementModal: React.FC = () => {
                     <XIcon className="w-5 h-5" />
                 </button>
             </div>
-            <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
                 {editais.map(edital => (
                     <div key={edital.id} className="bg-muted/50 p-3 rounded-lg flex items-center justify-between">
                         <div>
@@ -120,7 +120,7 @@ const EditalManagementModal: React.FC = () => {
                  {editais.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum edital cadastrado.</p>}
             </div>
             <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
-                <button onClick={handleStartCreate} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2">
+                <button onClick={handleStartCreate} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2" data-tutorial="novo-edital-button">
                     <PlusIcon className="w-4 h-4"/> Novo Edital
                 </button>
             </div>
@@ -138,26 +138,26 @@ const EditalManagementModal: React.FC = () => {
             <div className="p-6 space-y-4">
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Nome do Edital *</label>
-                    <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+                    <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Órgão</label>
-                        <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+                        <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     </div>
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Banca</label>
-                        <input {...register('banca')} placeholder="Ex: Cebraspe" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+                        <input {...register('banca')} placeholder="Ex: Cebraspe" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     </div>
                 </div>
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Descrição</label>
-                    <textarea {...register('descricao')} rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+                    <textarea {...register('descricao')} rows={3} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Data Alvo *</label>
-                    <input type="date" {...register('data_alvo', { required: 'A data é obrigatória' })} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+                    <input type="date" {...register('data_alvo', { required: 'A data é obrigatória' })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.data_alvo && <p className="text-xs text-red-500 mt-1">{errors.data_alvo.message}</p>}
                 </div>
             </div>
@@ -171,8 +171,8 @@ const EditalManagementModal: React.FC = () => {
     );
 
     return (
-         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={closeEditalModal}>
-            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
+            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 {mode === 'list' ? renderList() : renderForm()}
             </div>
         </div>

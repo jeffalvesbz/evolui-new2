@@ -60,8 +60,9 @@ export const checkAndAwardBadges = () => {
         const revisoesConcluidas = revisoes.filter(r => r.status === 'concluida').length;
         if (revisoesConcluidas >= 10) criteriaMet = true;
         break;
-      case 'badge-5': // Caça-Erros
-        if (erros.length >= 5) criteriaMet = true;
+      case 'badge-5': // Caça-Erros (só conta erros resolvidos para evitar farming)
+        const errosResolvidos = erros.filter(e => e.resolvido).length;
+        if (errosResolvidos >= 5) criteriaMet = true;
         break;
       case 'badge-6': // Edital Concluído
         if (getAverageProgress() >= 100) criteriaMet = true;

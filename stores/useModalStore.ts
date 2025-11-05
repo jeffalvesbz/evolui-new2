@@ -8,7 +8,9 @@ interface ModalStore {
   
   isAddTopicModalOpen: boolean;
   addTopicTargetDisciplinaId: string | null;
+  shouldOpenInBatchMode: boolean;
   openAddTopicModal: (disciplinaId: string) => void;
+  openAddTopicModalBatch: (disciplinaId: string) => void;
   closeAddTopicModal: () => void;
 
   isCriarCicloModalOpen: boolean;
@@ -28,6 +30,8 @@ interface ModalStore {
   flashcardToEdit: Flashcard | null;
   openCriarFlashcardModal: (flashcard?: Flashcard) => void;
   closeCriarFlashcardModal: () => void;
+  
+  closeAllModals: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set) => ({
@@ -37,8 +41,10 @@ export const useModalStore = create<ModalStore>((set) => ({
   
   isAddTopicModalOpen: false,
   addTopicTargetDisciplinaId: null,
-  openAddTopicModal: (disciplinaId: string) => set({ isAddTopicModalOpen: true, addTopicTargetDisciplinaId: disciplinaId }),
-  closeAddTopicModal: () => set({ isAddTopicModalOpen: false, addTopicTargetDisciplinaId: null }),
+  shouldOpenInBatchMode: false,
+  openAddTopicModal: (disciplinaId: string) => set({ isAddTopicModalOpen: true, addTopicTargetDisciplinaId: disciplinaId, shouldOpenInBatchMode: false }),
+  openAddTopicModalBatch: (disciplinaId: string) => set({ isAddTopicModalOpen: true, addTopicTargetDisciplinaId: disciplinaId, shouldOpenInBatchMode: true }),
+  closeAddTopicModal: () => set({ isAddTopicModalOpen: false, addTopicTargetDisciplinaId: null, shouldOpenInBatchMode: false }),
 
   isCriarCicloModalOpen: false,
   openCriarCicloModal: () => set({ isCriarCicloModalOpen: true }),
@@ -57,4 +63,17 @@ export const useModalStore = create<ModalStore>((set) => ({
   flashcardToEdit: null,
   openCriarFlashcardModal: (flashcard = null) => set({ isCriarFlashcardModalOpen: true, flashcardToEdit: flashcard }),
   closeCriarFlashcardModal: () => set({ isCriarFlashcardModalOpen: false, flashcardToEdit: null }),
+  
+  closeAllModals: () => set({
+    isEditalModalOpen: false,
+    isAddTopicModalOpen: false,
+    addTopicTargetDisciplinaId: null,
+    shouldOpenInBatchMode: false,
+    isCriarCicloModalOpen: false,
+    isErroModalOpen: false,
+    erroEmEdicao: null,
+    isGeradorPlanoModalOpen: false,
+    isCriarFlashcardModalOpen: false,
+    flashcardToEdit: null,
+  }),
 }));

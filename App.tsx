@@ -2,18 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import CicloDeEstudos from './components/CicloDeEstudos';
-import TrilhaSemanal from './components/TrilhaSemanal';
-import HistoricoPage from './components/HistoricoPage';
+import { useNavigation } from './hooks/useNavigation';
 import PlaceholderView from './components/PlaceholderView';
 import ThemeSwitcher from './components/ThemeSwitcher';
-import Edital from './components/Edital';
-import FlashcardsPage from './components/FlashcardsPage';
-import Simulados from './components/Simulados';
-import RevisoesPage from './components/RevisoesPage';
-import CadernoErros from './components/CadernoErros';
-import CorretorRedacao from './components/CorretorRedacao';
+import { AppRoutes } from './routes';
 import Breadcrumb from './components/Breadcrumb';
 import { BellIcon, PlusCircleIcon, PlayCircleIcon, SettingsIcon, LandmarkIcon, CheckCircle2Icon } from './components/icons';
 import { Theme, User } from './types';
@@ -46,6 +38,13 @@ import { useFriendsStore } from './stores/useFriendsStore';
 import CriarFlashcardModal from './components/CriarFlashcardModal';
 import MobileHeader from './components/MobileHeader';
 import QuickStartTimerButton from './components/QuickStartTimerButton';
+import CommandPalette from './components/CommandPalette';
+import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
+import { OnboardingTutorial } from './components/OnboardingTutorial';
+import { useOnboardingStore } from './stores/useOnboardingStore';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
@@ -106,13 +105,13 @@ const useFriendsDataSync = () => {
 }
 
 
-const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: string; }> = ({ theme, toggleTheme, activeView }) => {
+const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: string; setActiveView: (view: string) => void; }> = ({ theme, toggleTheme, activeView, setActiveView }) => {
   const openEstudoModal = useEstudosStore(state => state.iniciarSessaoInteligente);
   const user = useAuthStore(state => state.user);
   
   return (
-    <header className="sticky top-0 z-30 hidden lg:flex items-center justify-between h-[73px] px-6 border-b border-white/10 bg-card/50 backdrop-blur-lg flex-shrink-0">
-       <Breadcrumb activeView={activeView} setActiveView={() => {}} />
+    <header data-tutorial="header" className="sticky top-0 z-30 hidden lg:flex items-center justify-between h-[73px] px-6 border-b border-white/10 bg-card/50 backdrop-blur-lg flex-shrink-0">
+       <Breadcrumb activeView={activeView} setActiveView={setActiveView} />
       <div className="flex items-center gap-2">
           <HeaderXPChip />
           <button onClick={openEstudoModal} className="h-9 px-4 flex items-center gap-2 rounded-lg bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity">
@@ -216,13 +215,51 @@ const AuthGate: React.FC = () => {
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
-  const [activeView, setActiveView] = useState('dashboard'); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isKeyboardHelpOpen, setIsKeyboardHelpOpen] = useState(false);
   const editalAtivo = useEditalStore(state => state.editalAtivo);
+  const { closeAllModals } = useModalStore();
+  
+  // Usar hook de navegação para obter view atual e função de navegação
+  const { currentView, setActiveView } = useNavigation();
   
   const { isAuthenticated, user, checkAuth } = useAuthStore();
   const [isAppLoading, setIsAppLoading] = useState(true);
   const { fetchEditais } = useEditalStore();
+  const { hasSeenOnboarding, isLoading: isOnboardingLoading, checkOnboardingStatus, markOnboardingAsSeen } = useOnboardingStore();
+  const [showTutorial, setShowTutorial] = useState(false);
+  
+  // Listener para abrir Command Palette com Cmd/Ctrl + K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+      // Ctrl/Cmd + / para mostrar ajuda
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        setIsKeyboardHelpOpen(true);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  
+  // Usar hook de atalhos de teclado
+  useKeyboardShortcuts({
+    onOpenCommandPalette: () => setIsCommandPaletteOpen(true),
+    onCloseModals: () => {
+      closeAllModals();
+      setIsSidebarOpen(false);
+      setIsCommandPaletteOpen(false);
+      setIsKeyboardHelpOpen(false);
+    },
+    onToggleSidebar: () => setIsSidebarOpen(prev => !prev),
+    isSidebarOpen,
+  });
 
   const { unlockBadges, badges, stats, updateStreak } = useGamificationStore();
   const { sessoes } = useEstudosStore();
@@ -255,6 +292,38 @@ const App: React.FC = () => {
         setIsAppLoading(false);
     }
   }, [isAuthenticated, fetchEditais]);
+
+  // Verificar status do onboarding quando usuário autentica
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      checkOnboardingStatus(user.id);
+    }
+  }, [isAuthenticated, user?.id, checkOnboardingStatus]);
+
+  // Mostrar tutorial se usuário não viu ainda
+  useEffect(() => {
+    if (isAuthenticated && !isOnboardingLoading && hasSeenOnboarding === false) {
+      // Aguardar um pouco para garantir que o DOM está renderizado
+      const timeout = setTimeout(() => {
+        setShowTutorial(true);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [isAuthenticated, isOnboardingLoading, hasSeenOnboarding]);
+
+  const handleTutorialComplete = async () => {
+    if (user?.id) {
+      await markOnboardingAsSeen(user.id);
+    }
+    setShowTutorial(false);
+  };
+
+  const handleTutorialSkip = async () => {
+    if (user?.id) {
+      await markOnboardingAsSeen(user.id);
+    }
+    setShowTutorial(false);
+  };
 
   useEditalDataSync();
   useGamificationDataSync();
@@ -301,24 +370,6 @@ const App: React.FC = () => {
         themeToggleCount.current = 0;
     }, 3000); // Reset after 3 seconds of inactivity
   };
-  
-  const renderActiveView = () => {
-    switch (activeView) {
-      case 'dashboard': return <Dashboard setActiveView={setActiveView} />;
-      case 'planejamento': return <TrilhaSemanal />;
-      case 'ciclos': return <CicloDeEstudos />;
-      case 'historico': return <HistoricoPage setActiveView={setActiveView} />;
-      case 'edital': return <Edital />;
-      case 'flashcards': return <FlashcardsPage />;
-      case 'simulados': return <Simulados />;
-      case 'revisoes': return <RevisoesPage />;
-      case 'erros': return <CadernoErros />;
-      case 'estatisticas': return <Estatisticas />;
-      case 'corretor': return <CorretorRedacao />;
-      case 'gamificacao': return <GamificationPage />;
-      default: return <Dashboard setActiveView={setActiveView} />;
-    }
-  };
 
   if (isAppLoading) {
      return (
@@ -335,40 +386,56 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground font-sans dark overflow-hidden">
-      <Toaster />
-      <AchievementNotifier />
-      <SalvarSessaoModal />
-      <EditalManagementModal />
-      <AdicionarTopicoModal />
-      <CriarCicloModal />
-      <GeradorPlanoModal />
-      <CriarFlashcardModal />
+    <ErrorBoundary>
+      <BreadcrumbProvider>
+        <div className="flex h-screen bg-background text-foreground font-sans dark overflow-hidden">
+          <Toaster />
+          <AchievementNotifier />
+          <OnboardingTutorial 
+            isOpen={showTutorial} 
+            onComplete={handleTutorialComplete}
+            onSkip={handleTutorialSkip}
+            setActiveView={setActiveView}
+          />
+          <CommandPalette open={isCommandPaletteOpen} onOpenChange={setIsCommandPaletteOpen} />
+          <KeyboardShortcutsHelp open={isKeyboardHelpOpen} onOpenChange={setIsKeyboardHelpOpen} />
+          <SalvarSessaoModal />
+          <EditalManagementModal />
+          <AdicionarTopicoModal />
+          <CriarCicloModal />
+          <GeradorPlanoModal />
+          <CriarFlashcardModal />
 
-      <Sidebar 
-        activeView={activeView} 
-        setActiveView={setActiveView} 
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-      />
-      
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="w-full h-8 bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-xs font-bold text-black shadow-lg z-20 flex-shrink-0">
-            Plano de Estudo Ativo: {editalAtivo?.nome || 'Nenhum plano selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
-        </div>
-        <Header theme={theme} toggleTheme={toggleTheme} activeView={activeView} />
-        <MobileHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
-
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
-          <div className="max-w-5xl mx-auto">
-            {renderActiveView()}
-          </div>
+          <Sidebar 
+            activeView={currentView} 
+            setActiveView={setActiveView} 
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
           
-          <QuickStartTimerButton />
-          <CronometroInteligente />
-        </main>
-      </div>
-    </div>
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="w-full min-h-[40px] px-4 py-2 bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-xs sm:text-sm font-bold text-black shadow-lg z-20 flex-shrink-0">
+                <span className="text-center truncate max-w-full">
+                  Plano de Estudo Ativo: {editalAtivo?.nome || 'Nenhum plano selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
+                </span>
+            </div>
+            <Header theme={theme} toggleTheme={toggleTheme} activeView={currentView} setActiveView={setActiveView} />
+            <MobileHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
+
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+              <div className="max-w-7xl mx-auto w-full">
+                <ErrorBoundary>
+                  <AppRoutes setActiveView={setActiveView} />
+                </ErrorBoundary>
+              </div>
+              
+              <QuickStartTimerButton />
+              <CronometroInteligente />
+            </main>
+          </div>
+        </div>
+      </BreadcrumbProvider>
+    </ErrorBoundary>
   );
 };
 

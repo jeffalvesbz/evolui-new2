@@ -28,6 +28,7 @@ const Edital = () => {
   } = useDisciplinasStore();
   
   const openAddTopicModal = useModalStore((state) => state.openAddTopicModal);
+  const openAddTopicModalBatch = useModalStore((state) => state.openAddTopicModalBatch);
 
   const [mode, setMode] = useState<PainelMode>('default');
   const [selectedDiscipline, setSelectedDiscipline] = useState<Disciplina | null>(null);
@@ -157,17 +158,22 @@ const Edital = () => {
     openAddTopicModal(disciplinaId);
   };
 
+  const handleAddTopicBatch = (disciplinaId: string) => {
+    openAddTopicModalBatch(disciplinaId);
+  };
+
   const handleCancel = () => {
     setMode('default');
     setSelectedDiscipline(null);
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 lg:flex-row">
+    <div data-tutorial="edital-content" className="mx-auto flex w-full max-w-7xl flex-col gap-6 lg:flex-row">
       <div className="flex w-full flex-col gap-4 lg:w-2/3">
         <EditalVerticalizado
           onEditDisciplina={handleEditDisciplina}
           onAddTopic={handleAddTopic}
+          onAddTopicBatch={handleAddTopicBatch}
           onDeleteDisciplina={handleDeleteDisciplina}
         />
       </div>
