@@ -9,7 +9,6 @@ import { useEditalStore } from './useEditalStore';
 import { useGamificationStore } from './useGamificationStore';
 import { checkAndAwardBadges } from '../services/badgeService';
 import { useCiclosStore } from './useCiclosStore';
-import { startOfWeek, format } from 'date-fns';
 
 export interface SessaoAtual {
   topico: {
@@ -82,23 +81,12 @@ interface EstudosStore {
   toggleTopicoConcluidoNaTrilha: (weekKey: string, diaId: string, topicId: string) => void;
   isTopicoConcluidoNaTrilha: (weekKey: string, diaId: string, topicId: string) => boolean;
   fetchTrilhas: (studyPlanId: string) => Promise<void>;
+  loadTrilhaSemanal: (studyPlanId: string, weekKey?: string) => Promise<void>;
   saveTrilhasToDb: () => Promise<void>;
-  loadTrilhaSemanal: (studyPlanId: string, semanaRef?: string) => Promise<void>;
-  saveTrilhaSemanal: (studyPlanId: string, semanaRef?: string) => Promise<void>;
-  getHistoricoSemanas: () => Array<{ semanaRef: string; dataInicio: string }>;
   _tick: () => void;
 }
 
 const emptyTrilha: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
-
-// Helper para obter a referência da semana (data de início da semana no formato YYYY-MM-DD)
-const getSemanaRef = (date: Date = new Date()): string => {
-  const inicioSemana = startOfWeek(date, { weekStartsOn: 1 });
-  return format(inicioSemana, 'yyyy-MM-dd');
-};
-
-// Variável para armazenar o timeout do debounce
-let saveTrilhaDebounceTimeout: NodeJS.Timeout | null = null;
 
 export const useEstudosStore = create<EstudosStore>()(
   persist(
@@ -377,20 +365,9 @@ export const useEstudosStore = create<EstudosStore>()(
         try {
             const novaSessao = await createSessao(studyPlanId, sessao);
             set(state => ({ sessoes: [...state.sessoes, novaSessao] }));
-            toast.success("Sessão adicionada com sucesso!");
-            
-            // Atualizar streak e verificar conquistas após adicionar sessão
-            const { updateStreak } = useGamificationStore.getState();
-            await updateStreak();
-            // Aguardar um pouco para garantir que os dados estão atualizados
-            setTimeout(() => {
-              checkAndAwardBadges();
-            }, 100);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Failed to add session:", error);
-            const errorMessage = error?.message || "Falha ao adicionar sessão de estudo.";
-            toast.error(errorMessage);
-            throw error; // Re-throw para que o erro seja propagado
+            toast.error("Falha ao adicionar sessão de estudo.");
         }
       },
       updateSessao: async (id, updates) => {
@@ -442,44 +419,32 @@ export const useEstudosStore = create<EstudosStore>()(
           const trilhaAtualSerializada = JSON.stringify(state.trilha);
           const trilhaNovaSerializada = JSON.stringify(trilhaValidada);
           
-          // Usar semanaAtualKey do estado (semana que está sendo visualizada) ou calcular a semana atual
-          const semanaRef = state.semanaAtualKey || getSemanaRef();
-          const novasTrilhas = { ...state.trilhasPorSemana };
-          
-          // Verificar se mudou de semana
-          if (state.semanaAtualKey && state.semanaAtualKey !== semanaRef) {
-            // Nova semana detectada - criar novo slot automaticamente
-            console.log(`Nova semana detectada: ${semanaRef} (anterior: ${state.semanaAtualKey})`);
+          if (trilhaAtualSerializada === trilhaNovaSerializada && state.semanaAtualKey) {
+            // Se a trilha não mudou e já temos a semana atual, não precisa atualizar trilhasPorSemana
+            return {};
           }
           
-          const trilhaSemanaAtualSerializada = JSON.stringify(novasTrilhas[semanaRef] || {});
-          // Só atualiza se for diferente
-          if (trilhaSemanaAtualSerializada !== trilhaNovaSerializada) {
-            // Atualizar apenas a semana específica (semanaRef), preservando outras semanas
-            novasTrilhas[semanaRef] = trilhaValidada;
-            
-            // Salvar no banco de dados com debounce de 1 segundo
-            const studyPlanId = useEditalStore.getState().editalAtivo?.id;
-            if (studyPlanId) {
-              // Limpar timeout anterior se existir
-              if (saveTrilhaDebounceTimeout) {
-                clearTimeout(saveTrilhaDebounceTimeout);
-              }
-              
-              // Criar novo timeout - passar semanaRef para garantir que salve a semana correta
-              saveTrilhaDebounceTimeout = setTimeout(() => {
-                get().saveTrilhaSemanal(studyPlanId, semanaRef).catch(err => {
-                  console.error("Erro ao salvar trilha semanal:", err);
+          // Atualizar também a trilha da semana atual
+          const weekKey = state.semanaAtualKey;
+          const novasTrilhas = { ...state.trilhasPorSemana };
+          if (weekKey) {
+            const trilhaSemanaAtualSerializada = JSON.stringify(novasTrilhas[weekKey] || {});
+            // Só atualiza se for diferente
+            if (trilhaSemanaAtualSerializada !== trilhaNovaSerializada) {
+              novasTrilhas[weekKey] = trilhaValidada;
+              // Salvar no banco de dados em segundo plano (com debounce)
+              const saveFunction = get().saveTrilhasToDb;
+              setTimeout(() => {
+                saveFunction().catch(err => {
+                  console.error("Erro ao salvar trilhas no banco:", err);
                 });
-                saveTrilhaDebounceTimeout = null;
-              }, 1000);
+              }, 500);
             }
           }
           
           return { 
             trilha: trilhaValidada,
-            trilhasPorSemana: novasTrilhas,
-            semanaAtualKey: semanaRef
+            trilhasPorSemana: novasTrilhas
           };
         });
       },
@@ -492,25 +457,15 @@ export const useEstudosStore = create<EstudosStore>()(
           
           // Só atualiza se for diferente
           if (trilhaAnteriorSerializada !== trilhaNovaSerializada) {
-            // Atualizar apenas a semana específica (weekKey), preservando outras semanas
             novasTrilhas[weekKey] = trilha;
-            
-            // Salvar no banco de dados com debounce de 1 segundo
-            const studyPlanId = useEditalStore.getState().editalAtivo?.id;
-            if (studyPlanId) {
-              // Limpar timeout anterior se existir
-              if (saveTrilhaDebounceTimeout) {
-                clearTimeout(saveTrilhaDebounceTimeout);
-              }
-              
-              // Criar novo timeout - passar weekKey para garantir que salve a semana correta
-              saveTrilhaDebounceTimeout = setTimeout(() => {
-                get().saveTrilhaSemanal(studyPlanId, weekKey).catch(err => {
-                  console.error("Erro ao salvar trilha semanal:", err);
-                });
-                saveTrilhaDebounceTimeout = null;
-              }, 1000);
-            }
+            // Salvar no banco de dados em segundo plano (com debounce)
+            const saveFunction = get().saveTrilhasToDb;
+            // Usar setTimeout para fazer debounce e evitar muitas chamadas
+            setTimeout(() => {
+              saveFunction().catch(err => {
+                console.error("Erro ao salvar trilhas no banco:", err);
+              });
+            }, 500);
           }
           
           return { trilhasPorSemana: novasTrilhas };
@@ -532,24 +487,13 @@ export const useEstudosStore = create<EstudosStore>()(
           } else {
             novasConclusoes[key] = true;
           }
-          
-          // Salvar no banco de dados com debounce de 1 segundo
-          const studyPlanId = useEditalStore.getState().editalAtivo?.id;
-          if (studyPlanId) {
-            // Limpar timeout anterior se existir
-            if (saveTrilhaDebounceTimeout) {
-              clearTimeout(saveTrilhaDebounceTimeout);
-            }
-            
-            // Criar novo timeout - passar weekKey para garantir que salve a semana correta
-            saveTrilhaDebounceTimeout = setTimeout(() => {
-              get().saveTrilhaSemanal(studyPlanId, weekKey).catch(err => {
-                console.error("Erro ao salvar trilha semanal:", err);
-              });
-              saveTrilhaDebounceTimeout = null;
-            }, 1000);
-          }
-          
+          // Salvar no banco de dados em segundo plano (com debounce)
+          const saveFunction = get().saveTrilhasToDb;
+          setTimeout(() => {
+            saveFunction().catch(err => {
+              console.error("Erro ao salvar trilhas no banco:", err);
+            });
+          }, 500);
           return { trilhaConclusao: novasConclusoes };
         });
       },
@@ -569,6 +513,11 @@ export const useEstudosStore = create<EstudosStore>()(
           console.error("Failed to fetch trilhas:", error);
           // Não mostra erro para o usuário, apenas usa estado vazio
         }
+      },
+      loadTrilhaSemanal: async (studyPlanId: string, weekKey?: string) => {
+        // Alias para fetchTrilhas para manter compatibilidade
+        // O parâmetro weekKey é ignorado pois fetchTrilhas carrega todas as semanas
+        await get().fetchTrilhas(studyPlanId);
       },
       saveTrilhasToDb: async () => {
         const studyPlanId = useEditalStore.getState().editalAtivo?.id;
@@ -604,123 +553,6 @@ export const useEstudosStore = create<EstudosStore>()(
             toast.error("Erro ao salvar trilha no banco de dados.");
           }
         }
-      },
-      loadTrilhaSemanal: async (studyPlanId: string, semanaRefParam?: string) => {
-        try {
-          // Usar semanaRef passada como parâmetro, ou semanaAtualKey do estado, ou calcular semana atual
-          const state = get();
-          const semanaRef = semanaRefParam || state.semanaAtualKey || getSemanaRef();
-          
-          const { trilhasPorSemana, trilhaConclusao } = await getTrilhasPorSemana(studyPlanId);
-          
-          // Atualizar estado com dados do banco (preservando semanas existentes)
-          const trilhasMerged = { ...state.trilhasPorSemana, ...(trilhasPorSemana || {}) };
-          
-          set({ 
-            trilhasPorSemana: trilhasMerged,
-            trilhaConclusao: { ...state.trilhaConclusao, ...(trilhaConclusao || {}) }
-          });
-          
-          const stateAtualizado = get();
-          const trilhaSemanaAtual = stateAtualizado.trilhasPorSemana[semanaRef];
-          
-          if (trilhaSemanaAtual) {
-            // Se existe trilha para a semana específica, restaura no estado
-            set({ 
-              trilha: trilhaSemanaAtual,
-              semanaAtualKey: semanaRef
-            });
-          } else {
-            // Se não existe, cria objeto vazio e salva
-            const novaTrilha = { ...emptyTrilha };
-            const novasTrilhas = { ...stateAtualizado.trilhasPorSemana, [semanaRef]: novaTrilha };
-            
-            set({ 
-              trilha: novaTrilha,
-              trilhasPorSemana: novasTrilhas,
-              semanaAtualKey: semanaRef
-            });
-            
-            // Salva automaticamente a nova semana
-            await get().saveTrilhaSemanal(studyPlanId, semanaRef);
-          }
-        } catch (error) {
-          console.error("Failed to load trilha semanal:", error);
-          // Não mostra erro para o usuário, apenas usa estado vazio
-        }
-      },
-      saveTrilhaSemanal: async (studyPlanId: string, semanaRefParam?: string) => {
-        const state = get();
-        // Usar semanaRef passada como parâmetro, ou semanaAtualKey do estado, ou calcular semana atual
-        const semanaRef = semanaRefParam || state.semanaAtualKey || getSemanaRef();
-        
-        if (!semanaRef) {
-          console.warn("Não foi possível determinar a semana atual");
-          return;
-        }
-        
-        // Obter dados existentes do banco para preservar outras semanas
-        let existingData: Record<string, TrilhaSemanalData> = {};
-        try {
-          const { trilhasPorSemana } = await getTrilhasPorSemana(studyPlanId);
-          existingData = trilhasPorSemana || {};
-        } catch (error) {
-          console.error("Erro ao buscar dados existentes:", error);
-          // Continua com dados locais se falhar
-          existingData = state.trilhasPorSemana || {};
-        }
-        
-        // Obter dados da semana específica (semanaRef) do estado local
-        // Prioridade: trilhasPorSemana[semanaRef] > trilha (se semanaAtualKey === semanaRef) > emptyTrilha
-        const currentWeekData = state.trilhasPorSemana[semanaRef] || 
-          (state.semanaAtualKey === semanaRef ? state.trilha : null) || 
-          emptyTrilha;
-        
-        // Atualizar apenas a semana específica, preservando todas as outras semanas
-        const trilhasParaSalvar = { 
-          ...existingData,  // Preserva semanas existentes no banco
-          [semanaRef]: currentWeekData  // Atualiza apenas a semana específica
-        };
-        
-        // Filtrar conclusões apenas da semana específica e anteriores
-        const conclusoesParaSalvar = Object.keys(state.trilhaConclusao || {})
-          .filter(key => {
-            // Manter conclusões da semana específica e anteriores
-            const keySemanaRef = key.split('-')[0];
-            return keySemanaRef <= semanaRef;
-          })
-          .reduce((acc, key) => {
-            acc[key] = state.trilhaConclusao[key];
-            return acc;
-          }, {} as Record<string, boolean>);
-        
-        try {
-          await saveTrilhasPorSemana(
-            studyPlanId,
-            trilhasParaSalvar,
-            conclusoesParaSalvar
-          );
-          console.log(`✅ Trilha da semana ${semanaRef} salva com sucesso`);
-          toast.success('Trilha salva automaticamente!');
-        } catch (error: any) {
-          console.error("❌ Failed to save trilha semanal:", error);
-          if (error?.message?.includes('column') || error?.code === '42703') {
-            console.warn("⚠️ Colunas trilhas_por_semana ou trilha_conclusao podem não existir no banco.");
-          }
-          // Não mostra toast de erro para não incomodar o usuário com salvamentos automáticos
-        }
-      },
-      getHistoricoSemanas: () => {
-        const state = get();
-        const semanas = Object.keys(state.trilhasPorSemana || {})
-          .sort()
-          .reverse()
-          .slice(0, 4)
-          .map(semanaRef => ({
-            semanaRef,
-            dataInicio: semanaRef
-          }));
-        return semanas;
       },
     }),
     {

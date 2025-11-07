@@ -71,18 +71,18 @@ const AdicionarTopicoModal: React.FC = () => {
         const titulos = batchTopics.split('\n').map(t => t.trim()).filter(Boolean);
         if(titulos.length === 0) return;
 
-        const addPromises = titulos.map(titulo => {
-             const novoTopicoData: Omit<Topico, 'id'> = {
+        // Adiciona os tópicos sequencialmente para preservar a ordem de inserção
+        for (const titulo of titulos) {
+            const novoTopicoData: Omit<Topico, 'id'> = {
                 titulo: titulo.trim(),
                 concluido: false,
                 nivelDificuldade: 'desconhecido',
                 ultimaRevisao: null,
                 proximaRevisao: null,
             };
-            return addTopico(disciplina.id, novoTopicoData);
-        });
+            await addTopico(disciplina.id, novoTopicoData);
+        }
         
-        await Promise.all(addPromises);
         toast.success(`${titulos.length} tópicos adicionados em lote!`);
         closeAddTopicModal();
     };

@@ -389,6 +389,54 @@ export const extrairTextoDeImagem = async (base64Image: string, mimeType: string
     return response.text;
 };
 
+export const gerarMensagemMotivacionalIA = async (
+    nomeUsuario: string,
+    tempoTotalHoje: number,
+    metaPercentual: number,
+    diasStreak: number,
+    revisoesPendentes: number
+): Promise<string> => {
+    if (!ai) {
+        // Se não houver API key, retornar mensagem padrão
+        return "Continue estudando! Cada esforço te aproxima do seu objetivo.";
+    }
+
+    const prompt = `Você é um assistente motivacional especializado em ajudar estudantes de concursos públicos.
+
+Gere uma mensagem motivacional personalizada e inspiradora para ${nomeUsuario} baseada nas seguintes informações:
+
+- Tempo estudado hoje: ${tempoTotalHoje} minutos
+- Progresso da meta diária: ${metaPercentual}%
+- Sequência de dias estudando (streak): ${diasStreak} dias
+- Revisões pendentes: ${revisoesPendentes}
+
+INSTRUÇÕES:
+1. Seja positivo, encorajador e autêntico
+2. Reconheça o esforço e progresso do estudante
+3. Adapte o tom baseado no progresso:
+   - Se a meta está sendo atingida, celebre e incentive a continuar
+   - Se está abaixo da meta, seja encorajador sem ser condescendente
+   - Se o streak está alto, reconheça a consistência
+4. Mencione brevemente as revisões pendentes se relevante
+5. Mantenha a mensagem curta (máximo 2 frases)
+6. Use linguagem natural e calorosa, como um mentor amigável
+7. Não use emojis ou formatação especial
+
+Retorne APENAS a mensagem motivacional, sem aspas ou formatação adicional.`;
+
+    try {
+        const response = await ai.models.generateContent({ 
+            model: 'gemini-2.5-flash', 
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Erro ao gerar mensagem motivacional:", error);
+        // Retornar mensagem padrão em caso de erro
+        return "Continue estudando! Cada esforço te aproxima do seu objetivo.";
+    }
+};
+
 
 
 // --- GAMIFICATION SERVICES ---

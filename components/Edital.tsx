@@ -50,20 +50,18 @@ const Edital = () => {
       });
       
       // Step 2: Add topics to the newly created disciplina.
-      const topicPromises = payload.topicos
-        .filter(topic => topic.titulo && topic.titulo.trim())
-        .map(topic => {
-            const newTopic: Omit<Topico, 'id'> = {
-                titulo: (topic.titulo || '').trim(),
-                concluido: topic.concluido || false,
-                nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
-                ultimaRevisao: null,
-                proximaRevisao: null,
-            };
-            return addTopico(disciplina.id, newTopic);
-        });
-
-      await Promise.all(topicPromises);
+      // Adiciona os tópicos sequencialmente para preservar a ordem de inserção
+      const topicosFiltrados = payload.topicos.filter(topic => topic.titulo && topic.titulo.trim());
+      for (const topic of topicosFiltrados) {
+        const newTopic: Omit<Topico, 'id'> = {
+          titulo: (topic.titulo || '').trim(),
+          concluido: topic.concluido || false,
+          nivelDificuldade: topic.nivelDificuldade || 'desconhecido',
+          ultimaRevisao: null,
+          proximaRevisao: null,
+        };
+        await addTopico(disciplina.id, newTopic);
+      }
       
       const topicosMsg = payload.topicos.length > 0 
         ? `${payload.topicos.length} tópico(s) adicionado(s). Defina seus tópicos ou comece a estudar.`
