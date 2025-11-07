@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigation } from './useNavigation';
 
 interface KeyboardShortcutsOptions {
@@ -6,6 +6,7 @@ interface KeyboardShortcutsOptions {
   onCloseModals?: () => void;
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
+  disableNavigation?: boolean; // Para desabilitar navegação por números quando em flashcards
 }
 
 /**
@@ -18,8 +19,33 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
     onCloseModals,
     onToggleSidebar,
     isSidebarOpen,
+    disableNavigation = false,
   } = options;
 
+  // Usar useRef para estabilizar valores dinâmicos e evitar mudança de tamanho no array de dependências
+  const onOpenCommandPaletteRef = useRef(onOpenCommandPalette);
+  const onCloseModalsRef = useRef(onCloseModals);
+  const onToggleSidebarRef = useRef(onToggleSidebar);
+  const disableNavigationRef = useRef(disableNavigation);
+
+  // Atualizar refs quando os valores mudarem
+  useEffect(() => {
+    onOpenCommandPaletteRef.current = onOpenCommandPalette;
+  }, [onOpenCommandPalette]);
+
+  useEffect(() => {
+    onCloseModalsRef.current = onCloseModals;
+  }, [onCloseModals]);
+
+  useEffect(() => {
+    onToggleSidebarRef.current = onToggleSidebar;
+  }, [onToggleSidebar]);
+
+  useEffect(() => {
+    disableNavigationRef.current = disableNavigation;
+  }, [disableNavigation]);
+
+  // Efeito principal com array de dependências fixo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignorar se estiver digitando em um input, textarea ou contenteditable
@@ -31,7 +57,7 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
       ) {
         // Permitir apenas ESC e Ctrl/Cmd + / mesmo em inputs
         if (e.key === 'Escape') {
-          onCloseModals?.();
+          onCloseModalsRef.current?.();
         }
         if ((e.metaKey || e.ctrlKey) && e.key === '/') {
           e.preventDefault();
@@ -40,8 +66,10 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
         return;
       }
 
-      // Números 1-9 para navegação rápida
-      if (e.key >= '1' && e.key <= '9' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      // Desabilitar navegação por números quando explicitamente desabilitado
+      // (ex: quando há uma sessão de flashcards ativa)
+      // Números 1-9 para navegação rápida (desabilitado quando disableNavigation é true)
+      if (!disableNavigationRef.current && e.key >= '1' && e.key <= '9' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         const pageMap: Record<string, string> = {
           '1': 'dashboard',
           '2': 'planejamento',
@@ -63,7 +91,7 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
 
       // ESC para fechar modais/sidebar
       if (e.key === 'Escape') {
-        onCloseModals?.();
+        onCloseModalsRef.current?.();
       }
 
       // / para focar busca (se implementada)
@@ -78,13 +106,13 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
       // Ctrl/Cmd + K para Command Palette (já gerenciado no App.tsx)
       // Mas podemos manter aqui como fallback
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        onOpenCommandPalette?.();
+        onOpenCommandPaletteRef.current?.();
       }
 
       // Ctrl/Cmd + B para toggle sidebar (opcional)
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
         e.preventDefault();
-        onToggleSidebar?.();
+        onToggleSidebarRef.current?.();
       }
     };
 
@@ -92,6 +120,6 @@ export const useKeyboardShortcuts = (options: KeyboardShortcutsOptions = {}) => 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [setActiveView, onOpenCommandPalette, onCloseModals, onToggleSidebar, isSidebarOpen]);
+  }, [setActiveView]); // Array de dependências fixo - apenas setActiveView (função estável do hook useNavigation)
 };
 

@@ -6,6 +6,7 @@ import { getRevisoes, createRevisao, updateRevisaoApi, deleteRevisao } from '../
 import { useEditalStore } from './useEditalStore';
 import { toast } from '../components/Sonner';
 import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
 
 
 const mapDificuldade = (d?: 'facil' | 'medio' | 'dificil'): NivelDificuldade | undefined => {
@@ -84,14 +85,38 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
         const revisaoOriginal = get().revisoes.find(r => r.id === id);
         if (!revisaoOriginal) return;
 
-        const mappedNovaDificuldade = mapDificuldade(novaDificuldade);
+        // Se adiou, apenas reagenda para amanhã sem marcar como concluída
+        if (resultado === 'adiou') {
+          await get().reagendarRevisao(id, 1);
+          toast.info('Revisão adiada para amanhã');
+          return;
+        }
 
-        await get().updateRevisao(id, { status: 'concluida', dificuldade: mappedNovaDificuldade ?? revisaoOriginal.dificuldade });
+        // Se acertou, mantém a dificuldade atual ou melhora para fácil
+        // Se errou, aumenta a dificuldade ou mantém como difícil
+        let novaDificuldadeFinal = revisaoOriginal.dificuldade;
+        if (resultado === 'acertou') {
+          // Se estava difícil ou médio, pode melhorar
+          if (revisaoOriginal.dificuldade === 'difícil') {
+            novaDificuldadeFinal = 'médio';
+          } else if (revisaoOriginal.dificuldade === 'médio') {
+            novaDificuldadeFinal = 'fácil';
+          }
+        } else if (resultado === 'errou') {
+          // Se errou, aumenta a dificuldade
+          if (revisaoOriginal.dificuldade === 'fácil') {
+            novaDificuldadeFinal = 'médio';
+          } else {
+            novaDificuldadeFinal = 'difícil';
+          }
+        }
+
+        await get().updateRevisao(id, { status: 'concluida', dificuldade: novaDificuldadeFinal });
         
         // Determine the correct event and context
         let eventType: XpLogEvent = revisaoOriginal.status === 'atrasada' ? 'revisao_atrasada' : 'revisao_concluida';
         const context = {
-            difficulty: mappedNovaDificuldade ?? revisaoOriginal.dificuldade,
+            difficulty: novaDificuldadeFinal,
             isCorrect: resultado === 'acertou'
         };
 
@@ -100,18 +125,22 @@ export const useRevisoesStore = create<RevisoesStore>((set, get) => ({
             eventType = 'revisao_dificil';
         }
 
-        useGamificationStore.getState().logXpEvent(eventType, { revisaoId: id }, context);
-
+        await useGamificationStore.getState().logXpEvent(eventType, { revisaoId: id }, context);
 
         if (resultado === 'errou') {
             const novaRevisaoData: Omit<Revisao, 'id' | 'studyPlanId'> = {
                 ...revisaoOriginal,
                 data_prevista: addDays(new Date(), 1).toISOString(),
                 status: 'pendente',
-                dificuldade: mappedNovaDificuldade || 'difícil',
+                dificuldade: 'difícil',
             };
             await get().addRevisao(novaRevisaoData);
         }
+        
+        // Verificar conquistas após concluir revisão (aguardar um pouco para garantir que os dados estão atualizados)
+        setTimeout(() => {
+          checkAndAwardBadges();
+        }, 100);
       },
       reagendarRevisao: async (id, dias) => {
         const novaData = addDays(new Date(), dias);

@@ -10,6 +10,13 @@ const AchievementNotifier: React.FC = () => {
 
   const currentBadge = queue.length > 0 ? queue[0] : null;
 
+  // Debug: log quando há badges na fila
+  React.useEffect(() => {
+    if (queue.length > 0) {
+      console.log("AchievementNotifier: Badges na fila:", queue.map(b => b.name));
+    }
+  }, [queue]);
+
   return (
     <AnimatePresence>
       {currentBadge && (

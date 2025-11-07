@@ -573,3 +573,6 @@ Com essas implementações, a aplicação estará pronta para escalar e manter a
 
 **Desenvolvido com ❤️ para ajudar nos seus estudos!**
 
+
+
+

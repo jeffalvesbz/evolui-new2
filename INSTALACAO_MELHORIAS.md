@@ -83,3 +83,6 @@ Todas as melhorias críticas foram implementadas. A aplicação agora tem:
 
 Consulte `README_MELHORIAS.md` para detalhes completos.
 
+
+
+

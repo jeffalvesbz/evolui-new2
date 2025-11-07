@@ -3,13 +3,13 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { Disciplina, Topico } from '../types';
 import { 
     ChevronDownIcon, 
-    FilePlus2Icon, 
     Trash2Icon, 
     EditIcon, 
     LandmarkIcon, 
     CheckIcon,
     SaveIcon,
     UploadIcon,
+    PlusCircleIcon,
 } from './icons';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
 import { toast } from './Sonner';
@@ -114,18 +114,67 @@ const DisciplinaCard: React.FC<{
     onAddTopicBatch: () => void;
     onDelete: () => void;
 }> = ({ disciplina, onEdit, onAddTopic, onAddTopicBatch, onDelete }) => {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     
     return (
         <div className="bg-card rounded-xl border border-border">
-            <header className="p-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-lg text-foreground">{disciplina.nome}</h3>
-                    <button onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} className="p-2 rounded-full hover:bg-muted text-muted-foreground">
+            <header className={`p-4 transition-colors ${isExpanded ? 'bg-muted/20' : ''}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                    <div className="flex items-center justify-between flex-1">
+                        <h3 
+                            className="font-bold text-lg text-foreground cursor-pointer" 
+                            onClick={() => setIsExpanded(!isExpanded)}
+                        >
+                            {disciplina.nome}
+                        </h3>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} 
+                            className="p-2 rounded-full hover:bg-muted text-muted-foreground sm:hidden"
+                        >
+                            <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                    </div>
+                    <div className="flex items-center flex-wrap justify-end gap-2">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onAddTopic(); }} 
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                            title="Adicionar Tópico"
+                        >
+                            <PlusCircleIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} 
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                            title="Adicionar Tópicos em Lote"
+                        >
+                            <UploadIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onEdit(); }} 
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                            title="Editar Disciplina"
+                        >
+                            <EditIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onDelete(); }} 
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500 transition-colors" 
+                            title="Excluir Disciplina"
+                        >
+                            <Trash2Icon className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} 
+                            className="hidden sm:flex p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                        >
                         <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                     </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div 
+                    className="flex items-center gap-3 cursor-pointer" 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
                     <Progress value={disciplina.progresso} />
                     <span className="text-sm font-bold text-secondary w-14 text-right">{disciplina.progresso.toFixed(0)}%</span>
                 </div>
@@ -145,12 +194,6 @@ const DisciplinaCard: React.FC<{
                                </div>
                             </div>
                         )}
-                    </div>
-                    <div className="p-2 flex items-center justify-end gap-1 border-t border-border bg-muted/30">
-                        <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópico"><FilePlus2Icon className="w-4 h-4" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Adicionar Tópicos em Lote"><UploadIcon className="w-4 h-4" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary" title="Editar Disciplina"><EditIcon className="w-4 h-4" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500" title="Excluir Disciplina"><Trash2Icon className="w-4 h-4" /></button>
                     </div>
                 </div>
             )}

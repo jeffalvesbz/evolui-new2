@@ -128,3 +128,6 @@ export const useEstudosStore = create<EstudosState>((set, get) => ({
 3. **Pronto para integração**: Fácil adicionar Sentry, LogRocket, etc.
 4. **Performance**: Zero overhead em produção
 
+
+
+

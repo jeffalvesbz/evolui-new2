@@ -58,14 +58,14 @@ const EditalManagementModal: React.FC = () => {
             if (mode === 'create') {
                 const novoEdital = await addEdital(data);
                 setEditalAtivo(novoEdital); // UX Improvement: Set new edital as active
-                toast.success('Edital criado e ativado com sucesso!');
+                toast.success(`Plano "${novoEdital.nome}" criado com sucesso! Agora adicione disciplinas na seção Edital.`);
             } else if (mode === 'edit' && selectedEdital) {
                 await updateEdital(selectedEdital.id, data);
-                toast.success('Edital atualizado com sucesso!');
+                toast.success(`Plano "${data.nome}" atualizado com sucesso!`);
             }
             setMode('list');
         } catch (error) {
-            toast.error('Ocorreu um erro ao salvar o edital.');
+            toast.error('Não foi possível salvar o plano de estudos. Verifique sua conexão e tente novamente.');
             console.error(error);
         } finally {
             setIsSubmitting(false);
@@ -78,7 +78,7 @@ const EditalManagementModal: React.FC = () => {
             toast.success('Edital e todos os seus dados foram removidos.');
             setDeleteConfirmationId(null);
         } catch (error) {
-            toast.error('Ocorreu um erro ao remover o edital.');
+            toast.error('Não foi possível remover o plano de estudos. Verifique sua conexão e tente novamente.');
             console.error(error);
         }
     };
@@ -171,7 +171,7 @@ const EditalManagementModal: React.FC = () => {
     );
 
     return (
-         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
+         <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
             <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 {mode === 'list' ? renderList() : renderForm()}
             </div>

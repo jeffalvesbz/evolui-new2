@@ -4,13 +4,11 @@
 
 # 📚 Evolui: Planejador de Estudos Inteligente
 
-Plataforma completa de estudos com IA, gamificação e acompanhamento de progresso para concursos e vestibulares.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1yycm051VuuDYdIpbtSueXsa_MoDBJzFP
+Plataforma completa de estudos com gamificação e acompanhamento de progresso para concursos e vestibulares.
 
 ## ✨ Funcionalidades
 
-- 🤖 **IA Integrada** - Geração de flashcards, correção de redações e planos de estudo personalizados
+- ✍️ **Corretor de Redação com IA** - Correção detalhada de redações com análise completa
 - 📊 **Gamificação** - Sistema de XP, níveis, conquistas e ranking semanal
 - 🎯 **Ciclos de Estudo** - Método de estudo rotativo baseado em tempo
 - 📝 **Caderno de Erros** - Registre e revise seus erros
@@ -34,7 +32,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1yycm051VuuDYdIpbtSueXs
    ```
    
    Edite o arquivo `.env` e configure suas credenciais:
-   - `VITE_GEMINI_API_KEY` - Sua chave de API do Google Gemini
+   - `VITE_GEMINI_API_KEY` - Sua chave de API do Google Gemini (opcional, apenas para correção de redação)
    - `VITE_SUPABASE_URL` - URL do seu projeto Supabase
    - `VITE_SUPABASE_ANON_KEY` - Chave anônima do Supabase
 
@@ -85,10 +83,11 @@ Para instruções detalhadas de deploy, consulte o arquivo **[DEPLOY.md](./DEPLO
 
 ## 🔑 Obtendo Credenciais
 
-### Google Gemini API Key
+### Google Gemini API Key (Opcional - apenas para correção de redação)
 1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Faça login e clique em "Create API Key"
 3. Copie a chave gerada
+4. **Nota:** Esta chave é necessária apenas se você quiser usar o corretor de redação com IA
 
 ### Supabase
 1. Crie um projeto em [Supabase](https://supabase.com)
@@ -102,7 +101,7 @@ Para instruções detalhadas de deploy, consulte o arquivo **[DEPLOY.md](./DEPLO
 - **Estilização:** TailwindCSS com design glassmorphism
 - **Estado:** Zustand para gerenciamento de estado
 - **Backend:** Supabase (PostgreSQL + Auth + Real-time)
-- **IA:** Google Gemini API (flashcards, correção de redações, planos de estudo)
+- **IA:** Google Gemini API (apenas para correção de redação)
 - **Gráficos:** Recharts
 - **Animações:** Framer Motion
 - **Formulários:** React Hook Form
@@ -114,7 +113,7 @@ Para instruções detalhadas de deploy, consulte o arquivo **[DEPLOY.md](./DEPLO
 evoluiapp-main/
 ├── components/          # Componentes React
 ├── stores/             # Stores Zustand
-├── services/           # Integração com APIs (Supabase, Gemini)
+├── services/           # Integração com APIs (Supabase, Gemini para redação)
 ├── hooks/              # Custom React Hooks
 ├── types/              # Definições TypeScript
 ├── utils/              # Funções utilitárias
@@ -143,7 +142,7 @@ Este projeto é privado e proprietário.
 Para dúvidas ou problemas:
 - Consulte o [DEPLOY.md](./DEPLOY.md) para questões de deploy
 - Verifique a documentação do [Supabase](https://supabase.com/docs)
-- Consulte a documentação do [Gemini API](https://ai.google.dev/docs)
+- Para correção de redação, consulte a documentação do [Gemini API](https://ai.google.dev/docs)
 
 ---
 

@@ -127,3 +127,6 @@ Após adicionar todas as variáveis:
 
 **✅ Pronto! Todas as variáveis estão formatadas para copiar e colar no Vercel!**
 
+
+
+

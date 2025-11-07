@@ -119,3 +119,6 @@ npm run dev
 - [Vite Environment Variables](https://vitejs.dev/guide/env-and-mode.html)
 - [Google AI Studio](https://aistudio.google.com)
 
+
+
+

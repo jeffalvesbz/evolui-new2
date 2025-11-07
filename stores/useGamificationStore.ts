@@ -86,7 +86,24 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             if (stats) {
                 // Recalcula o nível com base no XP total para garantir consistência
                 stats.level = calculateLevel(stats.xp_total);
+                const previousStats = get().stats;
                 set({ stats });
+                
+                // Se havia badges na fila esperando stats, processá-las agora
+                const queue = get().newlyUnlockedBadgesQueue;
+                if (queue.length > 0 && !previousStats) {
+                    console.log("Processando badges da fila agora que stats está disponível:", queue.map(b => b.name));
+                    // Processar badges da fila que estavam esperando stats
+                    const { unlockBadges } = get();
+                    // Remover da fila temporária e processar novamente com stats disponível
+                    set(state => ({ newlyUnlockedBadgesQueue: [] }));
+                    unlockBadges(queue);
+                }
+                
+                // Verificar conquistas após carregar stats (aguardar um pouco para garantir que os dados estão atualizados)
+                setTimeout(() => {
+                  checkAndAwardBadges();
+                }, 100);
             }
         } catch (error) {
             console.error("Failed to fetch gamification stats:", error);
@@ -149,7 +166,10 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             await get().fetchGamificationStats(userId);
             await get().fetchXpLog(userId);
 
-            checkAndAwardBadges();
+            // Verificar conquistas após atualizar stats e xpLog (aguardar um pouco para garantir que os dados estão atualizados)
+            setTimeout(() => {
+              checkAndAwardBadges();
+            }, 100);
             
         } catch (error) {
             console.error("Failed to log XP event:", error);
@@ -178,6 +198,10 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
             try {
                 await updateGamificationStats(user.id, updates);
                 await get().fetchGamificationStats(user.id); // Refresh stats from DB
+                // Verificar conquistas após atualizar streak (aguardar um pouco para garantir que os dados estão atualizados)
+                setTimeout(() => {
+                  checkAndAwardBadges();
+                }, 100);
             } catch (error) {
                 console.error("Failed to update streak:", error);
             }
@@ -187,12 +211,29 @@ export const useGamificationStore = create<GamificationState>((set, get) => ({
     unlockBadges: (newlyUnlocked: Badge[]) => {
         const userId = useAuthStore.getState().user?.id;
         const { stats, fetchXpLog, fetchGamificationStats } = get();
-        if (!stats || newlyUnlocked.length === 0 || !userId) return;
+        
+        if (newlyUnlocked.length === 0) {
+            console.warn("unlockBadges called with empty array");
+            return;
+        }
+        
+        if (!userId) {
+            console.warn("unlockBadges called but user not authenticated");
+            return;
+        }
 
-        // 1. Adiciona as conquistas à fila de notificações da UI
+        // 1. Adiciona as conquistas à fila de notificações da UI PRIMEIRO (antes de qualquer verificação de stats)
         set(state => ({ 
             newlyUnlockedBadgesQueue: [...state.newlyUnlockedBadgesQueue, ...newlyUnlocked]
         }));
+        
+        console.log("Badges adicionadas à fila:", newlyUnlocked.map(b => b.name));
+
+        // Se não há stats ainda, apenas adiciona à fila e retorna (stats serão atualizados depois)
+        if (!stats) {
+            console.warn("Stats não disponíveis ainda, badges adicionadas à fila para notificação posterior");
+            return;
+        }
         
         // 2. Atualiza o estado local de forma otimista para feedback imediato na UI
         const newBadgeIds = newlyUnlocked.map(b => b.id);

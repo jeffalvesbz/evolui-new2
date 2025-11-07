@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CalendarDaysIcon, 
@@ -11,12 +11,14 @@ import {
   PlusIcon,
   BarChart3Icon,
   TargetIcon,
+  SearchIcon,
 } from './icons';
 import { useRevisoes } from '../hooks/useRevisoes';
 import RevisaoCard from './RevisaoCard';
 import { toast } from './Sonner';
 import { useEditalStore } from '../stores/useEditalStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
+import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 
 type FiltroStatus = 'todas' | 'pendentes' | 'programadas' | 'atrasadas' | 'concluidas';
 type FiltroDificuldade = 'todas' | 'fácil' | 'médio' | 'difícil';
@@ -24,6 +26,7 @@ type FiltroDificuldade = 'todas' | 'fácil' | 'médio' | 'difícil';
 const RevisoesPage: React.FC = () => {
   const editalAtivo = useEditalStore((state) => state.editalAtivo);
   const { fetchRevisoes } = useRevisoesStore();
+  const findTopicById = useDisciplinasStore((state) => state.findTopicById);
   const {
     revisoes,
     pendentesHoje,
@@ -45,6 +48,7 @@ const RevisoesPage: React.FC = () => {
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('todas');
   const [filtroDificuldade, setFiltroDificuldade] = useState<FiltroDificuldade>('todas');
   const [mostrarEstatisticas, setMostrarEstatisticas] = useState(false);
+  const [busca, setBusca] = useState('');
 
   // Garantir que as revisões sejam carregadas quando o componente é montado ou quando o edital muda
   useEffect(() => {
@@ -56,16 +60,39 @@ const RevisoesPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editalAtivo?.id]);
 
-  const revisoesFiltradas = (revisoes || []).filter(revisao => {
-    if (filtroStatus !== 'todas') {
-      if (filtroStatus === 'pendentes' && revisao.status !== 'pendente') return false;
-      if (filtroStatus === 'programadas' && revisao.status !== 'pendente') return false;
-      if (filtroStatus === 'atrasadas' && revisao.status !== 'atrasada') return false;
-      if (filtroStatus === 'concluidas' && revisao.status !== 'concluida') return false;
-    }
-    if (filtroDificuldade !== 'todas' && revisao.dificuldade !== filtroDificuldade) return false;
-    return true;
-  });
+  // Cache de informações de disciplina e tópico para busca
+  const revisoesComInfo = useMemo(() => {
+    return (revisoes || []).map(revisao => {
+      const info = findTopicById(revisao.topico_id);
+      return {
+        revisao,
+        disciplinaNome: info?.disciplina?.nome || '',
+        topicoNome: info?.topico?.titulo || '',
+      };
+    });
+  }, [revisoes, findTopicById]);
+
+  const revisoesFiltradas = useMemo(() => {
+    return revisoesComInfo.filter(({ revisao, disciplinaNome, topicoNome }) => {
+      // Filtro por busca (conteúdo, disciplina, tópico)
+      if (busca.trim()) {
+        const buscaLower = busca.toLowerCase();
+        const conteudoMatch = revisao.conteudo.toLowerCase().includes(buscaLower);
+        const disciplinaMatch = disciplinaNome.toLowerCase().includes(buscaLower);
+        const topicoMatch = topicoNome.toLowerCase().includes(buscaLower);
+        if (!conteudoMatch && !disciplinaMatch && !topicoMatch) return false;
+      }
+      // Filtro por status
+      if (filtroStatus !== 'todas') {
+        if (filtroStatus === 'pendentes' && revisao.status !== 'pendente') return false;
+        if (filtroStatus === 'atrasadas' && revisao.status !== 'atrasada') return false;
+        if (filtroStatus === 'concluidas' && revisao.status !== 'concluida') return false;
+      }
+      // Filtro por dificuldade
+      if (filtroDificuldade !== 'todas' && revisao.dificuldade !== filtroDificuldade) return false;
+      return true;
+    }).map(({ revisao }) => revisao);
+  }, [revisoesComInfo, busca, filtroStatus, filtroDificuldade]);
 
   const handleRefresh = async () => {
     try {
@@ -169,17 +196,36 @@ const RevisoesPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="rounded-xl border border-border bg-card p-4">
-        <div className="flex items-center gap-4 mb-3">
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="flex items-center gap-4">
           <FilterIcon className="w-5 h-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold text-foreground">Filtros</h3>
+          <h3 className="text-lg font-semibold text-foreground">Filtros e Busca</h3>
         </div>
+        
+        {/* Campo de busca */}
+        <div className="relative">
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por conteúdo, disciplina ou tópico..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+
         <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-semibold w-20">Status:</span>
                 <FilterButton label="Todas" isActive={filtroStatus === 'todas'} onClick={() => setFiltroStatus('todas')} />
                 <FilterButton label="Pendentes" isActive={filtroStatus === 'pendentes'} onClick={() => setFiltroStatus('pendentes')} />
                 <FilterButton label="Atrasadas" isActive={filtroStatus === 'atrasadas'} onClick={() => setFiltroStatus('atrasadas')} />
                 <FilterButton label="Concluídas" isActive={filtroStatus === 'concluidas'} onClick={() => setFiltroStatus('concluidas')} />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-semibold w-20">Dificuldade:</span>
+                <FilterButton label="Todas" isActive={filtroDificuldade === 'todas'} onClick={() => setFiltroDificuldade('todas')} />
+                <FilterButton label="Fácil" isActive={filtroDificuldade === 'fácil'} onClick={() => setFiltroDificuldade('fácil')} />
+                <FilterButton label="Médio" isActive={filtroDificuldade === 'médio'} onClick={() => setFiltroDificuldade('médio')} />
+                <FilterButton label="Difícil" isActive={filtroDificuldade === 'difícil'} onClick={() => setFiltroDificuldade('difícil')} />
             </div>
         </div>
       </div>

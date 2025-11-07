@@ -126,16 +126,23 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                          {isConcluirMenuOpen && (
                             <div className="absolute bottom-full right-0 mb-2 w-40 bg-background border border-border rounded-md shadow-lg z-10 p-1">
                                 <button
-                                    onClick={() => { onConcluir(revisao.id, 'acertou', 'facil'); setIsConcluirMenuOpen(false); }}
-                                    className="w-full text-left font-semibold text-sm px-3 py-1.5 rounded hover:bg-muted text-primary"
+                                    onClick={() => { onConcluir(revisao.id, 'acertou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-green-600 font-medium"
                                 >
-                                    Acertei
+                                    ✓ Acertei
                                 </button>
                                 <button
-                                    onClick={() => { onConcluir(revisao.id, 'errou', 'dificil'); setIsConcluirMenuOpen(false); }}
-                                    className="w-full text-left font-semibold text-sm px-3 py-1.5 rounded hover:bg-muted text-red-400"
+                                    onClick={() => { onConcluir(revisao.id, 'errou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-red-400 font-medium"
                                 >
-                                    Errei
+                                    ✗ Errei
+                                </button>
+                                <div className="border-t border-border my-1"></div>
+                                <button
+                                    onClick={() => { onConcluir(revisao.id, 'adiou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-muted-foreground"
+                                >
+                                    ⏸ Adiar
                                 </button>
                             </div>
                         )}

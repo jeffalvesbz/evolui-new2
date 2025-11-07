@@ -19,6 +19,7 @@ const toast = (message: string, type: ToastType = 'info') => {
 
 toast.success = (message: string) => toast(message, 'success');
 toast.error = (message: string) => toast(message, 'error');
+toast.info = (message: string) => toast(message, 'info');
 
 export { toast };
 

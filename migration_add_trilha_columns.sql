@@ -9,3 +9,6 @@ ADD COLUMN IF NOT EXISTS trilha_conclusao JSONB DEFAULT '{}'::jsonb;
 COMMENT ON COLUMN study_plans.trilhas_por_semana IS 'Armazena as trilhas organizadas por semana (chave: weekKey, valor: TrilhaSemanalData)';
 COMMENT ON COLUMN study_plans.trilha_conclusao IS 'Armazena o estado de conclusão dos tópicos na trilha (chave: weekKey-diaId-topicId, valor: boolean)';
 
+
+
+

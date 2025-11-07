@@ -259,21 +259,38 @@ const StudyView: React.FC = () => {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                flipCard();
+            // Ignorar se estiver digitando em um input ou textarea
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
             }
-            if (isFlipped) {
-                if (e.key === '1') handleAnswer('errei');
-                if (e.key === '2') handleAnswer('dificil');
-                if (e.key === '3') handleAnswer('bom');
-                if (e.key === '4') handleAnswer('facil');
+
+            switch (e.code) {
+                case 'Digit1':
+                    e.preventDefault();
+                    handleAnswer('errei');
+                    break;
+                case 'Digit2':
+                    e.preventDefault();
+                    handleAnswer('dificil');
+                    break;
+                case 'Digit3':
+                    e.preventDefault();
+                    handleAnswer('bom');
+                    break;
+                case 'Digit4':
+                    e.preventDefault();
+                    handleAnswer('facil');
+                    break;
+                case 'Space':
+                    e.preventDefault();
+                    flipCard();
+                    break;
             }
         };
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isFlipped, flipCard, handleAnswer]);
+    }, [flipCard, handleAnswer]);
 
     if (!session) return null;
     

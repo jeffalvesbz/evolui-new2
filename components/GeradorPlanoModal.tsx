@@ -4,8 +4,6 @@ import { useModalStore } from '../stores/useModalStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { Disciplina } from '../types';
 import { useEstudosStore, TrilhaSemanalData } from '../stores/useEstudosStore';
-import { gerarPlanoDeEstudosIA } from '../services/geminiService';
-import { DisciplinaParaIA } from '../types';
 import { toast } from './Sonner';
 import { XIcon, SparklesIcon, PlusIcon } from './icons';
 import { startOfWeek, format } from 'date-fns';
@@ -122,18 +120,40 @@ const GeradorPlanoModal: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const disciplinasParaIA: DisciplinaParaIA[] = disciplinasSelecionadasObjetos.map(d => ({
-        id: d.id,
-        nome: d.nome,
-        dificuldade: data.dificuldades[d.id] || 'medio',
-        topicos: d.topicos.map(t => ({ id: t.id, titulo: t.titulo })),
-      }));
-
-      const planoGerado: TrilhaSemanalData = await gerarPlanoDeEstudosIA('', data.horasSemanais, disciplinasParaIA, data.diasSemana);
+      // Geração simples sem IA: distribui tópicos igualmente entre os dias selecionados
+      const allTopicIds = disciplinasSelecionadasObjetos.flatMap(d => d.topicos.map(t => t.id));
+      const planoGerado: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+      const dias = data.diasSemana.length > 0 ? data.diasSemana : ['seg', 'ter', 'qua', 'qui', 'sex'];
+      const MAX_TOPICOS_POR_DIA = 4;
+      
+      // Embaralhar os tópicos
+      const topicosEmbaralhados = allTopicIds.sort(() => 0.5 - Math.random());
+      
+      // Distribuir os tópicos limitando a 4 por dia apenas nos dias selecionados
+      let diaIndex = 0;
+      for (const topicId of topicosEmbaralhados) {
+        // Encontrar o próximo dia selecionado que ainda não atingiu o limite
+        let tentativas = 0;
+        while (planoGerado[dias[diaIndex]] && planoGerado[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA && tentativas < dias.length) {
+          diaIndex = (diaIndex + 1) % dias.length;
+          tentativas++;
+        }
+        
+        // Se todos os dias selecionados estão cheios, parar (usuário pode adicionar mais manualmente)
+        if (!planoGerado[dias[diaIndex]] || planoGerado[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA) {
+          break;
+        }
+        
+        planoGerado[dias[diaIndex]].push(topicId);
+        diaIndex = (diaIndex + 1) % dias.length;
+      }
+      
+      // Simular um pequeno delay para feedback visual
+      await new Promise(res => setTimeout(res, 500));
       
       // Definir semana atual antes de salvar
       const { setSemanaAtualKey, setTrilhaCompleta, saveTrilhasToDb } = useEstudosStore.getState();
-      const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww', { locale: ptBR });
+      const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
       setSemanaAtualKey(weekKey);
       
       setTrilhaCompleta(planoGerado);
@@ -155,13 +175,13 @@ const GeradorPlanoModal: React.FC = () => {
   if (!isGeradorPlanoModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeGeradorPlanoModal}>
+    <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeGeradorPlanoModal}>
       <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <header className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <SparklesIcon className="w-6 h-6 text-primary" />
-              <h2 className="text-lg font-bold">Gerador de Plano de Estudos IA</h2>
+              <h2 className="text-lg font-bold">Gerador de Plano de Estudos</h2>
             </div>
             <button type="button" onClick={closeGeradorPlanoModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
           </header>
@@ -171,7 +191,7 @@ const GeradorPlanoModal: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-96 text-center">
                 <SparklesIcon className="w-12 h-12 text-primary animate-pulse mb-4" />
                 <h3 className="font-semibold text-lg text-foreground">Criando seu plano...</h3>
-                <p className="text-muted-foreground mt-1">Aguarde, a IA está organizando seus estudos.</p>
+                <p className="text-muted-foreground mt-1">Aguarde, organizando seus estudos.</p>
               </div>
             ) : (
               <div className="space-y-6">

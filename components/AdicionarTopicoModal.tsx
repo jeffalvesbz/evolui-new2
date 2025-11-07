@@ -100,7 +100,7 @@ const AdicionarTopicoModal: React.FC = () => {
     if (!isAddTopicModalOpen || !disciplina) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeAddTopicModal}>
+        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeAddTopicModal}>
             <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-border flex items-start justify-between">
                     <div>

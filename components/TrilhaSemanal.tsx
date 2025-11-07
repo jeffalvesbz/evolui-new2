@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
+import { useEditalStore } from '../stores/useEditalStore';
 import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, PlusIcon, XIcon, Trash2Icon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { Topico } from '../types';
 import { useModalStore } from '../stores/useModalStore';
@@ -51,7 +52,7 @@ const TopicCard: React.FC<{
         });
     };
 
-    const cardClasses = `p-2 sm:p-3 rounded-md mb-2 transition-all duration-200 flex items-center gap-2 sm:gap-3 group relative ${
+    const cardClasses = `p-2.5 sm:p-3 rounded-md mb-2 transition-all duration-200 flex flex-col gap-2 group relative ${
       isDragging
         ? 'opacity-40 scale-95 cursor-grabbing'
         : concluidoNaTrilha
@@ -74,26 +75,30 @@ const TopicCard: React.FC<{
             transform: isDragging ? 'scale(0.95)' : undefined,
           }}
         >
-        {concluidoNaTrilha && (
-          <div className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 flex items-center justify-center rounded-full bg-green-500 text-black">
-            <CheckIcon className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+        <div className="flex items-start justify-between gap-2 w-full">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <div 
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-0.5"
+                style={{
+                  backgroundColor: `hsl(${(topic.disciplinaId.charCodeAt(0) * 137.5) % 360}, 70%, 60%)`
+                }}
+              />
+              <p className="text-[10px] sm:text-xs text-muted-foreground break-words leading-tight">{topic.disciplinaNome}</p>
+            </div>
+            <p className={`text-xs sm:text-sm font-semibold break-words leading-snug ${concluidoNaTrilha ? 'text-muted-foreground line-through' : 'text-card-foreground'}`}>
+              {topic.titulo}
+            </p>
           </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
-            <div 
-              className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full flex-shrink-0"
-              style={{
-                backgroundColor: `hsl(${(topic.disciplinaId.charCodeAt(0) * 137.5) % 360}, 70%, 60%)`
-              }}
-            />
-            <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{topic.disciplinaNome}</p>
+          <div className="flex items-start gap-1 flex-shrink-0">
+            {concluidoNaTrilha && (
+              <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded-full bg-green-500 text-black flex-shrink-0">
+                <CheckIcon className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+              </div>
+            )}
           </div>
-          <p className={`text-xs sm:text-sm font-semibold truncate ${concluidoNaTrilha ? 'text-muted-foreground line-through' : 'text-card-foreground'}`}>
-            {topic.titulo}
-          </p>
         </div>
-        <div className="flex items-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity w-full pt-1 border-t border-border/50">
           {/* Botões sempre visíveis, mesmo quando concluído */}
           <button 
               onClick={(e) => {
@@ -163,6 +168,13 @@ const DIAS_SEMANA = [
     { id: 'dom', nome: 'Domingo' },
 ];
 
+// Função para normalizar strings (remover acentos e converter para minúsculas)
+const normalizarDia = (s: string) => {
+    // Extrair apenas a primeira palavra (antes do hífen, se houver)
+    const primeiraPalavra = s.split('-')[0].trim();
+    return primeiraPalavra.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+};
+
 const TrilhaSemanal: React.FC = () => {
     const { 
         trilha, 
@@ -174,13 +186,23 @@ const TrilhaSemanal: React.FC = () => {
         toggleTopicoConcluidoNaTrilha,
         isTopicoConcluidoNaTrilha,
         setSemanaAtualKey,
-        trilhaConclusao
+        trilhaConclusao,
+        loadTrilhaSemanal
     } = useEstudosStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const { openGeradorPlanoModal } = useModalStore();
+    const { editalAtivo } = useEditalStore();
 
     // Estado para semana atual
     const [semanaAtual, setSemanaAtual] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+    
+    // Detectar o dia atual e normalizar
+    const diaAtualNormalizado = useMemo(() => {
+        const diaAtual = format(new Date(), 'EEEE', { locale: ptBR });
+        // date-fns retorna "segunda-feira", "terça-feira", etc.
+        // Extraímos apenas a primeira palavra e normalizamos
+        return normalizarDia(diaAtual);
+    }, []);
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [diaParaAdicionar, setDiaParaAdicionar] = useState<string | null>(null);
     const [topicosSelecionados, setTopicosSelecionados] = useState<Set<string>>(new Set());
@@ -190,10 +212,10 @@ const TrilhaSemanal: React.FC = () => {
     const [draggingTopicId, setDraggingTopicId] = useState<string | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-    // Gerar chave da semana (YYYY-WW)
+    // Gerar chave da semana (YYYY-MM-DD - data de início da semana)
     const getWeekKey = (date: Date) => {
         const start = startOfWeek(date, { weekStartsOn: 1 });
-        return format(start, 'yyyy-ww', { locale: ptBR });
+        return format(start, 'yyyy-MM-dd');
     };
 
     // Carregar trilha da semana atual
@@ -202,6 +224,16 @@ const TrilhaSemanal: React.FC = () => {
     const trilhaSemanaAtual = useMemo(() => {
         return getTrilhaSemana(weekKey);
     }, [weekKey, trilhasPorSemana]);
+
+    // Carregar trilha semanal do banco quando o componente montar ou edital mudar
+    useEffect(() => {
+        if (editalAtivo?.id) {
+            loadTrilhaSemanal(editalAtivo.id).catch(err => {
+                console.error("Erro ao carregar trilha semanal:", err);
+            });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [editalAtivo?.id]);
 
     // Atualizar trilha quando semana mudar
     useEffect(() => {
@@ -225,6 +257,13 @@ const TrilhaSemanal: React.FC = () => {
         
         // Sempre atualiza a semana atual key
         setSemanaAtualKey(weekKey);
+        
+        // Se mudou de semana e há edital ativo, carregar trilha da nova semana
+        if (editalAtivo?.id) {
+            loadTrilhaSemanal(editalAtivo.id, weekKey).catch(err => {
+                console.error("Erro ao carregar trilha da nova semana:", err);
+            });
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [weekKey]);
     
@@ -627,17 +666,36 @@ const TrilhaSemanal: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <div className="flex-1 p-2 sm:p-4 md:p-6 lg:p-8 overflow-y-auto">
-                {/* Layout Responsivo: Grid em mobile/tablet, horizontal scroll em desktop */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row gap-3 sm:gap-4 lg:gap-4 lg:overflow-x-auto lg:overflow-y-hidden lg:h-full">
-                    {DIAS_SEMANA.map(dia => {
-                        const stats = estatisticasPorDia[dia.id];
-                        const carga = stats.total === 0 ? 'vazio' : stats.total <= 3 ? 'leve' : stats.total <= 6 ? 'medio' : 'pesado';
-                        return (
-                            <div key={dia.id} className="flex flex-col w-full sm:w-auto lg:w-64 lg:flex-shrink-0 lg:min-h-full">
-                                <div className="mb-2 sm:mb-3">
+            <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-y-auto overflow-x-hidden">
+                {/* Layout Responsivo: Grid flexível que se adapta ao tamanho da tela */}
+                <div className="max-w-[1400px] mx-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3 sm:gap-4 w-full items-start">
+                        {DIAS_SEMANA.map(dia => {
+                            const stats = estatisticasPorDia[dia.id];
+                            const carga = stats.total === 0 ? 'vazio' : stats.total <= 3 ? 'leve' : stats.total <= 6 ? 'medio' : 'pesado';
+                            const isDiaAtual = isSemanaAtual && normalizarDia(dia.nome) === diaAtualNormalizado;
+                            return (
+                                <div key={dia.id} className={`flex flex-col w-full transition-all duration-300 ${
+                                    isDiaAtual ? 'scale-[1.02]' : ''
+                                }`}>
+                                <div className={`mb-2 sm:mb-3 rounded-xl p-2 sm:p-3 transition-all duration-300 ${
+                                    isDiaAtual 
+                                        ? 'bg-indigo-50/30 dark:bg-indigo-900/20 border border-indigo-500 shadow-lg shadow-indigo-200/20 dark:shadow-indigo-900/20' 
+                                        : ''
+                                }`}>
                                     <div className="flex items-center justify-between mb-1">
-                                        <h3 className="font-bold text-sm sm:text-base">{dia.nome}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`font-bold text-sm sm:text-base transition-colors duration-300 ${
+                                                isDiaAtual ? 'text-indigo-600 dark:text-indigo-400' : 'text-foreground'
+                                            }`}>
+                                                {dia.nome}
+                                            </h3>
+                                            {isDiaAtual && (
+                                                <span className="text-[10px] sm:text-xs bg-indigo-500 text-white px-2 py-0.5 rounded-full font-medium">
+                                                    Hoje
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
                                             carga === 'vazio' ? 'bg-muted text-muted-foreground' :
                                             carga === 'leve' ? 'bg-green-500/20 text-green-600 dark:text-green-500' :
@@ -657,7 +715,7 @@ const TrilhaSemanal: React.FC = () => {
                                     )}
                                 </div>
                                 <Card
-                                    className={`flex-1 p-2 sm:p-3 overflow-y-auto transition-all duration-200 flex flex-col ${
+                                    className={`flex-1 p-2 sm:p-3 overflow-y-auto transition-all duration-200 flex flex-col w-full ${
                                         draggingOverDay === dia.id 
                                             ? 'bg-primary/10 border-2 border-primary shadow-lg ring-2 ring-primary/20' 
                                             : 'border-2 border-transparent'
@@ -724,6 +782,7 @@ const TrilhaSemanal: React.FC = () => {
                             </div>
                         );
                     })}
+                    </div>
                 </div>
             </div>
             

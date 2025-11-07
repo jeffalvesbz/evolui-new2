@@ -39,7 +39,8 @@ import { MiniGamificationCard } from './MiniGamificationCard';
 import AcoesRecomendadas from './AcoesRecomendadas';
 import { mensagensDiarias } from '../data/motivacoes';
 import { useGamificationStore } from '../stores/useGamificationStore';
-import { gerarMensagemMotivacionalIA } from '../services/geminiService';
+import EmptyDashboardState from './EmptyDashboardState';
+import FirstStepsChecklist from './FirstStepsChecklist';
 
 // --- Chart Components ---
 
@@ -129,7 +130,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const user = useAuthStore((state) => state.user);
-  const editalAtivo = useEditalStore((state) => state.editalAtivo);
+  const { editalAtivo, editais } = useEditalStore();
   const abrirModalEstudoManual = useEstudosStore((state) => state.abrirModalEstudoManual);
   const openEditalModal = useModalStore((state) => state.openEditalModal);
   
@@ -242,39 +243,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const metaPercentual = safeGoalMinutes > 0 ? Math.min(100, Math.round((tempoTotalHoje / safeGoalMinutes) * 100)) : 0;
 
   useEffect(() => {
-    const fetchMotivationalMessage = async () => {
-        if (!user || gamificationStats === null) {
-            const fallbackIndex = Math.floor(Math.random() * mensagensDiarias.length);
-            setMotivationalMessage(mensagensDiarias[fallbackIndex]);
-            setIsMessageLoading(false);
-            return;
-        };
-        
-        setIsMessageLoading(true);
-        try {
-            // FIX: Explicitly convert potentially 'unknown' or 'any' types to 'number' to satisfy the function signature.
-            // This prevents a TypeScript error where an argument is not assignable to the 'number' parameter.
-            const message = await gerarMensagemMotivacionalIA(
-                user.name.split(' ')[0],
-                Number(tempoTotalHoje),
-                Number(metaPercentual),
-                Number(gamificationStats.current_streak_days || 0),
-                Number(revisoesPendentes as any)
-            );
-            setMotivationalMessage({ frase: message, autor: null });
-        } catch (error) {
-             console.error("Failed to fetch motivational message", error);
-             const fallbackIndex = Math.floor(Math.random() * mensagensDiarias.length);
-             setMotivationalMessage(mensagensDiarias[fallbackIndex]);
-        } finally {
-            setIsMessageLoading(false);
-        }
-    };
-    
-    const timeoutId = setTimeout(fetchMotivationalMessage, 100);
-    return () => clearTimeout(timeoutId);
-
-  }, [user, gamificationStats, tempoTotalHoje, metaPercentual, revisoesPendentes]);
+    // Usa mensagens motivacionais estáticas (sem IA)
+    const fallbackIndex = Math.floor(Math.random() * mensagensDiarias.length);
+    setMotivationalMessage(mensagensDiarias[fallbackIndex]);
+    setIsMessageLoading(false);
+  }, []);
   
   const recentStudies = useMemo(() => sessoes
     .slice() // Create a copy to avoid mutating the original array
@@ -333,6 +306,18 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const weeklyGoalOptions = [...new Set([...WEEKLY_GOAL_OPTIONS, safeWeeklyGoalHours])].sort(
     (a, b) => a - b,
   );
+
+  // Mostrar estado vazio se não há editais ou edital ativo
+  const showEmptyState = editais.length === 0 || !editalAtivo;
+
+  if (showEmptyState) {
+    return (
+      <div data-tutorial="dashboard-content" className="space-y-8">
+        <EmptyDashboardState onCreateEdital={openEditalModal} />
+        <FirstStepsChecklist setActiveView={setActiveView} />
+      </div>
+    );
+  }
 
   return (
     <div data-tutorial="dashboard-content" className="space-y-12">
@@ -406,7 +391,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 <CardTitle className="text-2xl mt-1">Metas e Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-3">
+                <div className="space-y-3" data-goal-section>
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Meta diária</span>

@@ -24,6 +24,7 @@ import SalvarSessaoModal from './components/SalvarSessaoModal';
 import AdicionarTopicoModal from './components/AdicionarTopicoModal';
 import CriarCicloModal from './components/CriarCicloModal';
 import { useFlashcardsStore } from './stores/useFlashcardStore';
+import { useFlashcardStudyStore } from './stores/useFlashcardStudyStore';
 import { useDailyGoalStore } from './stores/useDailyGoalStore';
 import { useStudyStore } from './stores/useStudyStore';
 import { useRedacaoStore } from './stores/useRedacaoStore';
@@ -231,6 +232,10 @@ const App: React.FC = () => {
   const { hasSeenOnboarding, isLoading: isOnboardingLoading, checkOnboardingStatus, markOnboardingAsSeen } = useOnboardingStore();
   const [showTutorial, setShowTutorial] = useState(false);
   
+  // Verificar se há uma sessão de flashcards ativa para desabilitar navegação por números
+  const flashcardSession = useFlashcardStudyStore(state => state.session);
+  const hasActiveFlashcardSession = flashcardSession !== null;
+  
   // Listener para abrir Command Palette com Cmd/Ctrl + K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -250,6 +255,7 @@ const App: React.FC = () => {
   }, []);
   
   // Usar hook de atalhos de teclado
+  // Desabilitar navegação por números quando há uma sessão de flashcards ativa
   useKeyboardShortcuts({
     onOpenCommandPalette: () => setIsCommandPaletteOpen(true),
     onCloseModals: () => {
@@ -260,6 +266,7 @@ const App: React.FC = () => {
     },
     onToggleSidebar: () => setIsSidebarOpen(prev => !prev),
     isSidebarOpen,
+    disableNavigation: hasActiveFlashcardSession,
   });
 
   const { unlockBadges, badges, stats, updateStreak } = useGamificationStore();

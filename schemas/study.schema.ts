@@ -86,3 +86,6 @@ export type CreateCicloInput = z.infer<typeof createCicloSchema>;
 export type CreateFlashcardInput = z.infer<typeof createFlashcardSchema>;
 export type RedacaoInput = z.infer<typeof redacaoSchema>;
 
+
+
+

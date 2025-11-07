@@ -157,7 +157,7 @@ const CronometroInteligente: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
+                className={`fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
             >
                 <motion.div
                     initial={{ scale: 0.95, y: 20, opacity: 0 }}

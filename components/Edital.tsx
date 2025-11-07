@@ -65,12 +65,15 @@ const Edital = () => {
 
       await Promise.all(topicPromises);
       
-      toast.success(`Disciplina "${disciplina.nome}" adicionada ao edital!`);
+      const topicosMsg = payload.topicos.length > 0 
+        ? `${payload.topicos.length} tópico(s) adicionado(s). Defina seus tópicos ou comece a estudar.`
+        : 'Adicione tópicos para começar a organizar seus estudos.';
+      toast.success(`Disciplina "${disciplina.nome}" adicionada! ${topicosMsg}`);
       setMode('default');
       setSelectedDiscipline(null);
     } catch (error) {
       console.error('Erro ao criar disciplina:', error);
-      toast.error('Não foi possível criar a disciplina.');
+      toast.error('Não foi possível criar a disciplina. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -125,12 +128,12 @@ const Edital = () => {
         }
       }
 
-      toast.success(`Disciplina "${payload.nome}" atualizada!`);
+      toast.success(`Disciplina "${payload.nome}" atualizada com sucesso!`);
       setMode('default');
       setSelectedDiscipline(null);
     } catch (error) {
       console.error('Erro ao atualizar disciplina:', error);
-      toast.error('Não foi possível atualizar a disciplina.');
+      toast.error('Não foi possível atualizar a disciplina. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -144,7 +147,7 @@ const Edital = () => {
       setSelectedDiscipline(null);
     } catch (error) {
       console.error('Erro ao deletar disciplina:', error);
-      toast.error('Não foi possível remover a disciplina.');
+      toast.error('Não foi possível remover a disciplina. Verifique sua conexão e tente novamente.');
     }
   };
 

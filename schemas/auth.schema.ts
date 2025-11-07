@@ -28,3 +28,6 @@ export const signupSchema = loginSchema.extend({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 
+
+
+

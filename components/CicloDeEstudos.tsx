@@ -1,12 +1,12 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { RepeatIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon, ClockIcon, PlusCircleIcon, ArrowUpIcon, ArrowDownIcon, PlayIcon, StarIcon, CheckIcon, CheckCircle2Icon, GripVerticalIcon } from './icons';
 import { toast } from './Sonner';
 import { useModalStore } from '../stores/useModalStore';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Ciclo, SessaoCiclo } from '../types';
 import {
   DndContext,
@@ -37,18 +37,20 @@ const formatTime = (seconds: number) => {
 const COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7', '#EC4899', '#6366F1', '#F59E0B'];
 
 // Componente de item sortable
-const SortableSessaoItem: React.FC<{
+const SortableSessaoItemComponent: React.FC<{
     sessao: SessaoCiclo;
     index: number;
     isNext: boolean;
     isActive: boolean;
     disciplinaNome: string;
     tempoDecorrido?: number;
+    isConcluido: boolean;
+    isSaving?: boolean;
     onIniciar: () => void;
     onConcluir: () => void;
     onRemove: () => void;
     onUpdateTempo: (delta: number) => void;
-}> = ({ sessao, index, isNext, isActive, disciplinaNome, tempoDecorrido, onIniciar, onConcluir, onRemove, onUpdateTempo }) => {
+}> = ({ sessao, index, isNext, isActive, disciplinaNome, tempoDecorrido, isConcluido, isSaving = false, onIniciar, onConcluir, onRemove, onUpdateTempo }) => {
     const {
         attributes,
         listeners,
@@ -68,17 +70,41 @@ const SortableSessaoItem: React.FC<{
         <div
             ref={setNodeRef}
             style={style}
-            className={`p-4 flex items-center justify-between group transition-colors ${isNext ? 'bg-primary/10 border-l-4 border-primary' : ''} ${isActive ? 'ring-2 ring-primary/50' : ''}`}
+            className={`p-4 flex items-center justify-between group transition-all duration-300 ${
+                isConcluido 
+                    ? 'bg-gray-100/50 dark:bg-gray-800/50 border-l-4 border-gray-400' 
+                    : isNext 
+                        ? 'bg-primary/10 border-l-4 border-primary' 
+                        : ''
+            } ${isActive ? 'ring-2 ring-primary/50' : ''}`}
         >
             <div className="flex items-center gap-4 flex-1">
                 <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
                     <GripVerticalIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <span className="text-sm font-bold bg-muted/50 w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground">{index + 1}</span>
+                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${
+                    isConcluido 
+                        ? 'bg-gray-400 dark:bg-gray-600 text-white' 
+                        : 'bg-muted/50 text-muted-foreground'
+                }`}>
+                    {isConcluido ? <CheckCircle2Icon className="w-4 h-4" /> : index + 1}
+                </span>
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
-                        <p className="font-semibold text-foreground">{disciplinaNome}</p>
-                        {isActive && (
+                        <p className={`font-semibold transition-all duration-300 ${
+                            isConcluido 
+                                ? 'text-gray-500 dark:text-gray-400 line-through' 
+                                : 'text-foreground'
+                        }`}>
+                            {disciplinaNome}
+                        </p>
+                        {isConcluido && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                                <CheckCircle2Icon className="w-3 h-3" />
+                                Concluída
+                            </span>
+                        )}
+                        {isActive && !isConcluido && (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-1">
                                 <ClockIcon className="w-3 h-3" />
                                 Em andamento
@@ -132,9 +158,19 @@ const SortableSessaoItem: React.FC<{
                         {isActive && (
                             <button
                                 onClick={onConcluir}
-                                className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-secondary text-black text-xs font-bold shadow-sm hover:opacity-90"
+                                disabled={isSaving}
+                                className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-secondary text-black text-xs font-bold shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <CheckCircle2Icon className="w-3 h-3"/> Concluir
+                                {isSaving ? (
+                                    <>
+                                        <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                        Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2Icon className="w-3 h-3"/> Concluir
+                                    </>
+                                )}
                             </button>
                         )}
                     </>
@@ -157,6 +193,21 @@ const SortableSessaoItem: React.FC<{
     );
 };
 
+// Memoizar componente para evitar re-renders desnecessários
+const SortableSessaoItem = React.memo(SortableSessaoItemComponent, (prevProps, nextProps) => {
+    return (
+        prevProps.sessao.id === nextProps.sessao.id &&
+        prevProps.sessao.tempo_previsto === nextProps.sessao.tempo_previsto &&
+        prevProps.index === nextProps.index &&
+        prevProps.isNext === nextProps.isNext &&
+        prevProps.isActive === nextProps.isActive &&
+        prevProps.isConcluido === nextProps.isConcluido &&
+        prevProps.tempoDecorrido === nextProps.tempoDecorrido &&
+        prevProps.disciplinaNome === nextProps.disciplinaNome &&
+        prevProps.isSaving === nextProps.isSaving
+    );
+});
+
 const CicloDeEstudos: React.FC = () => {
     const {
         ciclos,
@@ -172,7 +223,7 @@ const CicloDeEstudos: React.FC = () => {
         setUltimaSessaoConcluida,
     } = useCiclosStore();
     const { disciplinas } = useDisciplinasStore();
-    const { iniciarSessao, sessaoAtual, sessoes } = useEstudosStore();
+    const { iniciarSessao, sessaoAtual, sessoes, salvarSessao, descartarSessao } = useEstudosStore();
     const openCriarCicloModal = useModalStore(state => state.openCriarCicloModal);
     
     const [isEditingCiclo, setIsEditingCiclo] = useState(false);
@@ -180,6 +231,7 @@ const CicloDeEstudos: React.FC = () => {
     const [isAddingSessao, setIsAddingSessao] = useState(false);
     const [novaSessaoData, setNovaSessaoData] = useState({ disciplinaId: '', tempoMinutos: '60' });
     const [isTrocarSessaoModalOpen, setIsTrocarSessaoModalOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -188,32 +240,95 @@ const CicloDeEstudos: React.FC = () => {
         })
     );
 
-    const cicloAtivo = useMemo(() => getCicloAtivo(), [cicloAtivoId, ciclos, getCicloAtivo]);
+    // Calcular cicloAtivo diretamente sem usar getCicloAtivo na dependência
+    const cicloAtivo = useMemo(() => {
+        if (!cicloAtivoId) return null;
+        return ciclos.find(c => c.id === cicloAtivoId) || null;
+    }, [cicloAtivoId, ciclos]);
 
     const disciplinasMap = useMemo<Map<string, string>>(() => new Map(disciplinas.map(d => [d.id, d.nome])), [disciplinas]);
 
-    // Calcular sessões do ciclo concluídas hoje
+    // Criar sessoesIdsDoCiclo memoizado uma vez
+    const sessoesIdsDoCiclo = useMemo(() => {
+        if (!cicloAtivo) return new Set<string>();
+        return new Set((cicloAtivo.sessoes || []).map(s => s.id));
+    }, [cicloAtivo]);
+
+    // Criar sessoesDoCiclo base que filtra todas as sessões do ciclo
+    const sessoesDoCiclo = useMemo(() => {
+        if (sessoesIdsDoCiclo.size === 0) return [];
+        return sessoes.filter(s => 
+            s.topico_id.startsWith('ciclo-') && 
+            sessoesIdsDoCiclo.has(s.topico_id.replace('ciclo-', ''))
+        );
+    }, [sessoes, sessoesIdsDoCiclo]);
+
+    // Calcular sessões do ciclo concluídas hoje (derivado de sessoesDoCiclo)
     const sessoesHojeDoCiclo = useMemo(() => {
-        if (!cicloAtivo) return [];
         const hojeISO = new Date().toISOString().split('T')[0];
-        const sessoesIds = new Set((cicloAtivo.sessoes || []).map(s => s.id));
-        return sessoes.filter(s => {
-            if (s.data_estudo !== hojeISO) return false;
-            // Verificar se a sessão pertence ao ciclo (através do topico_id que começa com 'ciclo-')
-            return s.topico_id.startsWith('ciclo-') && sessoesIds.has(s.topico_id.replace('ciclo-', ''));
+        return sessoesDoCiclo.filter(s => s.data_estudo === hojeISO);
+    }, [sessoesDoCiclo]);
+
+    // Criar Set com IDs de sessões concluídas (qualquer data)
+    const sessoesConcluidasIds = useMemo(() => {
+        const ids = new Set<string>();
+        sessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            ids.add(sessaoCicloId);
         });
-    }, [sessoes, cicloAtivo]);
+        return ids;
+    }, [sessoesDoCiclo]);
+
+    // todasSessoesDoCiclo é simplesmente sessoesDoCiclo (já são todas as sessões do ciclo)
+    const todasSessoesDoCiclo = sessoesDoCiclo;
+
+    // Calcular sessoesOrdenadas uma vez e reutilizar
+    const sessoesOrdenadas = useMemo(() => {
+        if (!cicloAtivo) return [];
+        return [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
+    }, [cicloAtivo]);
 
     // Calcular progresso do ciclo (tempo concluído vs total)
-    const { totalTempoCiclo, tempoConcluidoCiclo, dadosGrafico, proximaSessao, progressoPercentual } = useMemo(() => {
-        if (!cicloAtivo) return { totalTempoCiclo: 0, tempoConcluidoCiclo: 0, dadosGrafico: [], proximaSessao: null, progressoPercentual: 0 };
-        
-        const sessoesOrdenadas = [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
+    const { totalTempoCiclo, tempoConcluidoCiclo, dadosGrafico, proximaSessao, progressoPercentual, legendaDisciplinas, cicloConcluido, totalSessoes, sessoesConcluidasCount } = useMemo(() => {
+        if (!cicloAtivo || sessoesOrdenadas.length === 0) return { 
+            totalTempoCiclo: 0, 
+            tempoConcluidoCiclo: 0, 
+            dadosGrafico: [], 
+            proximaSessao: null, 
+            progressoPercentual: 0,
+            legendaDisciplinas: [],
+            cicloConcluido: false,
+            totalSessoes: 0,
+            sessoesConcluidasCount: 0
+        };
         
         const tempoTotal = sessoesOrdenadas.reduce((acc: number, s) => acc + Number(s.tempo_previsto || 0), 0);
         
-        // Calcular tempo concluído (sessões do ciclo que foram estudadas hoje)
-        const tempoConcluido = sessoesHojeDoCiclo.reduce((acc, s) => acc + s.tempo_estudado, 0);
+        // Calcular tempo concluído considerando TODAS as sessões do ciclo estudadas (não apenas hoje)
+        // Agrupar por sessão do ciclo e pegar o maior tempo estudado de cada uma
+        const tempoPorSessaoCiclo = new Map<string, number>();
+        todasSessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            const tempoAtual = tempoPorSessaoCiclo.get(sessaoCicloId) || 0;
+            // Considerar o maior tempo estudado para cada sessão do ciclo
+            if (s.tempo_estudado > tempoAtual) {
+                tempoPorSessaoCiclo.set(sessaoCicloId, s.tempo_estudado);
+            }
+        });
+        
+        // Identificar quais sessões estão concluídas (há uma sessão de estudo correspondente)
+        const sessoesConcluidas = new Set<string>();
+        todasSessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            sessoesConcluidas.add(sessaoCicloId);
+        });
+        
+        // Somar o tempo de cada sessão do ciclo (limitado ao tempo previsto)
+        const tempoConcluido = sessoesOrdenadas.reduce((acc, sessao) => {
+            const tempoEstudado = tempoPorSessaoCiclo.get(sessao.id) || 0;
+            // Limitar ao tempo previsto para não ultrapassar 100%
+            return acc + Math.min(tempoEstudado, sessao.tempo_previsto);
+        }, 0);
         
         // Criar mapeamento estável de disciplina para cor (ordenado por nome para consistência)
         const disciplinasUnicas = Array.from(new Set(sessoesOrdenadas.map(s => s.disciplina_id)))
@@ -227,13 +342,64 @@ const CicloDeEstudos: React.FC = () => {
             disciplinaCorMap.set(disciplinaId, COLORS[index % COLORS.length]);
         });
 
-        const dadosGrafico = sessoesOrdenadas.map(sessao => ({
-            id: sessao.id,
-            disciplinaId: sessao.disciplina_id,
-            name: disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida',
-            value: Math.round(Number(sessao.tempo_previsto || 0) / 60),
-            color: disciplinaCorMap.get(sessao.disciplina_id) || COLORS[0]
-        }));
+        // Calcular progresso por disciplina
+        const progressoPorDisciplina = new Map<string, number>();
+        disciplinasUnicas.forEach(disciplinaId => {
+            const sessoesDaDisciplina = sessoesOrdenadas.filter(s => s.disciplina_id === disciplinaId);
+            const sessoesConcluidasDaDisciplina = sessoesDaDisciplina.filter(s => sessoesConcluidas.has(s.id));
+            const progresso = sessoesDaDisciplina.length > 0 
+                ? sessoesConcluidasDaDisciplina.length / sessoesDaDisciplina.length 
+                : 0;
+            progressoPorDisciplina.set(disciplinaId, progresso);
+        });
+
+        // Criar dados do gráfico com cores dinâmicas baseadas no estado de conclusão
+        const dadosGrafico = sessoesOrdenadas.map(sessao => {
+            const disciplinaId = sessao.disciplina_id;
+            const nomeDisciplina = disciplinasMap.get(disciplinaId) || 'Desconhecida';
+            const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
+            const isConcluida = sessoesConcluidas.has(sessao.id);
+            const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
+            
+            // Determinar cor final:
+            // - Verde (#22C55E) se disciplina 100% concluída
+            // - Cinza (#9CA3AF) se sessão concluída mas disciplina não 100%
+            // - Cor base se não concluída
+            let corFinal = corBase;
+            if (progressoDisciplina >= 1.0) {
+                corFinal = '#22C55E'; // Verde para disciplina 100% concluída
+            } else if (isConcluida) {
+                corFinal = '#9CA3AF'; // Cinza para sessão concluída
+            }
+            
+            return {
+                id: sessao.id,
+                disciplinaId: disciplinaId,
+                name: nomeDisciplina,
+                value: Math.round(Number(sessao.tempo_previsto || 0) / 60),
+                color: corFinal,
+                corBase: corBase, // Guardar cor base para legenda
+                isConcluida: isConcluida,
+                progressoDisciplina: progressoDisciplina
+            };
+        });
+        
+        // Criar legenda única por disciplina (sem repetição)
+        const legendaDisciplinas = disciplinasUnicas.map(disciplinaId => {
+            const nomeDisciplina = disciplinasMap.get(disciplinaId) || 'Desconhecida';
+            const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
+            const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
+            
+            // Cor da legenda: verde se 100% concluída, senão cor base
+            const corLegenda = progressoDisciplina >= 1.0 ? '#22C55E' : corBase;
+            
+            return {
+                disciplinaId,
+                name: nomeDisciplina,
+                color: corLegenda,
+                progresso: progressoDisciplina
+            };
+        });
         
         // Lógica para encontrar a próxima sessão
         let proxima: SessaoCiclo | null = null;
@@ -246,10 +412,34 @@ const CicloDeEstudos: React.FC = () => {
             }
         }
 
+        // Calcular progresso: considerar 100% quando tempo concluído >= tempo total
         const progresso = tempoTotal > 0 ? Math.min(100, Math.round((tempoConcluido / tempoTotal) * 100)) : 0;
+        
+        // Garantir que seja exatamente 100% quando concluído (com margem de erro de 1%)
+        const progressoFinal = progresso >= 99 ? 100 : progresso;
 
-        return { totalTempoCiclo: tempoTotal, tempoConcluidoCiclo: tempoConcluido, dadosGrafico, proximaSessao: proxima, progressoPercentual: progresso };
-    }, [cicloAtivo, disciplinasMap, ultimaSessaoConcluidaId, sessoesHojeDoCiclo]);
+        // Verificar se todas as sessões do ciclo estão concluídas
+        const totalSessoes = sessoesOrdenadas.length;
+        const sessoesConcluidasCount = sessoesConcluidas.size;
+        const cicloConcluido = totalSessoes > 0 && sessoesConcluidasCount === totalSessoes;
+
+        // Calcular progresso baseado em sessões concluídas (conforme solicitado)
+        const progressoPorSessoes = totalSessoes > 0
+            ? (sessoesConcluidasCount / totalSessoes) * 100
+            : 0;
+
+        return { 
+            totalTempoCiclo: tempoTotal, 
+            tempoConcluidoCiclo: tempoConcluido, 
+            dadosGrafico, 
+            proximaSessao: proxima, 
+            progressoPercentual: Math.round(progressoPorSessoes),
+            legendaDisciplinas,
+            cicloConcluido,
+            totalSessoes,
+            sessoesConcluidasCount
+        };
+    }, [cicloAtivo, disciplinasMap, ultimaSessaoConcluidaId, todasSessoesDoCiclo, sessoesOrdenadas]);
 
     // Verificar se há sessão ativa para a próxima sessão do ciclo
     const sessaoAtivaParaCiclo = useMemo(() => {
@@ -258,33 +448,38 @@ const CicloDeEstudos: React.FC = () => {
         return sessaoAtual.topico.id === sessaoCicloId ? sessaoAtual : null;
     }, [sessaoAtual, proximaSessao]);
 
-    const handleUpdateCicloName = () => {
+    const handleUpdateCicloName = useCallback(() => {
         if (cicloAtivo && editedCicloName.trim() && editedCicloName.trim() !== cicloAtivo.nome) {
             updateCiclo(cicloAtivo.id, { nome: editedCicloName.trim() });
             toast.success("Nome do ciclo atualizado.");
         }
         setIsEditingCiclo(false);
-    }
+    }, [cicloAtivo, editedCicloName, updateCiclo]);
     
-    const handleRemoveCiclo = () => {
+    const handleRemoveCiclo = useCallback(() => {
         if (cicloAtivo && window.confirm(`Tem certeza que deseja remover o ciclo "${cicloAtivo.nome}"?`)) {
             removeCiclo(cicloAtivo.id);
             toast.success("Ciclo removido.");
         }
-    }
+    }, [cicloAtivo, removeCiclo]);
     
-    const handleAddSessao = async () => {
+    const handleAddSessao = useCallback(async () => {
         if (cicloAtivo && novaSessaoData.disciplinaId && parseInt(novaSessaoData.tempoMinutos) > 0) {
-            await addSessaoAoCiclo(cicloAtivo.id, novaSessaoData.disciplinaId, parseInt(novaSessaoData.tempoMinutos) * 60);
-            toast.success("Sessão adicionada ao ciclo.");
-            setNovaSessaoData({ disciplinaId: '', tempoMinutos: '60' });
-            setIsAddingSessao(false);
+            try {
+                await addSessaoAoCiclo(cicloAtivo.id, novaSessaoData.disciplinaId, parseInt(novaSessaoData.tempoMinutos) * 60);
+                toast.success("Sessão adicionada ao ciclo.");
+                setNovaSessaoData({ disciplinaId: '', tempoMinutos: '60' });
+                setIsAddingSessao(false);
+            } catch (error) {
+                console.error("Erro ao adicionar sessão:", error);
+                toast.error("Erro ao adicionar sessão. Tente novamente.");
+            }
         } else {
             toast.error("Selecione uma disciplina e defina um tempo válido.");
         }
-    };
+    }, [cicloAtivo, novaSessaoData, addSessaoAoCiclo]);
     
-    const handleIniciarEstudoCiclo = (sessao: SessaoCiclo) => {
+    const handleIniciarEstudoCiclo = useCallback((sessao: SessaoCiclo) => {
         const disciplina = disciplinas.find(d => d.id === sessao.disciplina_id);
         if (disciplina && cicloAtivo) {
             iniciarSessao({
@@ -294,32 +489,44 @@ const CicloDeEstudos: React.FC = () => {
             }, 'cronometro');
             toast.success(`Iniciando estudos de ${disciplina.nome}!`);
         }
-    };
+    }, [disciplinas, cicloAtivo, iniciarSessao]);
 
-    const handleConcluirSessao = () => {
-        if (!cicloAtivo || !proximaSessao || !sessaoAtivaParaCiclo) return;
+    const handleConcluirSessao = useCallback(async () => {
+        if (!cicloAtivo || !proximaSessao || !sessaoAtivaParaCiclo || isSaving) return;
         
-        // Marcar sessão como concluída (isso vai avançar para a próxima)
-        setUltimaSessaoConcluida(cicloAtivo.id, proximaSessao.id);
-        toast.success("Sessão concluída! Avançando para a próxima.");
-        
-        // Sugerir revisão/flashcards
         const disciplina = disciplinas.find(d => d.id === proximaSessao.disciplina_id);
-        if (disciplina) {
+        if (!disciplina) return;
+
+        setIsSaving(true);
+        try {
+            // Salvar a sessão de estudo no banco de dados
+            // A função salvarSessao já marca a sessão como concluída no ciclo automaticamente
+            await salvarSessao({
+                topico_id: sessaoAtivaParaCiclo.topico.id,
+                comentarios: `Sessão do ciclo: ${cicloAtivo.nome}`,
+            });
+
+            toast.success("Sessão concluída! Avançando para a próxima.");
+            
+            // Sugerir revisão/flashcards
             setTimeout(() => {
-                toast.info(`💡 Dica: Que tal revisar ${disciplina.nome} com flashcards?`, {
+                toast(`💡 Dica: Que tal revisar ${disciplina.nome} com flashcards?`, {
                     duration: 5000,
                 });
             }, 1000);
+        } catch (error) {
+            console.error("Erro ao salvar sessão:", error);
+            toast.error("Erro ao salvar sessão. Tente novamente.");
+        } finally {
+            setIsSaving(false);
         }
-    };
+    }, [cicloAtivo, proximaSessao, sessaoAtivaParaCiclo, disciplinas, salvarSessao, isSaving]);
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
         
         if (!cicloAtivo || !over || active.id === over.id) return;
 
-        const sessoesOrdenadas = [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
         const oldIndex = sessoesOrdenadas.findIndex(s => s.id === active.id);
         const newIndex = sessoesOrdenadas.findIndex(s => s.id === over.id);
 
@@ -328,11 +535,16 @@ const CicloDeEstudos: React.FC = () => {
         const sessoesReordenadas = arrayMove(sessoesOrdenadas, oldIndex, newIndex);
         const sessoesComOrdem = sessoesReordenadas.map((s, i) => ({ ...s, ordem: i }));
         
-        await updateCiclo(cicloAtivo.id, { sessoes: sessoesComOrdem });
-        toast.success("Sessões reordenadas.");
-    };
+        try {
+            await updateCiclo(cicloAtivo.id, { sessoes: sessoesComOrdem });
+            toast.success("Sessões reordenadas.");
+        } catch (error) {
+            console.error("Erro ao reordenar sessões:", error);
+            toast.error("Erro ao reordenar sessões. Tente novamente.");
+        }
+    }, [cicloAtivo, sessoesOrdenadas, updateCiclo]);
 
-    const handleUpdateTempo = async (sessaoId: string, delta: number) => {
+    const handleUpdateTempo = useCallback(async (sessaoId: string, delta: number) => {
         if (!cicloAtivo) return;
         const sessao = cicloAtivo.sessoes?.find(s => s.id === sessaoId);
         if (!sessao) return;
@@ -342,20 +554,24 @@ const CicloDeEstudos: React.FC = () => {
             s.id === sessaoId ? { ...s, tempo_previsto: novoTempo } : s
         );
         
-        await updateCiclo(cicloAtivo.id, { sessoes: sessoesAtualizadas });
-        toast.success(`Tempo atualizado para ${formatTime(novoTempo)}`);
-    };
+        try {
+            await updateCiclo(cicloAtivo.id, { sessoes: sessoesAtualizadas });
+            toast.success(`Tempo atualizado para ${formatTime(novoTempo)}`);
+        } catch (error) {
+            console.error("Erro ao atualizar tempo:", error);
+            toast.error("Erro ao atualizar tempo. Tente novamente.");
+        }
+    }, [cicloAtivo, updateCiclo]);
 
-    const handleTrocarSessao = () => {
+    const handleTrocarSessao = useCallback(() => {
         setIsTrocarSessaoModalOpen(true);
-    };
+    }, []);
 
-    const handleSelecionarSessao = (sessaoSelecionada: SessaoCiclo) => {
+    const handleSelecionarSessao = useCallback((sessaoSelecionada: SessaoCiclo) => {
         if (!cicloAtivo) return;
         
         // Atualizar a última sessão concluída para a sessão anterior à selecionada
         // Isso faz com que a sessão selecionada se torne a nova "próxima sessão"
-        const sessoesOrdenadas = [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
         const indiceSelecionado = sessoesOrdenadas.findIndex(s => s.id === sessaoSelecionada.id);
         
         if (indiceSelecionado > 0) {
@@ -370,12 +586,7 @@ const CicloDeEstudos: React.FC = () => {
         handleIniciarEstudoCiclo(sessaoSelecionada);
         setIsTrocarSessaoModalOpen(false);
         toast.success(`Iniciando estudos de ${disciplinasMap.get(sessaoSelecionada.disciplina_id)}!`);
-    };
-
-    const sessoesOrdenadas = useMemo(() => {
-        if (!cicloAtivo) return [];
-        return [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
-    }, [cicloAtivo]);
+    }, [cicloAtivo, sessoesOrdenadas, setUltimaSessaoConcluida, handleIniciarEstudoCiclo, disciplinasMap]);
 
     return (
         <div data-tutorial="ciclos-content" className="max-w-7xl mx-auto space-y-6">
@@ -423,10 +634,20 @@ const CicloDeEstudos: React.FC = () => {
                             ) : (
                                 <button
                                     onClick={handleConcluirSessao}
-                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+                                    disabled={isSaving}
+                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    <CheckCircle2Icon className="w-4 h-4" />
-                                    Concluir Sessão
+                                    {isSaving ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                            Salvando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2Icon className="w-4 h-4" />
+                                            Concluir Sessão
+                                        </>
+                                    )}
                                 </button>
                             )}
                             <button
@@ -487,21 +708,55 @@ const CicloDeEstudos: React.FC = () => {
                         <div className="p-4 border-b border-border bg-muted/20">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-sm font-medium text-muted-foreground">Progresso do Ciclo</span>
-                                    <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary font-bold">
-                                        {sessoesHojeDoCiclo.length} sessão{sessoesHojeDoCiclo.length !== 1 ? 'ões' : ''} hoje
+                                    <span className={`text-sm font-medium transition-all duration-300 flex items-center ${
+                                        cicloConcluido 
+                                            ? 'text-green-500' 
+                                            : 'text-muted-foreground'
+                                    }`}>
+                                        Progresso do Ciclo
+                                        {cicloConcluido && <CheckCircle2Icon className="w-4 h-4 ml-2 text-green-500" />}
                                     </span>
+                                    {cicloConcluido ? (
+                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-green-500/20 text-green-600 dark:text-green-400 flex items-center gap-1 transition-all duration-300">
+                                            <CheckCircle2Icon className="w-3 h-3" />
+                                            Ciclo Concluído
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-primary/20 text-primary transition-all duration-300">
+                                            {sessoesHojeDoCiclo.length} sessão{sessoesHojeDoCiclo.length !== 1 ? 'ões' : ''} hoje
+                                        </span>
+                                    )}
                                 </div>
-                                <span className="text-sm font-bold text-foreground">{progressoPercentual}%</span>
+                                <span className={`text-sm font-bold transition-all duration-300 ${
+                                    cicloConcluido 
+                                        ? 'text-green-500' 
+                                        : 'text-foreground'
+                                }`}>
+                                    {progressoPercentual}%
+                                </span>
                             </div>
-                            <div className="w-full bg-muted/50 rounded-full h-2.5">
+                            {/* Barra de Progresso Moderna */}
+                            <div className="w-full bg-muted/30 rounded-full h-3 mt-3 overflow-hidden">
                                 <div
-                                    className="bg-primary h-2.5 rounded-full transition-all duration-300"
+                                    className={`h-full rounded-full transition-all duration-700 ${
+                                        progressoPercentual === 100
+                                            ? 'bg-green-500'
+                                            : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
+                                    }`}
                                     style={{ width: `${progressoPercentual}%` }}
                                 />
                             </div>
-                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                                <span>{formatTime(tempoConcluidoCiclo)} concluído</span>
+                            <p className="text-xs mt-1 text-gray-400 dark:text-gray-500 text-right">
+                                {progressoPercentual.toFixed(0)}%
+                            </p>
+                            <div className={`flex justify-between text-xs mt-2 transition-all duration-300 ${
+                                cicloConcluido 
+                                    ? 'text-green-600 dark:text-green-400' 
+                                    : 'text-muted-foreground'
+                            }`}>
+                                <span>
+                                    {sessoesConcluidasCount} de {totalSessoes} sessão{totalSessoes !== 1 ? 'ões' : ''} concluída{totalSessoes !== 1 ? 's' : ''}
+                                </span>
                                 <span>{formatTime(totalTempoCiclo)} total</span>
                             </div>
                         </div>
@@ -515,11 +770,14 @@ const CicloDeEstudos: React.FC = () => {
                                 items={sessoesOrdenadas.map(s => s.id)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <div className="divide-y divide-border max-h-[60vh] overflow-y-auto">
+                                <div className="divide-y divide-border">
                                     {sessoesOrdenadas.map((sessao, index) => {
                                         const isNext = sessao.id === proximaSessao?.id;
                                         const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
                                         const tempoDecorrido = isActive ? sessaoAtivaParaCiclo.elapsedSeconds : undefined;
+                                        
+                                        // Verificar se a sessão foi concluída (qualquer data, não apenas hoje)
+                                        const isConcluido = sessoesConcluidasIds.has(sessao.id);
                                         
                                         return (
                                             <SortableSessaoItem
@@ -530,6 +788,8 @@ const CicloDeEstudos: React.FC = () => {
                                                 isActive={isActive}
                                                 disciplinaNome={disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}
                                                 tempoDecorrido={tempoDecorrido}
+                                                isConcluido={isConcluido}
+                                                isSaving={isSaving && isActive}
                                                 onIniciar={() => handleIniciarEstudoCiclo(sessao)}
                                                 onConcluir={handleConcluirSessao}
                                                 onRemove={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)}
@@ -575,18 +835,63 @@ const CicloDeEstudos: React.FC = () => {
                             </div>
                         )}
                     </div>
-                    <div className="bg-card rounded-xl border border-border shadow-sm p-4 space-y-4">
-                        <h3 className="font-bold text-center text-foreground">Distribuição do Tempo</h3>
+                    <div className={`bg-card rounded-xl border border-border shadow-sm p-4 space-y-4 ${progressoPercentual === 100 ? 'opacity-90' : ''}`}>
+                        <h3 className={`font-bold text-center ${progressoPercentual === 100 ? 'text-gray-500 line-through' : 'text-foreground'}`}>Distribuição do Tempo</h3>
                         {dadosGrafico.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={dadosGrafico} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
-                                        {dadosGrafico.map((entry) => <Cell key={`cell-${entry.id}`} fill={entry.color} />)}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-background)', border: '1px solid var(--color-border)'}} formatter={(value: number) => `${value} min`}/>
-                                    <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}}/>
-                                </PieChart>
-                            </ResponsiveContainer>
+                            <>
+                                <ResponsiveContainer width="100%" height={250}>
+                                    <PieChart>
+                                        <Pie 
+                                            data={dadosGrafico} 
+                                            dataKey="value" 
+                                            nameKey="name" 
+                                            cx="50%" 
+                                            cy="50%" 
+                                            innerRadius={60} 
+                                            outerRadius={80} 
+                                            fill="#8884d8" 
+                                            paddingAngle={5}
+                                        >
+                                            {dadosGrafico.map((entry) => (
+                                                <Cell 
+                                                    key={`cell-${entry.id}`} 
+                                                    fill={entry.color}
+                                                    style={{ transition: 'fill 0.3s ease' }}
+                                                />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ 
+                                                backgroundColor: 'var(--color-background)', 
+                                                border: '1px solid var(--color-border)'
+                                            }} 
+                                            formatter={(value: number) => `${value} min`}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                {/* Legenda customizada - apenas disciplinas únicas */}
+                                {legendaDisciplinas.length > 0 && (
+                                    <div className="flex flex-wrap gap-3 justify-center pt-2">
+                                        {legendaDisciplinas.map((item) => (
+                                            <div 
+                                                key={item.disciplinaId} 
+                                                className="flex items-center gap-2 text-xs"
+                                            >
+                                                <div 
+                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    style={{ backgroundColor: item.color }}
+                                                />
+                                                <span className="text-muted-foreground">
+                                                    {item.name}
+                                                    {item.progresso >= 1.0 && (
+                                                        <span className="ml-1 text-green-500">✓</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">Adicione sessões para ver o gráfico.</div>
                         )}
@@ -614,7 +919,7 @@ const CicloDeEstudos: React.FC = () => {
             {/* Modal de Trocar Sessão */}
             {isTrocarSessaoModalOpen && cicloAtivo && (
                 <div 
-                    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-4"
                     onClick={() => setIsTrocarSessaoModalOpen(false)}
                 >
                     <div 

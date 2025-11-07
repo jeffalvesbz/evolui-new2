@@ -2,8 +2,7 @@
 
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabase } from './supabaseClient';
-import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, DisciplinaParaIA, Friendship, FriendRequest, NivelDificuldade, NotasPesosEntrada } from '../types';
-import { TrilhaSemanalData } from '../stores/useEstudosStore';
+import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, Friendship, FriendRequest, NivelDificuldade, NotasPesosEntrada } from '../types';
 import { Simulation } from '../stores/useStudyStore';
 import { subDays } from 'date-fns';
 import { WeeklyRankingData } from '../stores/useGamificationStore';
@@ -59,93 +58,9 @@ export const signup = async (email, password, name) => {
 }
 
 
-// --- AI PROXY SERVICES (Estes não mudam, pois já usam a API Gemini real) ---
-export const generateFlashcards = async (topicName: string): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-  // Simulação, pois não temos um backend para o proxy. Em um app real, isso seria uma chamada fetch.
-  return [{ pergunta: `Qual a capital do Brasil para o tópico ${topicName}?`, resposta: 'Brasília.' }];
-};
+// --- AI SERVICES (Apenas funcionalidades de redação) ---
 
-export const generateFlashcardsFromContent = async (
-    disciplinaId: string,
-    topicoId: string,
-    topicoTitulo: string,
-    quantidade: number = 5,
-    estilos: ('direto' | 'explicativo' | 'completar')[] = ['direto', 'explicativo', 'completar'],
-    contexto: string = ''
-): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-    await new Promise(res => setTimeout(res, 1500 + quantidade * 200)); // Simulate AI thinking (more time for more cards)
-    
-    // Base de flashcards variados por estilo
-    const flashcardsDireto = [
-        { pergunta: 'O que é Inquérito Policial?', resposta: 'Procedimento administrativo e investigatório, não-processual, presidido pela autoridade policial.', estilo: 'direto' as const },
-        { pergunta: 'Qual o prazo para apresentação de defesa prévia?', resposta: 'O prazo é de 10 dias, contados da publicação da portaria de instauração.', estilo: 'direto' as const },
-        { pergunta: 'O que é habeas corpus?', resposta: 'Remédio constitucional que visa proteger a liberdade de locomoção.', estilo: 'direto' as const },
-        { pergunta: 'Qual a diferença entre crime e contravenção?', resposta: 'Crime é infração penal punida com reclusão ou detenção; contravenção é punida com prisão simples ou multa.', estilo: 'direto' as const },
-    ];
-    
-    const flashcardsExplicativo = [
-        { pergunta: 'Explique o princípio da insignificância no Direito Penal.', resposta: 'Causa de exclusão da tipicidade material do fato, aplicável quando a lesão ao bem jurídico tutelado é ínfima e não justifica a aplicação da sanção penal.', estilo: 'explicativo' as const },
-        { pergunta: 'Descreva o processo de investigação criminal.', resposta: 'Inicia-se com a notitia criminis, passa pela fase investigatória (inquérito policial ou procedimento investigatório), e culmina com a denúncia ou arquivamento.', estilo: 'explicativo' as const },
-        { pergunta: 'Como funciona o sistema acusatório?', resposta: 'Sistema processual onde há separação entre as funções de acusar, defender e julgar, garantindo imparcialidade e contraditório.', estilo: 'explicativo' as const },
-        { pergunta: 'Explique a teoria do domínio do fato.', resposta: 'Teoria que identifica o autor como aquele que domina o fato delitivo, controlando a execução do crime de forma direta ou indireta.', estilo: 'explicativo' as const },
-    ];
-    
-    const flashcardsCompletar = [
-        { pergunta: 'O habeas corpus pode ser impetrado por ______.', resposta: 'qualquer pessoa', estilo: 'completar' as const },
-        { pergunta: 'A competência para julgamento de crimes militares é da ______.', resposta: 'Justiça Militar', estilo: 'completar' as const },
-        { pergunta: 'O princípio do contraditório garante o direito de ______ e ______.', resposta: 'ser ouvido e se defender', estilo: 'completar' as const },
-        { pergunta: 'O art. 5º, inciso LVII da CF garante que ninguém será considerado culpado até o trânsito em julgado de sentença ______.', resposta: 'penal condenatória', estilo: 'completar' as const },
-    ];
-    
-    // Seleciona flashcards baseado nos estilos escolhidos
-    const allFlashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] = [];
-    
-    if (estilos.includes('direto')) {
-        allFlashcards.push(...flashcardsDireto);
-    }
-    if (estilos.includes('explicativo')) {
-        allFlashcards.push(...flashcardsExplicativo);
-    }
-    if (estilos.includes('completar')) {
-        allFlashcards.push(...flashcardsCompletar);
-    }
-    
-    // Se contexto foi fornecido, tenta personalizar os flashcards
-    if (contexto.trim()) {
-        // Em uma implementação real, isso seria processado pela IA
-        // Por enquanto, apenas adicionamos variação baseada no contexto
-        const contextualized = allFlashcards.map(card => ({
-            ...card,
-            pergunta: `${card.pergunta} (Contexto: ${topicoTitulo})`,
-        }));
-        allFlashcards.push(...contextualized);
-    }
-    
-    // Seleciona aleatoriamente a quantidade solicitada
-    const selected: typeof allFlashcards = [];
-    const shuffled = [...allFlashcards].sort(() => Math.random() - 0.5);
-    
-    for (let i = 0; i < Math.min(quantidade, shuffled.length); i++) {
-        selected.push(shuffled[i]);
-    }
-    
-    // Se não houver suficientes, preenche com variações
-    while (selected.length < quantidade) {
-        const base = allFlashcards[selected.length % allFlashcards.length];
-        selected.push({
-            ...base,
-            pergunta: `${base.pergunta} (${selected.length + 1})`,
-        });
-    }
-    
-    return selected.slice(0, quantidade);
-};
-
-export const suggestTopics = async (comment: string): Promise<string[]> => {
-  return ['Tópico Sugerido 1', 'Tópico Sugerido 2'];
-};
-
-// Converte File para base64
+// Converte File para base64 (usado apenas para extração de texto de imagem na redação)
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -156,168 +71,6 @@ const fileToBase64 = (file: File): Promise<string> => {
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
-};
-
-// Extrai texto de PDF usando Gemini
-export const extractTextFromPdf = async (file: File): Promise<string> => {
-    if (!ai) {
-        throw new Error('API Key do Gemini não configurada.');
-    }
-
-    try {
-        const base64 = await fileToBase64(file);
-
-        // Usa Gemini 2.5 Flash para extrair texto (mais rápido e barato)
-        const prompt = "Extraia o texto completo deste PDF de forma estruturada, mantendo a hierarquia de títulos e parágrafos. Retorne apenas o texto, sem formatação adicional.";
-        
-        const response = await ai.models.generateContent({ 
-            model: 'gemini-2.5-flash',
-            contents: {
-                parts: [
-                    { text: prompt },
-                    { inlineData: { mimeType: 'application/pdf', data: base64 } }
-                ]
-            }
-        });
-
-        return response.text;
-    } catch (error) {
-        console.error('Erro ao extrair texto do PDF:', error);
-        throw new Error('Não foi possível extrair texto do PDF. Verifique se o arquivo é válido.');
-    }
-};
-
-// Gera flashcards a partir de PDF com otimização de tokens
-export const generateFlashcardsFromPdf = async (
-    pdfFile: File,
-    pdfText: string,
-    topicoTitulo: string,
-    quantidade: number = 5,
-    estilos: ('direto' | 'explicativo' | 'completar')[] = ['direto', 'explicativo', 'completar'],
-    contextoAdicional: string = ''
-): Promise<Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[]> => {
-    if (!ai) {
-        throw new Error('API Key do Gemini não configurada.');
-    }
-
-    // OTIMIZAÇÃO: Limita o tamanho do texto para reduzir tokens
-    // Pega os primeiros 50.000 caracteres (aproximadamente 12.500 tokens)
-    const maxChars = 50000;
-    const truncatedText = pdfText.length > maxChars 
-        ? pdfText.substring(0, maxChars) + '\n\n[... conteúdo truncado para economizar tokens ...]'
-        : pdfText;
-
-    // OTIMIZAÇÃO: Primeiro pede um resumo dos conceitos principais
-    const resumoPrompt = `Analise o seguinte texto extraído de um PDF sobre "${topicoTitulo}".
-    
-Texto (primeiros ${truncatedText.length} caracteres):
-${truncatedText}
-
-${contextoAdicional ? `\nContexto adicional: ${contextoAdicional}` : ''}
-
-Crie um resumo estruturado com os 10-15 conceitos principais mais importantes para estudo. 
-Cada conceito deve ter: (1) Nome/Título do conceito, (2) Explicação breve (2-3 frases).
-Retorne em formato JSON: { "conceitos": [{ "titulo": "...", "explicacao": "..." }] }`;
-
-    let conceitosResumidos: Array<{ titulo: string; explicacao: string }> = [];
-
-    try {
-        // Passo 1: Obter resumo dos conceitos (economiza tokens)
-        const schemaResumo = {
-            type: Type.OBJECT,
-            properties: {
-                conceitos: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            titulo: { type: Type.STRING },
-                            explicacao: { type: Type.STRING }
-                        }
-                    }
-                }
-            }
-        };
-
-        const resumoResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: resumoPrompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: schemaResumo
-            }
-        });
-
-        const resumoData = JSON.parse(resumoResponse.text);
-        conceitosResumidos = resumoData.conceitos || [];
-
-        // Se não conseguiu resumir, usa o texto completo
-        if (conceitosResumidos.length === 0) {
-            conceitosResumidos = [{ titulo: topicoTitulo, explicacao: truncatedText.substring(0, 500) }];
-        }
-    } catch (error) {
-        console.warn('Erro ao resumir PDF, usando texto completo:', error);
-        conceitosResumidos = [{ titulo: topicoTitulo, explicacao: truncatedText.substring(0, 500) }];
-    }
-
-    // Passo 2: Gerar flashcards baseado nos conceitos resumidos (muito mais eficiente)
-    const estilosStr = estilos.join(', ');
-    const flashcardsPrompt = `Com base nos seguintes conceitos extraídos de um PDF sobre "${topicoTitulo}", 
-gere exatamente ${quantidade} flashcards de alta qualidade.
-
-Conceitos:
-${conceitosResumidos.map((c, i) => `${i + 1}. ${c.titulo}: ${c.explicacao}`).join('\n')}
-
-${contextoAdicional ? `\nContexto adicional: ${contextoAdicional}` : ''}
-
-Requisitos:
-- Gere flashcards nos estilos: ${estilosStr}
-- Distribua os estilos de forma equilibrada
-- Cada flashcard deve ter pergunta e resposta claras
-- Foque nos conceitos mais importantes
-- Use termos técnicos quando apropriado
-
-Retorne em formato JSON:
-{
-  "flashcards": [
-    { "pergunta": "...", "resposta": "...", "estilo": "direto|explicativo|completar" }
-  ]
-}`;
-
-    const schemaFlashcards = {
-        type: Type.OBJECT,
-        properties: {
-            flashcards: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        pergunta: { type: Type.STRING },
-                        resposta: { type: Type.STRING },
-                        estilo: { type: Type.STRING }
-                    }
-                }
-            }
-        }
-    };
-
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: flashcardsPrompt,
-        config: {
-            responseMimeType: 'application/json',
-            responseSchema: schemaFlashcards
-        }
-    });
-
-    const data = JSON.parse(response.text);
-    const flashcards = (data.flashcards || []).slice(0, quantidade).map((fc: any) => ({
-        pergunta: fc.pergunta,
-        resposta: fc.resposta,
-        estilo: (fc.estilo || 'direto') as 'direto' | 'explicativo' | 'completar'
-    }));
-
-    return flashcards;
 };
 
 const correcaoSchema = {
@@ -636,67 +389,6 @@ export const extrairTextoDeImagem = async (base64Image: string, mimeType: string
     return response.text;
 };
 
-export const gerarPlanoDeEstudosIA = async (
-    objetivo: string, 
-    horasSemanais: number, 
-    disciplinasComTopicos: DisciplinaParaIA[],
-    diasSemana: string[] = ['seg', 'ter', 'qua', 'qui', 'sex']
-): Promise<TrilhaSemanalData> => {
-     // Esta lógica pode ser mais complexa, mas aqui está uma simulação.
-    const allTopicIds = disciplinasComTopicos.flatMap(d => d.topicos.map(t => t.id));
-    const mockPlan: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
-    const dias = diasSemana.length > 0 ? diasSemana : ['seg', 'ter', 'qua', 'qui', 'sex'];
-    const MAX_TOPICOS_POR_DIA = 4; // Limite máximo de tópicos por dia na geração automática
-    
-    // Embaralhar os tópicos
-    const topicosEmbaralhados = allTopicIds.sort(() => 0.5 - Math.random());
-    
-    // Distribuir os tópicos limitando a 4 por dia apenas nos dias selecionados
-    let diaIndex = 0;
-    for (const topicId of topicosEmbaralhados) {
-        // Encontrar o próximo dia selecionado que ainda não atingiu o limite
-        let tentativas = 0;
-        while (mockPlan[dias[diaIndex]] && mockPlan[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA && tentativas < dias.length) {
-            diaIndex = (diaIndex + 1) % dias.length;
-            tentativas++;
-        }
-        
-        // Se todos os dias selecionados estão cheios, parar (usuário pode adicionar mais manualmente)
-        if (!mockPlan[dias[diaIndex]] || mockPlan[dias[diaIndex]].length >= MAX_TOPICOS_POR_DIA) {
-            break;
-        }
-        
-        mockPlan[dias[diaIndex]].push(topicId);
-        diaIndex = (diaIndex + 1) % dias.length;
-    }
-    
-    await new Promise(res => setTimeout(res, 1500));
-    return mockPlan;
-};
-
-export const sugerirCicloIA = async (disciplinas: { id: string, nome: string, dificuldade: string }[], tempoTotalMinutos: number): Promise<{disciplina_id: string, tempo_previsto: number}[]> => {
-    if (!ai) {
-        // Fallback: distribui igualmente entre as disciplinas
-        const tempoPorDisciplina = Math.floor(tempoTotalMinutos / disciplinas.length);
-        return disciplinas.map(d => ({ disciplina_id: d.id, tempo_previsto: tempoPorDisciplina * 60 }));
-    }
-    const prompt = `Crie uma sugestão de ciclo de estudos com ${tempoTotalMinutos} minutos totais para as matérias: ${disciplinas.map(d => `${d.nome} (dificuldade: ${d.dificuldade})`).join(', ')}. Retorne um array JSON com "disciplina_id" e "tempo_previsto" em minutos.`;
-    const schema = { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { disciplina_id: { type: Type.STRING }, tempo_previsto: { type: Type.NUMBER } } } };
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { responseMimeType: 'application/json', responseSchema: schema } });
-    let jsonText = response.text.trim().replace(/^```json\n?|```$/g, '');
-    const sugestao = JSON.parse(jsonText) as {disciplina_id: string, tempo_previsto: number}[];
-    return sugestao.map(s => ({ ...s, tempo_previsto: s.tempo_previsto * 60 }));
-};
-
-export const gerarMensagemMotivacionalIA = async (userName: string, tempoHojeMin: number, metaPercentual: number, streakDays: number, revisoesPendentes: number): Promise<string> => {
-    if (!ai) {
-        // Fallback: mensagem motivacional padrão
-        return `Continue assim, ${userName}! Você está no caminho certo com ${tempoHojeMin} minutos de estudo hoje.`;
-    }
-    const prompt = `Crie uma mensagem motivacional curta para ${userName} que estudou ${tempoHojeMin} min hoje (${metaPercentual}% da meta), tem ${streakDays} dias de streak e ${revisoesPendentes} revisões pendentes.`;
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-    return response.text.trim();
-};
 
 
 // --- GAMIFICATION SERVICES ---
@@ -1161,8 +853,11 @@ export const getSessoes = async (studyPlanId: string): Promise<SessaoEstudo[]> =
 export const createSessao = async (studyPlanId: string, itemData: Omit<SessaoEstudo, 'id' | 'studyPlanId'>): Promise<SessaoEstudo> => {
     const userId = await getUserId();
     const payload = { ...itemData, study_plan_id: studyPlanId, user_id: userId };
-    const { data, error } = await supabase.from('sessoes_estudo').insert(payload as any).select().single();
-    if (error) throw error;
+    const { data, error } = await supabase.from('sessoes_estudo').insert(payload as any).select('*').single();
+    if (error) {
+        console.error("Failed to create session:", error);
+        throw error;
+    }
     return mapDbToSessao(data);
 };
 export const updateSessaoApi = async (id: string, updates: Partial<Omit<SessaoEstudo, 'id'>>): Promise<SessaoEstudo> => {

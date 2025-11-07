@@ -99,7 +99,7 @@ const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSav
 
     return (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onCancel} />
+            <div className="absolute inset-0 bg-background/[0.999] backdrop-blur-md" onClick={onCancel} />
             <Card className="relative bg-card shadow-2xl max-w-lg w-full">
                 <form onSubmit={handleSubmit}>
                     <CardHeader>
@@ -458,7 +458,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
 
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={handleDeleteCancel} />
+          <div className="absolute inset-0 bg-background/[0.999] backdrop-blur-md" onClick={handleDeleteCancel} />
           <Card className="relative bg-card shadow-2xl max-w-md w-full border-red-500/50">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">

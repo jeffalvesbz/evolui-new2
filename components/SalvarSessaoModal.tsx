@@ -4,7 +4,6 @@ import { toast } from './Sonner';
 import { useUiStore } from '../stores/useUiStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
-import { suggestTopics } from '../services/geminiService';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
 import { BookOpenIcon, XIcon, ClockIcon, SaveIcon, SparklesIcon } from './icons';
 import { startOfWeek, format } from 'date-fns';
@@ -39,8 +38,6 @@ const SalvarSessaoModal: React.FC = () => {
 
     const [editableHours, setEditableHours] = useState(0);
     const [editableMinutes, setEditableMinutes] = useState(0);
-    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-    const [suggestedTopics, setSuggestedTopics] = useState<string[]>([]);
     
     const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<SalvarSessaoFormData>({
         defaultValues: {
@@ -68,19 +65,27 @@ const SalvarSessaoModal: React.FC = () => {
     
     useEffect(() => {
         if (isSaveModalOpen && sessaoAtual) {
+            // Determinar valores iniciais para disciplina e tópico
+            const disciplinaIdInicial = sessaoAtual.topico.disciplinaId || '';
+            const topicoInicial = (sessaoAtual.topico.disciplinaId && !sessaoAtual.topico.id.startsWith('manual-')) 
+                ? sessaoAtual.topico.nome 
+                : '';
+            
+            // Determinar se teoria finalizada deve estar marcada
+            const teoriaFinalizadaInicial = sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-');
+            
             reset({
               categoria: 'Teoria',
-              disciplinaId: '',
-              topico: '',
+              disciplinaId: disciplinaIdInicial,
+              topico: topicoInicial,
               materialUtilizado: '',
               paginaInicial: '',
               paginaFinal: '',
               comentarios: '',
               gerarRevisoes: true,
-              teoriaFinalizada: false,
+              teoriaFinalizada: teoriaFinalizadaInicial,
               contabilizarPlanejamento: true,
             });
-            setSuggestedTopics([]);
 
             let totalSeconds = 0;
             if (sessaoAtual.mode === 'cronometro') {
@@ -94,45 +99,28 @@ const SalvarSessaoModal: React.FC = () => {
             
             setEditableHours(Math.floor(totalSeconds / 3600));
             setEditableMinutes(Math.floor((totalSeconds % 3600) / 60));
+        }
+    }, [isSaveModalOpen, reset, sessaoAtual]);
+
+    // Garantir que o tópico seja selecionado após os tópicos da disciplina carregarem
+    useEffect(() => {
+        if (isSaveModalOpen && sessaoAtual && disciplinaIdSelecionada && topicosDaDisciplina.length > 0) {
+            const topicoAtual = watch('topico');
+            const topicoEsperado = sessaoAtual.topico.nome;
             
-            if(sessaoAtual.topico.disciplinaId) {
-                setValue('disciplinaId', sessaoAtual.topico.disciplinaId);
-                // Pré-seleciona o tópico apenas se não for um estudo manual genérico
-                if (!sessaoAtual.topico.id.startsWith('manual-')) {
-                     setValue('topico', sessaoAtual.topico.nome);
+            // Se a disciplina está selecionada mas o tópico ainda não foi definido corretamente
+            if (disciplinaIdSelecionada === sessaoAtual.topico.disciplinaId && 
+                topicoAtual !== topicoEsperado && 
+                !sessaoAtual.topico.id.startsWith('manual-')) {
+                // Verificar se o tópico existe na lista de tópicos da disciplina
+                const topicoExiste = topicosDaDisciplina.some(t => t.titulo === topicoEsperado);
+                if (topicoExiste) {
+                    setValue('topico', topicoEsperado);
                 }
             }
-             if (sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-')) {
-                setValue('teoriaFinalizada', true);
-                // Em conclusão rápida, marcar "contabilizarPlanejamento" por padrão
-                setValue('contabilizarPlanejamento', true);
-            }
         }
-    }, [isSaveModalOpen, reset, sessaoAtual, setValue, disciplinas]);
-
-
-    const handleSuggestTopics = async () => {
-        if (!comentariosValue.trim()) {
-          toast.error('Escreva um comentário sobre o estudo para gerar sugestões.');
-          return;
-        }
-        setIsLoadingSuggestions(true);
-        try {
-          const topics = await suggestTopics(comentariosValue);
-          setSuggestedTopics(topics);
-          toast.success('Sugestões geradas com IA!');
-        } catch (error) {
-          toast.error('Falha ao gerar sugestões.');
-        } finally {
-          setIsLoadingSuggestions(false);
-        }
-    };
-    
-    const handleTopicClick = (topic: string) => {
-        const currentTopic = watch('topico');
-        const newTopic = currentTopic ? `${currentTopic}, ${topic}` : topic;
-        setValue('topico', newTopic.split(', ').filter((v, i, a) => a.indexOf(v) === i).join(', '));
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isSaveModalOpen, sessaoAtual, disciplinaIdSelecionada, topicosDaDisciplina, setValue]);
 
     const onSubmit = async (data: SalvarSessaoFormData) => {
         if (!sessaoAtual) return;
@@ -172,7 +160,7 @@ const SalvarSessaoModal: React.FC = () => {
         // Marcar como concluído na trilha se "contabilizarPlanejamento" estiver marcado
         if (data.contabilizarPlanejamento) {
             // Obter a chave da semana atual
-            const weekKeyAtual = semanaAtualKey || format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-ww', { locale: ptBR });
+            const weekKeyAtual = semanaAtualKey || format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
             
             // IDs de tópico a verificar (o selecionado no formulário e o original da sessão)
             const topicIdsToCheck = [targetTopic.id];
@@ -247,7 +235,7 @@ const SalvarSessaoModal: React.FC = () => {
     if (!isSaveModalOpen || !sessaoAtual) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/98 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
+        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
             <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -327,22 +315,9 @@ const SalvarSessaoModal: React.FC = () => {
                                 <input {...register('paginaFinal')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                             </div>
                         </div>
-                        <div className="md:col-span-2 space-y-2">
-                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-muted-foreground">Comentários</label>
-                                <button type="button" onClick={handleSuggestTopics} disabled={isLoadingSuggestions} className="px-2 py-1 flex items-center gap-1 rounded-md bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 disabled:opacity-50">
-                                    <SparklesIcon className="w-3 h-3" /> {isLoadingSuggestions ? 'Analisando...' : 'Sugerir Tópicos com IA'}
-                                </button>
-                            </div>
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Comentários</label>
                             <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
-                            {suggestedTopics.length > 0 && (
-                                <div className="space-y-1">
-                                    <p className="text-xs font-semibold text-muted-foreground">Tópicos Sugeridos:</p>
-                                    <div className="flex flex-wrap gap-1.5">{suggestedTopics.map(topic => (
-                                        <button key={topic} type="button" onClick={() => handleTopicClick(topic)} className="px-2 py-1 rounded bg-accent text-accent-foreground text-xs hover:bg-accent/80">{topic}</button>
-                                    ))}</div>
-                                </div>
-                            )}
                         </div>
                     </div>
                     <div className="space-y-3 pt-4 border-t border-border">

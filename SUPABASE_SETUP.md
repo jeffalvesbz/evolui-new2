@@ -101,3 +101,6 @@ Depois execute novamente o script `supabase_rls_policies.sql`.
 - [Guia de Políticas RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)
 
 
+
+
+

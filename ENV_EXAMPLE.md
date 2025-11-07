@@ -53,3 +53,6 @@ GEMINI_API_KEY=sua_chave_gemini_aqui
 - A **Anon Key** do Supabase é pública por design, mas protegida por RLS
 - Sem as variáveis de ambiente, o app **não funcionará** em produção
 
+
+
+

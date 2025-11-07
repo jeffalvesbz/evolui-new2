@@ -109,7 +109,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-50"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}

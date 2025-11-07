@@ -1,15 +1,36 @@
 import React from 'react';
 import { useEditalStore } from '../stores/useEditalStore';
-import { ChevronDownIcon } from './icons';
+import { useModalStore } from '../stores/useModalStore';
+import { ChevronDownIcon, PlusIcon } from './icons';
 
 const EditalSelector: React.FC<{ className?: string }> = ({ className }) => {
   const { editais, editalAtivo, setEditalAtivo } = useEditalStore();
+  const { openEditalModal } = useModalStore();
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value;
     const selectedEdital = editais.find(ed => ed.id === selectedId) || null;
     setEditalAtivo(selectedEdital);
   };
+
+  const handleCreateFirst = () => {
+    openEditalModal();
+    // O modal será aberto e o usuário pode clicar em "Novo Edital"
+  };
+
+  // Se não há editais, mostrar botão ao invés de select
+  if (editais.length === 0) {
+    return (
+      <button
+        onClick={handleCreateFirst}
+        className={`w-full flex items-center justify-center gap-2 rounded-md border-2 border-dashed border-primary/50 bg-primary/10 py-2.5 px-4 text-sm font-semibold text-primary hover:bg-primary/20 hover:border-primary transition-colors ${className || ''}`}
+        data-tutorial="edital-selector"
+      >
+        <PlusIcon className="w-4 h-4" />
+        Criar primeiro plano de estudos
+      </button>
+    );
+  }
 
   return (
     <div data-tutorial="edital-selector" className={`relative ${className || ''}`}>
