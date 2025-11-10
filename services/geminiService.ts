@@ -894,7 +894,18 @@ const mapDbToSessao = (dbData: any): SessaoEstudo => {
 };
 
 export const getSessoes = async (studyPlanId: string): Promise<SessaoEstudo[]> => {
-    const { data, error } = await supabase.from('sessoes_estudo').select('*').eq('study_plan_id', studyPlanId);
+    if (!studyPlanId || studyPlanId.trim() === '') {
+        throw new Error('studyPlanId é obrigatório para carregar as sessões de estudo.');
+    }
+
+    const userId = await getUserId();
+
+    const { data, error } = await supabase
+        .from('sessoes_estudo')
+        .select('*')
+        .eq('study_plan_id', studyPlanId)
+        .eq('user_id', userId)
+        .order('data_estudo', { ascending: false });
     if (error) throw error;
     return (data as any[]).map(mapDbToSessao);
 };
