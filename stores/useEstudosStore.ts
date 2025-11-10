@@ -108,6 +108,11 @@ export const useEstudosStore = create<EstudosStore>()(
 
       // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
       fetchSessoes: async (studyPlanId: string) => {
+          if (!studyPlanId || studyPlanId.trim() === '') {
+              console.warn('fetchSessoes chamado sem um studyPlanId válido.');
+              return;
+          }
+
           set({ loading: true });
           try {
               const sessoes = await getSessoes(studyPlanId);
