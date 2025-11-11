@@ -186,3 +186,5 @@ profiles (usuários)
 **Versão do Schema:** 1.0.0  
 **Última atualização:** Recriação completa do zero
 
+
+

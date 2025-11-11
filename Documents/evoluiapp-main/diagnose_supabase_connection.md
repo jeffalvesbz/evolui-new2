@@ -115,3 +115,5 @@ Isso ajudará a identificar se as variáveis estão sendo carregadas corretament
 - [ ] URL do Supabase está acessível (teste no navegador)
 - [ ] Não há erros no console do navegador
 
+
+

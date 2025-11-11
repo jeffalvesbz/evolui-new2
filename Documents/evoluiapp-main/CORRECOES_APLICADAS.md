@@ -74,3 +74,5 @@ Certifique-se de que as políticas RLS estão permitindo:
 - O erro "Maximum update depth exceeded" é um problema de React (loop infinito no useEffect)
 - Foque primeiro em resolver os problemas do banco de dados
 
+
+

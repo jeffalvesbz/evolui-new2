@@ -62,3 +62,5 @@ Se você receber um erro dizendo que o enum não existe, você precisa primeiro 
 
 Depois de executar o script, o erro deve desaparecer e você poderá criar sessões de estudo normalmente.
 
+
+

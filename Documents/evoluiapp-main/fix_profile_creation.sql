@@ -70,3 +70,5 @@ ON CONFLICT (user_id) DO NOTHING;
 -- FROM auth.users u
 -- LEFT JOIN public.profiles p ON u.id = p.user_id;
 
+
+

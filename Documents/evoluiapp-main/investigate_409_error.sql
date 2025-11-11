@@ -87,3 +87,5 @@ WHERE tc.constraint_type = 'FOREIGN KEY'
 -- 2. Verificar se o usuário está autenticado
 -- 3. Verificar se o user_id está sendo passado corretamente
 
+
+
