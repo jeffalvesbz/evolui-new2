@@ -14,6 +14,7 @@ import {
   SettingsIcon,
   PencilRulerIcon,
   TrophyIcon,
+  SparklesIcon,
 } from './icons';
 import { useAuthStore } from '../stores/useAuthStore';
 
@@ -45,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutGridIcon /> },
     { id: 'edital', label: 'Edital', icon: <LandmarkIcon /> },
     { id: 'planejamento', label: 'Planejamento', icon: <ClipboardListIcon /> },
+    { id: 'planejamento2', label: 'Planejamento 2.0', icon: <SparklesIcon /> },
     { id: 'ciclos', label: 'Ciclos de Estudos', icon: <RepeatIcon /> },
     { id: 'corretor', label: 'Corretor de Redação', icon: <PencilRulerIcon /> },
     { id: 'gamificacao', label: 'Jornada do Herói', icon: <TrophyIcon /> },

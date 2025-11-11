@@ -17,6 +17,7 @@ const shortcuts: Shortcut[] = [
   // Navegação
   { keys: ['1'], description: 'Ir para Dashboard', category: 'Navegação' },
   { keys: ['2'], description: 'Ir para Planejamento', category: 'Navegação' },
+  { keys: ['Shift', '2'], description: 'Ir para Planejamento 2.0', category: 'Navegação' },
   { keys: ['3'], description: 'Ir para Ciclos de Estudos', category: 'Navegação' },
   { keys: ['4'], description: 'Ir para Edital', category: 'Navegação' },
   { keys: ['5'], description: 'Ir para Estatísticas', category: 'Navegação' },
