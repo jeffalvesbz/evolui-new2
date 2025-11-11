@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastMessage {
   id: number;
@@ -20,6 +20,7 @@ const toast = (message: string, type: ToastType = 'info') => {
 toast.success = (message: string) => toast(message, 'success');
 toast.error = (message: string) => toast(message, 'error');
 toast.info = (message: string) => toast(message, 'info');
+toast.warning = (message: string) => toast(message, 'warning');
 
 export { toast };
 
@@ -50,6 +51,8 @@ export const Toaster: React.FC = () => {
         return 'bg-green-500 border-green-600';
       case 'error':
         return 'bg-red-500 border-red-600';
+      case 'warning':
+        return 'bg-yellow-500 border-yellow-600';
       default:
         return 'bg-blue-500 border-blue-600';
     }

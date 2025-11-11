@@ -344,20 +344,16 @@ const TrilhaSemanal: React.FC = () => {
             newTrilha[diaParaAdicionar] = [];
         }
         
-        // Verificar tópicos já existentes na trilha (em qualquer dia da semana)
-        const todosTopicosNaTrilha = new Set(
-            Object.values(newTrilha).flat() as string[]
-        );
+        // Verificar tópicos já existentes APENAS no dia atual (permitir repetição em outros dias)
+        const topicosNoDiaAtual = new Set(newTrilha[diaParaAdicionar] || []);
         
         const adicionados: string[] = [];
-        const jaExistem: string[] = [];
-        
-        // Remover duplicatas do dia antes de adicionar
-        newTrilha[diaParaAdicionar] = newTrilha[diaParaAdicionar].filter((id: string) => !topicosSelecionados.has(id));
+        const jaExistemNoDia: string[] = [];
         
         topicosSelecionados.forEach(topicId => {
-            if (todosTopicosNaTrilha.has(topicId)) {
-                jaExistem.push(topicId);
+            // Verificar se já existe no mesmo dia (evitar duplicata no mesmo dia)
+            if (topicosNoDiaAtual.has(topicId)) {
+                jaExistemNoDia.push(topicId);
             } else {
                 newTrilha[diaParaAdicionar].push(topicId);
                 adicionados.push(topicId);
@@ -371,14 +367,14 @@ const TrilhaSemanal: React.FC = () => {
             const diaNome = DIAS_SEMANA.find(d => d.id === diaParaAdicionar)?.nome;
             let mensagem = `${adicionados.length} tópico${adicionados.length > 1 ? 's' : ''} adicionado${adicionados.length > 1 ? 's' : ''} em ${diaNome}!`;
             
-            if (jaExistem.length > 0) {
-                mensagem += ` ${jaExistem.length} tópico${jaExistem.length > 1 ? 's' : ''} já ${jaExistem.length > 1 ? 'estão' : 'está'} na trilha.`;
-                toast.error(mensagem);
+            if (jaExistemNoDia.length > 0) {
+                mensagem += ` ${jaExistemNoDia.length} tópico${jaExistemNoDia.length > 1 ? 's' : ''} já ${jaExistemNoDia.length > 1 ? 'estão' : 'está'} neste dia.`;
+                toast.warning(mensagem);
             } else {
                 toast.success(mensagem);
             }
-        } else if (jaExistem.length > 0) {
-            toast.error(`Todos os tópicos selecionados já estão na trilha.`);
+        } else if (jaExistemNoDia.length > 0) {
+            toast.warning(`Todos os tópicos selecionados já estão neste dia.`);
         }
         
         setTopicosSelecionados(new Set());
