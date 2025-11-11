@@ -11,6 +11,7 @@ import { DIAS_SEMANA, DraggableTopic } from './TrilhaSemanal/types';
 import DayColumn from './TrilhaSemanal/DayColumn';
 import { DndContext, rectIntersection, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { sortTopicosPorNumero } from '../utils/sortTopicos';
 
 // Função para normalizar strings (remover acentos e converter para minúsculas)
 const normalizarDia = (s: string) => {
@@ -34,6 +35,7 @@ const TrilhaSemanal: React.FC = () => {
         loadTrilhaSemanal
     } = useEstudosStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const { openGeradorPlanoModal } = useModalStore();
     const { editalAtivo } = useEditalStore();
 
     // Estado para semana atual
@@ -419,33 +421,31 @@ const TrilhaSemanal: React.FC = () => {
         }
     };
 
-    // Filtrar tópicos no modal - excluir os que já estão na trilha
+    // Filtrar tópicos no modal - permitir repetição em diferentes dias
     const topicosFiltrados = useMemo(() => {
         if (!disciplinas || disciplinas.length === 0) return [];
         
-        // Obter todos os tópicos já na trilha (em qualquer dia)
-        const topicosNaTrilha = new Set(
-            Object.values(trilha).flat() as string[]
-        );
-        
         return disciplinas
             .filter(d => !disciplinaFiltro || d.id === disciplinaFiltro)
-                    .map(disciplina => ({
-                        disciplina,
-                        topicos: (disciplina.topicos || []).filter(topico => {
-                            // Verificar se já está na trilha
-                            if (topicosNaTrilha.has(topico.id)) {
-                                return false;
-                            }
-                            // Verificar busca (usando debounced)
+                    .map(disciplina => {
+                        const topicosFiltrados = (disciplina.topicos || []).filter(topico => {
+                            // Verificar apenas busca (permitir repetição em diferentes dias)
                             const matchBusca = buscaModalDebounced.trim() === '' || 
                                 topico.titulo.toLowerCase().includes(buscaModalDebounced.toLowerCase()) ||
                                 disciplina.nome.toLowerCase().includes(buscaModalDebounced.toLowerCase());
                             return matchBusca;
-                        })
-                    }))
+                        });
+                        
+                        // Ordenar tópicos por número
+                        const topicosOrdenados = sortTopicosPorNumero(topicosFiltrados);
+                        
+                        return {
+                            disciplina,
+                            topicos: topicosOrdenados
+                        };
+                    })
                     .filter(item => item.topicos.length > 0);
-    }, [disciplinas, buscaModalDebounced, disciplinaFiltro, trilha]);
+    }, [disciplinas, buscaModalDebounced, disciplinaFiltro]);
 
     const selecionarTodosTopicos = () => {
         const todos = topicosFiltrados.flatMap(item => item.topicos.map(t => t.id));
@@ -482,7 +482,7 @@ const TrilhaSemanal: React.FC = () => {
     return (
         <div data-tutorial="planejamento-content" className="flex flex-col h-full overflow-hidden">
             <header className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 border-b border-muted/50 flex-shrink-0">
-                {/* Título - Responsivo */}
+                {/* Título e Botão IA - Responsivo */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 sm:gap-3">
@@ -491,6 +491,14 @@ const TrilhaSemanal: React.FC = () => {
                         </div>
                         <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Organize seus estudos arrastando os tópicos para os dias da semana.</p>
                     </div>
+                    <button 
+                        onClick={openGeradorPlanoModal} 
+                        className="w-full sm:w-auto h-9 sm:h-10 px-3 sm:px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
+                    >
+                        <SparklesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Gerar Plano com IA</span>
+                        <span className="sm:hidden">IA</span>
+                    </button>
                 </div>
                 
                 {/* Navegação de semanas - Responsivo */}
