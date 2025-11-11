@@ -25,8 +25,19 @@ export const signupSchema = loginSchema.extend({
     .regex(/^[a-zA-ZÀ-ÿ\s]+$/, 'Nome deve conter apenas letras e espaços'),
 });
 
+/**
+ * Schema de validação para recuperação de senha
+ */
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 
 

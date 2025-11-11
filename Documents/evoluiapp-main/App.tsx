@@ -43,6 +43,7 @@ import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { useOnboardingStore } from './stores/useOnboardingStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import NotificationsPanel from './components/NotificationsPanel';
+import { LoginPage } from './components/LoginPage';
 
 // Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
@@ -176,75 +177,6 @@ const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: stri
   );
 };
 
-const AuthGate: React.FC = () => {
-    const { login, signup } = useAuthStore();
-    const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        try {
-            if (authMode === 'login') {
-                await login(email, password);
-                // The onAuthStateChange listener will handle the successful login
-            } else {
-                await signup(email, password, name);
-                toast.success('Conta criada! Verifique seu email para confirmar.');
-                setAuthMode('login'); // Switch to login after signup
-            }
-        } catch (err: any) {
-            setError(err.message || 'Falha na autenticação. Verifique suas credenciais.');
-            toast.error(err.message || 'Falha na autenticação.');
-        } finally {
-            setLoading(false);
-        }
-    };
-    
-    return (
-        <div className="w-full h-screen flex items-center justify-center bg-background">
-            <div className="w-full max-w-sm p-8 space-y-6 glass-card rounded-2xl">
-                <div className="text-center">
-                    <h1 className="text-3xl font-bold text-foreground">Bem-vindo ao Evolui</h1>
-                    <p className="text-muted-foreground mt-2">
-                        {authMode === 'login' ? 'Faça login para continuar' : 'Crie sua conta para começar'}
-                    </p>
-                </div>
-
-                <div className="flex bg-muted/50 p-1 rounded-lg">
-                    <button onClick={() => setAuthMode('login')} className={`w-1/2 p-2 rounded-md text-sm font-semibold transition-colors ${authMode === 'login' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>Entrar</button>
-                    <button onClick={() => setAuthMode('signup')} className={`w-1/2 p-2 rounded-md text-sm font-semibold transition-colors ${authMode === 'signup' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}>Registrar</button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                     {authMode === 'signup' && (
-                         <div>
-                            <label className="text-sm font-medium text-foreground">Nome</label>
-                            <input type="text" value={name} onChange={e => setName(e.target.value)} required className="mt-1 w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"/>
-                         </div>
-                     )}
-                     <div>
-                        <label className="text-sm font-medium text-foreground">Email</label>
-                        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="mt-1 w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"/>
-                     </div>
-                     <div>
-                        <label className="text-sm font-medium text-foreground">Senha</label>
-                        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="mt-1 w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"/>
-                     </div>
-                     {error && <p className="text-xs text-red-500">{error}</p>}
-                     <button type="submit" disabled={loading} className="w-full h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors">
-                        {loading ? 'Processando...' : (authMode === 'login' ? 'Entrar' : 'Criar Conta')}
-                     </button>
-                </form>
-            </div>
-        </div>
-    );
-}
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -400,7 +332,7 @@ const App: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <AuthGate />;
+    return <LoginPage />;
   }
 
   return (

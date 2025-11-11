@@ -11,6 +11,8 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
+  signInWithOAuth: (provider: 'google' | 'github') => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => void;
 }
@@ -57,6 +59,39 @@ export const useAuthStore = create<AuthState>((set) => ({
         throw error;
     } finally {
         set({ loading: false });
+    }
+  },
+
+  signInWithOAuth: async (provider: 'google' | 'github') => {
+    set({ loading: true });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error(`OAuth login failed (${provider}):`, error);
+      set({ loading: false });
+      throw error;
+    }
+  },
+
+  resetPassword: async (email: string) => {
+    set({ loading: true });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error("Password reset failed:", error);
+      set({ loading: false });
+      throw error;
+    } finally {
+      set({ loading: false });
     }
   },
 
