@@ -15,6 +15,7 @@ import {
   PencilRulerIcon,
   TrophyIcon,
   SearchIcon,
+  SparklesIcon,
 } from './icons';
 import { useNavigation } from '../hooks/useNavigation';
 
@@ -35,6 +36,7 @@ const commandItems: CommandItem[] = [
   // Planejamento
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutGridIcon />, category: 'Planejamento', description: 'Visão geral do seu progresso' },
   { id: 'planejamento', label: 'Planejamento', icon: <ClipboardListIcon />, category: 'Planejamento', description: 'Trilha semanal de estudos' },
+  { id: 'planejamento2', label: 'Planejamento 2.0', icon: <SparklesIcon />, category: 'Planejamento', description: 'Planner semanal evolutivo' },
   { id: 'ciclos', label: 'Ciclos de Estudos', icon: <RepeatIcon />, category: 'Planejamento', description: 'Gerenciar ciclos de estudo' },
   { id: 'edital', label: 'Edital', icon: <LandmarkIcon />, category: 'Planejamento', description: 'Configurar edital e disciplinas' },
   
