@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evolui: Planejador de Estudos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              'primary': 'var(--color-primary)',
+              'secondary': 'var(--color-secondary)',
+              'background': 'var(--color-background)',
+              'foreground': 'var(--color-foreground)',
+              'card': 'var(--color-card)',
+              'card-foreground': 'var(--color-card-foreground)',
+              'muted': 'var(--color-muted)',
+              'muted-foreground': 'var(--color-muted-foreground)',
+              'accent': 'var(--color-accent)',
+              'accent-foreground': 'var(--color-accent-foreground)',
+              'border': 'var(--color-border)',
+              'input': 'var(--color-input)',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      :root { /* Dark Theme */
+        --color-primary: #8b5cf6; /* violet-500 */
+        --color-secondary: #22d3ee; /* cyan-400 */
+        --color-background: #020617; /* slate-950 */
+        --color-foreground: #e2e8f0; /* slate-200 */
+        --color-card: rgba(15, 23, 42, 0.5); /* slate-900 com alpha */
+        --color-card-foreground: #e2e8f0;
+        --color-muted: #334155; /* slate-700 */
+        --color-muted-foreground: #94a3b8; /* slate-400 */
+        --color-accent: rgba(139, 92, 246, 0.1); /* primary com alpha */
+        --color-accent-foreground: #a78bfa; /* violet-400 */
+        --color-border: rgba(255, 255, 255, 0.1);
+        --color-input: rgba(15, 23, 42, 0.9); /* slate-900 escuro para inputs no dark mode */
+      }
+      .light {
+        --color-primary: #7c3aed; /* violet-600 */
+        --color-secondary: #0891b2; /* cyan-600 */
+        --color-background: #f8fafc; /* slate-50 */
+        --color-foreground: #0f172a; /* slate-900 */
+        --color-card: rgba(255, 255, 255, 0.6);
+        --color-card-foreground: #0f172a;
+        --color-muted: #e2e8f0; /* slate-200 */
+        --color-muted-foreground: #64748B; /* slate-500 */
+        --color-accent: #ede9fe; /* violet-100 */
+        --color-accent-foreground: #5b21b6; /* violet-800 */
+        --color-border: rgba(15, 23, 42, 0.1);
+        --color-input: rgba(255, 255, 255, 0.95); /* branco quase sólido para inputs no light mode */
+      }
+      body {
+        background-color: var(--color-background);
+        color: var(--color-foreground);
+        position: relative;
+        overflow-x: hidden;
+      }
+      body::before {
+          content: '';
+          position: fixed;
+          top: -20vh;
+          left: -20vw;
+          width: 60vw;
+          height: 60vw;
+          background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0) 60%);
+          border-radius: 50%;
+          filter: blur(100px);
+          z-index: -1;
+          animation: spin-slow 25s linear infinite;
+      }
+
+      body::after {
+          content: '';
+          position: fixed;
+          bottom: -10vh;
+          right: -10vw;
+          width: 40vw;
+          height: 40vw;
+          background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, rgba(34, 211, 238, 0) 60%);
+          border-radius: 50%;
+          filter: blur(100px);
+          z-index: -1;
+          animation: spin-slow 20s linear infinite reverse;
+      }
+
+      @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+      }
+      
+      .glass-card {
+        background-color: var(--color-card);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--color-border);
+      }
+
+      .clamp-5 {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 5;
+        overflow: hidden;
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "zustand": "https://aistudiocdn.com/zustand@^4.5.4",
+    "zustand/middleware": "https://aistudiocdn.com/zustand@^4.5.4/middleware",
+    "zustand/": "https://aistudiocdn.com/zustand@^5.0.8/",
+    "react-hook-form": "https://aistudiocdn.com/react-hook-form@^7.65.0",
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.19",
+    "date-fns": "https://aistudiocdn.com/date-fns@^3.6.0",
+    "date-fns/": "https://aistudiocdn.com/date-fns@^4.1.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.76.1"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
