@@ -53,7 +53,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
     >
       {/* Header do dia */}
       <div className="flex-shrink-0 px-3 pt-3 pb-2">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-center mb-2 relative">
           <h3 className={`text-base font-extrabold ${
               isDiaAtual 
                 ? 'text-primary drop-shadow-sm' 
@@ -62,7 +62,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
               {dia.nome}
             </h3>
           <button
-            className={`px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
+            className={`absolute right-0 px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
               isDiaAtual
                 ? 'bg-primary/20 text-primary border border-primary/40'
                 : 'bg-muted/40 text-muted-foreground border border-border/40'
@@ -70,6 +70,18 @@ const DayColumn: React.FC<DayColumnProps> = ({
             title={`${normalizedStats.total} ${normalizedStats.total === 1 ? 'tópico' : 'tópicos'}`}
           >
             {normalizedStats.total}
+          </button>
+        </div>
+        
+        {/* Botão adicionar centralizado abaixo do nome */}
+        <div className="flex items-center justify-center mb-2">
+          <button
+            onClick={() => onAddTopics(dia.id)}
+            className="w-6 h-6 rounded-full border border-muted-foreground/50 hover:border-primary bg-muted/30 hover:bg-primary/10 flex items-center justify-center transition-all cursor-pointer group"
+            title={`Adicionar tópicos em ${dia.nome}`}
+            aria-label={`Adicionar tópicos em ${dia.nome}`}
+          >
+            <PlusIcon className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
           </button>
         </div>
         
@@ -88,18 +100,6 @@ const DayColumn: React.FC<DayColumnProps> = ({
         )}
       </div>
 
-      {/* Botão adicionar entre o header e os tópicos */}
-      <div className="flex items-center justify-center py-1.5 px-3 flex-shrink-0">
-        <button
-          onClick={() => onAddTopics(dia.id)}
-          className="p-1.5 rounded-lg bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"
-          title={`Adicionar tópicos em ${dia.nome}`}
-          aria-label={`Adicionar tópicos em ${dia.nome}`}
-        >
-          <PlusIcon className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
       {/* Área de tópicos */}
       <SortableContext
         items={topics.map(topico => topico.id)}
@@ -108,11 +108,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
         <div className="flex-1 px-3 pb-3 overflow-hidden min-h-0">
           {topics.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
-              <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-3">
-                <PlusIcon className="w-6 h-6 text-muted-foreground/50" />
-              </div>
-              <p className="text-xs text-muted-foreground/70 mb-1">Nenhum tópico</p>
-              <p className="text-[10px] text-muted-foreground/50">Clique no + para adicionar</p>
+              <p className="text-sm text-muted-foreground">Nenhum tópico adicionado</p>
             </div>
           ) : (
             <div className="grid grid-rows-5 gap-1.5 h-full">
