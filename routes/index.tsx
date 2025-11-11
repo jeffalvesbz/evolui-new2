@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 const routeToViewMap: Record<string, string> = {
   '/dashboard': 'dashboard',
   '/planejamento': 'planejamento',
+  '/planejamento-2': 'planejamento2',
   '/ciclos': 'ciclos',
   '/edital': 'edital',
   '/estatisticas': 'estatisticas',
@@ -20,6 +21,7 @@ const routeToViewMap: Record<string, string> = {
 const viewToRouteMap: Record<string, string> = {
   'dashboard': '/dashboard',
   'planejamento': '/planejamento',
+  'planejamento2': '/planejamento-2',
   'ciclos': '/ciclos',
   'edital': '/edital',
   'estatisticas': '/estatisticas',
@@ -46,6 +48,7 @@ export const getRouteFromView = (view: string): string => {
 const Dashboard = lazy(() => import('../components/Dashboard'));
 const CicloDeEstudos = lazy(() => import('../components/CicloDeEstudos'));
 const TrilhaSemanal = lazy(() => import('../components/TrilhaSemanal'));
+const Planejamento2Page = lazy(() => import('../components/Planejamento2Page'));
 const HistoricoPage = lazy(() => import('../components/HistoricoPage'));
 const Edital = lazy(() => import('../components/Edital'));
 const FlashcardsPage = lazy(() => import('../components/FlashcardsPage'));
@@ -77,6 +80,7 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView }) => {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard setActiveView={setActiveView} />} />
         <Route path="/planejamento" element={<TrilhaSemanal />} />
+        <Route path="/planejamento-2" element={<Planejamento2Page />} />
         <Route path="/ciclos" element={<CicloDeEstudos />} />
         <Route path="/historico" element={<HistoricoPage setActiveView={setActiveView} />} />
         <Route path="/edital" element={<Edital />} />

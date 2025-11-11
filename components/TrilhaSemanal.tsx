@@ -397,6 +397,8 @@ const TrilhaSemanal: React.FC = () => {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [activePreview, setActivePreview] = useState<TopicPreviewState | null>(null);
     const previewCloseTimeoutRef = useRef<number | null>(null);
+    const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const dayColumnRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const cancelPreviewClose = useCallback(() => {
         if (previewCloseTimeoutRef.current) {
@@ -526,6 +528,84 @@ const TrilhaSemanal: React.FC = () => {
     };
 
     const isSemanaAtual = isSameWeek(semanaAtual, new Date(), { weekStartsOn: 1 });
+
+    const initialActiveDay = useMemo(() => {
+        if (isSemanaAtual) {
+            const diaAtual = DIAS_SEMANA.find(dia => normalizarDia(dia.nome) === diaAtualNormalizado);
+            if (diaAtual) {
+                return diaAtual.id;
+            }
+        }
+        return DIAS_SEMANA[0]?.id ?? 'seg';
+    }, [diaAtualNormalizado, isSemanaAtual]);
+
+    const [activeDayNav, setActiveDayNav] = useState(initialActiveDay);
+
+    useEffect(() => {
+        setActiveDayNav(initialActiveDay);
+    }, [initialActiveDay]);
+
+    useEffect(() => {
+        const element = dayColumnRefs.current[initialActiveDay];
+        if (!element || !mobileScrollContainerRef.current) return;
+
+        const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+        if (isDesktop) return;
+
+        requestAnimationFrame(() => {
+            element.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        });
+    }, [initialActiveDay]);
+
+    const scrollToDay = useCallback((diaId: string) => {
+        setActiveDayNav(diaId);
+        const element = dayColumnRefs.current[diaId];
+        if (element && mobileScrollContainerRef.current) {
+            const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+            if (!isDesktop) {
+                element.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            } else {
+                const top = element.getBoundingClientRect().top + window.scrollY - 120;
+                window.scrollTo({ top, behavior: 'smooth' });
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const container = mobileScrollContainerRef.current;
+        if (!container) return;
+
+        const isDesktop = window.matchMedia('(min-width: 768px)');
+        if (isDesktop.matches) return;
+
+        const handleScroll = () => {
+            const containerRect = container.getBoundingClientRect();
+            const containerCenter = containerRect.left + containerRect.width / 2;
+            let closestId = activeDayNav;
+            let minDistance = Number.POSITIVE_INFINITY;
+
+            for (const dia of DIAS_SEMANA) {
+                const element = dayColumnRefs.current[dia.id];
+                if (!element) continue;
+                const rect = element.getBoundingClientRect();
+                const elementCenter = rect.left + rect.width / 2;
+                const distance = Math.abs(elementCenter - containerCenter);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestId = dia.id;
+                }
+            }
+
+            if (closestId !== activeDayNav) {
+                setActiveDayNav(closestId);
+            }
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+        };
+    }, [activeDayNav]);
 
     const allTopics = useMemo(() => {
         if (!disciplinas || disciplinas.length === 0) return [];
@@ -888,21 +968,70 @@ const TrilhaSemanal: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-x-auto overflow-y-hidden">
+            <div className="flex-1 p-2 sm:p-3 md:p-4 lg:p-6 overflow-hidden">
                 {/* Layout Responsivo: Grid flexível que se adapta ao tamanho da tela */}
-                <div className="max-w-[1400px] mx-auto">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-3 sm:gap-4 w-full items-start">
+                <div className="max-w-[1400px] mx-auto h-full flex flex-col gap-3 sm:gap-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="text-xs sm:text-sm text-muted-foreground font-medium uppercase tracking-wide">
+                            Navegue pela semana
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Use os atalhos para focar em um dia específico.</span>
+                        </div>
+                    </div>
+                    <div className="-mx-1 sm:mx-0">
+                        <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap sm:justify-start" role="tablist">
+                            {DIAS_SEMANA.map(dia => {
+                                const stats = estatisticasPorDia[dia.id];
+                                const isActive = activeDayNav === dia.id;
+                                return (
+                                    <button
+                                        key={`nav-${dia.id}`}
+                                        type="button"
+                                        onClick={() => scrollToDay(dia.id)}
+                                        role="tab"
+                                        aria-selected={isActive}
+                                        className={`flex min-w-[120px] flex-1 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs sm:text-sm transition-all duration-200 ${
+                                            isActive
+                                                ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                                                : 'border-border/60 bg-card/60 text-muted-foreground hover:border-primary/40 hover:text-primary'
+                                        }`}
+                                    >
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold truncate">{dia.nome}</span>
+                                            <span className="text-[10px] sm:text-xs opacity-80">
+                                                {stats.progresso}% concluído
+                                            </span>
+                                        </div>
+                                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                                            isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-background/80'
+                                        }`}>
+                                            {stats.total}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    <div
+                        ref={mobileScrollContainerRef}
+                        className="flex gap-3 sm:gap-4 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 snap-x snap-mandatory md:snap-none md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-7"
+                    >
                         {DIAS_SEMANA.map(dia => {
                             const stats = estatisticasPorDia[dia.id];
                             const carga = stats.total === 0 ? 'vazio' : stats.total <= 3 ? 'leve' : stats.total <= 6 ? 'medio' : 'pesado';
                             const isDiaAtual = isSemanaAtual && normalizarDia(dia.nome) === diaAtualNormalizado;
                             const dropZoneActive = draggingOverDay === dia.id;
+                            const isActiveColumn = activeDayNav === dia.id;
                             return (
                                 <div
                                     key={dia.id}
-                                    className={`flex h-[calc(100vh-200px)] flex-col transition-all duration-300 ${
-                                        isDiaAtual ? 'scale-[1.02]' : ''
-                                    }`}
+                                    ref={element => {
+                                        dayColumnRefs.current[dia.id] = element;
+                                    }}
+                                    className={`flex min-w-[260px] sm:min-w-[280px] md:min-w-0 min-h-[360px] md:min-h-[420px] flex-col snap-start transition-all duration-300 ${
+                                        isDiaAtual ? 'scale-[1.01]' : ''
+                                    } ${isActiveColumn ? 'md:ring-2 md:ring-primary/40 md:ring-offset-2 md:ring-offset-background' : ''}`}
                                 >
                                     <div
                                         className={`mb-2 sm:mb-3 rounded-xl p-2 sm:p-3 transition-all duration-300 ${

@@ -5,6 +5,7 @@ import { useBreadcrumb } from '../contexts/BreadcrumbContext';
 const navItems = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'planejamento', label: 'Planejamento' },
+    { id: 'planejamento2', label: 'Planejamento 2.0' },
     { id: 'ciclos', label: 'Ciclos de Estudos' },
     { id: 'edital', label: 'Edital' },
     { id: 'estatisticas', label: 'Estatísticas' },
