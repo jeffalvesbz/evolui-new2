@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlusIcon } from '../icons';
+import { PlusIcon, ClipboardListIcon } from '../icons';
 import { DraggableTopic, DayInfo, DayStats } from './types';
 import TopicCard from './TopicCard';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -40,88 +40,78 @@ const DayColumn: React.FC<DayColumnProps> = ({
   // Verificar se está sendo arrastado sobre esta coluna (efeito ímã)
   const isDragOverThisColumn = dragOverDia === dia.id && activeId;
 
+  // Cores por dia da semana (alternando entre azul e verde)
+  const getDayColor = (diaId: string) => {
+    const colors: Record<string, { light: string; dark: string }> = {
+      seg: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
+      ter: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+      qua: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
+      qui: { light: 'bg-module-bg-light', dark: 'dark:bg-module-bg-dark' },
+      sex: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+      sab: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
+      dom: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+    };
+    return colors[diaId] || colors.seg;
+  };
+
+  const dayColors = getDayColor(dia.id);
+
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col h-full transition-all duration-200 bg-background/20 ${
+      className={`flex flex-col gap-4 rounded-xl p-6 shadow-subtle dark:shadow-subtle-dark transition-all duration-200 ${
+        dayColors.light
+      } ${dayColors.dark} ${
         isDragOverThisColumn
-          ? 'bg-primary/15 ring-2 ring-primary/50 shadow-lg shadow-primary/20 scale-[1.01]'
+          ? 'ring-2 ring-primary/50 shadow-lg shadow-primary/20 scale-[1.01]'
           : isOver && activeId
-          ? 'bg-primary/10 ring-1 ring-primary/30'
+          ? 'ring-1 ring-primary/30'
           : ''
       }`}
     >
-      {/* Header do dia */}
-      <div className="flex-shrink-0 px-3 pt-3 pb-2">
-        <div className="flex items-center justify-center mb-2 relative">
-          <h3 className={`text-base font-extrabold ${
-              isDiaAtual 
-                ? 'text-primary drop-shadow-sm' 
-                : 'text-foreground'
-            }`}>
-              {dia.nome}
-            </h3>
-          <button
-            className={`absolute right-0 px-2 py-1 rounded-lg text-xs font-bold transition-colors ${
-              isDiaAtual
-                ? 'bg-primary/20 text-primary border border-primary/40'
-                : 'bg-muted/40 text-muted-foreground border border-border/40'
-            }`}
-            title={`${normalizedStats.total} ${normalizedStats.total === 1 ? 'tópico' : 'tópicos'}`}
-          >
-            {normalizedStats.total}
-          </button>
-        </div>
-        
-        {/* Botão adicionar centralizado abaixo do nome */}
-        <div className="flex items-center justify-center mb-2">
-          <button
-            onClick={() => onAddTopics(dia.id)}
-            className="w-6 h-6 rounded-full border border-muted-foreground/50 hover:border-primary bg-muted/30 hover:bg-primary/10 flex items-center justify-center transition-all cursor-pointer group"
-            title={`Adicionar tópicos em ${dia.nome}`}
-            aria-label={`Adicionar tópicos em ${dia.nome}`}
-          >
-            <PlusIcon className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
-          </button>
-        </div>
-        
-        {/* Barra de progresso */}
-        {normalizedStats.total > 0 && (
-          <div className="w-full h-1.5 bg-muted/30 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                normalizedStats.progresso === 100
-                  ? 'bg-emerald-500'
-                  : 'bg-primary'
-              }`}
-              style={{ width: `${normalizedStats.progresso}%` }}
-            />
-          </div>
-        )}
-      </div>
+      <h3 className="text-lg font-bold text-text-dark dark:text-text-light">
+        {dia.nome === 'Segunda' ? 'Segunda-feira' :
+         dia.nome === 'Terça' ? 'Terça-feira' :
+         dia.nome === 'Quarta' ? 'Quarta-feira' :
+         dia.nome === 'Quinta' ? 'Quinta-feira' :
+         dia.nome === 'Sexta' ? 'Sexta-feira' :
+         dia.nome === 'Sábado' ? 'Sábado' :
+         'Domingo'}
+      </h3>
 
       {/* Área de tópicos */}
       <SortableContext
         items={topics.map(topico => topico.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex-1 px-3 pb-3 overflow-hidden min-h-0">
-          {topics.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-4">
-              <p className="text-sm text-muted-foreground">Nenhum tópico adicionado</p>
-            </div>
-          ) : (
-            <div className="grid grid-rows-5 gap-1.5 h-full">
-              {Array.from({ length: 5 }, (_, index) => {
-                const topico = topics[index];
-                if (!topico) {
-                  return <div key={`empty-${dia.id}-${index}`} className="min-h-0" />;
-                }
+        {topics.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 text-center py-8">
+            <ClipboardListIcon className="w-12 h-12 text-text-muted-light dark:text-text-muted-dark" />
+            <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Nenhum tópico para hoje.</p>
+            <button
+              onClick={() => onAddTopics(dia.id)}
+              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-vibrant-blue/10 text-vibrant-blue text-sm font-bold leading-normal hover:bg-vibrant-blue/20 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" />
+              <span className="truncate">Adicionar</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            <ul className="flex flex-col gap-4">
+              {topics.map((topico) => {
                 const isDragOverThis = overId === topico.id && activeId && activeId !== topico.id;
                 return (
-                  <div key={topico.id} className="min-h-0 relative overflow-hidden">
+                  <li
+                    key={topico.id}
+                    className={`group rounded-lg bg-white/50 dark:bg-black/20 p-4 shadow-sm transition-all ${
+                      isDragOverThis
+                        ? 'ring-2 ring-primary/60 bg-primary/10'
+                        : 'hover:shadow-md dark:hover:bg-black/30'
+                    }`}
+                  >
                     {isDragOverThis && (
-                      <div className="absolute inset-0 border-2 border-primary/60 rounded-xl bg-primary/10 z-10 pointer-events-none animate-pulse" />
+                      <div className="absolute inset-0 border-2 border-primary/60 rounded-lg bg-primary/10 z-10 pointer-events-none animate-pulse" />
                     )}
                     <TopicCard
                       topic={topico}
@@ -130,12 +120,22 @@ const DayColumn: React.FC<DayColumnProps> = ({
                       onRemove={topicId => onRemove(topicId, dia.id)}
                       onToggleConcluido={() => onToggleConcluido(topico.id)}
                     />
-                  </div>
+                  </li>
                 );
               })}
-            </div>
-          )}
-        </div>
+            </ul>
+            {/* Botão para adicionar mais tópicos quando já existem */}
+            <button
+              onClick={() => onAddTopics(dia.id)}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-border-light/50 dark:border-border-dark/50 hover:border-vibrant-blue/50 dark:hover:border-vibrant-blue/50 bg-transparent hover:bg-vibrant-blue/5 dark:hover:bg-vibrant-blue/10 py-2 px-3 transition-all group mt-2"
+            >
+              <PlusIcon className="w-3.5 h-3.5 text-text-muted-light dark:text-text-muted-dark group-hover:text-vibrant-blue transition-colors" />
+              <span className="text-xs font-medium text-text-muted-light dark:text-text-muted-dark group-hover:text-vibrant-blue transition-colors">
+                Adicionar
+              </span>
+            </button>
+          </>
+        )}
       </SortableContext>
     </div>
   );

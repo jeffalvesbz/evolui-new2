@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useEditalStore } from '../stores/useEditalStore';
+import { useRevisoesStore } from '../stores/useRevisoesStore';
 import { FootprintsIcon, CheckIcon, PlayIcon, SparklesIcon, PlusIcon, XIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { useModalStore } from '../stores/useModalStore';
 import { toast } from './Sonner';
@@ -37,6 +38,7 @@ const TrilhaSemanal: React.FC = () => {
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const { openGeradorPlanoModal } = useModalStore();
     const { editalAtivo } = useEditalStore();
+    const { revisoes, fetchRevisoes } = useRevisoesStore();
 
     // Estado para semana atual
     const [semanaAtual, setSemanaAtual] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -51,6 +53,8 @@ const TrilhaSemanal: React.FC = () => {
     const [modalAdicionarAberto, setModalAdicionarAberto] = useState(false);
     const [diaParaAdicionar, setDiaParaAdicionar] = useState<string | null>(null);
     const [topicosSelecionados, setTopicosSelecionados] = useState<Set<string>>(new Set());
+    const [revisoesSelecionadas, setRevisoesSelecionadas] = useState<Set<string>>(new Set());
+    const [abaAtiva, setAbaAtiva] = useState<'topicos' | 'revisoes'>('topicos');
     const [buscaModal, setBuscaModal] = useState('');
     const [buscaModalDebounced, setBuscaModalDebounced] = useState('');
     const [disciplinaFiltro, setDisciplinaFiltro] = useState<string | null>(null);
@@ -337,7 +341,10 @@ const TrilhaSemanal: React.FC = () => {
     const isPlanoVazio = Object.values(topicsByDay).every((day: DraggableTopic[]) => day.length === 0);
 
     const adicionarTopicosAoDia = () => {
-        if (!diaParaAdicionar || topicosSelecionados.size === 0) return;
+        if (!diaParaAdicionar) return;
+        
+        const totalSelecionado = topicosSelecionados.size + revisoesSelecionadas.size;
+        if (totalSelecionado === 0) return;
         
         const newTrilha = JSON.parse(JSON.stringify(trilha));
         if (!newTrilha[diaParaAdicionar]) {
@@ -350,8 +357,8 @@ const TrilhaSemanal: React.FC = () => {
         const adicionados: string[] = [];
         const jaExistemNoDia: string[] = [];
         
+        // Adicionar tópicos selecionados
         topicosSelecionados.forEach(topicId => {
-            // Verificar se já existe no mesmo dia (evitar duplicata no mesmo dia)
             if (topicosNoDiaAtual.has(topicId)) {
                 jaExistemNoDia.push(topicId);
             } else {
@@ -360,24 +367,46 @@ const TrilhaSemanal: React.FC = () => {
             }
         });
         
+        // Adicionar revisões selecionadas (usando o topico_id da revisão)
+        revisoesSelecionadas.forEach(revisaoId => {
+            const revisao = revisoes.find(r => r.id === revisaoId);
+            if (revisao) {
+                const topicId = revisao.topico_id;
+                if (topicosNoDiaAtual.has(topicId)) {
+                    jaExistemNoDia.push(topicId);
+                } else {
+                    newTrilha[diaParaAdicionar].push(topicId);
+                    adicionados.push(topicId);
+                }
+            }
+        });
+        
         if (adicionados.length > 0) {
             setTrilhaCompleta(newTrilha);
             setTrilhaSemana(weekKey, newTrilha);
             
             const diaNome = DIAS_SEMANA.find(d => d.id === diaParaAdicionar)?.nome;
-            let mensagem = `${adicionados.length} tópico${adicionados.length > 1 ? 's' : ''} adicionado${adicionados.length > 1 ? 's' : ''} em ${diaNome}!`;
+            const totalAdicionado = adicionados.length;
+            const tipoTexto = topicosSelecionados.size > 0 && revisoesSelecionadas.size > 0 
+                ? 'itens' 
+                : topicosSelecionados.size > 0 
+                    ? 'tópico' + (totalAdicionado > 1 ? 's' : '')
+                    : 'revisão' + (totalAdicionado > 1 ? 'ões' : '');
+            
+            let mensagem = `${totalAdicionado} ${tipoTexto} adicionado${totalAdicionado > 1 ? 's' : ''} em ${diaNome}!`;
             
             if (jaExistemNoDia.length > 0) {
-                mensagem += ` ${jaExistemNoDia.length} tópico${jaExistemNoDia.length > 1 ? 's' : ''} já ${jaExistemNoDia.length > 1 ? 'estão' : 'está'} neste dia.`;
+                mensagem += ` ${jaExistemNoDia.length} item${jaExistemNoDia.length > 1 ? 's' : ''} já ${jaExistemNoDia.length > 1 ? 'estão' : 'está'} neste dia.`;
                 toast.warning(mensagem);
             } else {
                 toast.success(mensagem);
             }
         } else if (jaExistemNoDia.length > 0) {
-            toast.warning(`Todos os tópicos selecionados já estão neste dia.`);
+            toast.warning(`Todos os itens selecionados já estão neste dia.`);
         }
         
         setTopicosSelecionados(new Set());
+        setRevisoesSelecionadas(new Set());
         setModalAdicionarAberto(false);
         setDiaParaAdicionar(null);
     };
@@ -393,13 +422,34 @@ const TrilhaSemanal: React.FC = () => {
             return novo;
         });
     };
+
+    const toggleRevisaoSelecionada = (revisaoId: string) => {
+        setRevisoesSelecionadas(prev => {
+            const novo = new Set(prev);
+            if (novo.has(revisaoId)) {
+                novo.delete(revisaoId);
+            } else {
+                novo.add(revisaoId);
+            }
+            return novo;
+        });
+    };
     
     const abrirModalAdicionar = (diaId: string) => {
         setDiaParaAdicionar(diaId);
         setTopicosSelecionados(new Set());
+        setRevisoesSelecionadas(new Set());
         setBuscaModal('');
         setDisciplinaFiltro(null);
+        setAbaAtiva('topicos');
         setModalAdicionarAberto(true);
+        
+        // Carregar revisões se houver edital ativo
+        if (editalAtivo?.id) {
+            fetchRevisoes(editalAtivo.id).catch(err => {
+                console.error("Erro ao carregar revisões:", err);
+            });
+        }
     };
 
     const removerTopicoDoDia = (topicId: string, diaId: string) => {
@@ -443,13 +493,69 @@ const TrilhaSemanal: React.FC = () => {
                     .filter(item => item.topicos.length > 0);
     }, [disciplinas, buscaModalDebounced, disciplinaFiltro]);
 
+    // Filtrar revisões no modal
+    const revisoesFiltradas = useMemo(() => {
+        if (!revisoes || revisoes.length === 0) return [];
+        
+        // Filtrar apenas revisões pendentes ou atrasadas
+        const revisoesPendentes = revisoes.filter(r => 
+            r.status === 'pendente' || r.status === 'atrasada'
+        );
+        
+        // Aplicar filtro de disciplina
+        let revisoesFiltradas = revisoesPendentes;
+        if (disciplinaFiltro) {
+            revisoesFiltradas = revisoesPendentes.filter(r => r.disciplinaId === disciplinaFiltro);
+        }
+        
+        // Aplicar busca
+        if (buscaModalDebounced.trim() !== '') {
+            const buscaLower = buscaModalDebounced.toLowerCase();
+            revisoesFiltradas = revisoesFiltradas.filter(r => {
+                const topico = allTopicsMap.get(r.topico_id);
+                const disciplina = disciplinas.find(d => d.id === r.disciplinaId);
+                return (
+                    r.conteudo.toLowerCase().includes(buscaLower) ||
+                    topico?.titulo.toLowerCase().includes(buscaLower) ||
+                    disciplina?.nome.toLowerCase().includes(buscaLower)
+                );
+            });
+        }
+        
+        // Agrupar por disciplina
+        const revisoesPorDisciplina = revisoesFiltradas.reduce((acc, revisao) => {
+            const disciplina = disciplinas.find(d => d.id === revisao.disciplinaId);
+            if (!disciplina) return acc;
+            
+            if (!acc[disciplina.id]) {
+                acc[disciplina.id] = {
+                    disciplina,
+                    revisoes: []
+                };
+            }
+            acc[disciplina.id].revisoes.push(revisao);
+            return acc;
+        }, {} as Record<string, { disciplina: typeof disciplinas[0]; revisoes: typeof revisoes }>);
+        
+        return Object.values(revisoesPorDisciplina).filter(item => item.revisoes.length > 0);
+    }, [revisoes, buscaModalDebounced, disciplinaFiltro, disciplinas, allTopicsMap]);
+
     const selecionarTodosTopicos = () => {
-        const todos = topicosFiltrados.flatMap(item => item.topicos.map(t => t.id));
-        setTopicosSelecionados(new Set(todos));
+        if (abaAtiva === 'topicos') {
+            const todos = topicosFiltrados.flatMap(item => item.topicos.map(t => t.id));
+            setTopicosSelecionados(new Set(todos));
+        } else {
+            const todas = revisoesFiltradas.flatMap(item => item.revisoes.map(r => r.id));
+            setRevisoesSelecionadas(new Set(todas));
+        }
     };
 
     const deselecionarTodos = () => {
-        setTopicosSelecionados(new Set());
+        if (abaAtiva === 'topicos') {
+            setTopicosSelecionados(new Set());
+        } else {
+            setRevisoesSelecionadas(new Set());
+        }
     };
 
     // Debounce na busca do modal
@@ -476,124 +582,129 @@ const TrilhaSemanal: React.FC = () => {
     }, [modalAdicionarAberto]);
 
     return (
-        <div data-tutorial="planejamento-content" className="flex flex-col h-full overflow-hidden">
-            <header className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 border-b border-muted/50 flex-shrink-0">
-                {/* Título e Botão IA - Responsivo */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <FootprintsIcon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-primary flex-shrink-0" />
-                            <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">Trilha Semanal</h1>
-                        </div>
-                        <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Organize seus estudos arrastando os tópicos para os dias da semana.</p>
-                    </div>
-                    <button 
-                        onClick={openGeradorPlanoModal} 
-                        className="w-full sm:w-auto h-9 sm:h-10 px-3 sm:px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-medium hover:bg-primary/90 transition-colors flex-shrink-0"
-                    >
-                        <SparklesIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Gerar Plano com IA</span>
-                        <span className="sm:hidden">IA</span>
-                    </button>
-                </div>
-                
-                {/* Navegação de semanas - Responsivo */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
-                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        <button
-                            onClick={() => navegarSemana('anterior')}
-                            className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
-                            title="Semana anterior"
-                            aria-label="Semana anterior"
-                        >
-                            <ChevronLeftIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-                            <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
-                                <span className="hidden md:inline">
-                                    {format(semanaAtual, "dd 'de' MMMM", { locale: ptBR })} - {format(endOfWeek(semanaAtual, { weekStartsOn: 1 }), "dd 'de' MMMM", { locale: ptBR })}
-                                </span>
-                                <span className="md:hidden">
-                                    {format(semanaAtual, "dd/MM", { locale: ptBR })} - {format(endOfWeek(semanaAtual, { weekStartsOn: 1 }), "dd/MM", { locale: ptBR })}
-                                </span>
-                            </span>
-                            {isSemanaAtual && (
-                                <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex-shrink-0">
-                                    Esta semana
-                                </span>
-                            )}
-                        </div>
-                        <button
-                            onClick={() => navegarSemana('proxima')}
-                            className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
-                            title="Próxima semana"
-                            aria-label="Próxima semana"
-                        >
-                            <ChevronRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                        {!isSemanaAtual && (
+        <div data-tutorial="planejamento-content" className="flex flex-col h-full overflow-hidden bg-background">
+            <div className="flex flex-1 justify-center p-4 sm:p-6 lg:p-8 overflow-hidden">
+                <div className="flex w-full max-w-screen-2xl flex-col gap-6 h-full overflow-hidden">
+                    {/* Título */}
+                    <div className="px-2 flex-shrink-0">
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 dark:text-white md:text-4xl">
+                                Planejador de Estudos Semanal
+                            </h1>
                             <button 
-                                onClick={irParaSemanaAtual}
-                                className="px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs rounded-lg bg-muted hover:bg-muted/80 transition-colors flex-shrink-0"
-                                title="Voltar para semana atual"
+                                onClick={openGeradorPlanoModal} 
+                                className="h-9 px-4 flex items-center justify-center gap-2 rounded-lg bg-vibrant-blue text-white text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors flex-shrink-0"
                             >
-                                Hoje
+                                <SparklesIcon className="w-4 h-4" />
+                                <span className="hidden sm:inline">Gerar com IA</span>
+                                <span className="sm:hidden">IA</span>
                             </button>
-                        )}
+                        </div>
                     </div>
+
+                    {/* Navegação de semanas com tabs */}
+                    <div className="px-2 flex-shrink-0">
+                        <div className="flex border-b border-border-light dark:border-border-dark">
+                            <button
+                                onClick={() => navegarSemana('anterior')}
+                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200 transition-colors"
+                            >
+                                <ChevronLeftIcon className="w-4 h-4" />
+                                <span>Semana Anterior</span>
+                            </button>
+                            <button
+                                onClick={irParaSemanaAtual}
+                                className={`flex items-center justify-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
+                                    isSemanaAtual
+                                        ? 'border-vibrant-blue text-vibrant-blue'
+                                        : 'border-transparent text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200'
+                                }`}
+                            >
+                                <span>Semana Atual</span>
+                            </button>
+                            <button
+                                onClick={() => navegarSemana('proxima')}
+                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200 transition-colors"
+                            >
+                                <span>Próxima Semana</span>
+                                <ChevronRightIcon className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Layout principal com painel de progresso e dias */}
+                    <main className="grid grid-cols-1 gap-6 lg:grid-cols-4 xl:grid-cols-5 flex-1 overflow-hidden min-h-0">
+                        {/* Painel de Progresso da Semana */}
+                        <div className="flex flex-col gap-6 lg:col-span-1 flex-shrink-0">
+                            <div className="flex flex-col gap-4 rounded-xl bg-module-bg-light dark:bg-module-bg-dark p-6 shadow-subtle dark:shadow-subtle-dark">
+                                <h2 className="text-lg font-bold leading-tight tracking-tight text-text-dark dark:text-text-light">
+                                    Progresso da Semana
+                                </h2>
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-baseline justify-between">
+                                        <p className="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
+                                            {estatisticas.concluidos} de {estatisticas.total} tópicos completos
+                                        </p>
+                                        <p className="text-lg font-bold text-text-dark dark:text-text-light">
+                                            {estatisticas.progresso}%
+                                        </p>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700">
+                                        <div 
+                                            className="h-2 rounded-full bg-accent transition-all duration-500" 
+                                            style={{ width: `${estatisticas.progresso}%` }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pt-4 border-t border-border-light dark:border-border-dark space-y-2">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-text-muted-light dark:text-text-muted-dark">Total:</span>
+                                        <span className="font-semibold text-text-dark dark:text-text-light">{estatisticas.total}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-text-muted-light dark:text-text-muted-dark">Concluídos:</span>
+                                        <span className="font-semibold text-success">{estatisticas.concluidos}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-text-muted-light dark:text-text-muted-dark">Pendentes:</span>
+                                        <span className="font-semibold text-accent">{estatisticas.pendentes}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Grid de dias da semana */}
+                        <div className="grid grid-cols-1 gap-6 @container md:grid-cols-2 lg:col-span-3 xl:col-span-4 flex-1 overflow-y-auto min-h-0">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={rectIntersection}
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDragEnd={handleDragEnd}
+                            >
+                                {DIAS_SEMANA.map(dia => {
+                                    const stats = estatisticasPorDia[dia.id];
+                                    const isDiaAtual = isSemanaAtual && normalizarDia(dia.nome) === diaAtualNormalizado;
+                                    return (
+                                        <DayColumn
+                                            key={dia.id}
+                                            dia={dia}
+                                            topics={topicsByDay[dia.id]}
+                                            stats={stats}
+                                            isDiaAtual={isDiaAtual}
+                                            onRemove={removerTopicoDoDia}
+                                            onToggleConcluido={(topicId) => toggleTopicoConcluidoNaTrilha(weekKey, dia.id, topicId)}
+                                            onAddTopics={abrirModalAdicionar}
+                                            activeId={activeId}
+                                            dragOverDia={dragOverDia}
+                                            overId={overId}
+                                        />
+                                    );
+                                })}
+                            </DndContext>
+                        </div>
+                    </main>
                 </div>
-                
-                {/* Estatísticas gerais - Responsivo */}
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm mt-3">
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-muted-foreground whitespace-nowrap">Total:</span>
-                        <span className="font-semibold whitespace-nowrap">{estatisticas.total} tópicos</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-muted-foreground whitespace-nowrap">Concluídos:</span>
-                        <span className="font-semibold text-green-500 whitespace-nowrap">{estatisticas.concluidos}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-muted-foreground whitespace-nowrap">Pendentes:</span>
-                        <span className="font-semibold text-orange-500 whitespace-nowrap">{estatisticas.pendentes}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                        <span className="text-muted-foreground whitespace-nowrap">Progresso:</span>
-                        <span className="font-semibold text-primary whitespace-nowrap">{estatisticas.progresso}%</span>
-                    </div>
-                </div>
-            </header>
-            <DndContext
-                sensors={sensors}
-                collisionDetection={rectIntersection}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
-            >
-                <div className="flex-1 overflow-hidden">
-                    <div className="grid grid-cols-7 gap-3 h-[calc(100vh-160px)] px-3 sm:px-4 md:px-6 py-3">
-                        {DIAS_SEMANA.map(dia => {
-                            const stats = estatisticasPorDia[dia.id];
-                            const isDiaAtual = isSemanaAtual && normalizarDia(dia.nome) === diaAtualNormalizado;
-                            return (
-                                <DayColumn
-                                    key={dia.id}
-                                    dia={dia}
-                                    topics={topicsByDay[dia.id]}
-                                    stats={stats}
-                                    isDiaAtual={isDiaAtual}
-                                    onRemove={removerTopicoDoDia}
-                                    onToggleConcluido={(topicId) => toggleTopicoConcluidoNaTrilha(weekKey, dia.id, topicId)}
-                                    onAddTopics={abrirModalAdicionar}
-                                    activeId={activeId}
-                                    dragOverDia={dragOverDia}
-                                    overId={overId}
-                                />
-                            );
-                        })}
-                    </div>
-                </div>
-            </DndContext>
+            </div>
 
             {/* Modal para adicionar tópicos - Responsivo */}
             {modalAdicionarAberto && (
@@ -601,13 +712,14 @@ const TrilhaSemanal: React.FC = () => {
                     setModalAdicionarAberto(false);
                     setDiaParaAdicionar(null);
                     setTopicosSelecionados(new Set());
+                    setRevisoesSelecionadas(new Set());
                     setBuscaModal('');
                     setDisciplinaFiltro(null);
                 }}>
                     <div className="bg-card border-2 border-border rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                         <div className="p-3 sm:p-4 border-b border-border flex items-start sm:items-center justify-between gap-2 flex-shrink-0">
                             <div className="flex-1 min-w-0">
-                                <h2 className="text-lg sm:text-xl font-bold truncate">Adicionar Tópicos</h2>
+                                <h2 className="text-lg sm:text-xl font-bold truncate">Adicionar à Trilha</h2>
                                 {diaParaAdicionar && (
                                     <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
                                         Para: {DIAS_SEMANA.find(d => d.id === diaParaAdicionar)?.nome}
@@ -629,6 +741,35 @@ const TrilhaSemanal: React.FC = () => {
                             </button>
                         </div>
                         
+                        {/* Abas */}
+                        <div className="px-3 sm:px-4 border-b border-border flex gap-2 flex-shrink-0">
+                            <button
+                                onClick={() => setAbaAtiva('topicos')}
+                                className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                                    abaAtiva === 'topicos'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                Tópicos
+                            </button>
+                            <button
+                                onClick={() => setAbaAtiva('revisoes')}
+                                className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${
+                                    abaAtiva === 'revisoes'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                                }`}
+                            >
+                                Revisões
+                                {revisoes.filter(r => r.status === 'pendente' || r.status === 'atrasada').length > 0 && (
+                                    <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs">
+                                        {revisoes.filter(r => r.status === 'pendente' || r.status === 'atrasada').length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+
                         {/* Filtros e busca */}
                         <div className="p-3 sm:p-4 border-b border-border space-y-2 sm:space-y-3 flex-shrink-0">
                             <div className="relative">
@@ -637,7 +778,7 @@ const TrilhaSemanal: React.FC = () => {
                                     type="text"
                                     value={buscaModal}
                                     onChange={(e) => setBuscaModal(e.target.value)}
-                                    placeholder="Buscar tópicos ou disciplinas..."
+                                    placeholder={abaAtiva === 'topicos' ? "Buscar tópicos ou disciplinas..." : "Buscar revisões..."}
                                     className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 rounded-lg border border-border bg-background text-xs sm:text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                 />
                             </div>
@@ -688,54 +829,124 @@ const TrilhaSemanal: React.FC = () => {
                         </div>
                         
                         <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
-                            <div className="space-y-3 sm:space-y-4">
-                                {topicosFiltrados.map(({ disciplina, topicos }) => (
-                                    <div key={disciplina.id} className="border border-border rounded-lg p-2 sm:p-3">
-                                        <h3 className="font-semibold mb-2 text-foreground text-sm sm:text-base">{disciplina.nome}</h3>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {topicos.map((topico, index) => {
-                                                const isSelected = topicosSelecionados.has(topico.id);
-                                                return (
-                                                    <button
-                                                        key={`${topico.id}-${index}`}
-                                                        onClick={() => toggleTopicoSelecionado(topico.id)}
-                                                        className={`text-left p-2 rounded border-2 transition-all relative ${
-                                                            isSelected 
-                                                                ? 'border-primary bg-primary/10 shadow-sm' 
-                                                                : 'border-border hover:border-primary/50 hover:bg-primary/5'
-                                                        }`}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-xs sm:text-sm text-foreground truncate flex-1">{topico.titulo}</span>
-                                                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                                {isSelected && (
-                                                                    <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                                                                )}
+                            {abaAtiva === 'topicos' ? (
+                                <div className="space-y-3 sm:space-y-4">
+                                    {topicosFiltrados.map(({ disciplina, topicos }) => (
+                                        <div key={disciplina.id} className="border border-border rounded-lg p-2 sm:p-3">
+                                            <h3 className="font-semibold mb-2 text-foreground text-sm sm:text-base">{disciplina.nome}</h3>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {topicos.map((topico, index) => {
+                                                    const isSelected = topicosSelecionados.has(topico.id);
+                                                    return (
+                                                        <button
+                                                            key={`${topico.id}-${index}`}
+                                                            onClick={() => toggleTopicoSelecionado(topico.id)}
+                                                            className={`text-left p-2 rounded border-2 transition-all relative ${
+                                                                isSelected 
+                                                                    ? 'border-primary bg-primary/10 shadow-sm' 
+                                                                    : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="text-xs sm:text-sm text-foreground truncate flex-1">{topico.titulo}</span>
+                                                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                                    {isSelected && (
+                                                                        <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {topicos.length === 0 && (
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Nenhum tópico encontrado</p>
+                                            )}
                                         </div>
-                                        {topicos.length === 0 && (
-                                            <p className="text-[10px] sm:text-xs text-muted-foreground">Nenhum tópico encontrado</p>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            {topicosFiltrados.length === 0 && (
-                                <div className="text-center py-6 sm:py-8 text-muted-foreground">
-                                    {disciplinas.length === 0 ? (
-                                        <>
-                                            <p className="text-sm sm:text-base">Nenhuma disciplina cadastrada.</p>
-                                            <p className="text-xs sm:text-sm mt-2">Adicione disciplinas primeiro.</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-sm sm:text-base">Nenhum tópico encontrado.</p>
-                                            <p className="text-xs sm:text-sm mt-2">Tente ajustar os filtros de busca.</p>
-                                        </>
+                                    ))}
+                                    
+                                    {topicosFiltrados.length === 0 && (
+                                        <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                                            {disciplinas.length === 0 ? (
+                                                <>
+                                                    <p className="text-sm sm:text-base">Nenhuma disciplina cadastrada.</p>
+                                                    <p className="text-xs sm:text-sm mt-2">Adicione disciplinas primeiro.</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-sm sm:text-base">Nenhum tópico encontrado.</p>
+                                                    <p className="text-xs sm:text-sm mt-2">Tente ajustar os filtros de busca.</p>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="space-y-3 sm:space-y-4">
+                                    {revisoesFiltradas.map(({ disciplina, revisoes: revisoesDisciplina }) => (
+                                        <div key={disciplina.id} className="border border-border rounded-lg p-2 sm:p-3">
+                                            <h3 className="font-semibold mb-2 text-foreground text-sm sm:text-base">{disciplina.nome}</h3>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                {revisoesDisciplina.map((revisao) => {
+                                                    const isSelected = revisoesSelecionadas.has(revisao.id);
+                                                    const topico = allTopicsMap.get(revisao.topico_id);
+                                                    const isAtrasada = revisao.status === 'atrasada';
+                                                    return (
+                                                        <button
+                                                            key={revisao.id}
+                                                            onClick={() => toggleRevisaoSelecionada(revisao.id)}
+                                                            className={`text-left p-2 rounded border-2 transition-all relative ${
+                                                                isSelected 
+                                                                    ? 'border-primary bg-primary/10 shadow-sm' 
+                                                                    : 'border-border hover:border-primary/50 hover:bg-primary/5'
+                                                            } ${isAtrasada ? 'border-orange-500/50 bg-orange-500/5' : ''}`}
+                                                        >
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        {isAtrasada && (
+                                                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-500/20 text-orange-500">
+                                                                                ATRASADA
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-xs sm:text-sm text-foreground font-medium truncate">
+                                                                        {topico?.titulo || 'Tópico não encontrado'}
+                                                                    </p>
+                                                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                                        {revisao.conteudo}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                                    {isSelected && (
+                                                                        <CheckIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {revisoesDisciplina.length === 0 && (
+                                                <p className="text-[10px] sm:text-xs text-muted-foreground">Nenhuma revisão encontrada</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                    
+                                    {revisoesFiltradas.length === 0 && (
+                                        <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                                            {revisoes.length === 0 ? (
+                                                <>
+                                                    <p className="text-sm sm:text-base">Nenhuma revisão disponível.</p>
+                                                    <p className="text-xs sm:text-sm mt-2">Crie revisões primeiro.</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="text-sm sm:text-base">Nenhuma revisão encontrada.</p>
+                                                    <p className="text-xs sm:text-sm mt-2">Tente ajustar os filtros de busca.</p>
+                                                </>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -744,10 +955,20 @@ const TrilhaSemanal: React.FC = () => {
                         <div className="p-3 sm:p-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <span className="text-xs sm:text-sm text-muted-foreground">
-                                    {topicosSelecionados.size > 0 
-                                        ? `${topicosSelecionados.size} tópico${topicosSelecionados.size > 1 ? 's' : ''} selecionado${topicosSelecionados.size > 1 ? 's' : ''}`
-                                        : 'Selecione os tópicos para adicionar'
-                                    }
+                                    {(() => {
+                                        const total = topicosSelecionados.size + revisoesSelecionadas.size;
+                                        if (total === 0) {
+                                            return 'Selecione os itens para adicionar';
+                                        }
+                                        const partes: string[] = [];
+                                        if (topicosSelecionados.size > 0) {
+                                            partes.push(`${topicosSelecionados.size} tópico${topicosSelecionados.size > 1 ? 's' : ''}`);
+                                        }
+                                        if (revisoesSelecionadas.size > 0) {
+                                            partes.push(`${revisoesSelecionadas.size} revisão${revisoesSelecionadas.size > 1 ? 'ões' : ''}`);
+                                        }
+                                        return `${partes.join(' e ')} selecionado${total > 1 ? 's' : ''}`;
+                                    })()}
                                 </span>
                             </div>
                             <div className="flex gap-2">
@@ -756,6 +977,7 @@ const TrilhaSemanal: React.FC = () => {
                                         setModalAdicionarAberto(false);
                                         setDiaParaAdicionar(null);
                                         setTopicosSelecionados(new Set());
+                                        setRevisoesSelecionadas(new Set());
                                     }}
                                     className="px-3 sm:px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-xs sm:text-sm flex-1 sm:flex-initial"
                                 >
@@ -763,11 +985,11 @@ const TrilhaSemanal: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={adicionarTopicosAoDia}
-                                    disabled={topicosSelecionados.size === 0}
+                                    disabled={topicosSelecionados.size === 0 && revisoesSelecionadas.size === 0}
                                     className="px-3 sm:px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs sm:text-sm flex-1 sm:flex-initial"
                                 >
                                     <PlusIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    <span>Adicionar ({topicosSelecionados.size})</span>
+                                    <span>Adicionar ({topicosSelecionados.size + revisoesSelecionadas.size})</span>
                                 </button>
                             </div>
                         </div>

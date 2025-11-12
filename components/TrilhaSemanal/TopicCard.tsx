@@ -148,12 +148,9 @@ const TopicCard: React.FC<TopicCardProps> = ({
         >
           <div
             ref={cardRef}
-            className={`group relative flex h-full w-full flex-col rounded-xl border p-3 transition-all duration-200 ${
-              concluidoNaTrilha
-                ? 'border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5'
-                : 'border-border/50 bg-card/60 hover:border-primary/40 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/10'
-            } ${isDragging ? 'opacity-40 scale-95' : ''} ${
-              isDragOver ? 'border-primary/60 bg-primary/10 ring-2 ring-primary/40' : ''
+            className={`group relative flex flex-col transition-all duration-200 ${
+              isDragging ? 'opacity-40 scale-95' : ''} ${
+              isDragOver ? 'ring-2 ring-primary/60 bg-primary/10' : ''
             }`}
             onMouseEnter={() => {
               if (!isDragging && !isSaveModalOpen) {
@@ -172,100 +169,88 @@ const TopicCard: React.FC<TopicCardProps> = ({
               setShowTooltip(false);
             }}
           >
-            {/* Header com disciplina e badge */}
-            <div className="flex items-start justify-between gap-2 mb-2 flex-shrink-0">
-              <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <div
-                  className="h-2.5 w-2.5 rounded-full flex-shrink-0 shadow-sm"
-                  style={{ 
-                    backgroundColor: disciplinaColor,
-                    boxShadow: `0 0 6px ${disciplinaColor}50`
-                  }}
-                />
-                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/80 truncate">
-                  {topic.disciplinaNome}
-                </p>
-              </div>
-              {concluidoNaTrilha && (
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
-                  <CheckIcon className="w-3 h-3 text-emerald-500" />
-                </div>
-              )}
-            </div>
-
-            {/* Título */}
-            <h4
-              className={`text-sm font-bold leading-tight line-clamp-2 mb-2 flex-shrink-0 ${
-                concluidoNaTrilha 
-                  ? 'text-muted-foreground/70 line-through' 
-                  : 'text-foreground'
-              }`}
-            >
-              {topic.titulo}
-            </h4>
-
-            {/* Descrição */}
-            {temDescricao && descricaoCompleta && (
-              <p
-                className="text-[11px] text-foreground/70 leading-relaxed flex-1 overflow-hidden min-h-0"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical',
-                }}
-              >
-                {descricaoCompleta}
-              </p>
-            )}
-
-            {/* Ações */}
-            <div className="flex items-center justify-end gap-1 mt-1.5 pt-1.5 border-t border-border/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  handleIniciarEstudo();
-                }}
-                className="p-1 rounded text-muted-foreground/60 hover:text-primary hover:bg-primary/10 transition-colors"
-                aria-label="Iniciar estudo"
-              >
-                <PlayIcon className="h-3 w-3" />
-              </button>
-              {concluidoNaTrilha ? (
+            {/* Checkbox e título */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onToggleConcluido();
                   }}
-                  className="p-1 rounded text-emerald-500/70 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                  aria-label="Desmarcar como concluído"
+                  className="flex-shrink-0"
+                  aria-label={concluidoNaTrilha ? "Desmarcar como concluído" : "Marcar como concluído"}
                 >
-                  <XIcon className="h-3 w-3" />
+                  {concluidoNaTrilha ? (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success hover:bg-success/80 transition-colors cursor-pointer">
+                      <CheckIcon className="w-3 h-3 text-white" />
+                    </div>
+                  ) : (
+                    <div className="h-5 w-5 rounded-full border-2 border-border-light dark:border-border-dark hover:border-success transition-colors cursor-pointer" />
+                  )}
                 </button>
-              ) : (
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleConcluir();
-                  }}
-                  className="p-1 rounded text-muted-foreground/60 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors"
-                  aria-label="Marcar como concluído"
-                >
-                  <CheckIcon className="h-3 w-3" />
-                </button>
-              )}
+                <span className={`text-sm font-medium flex-1 ${
+                  concluidoNaTrilha 
+                    ? 'text-text-muted-light dark:text-text-muted-dark line-through' 
+                    : 'text-text-dark dark:text-text-light'
+                }`}>
+                  {topic.titulo}
+                </span>
+              </div>
               {onRemove && (
                 <button
                   onClick={e => {
                     e.stopPropagation();
                     onRemove(topic.id);
                   }}
-                  className="p-1 rounded text-muted-foreground/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted-light transition-colors hover:bg-vibrant-blue/10 hover:text-vibrant-blue dark:text-text-muted-dark dark:hover:bg-vibrant-blue/20 opacity-0 group-hover:opacity-100 flex-shrink-0"
                   aria-label="Remover tópico"
                 >
-                  <XIcon className="h-3 w-3" />
+                  <XIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
+
+            {/* Botões de ação */}
+            {concluidoNaTrilha ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    onToggleConcluido();
+                  }}
+                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-text-muted-light/10 dark:bg-text-muted-dark/10 px-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark transition-colors hover:bg-text-muted-light/20 dark:hover:bg-text-muted-dark/20"
+                  aria-label="Desmarcar como concluído"
+                >
+                  <XIcon className="h-4 w-4" />
+                  <span>Desmarcar</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleIniciarEstudo();
+                  }}
+                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-vibrant-blue/10 px-3 text-sm font-semibold text-vibrant-blue transition-colors hover:bg-vibrant-blue/20"
+                  aria-label="Iniciar estudo"
+                >
+                  <PlayIcon className="h-4 w-4" />
+                  <span>Iniciar</span>
+                </button>
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleConcluir();
+                  }}
+                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-success/10 px-3 text-sm font-semibold text-success transition-colors hover:bg-success/20"
+                  aria-label="Concluir"
+                >
+                  <CheckIcon className="h-4 w-4" />
+                  <span>Concluir</span>
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
       </SortableItem>
