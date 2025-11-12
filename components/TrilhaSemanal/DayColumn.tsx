@@ -40,16 +40,16 @@ const DayColumn: React.FC<DayColumnProps> = ({
   // Verificar se está sendo arrastado sobre esta coluna (efeito ímã)
   const isDragOverThisColumn = dragOverDia === dia.id && activeId;
 
-  // Cores por dia da semana (alternando entre azul e verde)
+  // Cores azuis para todos os dias
   const getDayColor = (diaId: string) => {
     const colors: Record<string, { light: string; dark: string }> = {
       seg: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
-      ter: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+      ter: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
       qua: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
-      qui: { light: 'bg-module-bg-light', dark: 'dark:bg-module-bg-dark' },
-      sex: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+      qui: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
+      sex: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
       sab: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
-      dom: { light: 'bg-green-50/50', dark: 'dark:bg-green-900/20' },
+      dom: { light: 'bg-blue-50/50', dark: 'dark:bg-blue-900/20' },
     };
     return colors[diaId] || colors.seg;
   };
@@ -127,10 +127,10 @@ const DayColumn: React.FC<DayColumnProps> = ({
             {/* Botão para adicionar mais tópicos quando já existem */}
             <button
               onClick={() => onAddTopics(dia.id)}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-border-light/50 dark:border-border-dark/50 hover:border-vibrant-blue/50 dark:hover:border-vibrant-blue/50 bg-transparent hover:bg-vibrant-blue/5 dark:hover:bg-vibrant-blue/10 py-2 px-3 transition-all group mt-2"
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 hover:border-border bg-transparent hover:bg-muted/30 py-2 px-3 transition-all group mt-2"
             >
-              <PlusIcon className="w-3.5 h-3.5 text-text-muted-light dark:text-text-muted-dark group-hover:text-vibrant-blue transition-colors" />
-              <span className="text-xs font-medium text-text-muted-light dark:text-text-muted-dark group-hover:text-vibrant-blue transition-colors">
+              <PlusIcon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                 Adicionar
               </span>
             </button>
