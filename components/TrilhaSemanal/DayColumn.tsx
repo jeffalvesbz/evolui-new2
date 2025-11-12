@@ -69,7 +69,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
           : ''
       }`}
     >
-      <h3 className="text-lg font-bold text-text-dark dark:text-text-light">
+      <h3 className="text-lg font-bold text-foreground">
         {dia.nome === 'Segunda' ? 'Segunda-feira' :
          dia.nome === 'Terça' ? 'Terça-feira' :
          dia.nome === 'Quarta' ? 'Quarta-feira' :
@@ -86,11 +86,11 @@ const DayColumn: React.FC<DayColumnProps> = ({
       >
         {topics.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-4 text-center py-8">
-            <ClipboardListIcon className="w-12 h-12 text-text-muted-light dark:text-text-muted-dark" />
-            <p className="text-sm text-text-muted-light dark:text-text-muted-dark">Nenhum tópico para hoje.</p>
+            <ClipboardListIcon className="w-12 h-12 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Nenhum tópico para hoje.</p>
             <button
               onClick={() => onAddTopics(dia.id)}
-              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-vibrant-blue/10 text-vibrant-blue text-sm font-bold leading-normal hover:bg-vibrant-blue/20 transition-colors"
+              className="flex min-w-[84px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-9 px-4 bg-primary/10 text-primary text-sm font-bold leading-normal hover:bg-primary/20 transition-colors"
             >
               <PlusIcon className="w-4 h-4" />
               <span className="truncate">Adicionar</span>

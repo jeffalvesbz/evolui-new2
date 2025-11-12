@@ -462,6 +462,8 @@ const TrilhaSemanal: React.FC = () => {
             // Salvar trilha da semana
             const weekKey = getWeekKey(semanaAtual);
             setTrilhaSemana(weekKey, newTrilha);
+            
+            toast.success(`Tópico "${topico?.titulo || 'removido'}" removido de ${DIAS_SEMANA.find(d => d.id === diaId)?.nome}`);
         }
     };
 
@@ -586,12 +588,12 @@ const TrilhaSemanal: React.FC = () => {
                     {/* Título */}
                     <div className="px-2 flex-shrink-0">
                         <div className="flex items-center justify-between">
-                            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 dark:text-white md:text-4xl">
+                            <h1 className="text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
                                 Planejador de Estudos Semanal
                             </h1>
                             <button 
                                 onClick={openGeradorPlanoModal} 
-                                className="h-9 px-4 flex items-center justify-center gap-2 rounded-lg bg-vibrant-blue text-white text-sm font-semibold hover:bg-vibrant-blue/90 transition-colors flex-shrink-0"
+                                className="h-9 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex-shrink-0"
                             >
                                 <SparklesIcon className="w-4 h-4" />
                                 <span className="hidden sm:inline">Gerar com IA</span>
@@ -602,10 +604,10 @@ const TrilhaSemanal: React.FC = () => {
 
                     {/* Navegação de semanas com tabs */}
                     <div className="px-2 flex-shrink-0">
-                        <div className="flex border-b border-border-light dark:border-border-dark">
+                        <div className="flex border-b border-border">
                             <button
                                 onClick={() => navegarSemana('anterior')}
-                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200 transition-colors"
+                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-muted-foreground hover:border-primary hover:text-foreground transition-colors"
                             >
                                 <ChevronLeftIcon className="w-4 h-4" />
                                 <span>Semana Anterior</span>
@@ -614,15 +616,15 @@ const TrilhaSemanal: React.FC = () => {
                                 onClick={irParaSemanaAtual}
                                 className={`flex items-center justify-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors ${
                                     isSemanaAtual
-                                        ? 'border-vibrant-blue text-vibrant-blue'
-                                        : 'border-transparent text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:border-primary hover:text-foreground'
                                 }`}
                             >
                                 <span>Semana Atual</span>
                             </button>
                             <button
                                 onClick={() => navegarSemana('proxima')}
-                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark hover:border-slate-400 hover:text-text-dark dark:hover:border-slate-500 dark:hover:text-slate-200 transition-colors"
+                                className="flex items-center justify-center gap-2 border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-muted-foreground hover:border-primary hover:text-foreground transition-colors"
                             >
                                 <span>Próxima Semana</span>
                                 <ChevronRightIcon className="w-4 h-4" />
@@ -634,38 +636,38 @@ const TrilhaSemanal: React.FC = () => {
                     <main className="grid grid-cols-1 gap-6 lg:grid-cols-4 xl:grid-cols-5 flex-1 overflow-hidden min-h-0">
                         {/* Painel de Progresso da Semana */}
                         <div className="flex flex-col gap-6 lg:col-span-1 flex-shrink-0">
-                            <div className="flex flex-col gap-4 rounded-xl bg-module-bg-light dark:bg-module-bg-dark p-6 shadow-subtle dark:shadow-subtle-dark">
-                                <h2 className="text-lg font-bold leading-tight tracking-tight text-text-dark dark:text-text-light">
+                            <div className="flex flex-col gap-4 rounded-xl bg-card border border-border p-6 shadow-sm">
+                                <h2 className="text-lg font-bold leading-tight tracking-tight text-foreground">
                                     Progresso da Semana
                                 </h2>
                                 <div className="flex flex-col gap-3">
                                     <div className="flex items-baseline justify-between">
-                                        <p className="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
+                                        <p className="text-sm font-medium text-muted-foreground">
                                             {estatisticas.concluidos} de {estatisticas.total} tópicos completos
                                         </p>
-                                        <p className="text-lg font-bold text-text-dark dark:text-text-light">
+                                        <p className="text-lg font-bold text-foreground">
                                             {estatisticas.progresso}%
                                         </p>
                                     </div>
-                                    <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700">
+                                    <div className="h-2 rounded-full bg-muted">
                                         <div 
-                                            className="h-2 rounded-full bg-accent transition-all duration-500" 
+                                            className="h-2 rounded-full bg-primary transition-all duration-500" 
                                             style={{ width: `${estatisticas.progresso}%` }}
                                         />
                                     </div>
                                 </div>
-                                <div className="pt-4 border-t border-border-light dark:border-border-dark space-y-2">
+                                <div className="pt-4 border-t border-border space-y-2">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-text-muted-light dark:text-text-muted-dark">Total:</span>
-                                        <span className="font-semibold text-text-dark dark:text-text-light">{estatisticas.total}</span>
+                                        <span className="text-muted-foreground">Total:</span>
+                                        <span className="font-semibold text-foreground">{estatisticas.total}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-text-muted-light dark:text-text-muted-dark">Concluídos:</span>
-                                        <span className="font-semibold text-success">{estatisticas.concluidos}</span>
+                                        <span className="text-muted-foreground">Concluídos:</span>
+                                        <span className="font-semibold text-green-500">{estatisticas.concluidos}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-text-muted-light dark:text-text-muted-dark">Pendentes:</span>
-                                        <span className="font-semibold text-accent">{estatisticas.pendentes}</span>
+                                        <span className="text-muted-foreground">Pendentes:</span>
+                                        <span className="font-semibold text-orange-500">{estatisticas.pendentes}</span>
                                     </div>
                                 </div>
                             </div>

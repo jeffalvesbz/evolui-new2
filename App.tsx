@@ -376,7 +376,7 @@ const App: React.FC = () => {
               <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 relative min-h-0">
                 <div className="max-w-7xl mx-auto w-full">
                   <ErrorBoundary>
-                    <AppRoutes setActiveView={setActiveView} />
+                    <AppRoutes setActiveView={setActiveView} theme={theme} toggleTheme={toggleTheme} />
                   </ErrorBoundary>
                 </div>
                 

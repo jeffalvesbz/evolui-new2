@@ -14,6 +14,7 @@ const routeToViewMap: Record<string, string> = {
   '/historico': 'historico',
   '/simulados': 'simulados',
   '/corretor': 'corretor',
+  '/configuracoes': 'configuracoes',
 };
 
 const viewToRouteMap: Record<string, string> = {
@@ -28,6 +29,7 @@ const viewToRouteMap: Record<string, string> = {
   'historico': '/historico',
   'simulados': '/simulados',
   'corretor': '/corretor',
+  'configuracoes': '/configuracoes',
 };
 
 // Função para converter pathname em view
@@ -55,6 +57,7 @@ const RevisoesPage = lazy(() => import('../components/RevisoesPage'));
 const CadernoErros = lazy(() => import('../components/CadernoErros'));
 const Estatisticas = lazy(() => import('../components/Estatisticas'));
 const CorretorRedacao = lazy(() => import('../components/CorretorRedacao'));
+const Configuracoes = lazy(() => import('../components/Configuracoes'));
 
 // Componente de loading para Suspense
 const LoadingSpinner = () => (
@@ -68,9 +71,11 @@ const LoadingSpinner = () => (
 
 interface AppRoutesProps {
   setActiveView: (view: string) => void;
+  theme?: 'light' | 'dark';
+  toggleTheme?: () => void;
 }
 
-export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView }) => {
+export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView, theme = 'dark', toggleTheme = () => {} }) => {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
@@ -86,6 +91,7 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView }) => {
         <Route path="/erros" element={<CadernoErros />} />
         <Route path="/estatisticas" element={<Estatisticas />} />
         <Route path="/corretor" element={<CorretorRedacao />} />
+        <Route path="/configuracoes" element={<Configuracoes theme={theme} toggleTheme={toggleTheme} />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>

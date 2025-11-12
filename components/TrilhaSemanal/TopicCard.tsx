@@ -185,13 +185,13 @@ const TopicCard: React.FC<TopicCardProps> = ({
                       <CheckIcon className="w-3 h-3 text-white" />
                     </div>
                   ) : (
-                    <div className="h-5 w-5 rounded-full border-2 border-border-light dark:border-border-dark hover:border-success transition-colors cursor-pointer" />
+                    <div className="h-5 w-5 rounded-full border-2 border-border hover:border-success transition-colors cursor-pointer" />
                   )}
                 </button>
                 <span className={`text-sm font-medium flex-1 ${
                   concluidoNaTrilha 
-                    ? 'text-text-muted-light dark:text-text-muted-dark line-through' 
-                    : 'text-text-dark dark:text-text-light'
+                    ? 'text-muted-foreground line-through' 
+                    : 'text-foreground'
                 }`}>
                   {topic.titulo}
                 </span>
@@ -202,7 +202,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
                     e.stopPropagation();
                     onRemove(topic.id);
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted-light transition-colors hover:bg-vibrant-blue/10 hover:text-vibrant-blue dark:text-text-muted-dark dark:hover:bg-vibrant-blue/20 opacity-0 group-hover:opacity-100 flex-shrink-0"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100 flex-shrink-0"
                   aria-label="Remover tópico"
                 >
                   <XIcon className="h-4 w-4" />
@@ -218,7 +218,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
                     e.stopPropagation();
                     onToggleConcluido();
                   }}
-                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-text-muted-light/10 dark:bg-text-muted-dark/10 px-3 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark transition-colors hover:bg-text-muted-light/20 dark:hover:bg-text-muted-dark/20"
+                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-muted/10 px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/20"
                   aria-label="Desmarcar como concluído"
                 >
                   <XIcon className="h-4 w-4" />
@@ -232,7 +232,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
                     e.stopPropagation();
                     handleIniciarEstudo();
                   }}
-                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-vibrant-blue/10 px-3 text-sm font-semibold text-vibrant-blue transition-colors hover:bg-vibrant-blue/20"
+                  className="flex h-8 items-center justify-center gap-2 rounded-full bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20"
                   aria-label="Iniciar estudo"
                 >
                   <PlayIcon className="h-4 w-4" />
