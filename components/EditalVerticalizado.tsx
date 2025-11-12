@@ -53,7 +53,6 @@ const TopicoItem: React.FC<{
     const handleDelete = () => {
         if(window.confirm(`Tem certeza que deseja remover o tópico "${topico.titulo}"?`)){
             removeTopico(disciplinaId, topico.id)
-                .then(() => toast.success("Tópico removido."))
                 .catch(() => {}); // Error is already toasted in the store
         }
     };

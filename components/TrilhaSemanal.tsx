@@ -462,8 +462,6 @@ const TrilhaSemanal: React.FC = () => {
             // Salvar trilha da semana
             const weekKey = getWeekKey(semanaAtual);
             setTrilhaSemana(weekKey, newTrilha);
-            
-            toast.success(`Tópico "${topico?.titulo || 'removido'}" removido de ${DIAS_SEMANA.find(d => d.id === diaId)?.nome}`);
         }
     };
 
