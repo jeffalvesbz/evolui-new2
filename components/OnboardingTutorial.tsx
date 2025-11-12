@@ -137,8 +137,11 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPosition, setHighlightPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isNavigating, setIsNavigating] = useState(false);
+  const [elementFound, setElementFound] = useState(true);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 8; // Reduzir tentativas para resposta mais rápida
 
   const step = tutorialSteps[currentStep];
   const isLastStep = currentStep === tutorialSteps.length - 1;
@@ -146,74 +149,125 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
   useEffect(() => {
     if (!isOpen || !step) return;
 
+    // Reset retry count quando mudar de step
+    retryCountRef.current = 0;
+    setElementFound(true);
+
     // Navegar para a view necessária se especificada
     if (step.view && setActiveView) {
       setIsNavigating(true);
       setActiveView(step.view);
-      // Aguardar navegação e renderização
+      // Reduzir delay de navegação para resposta mais rápida
       setTimeout(() => {
         setIsNavigating(false);
-      }, 300);
+      }, 200);
     }
 
-    const updateHighlight = () => {
-      // Aguardar um pouco para garantir que a navegação e renderização terminaram
-      const element = document.querySelector(step.target);
+    const findAndHighlightElement = (attempt: number = 0): void => {
+      const element = document.querySelector(step.target) as HTMLElement;
+      
       if (element && element.isConnected) {
-        const rect = element.getBoundingClientRect();
-        // Verificar se o elemento está visível
-        const styles = window.getComputedStyle(element);
-        const isVisible = styles.display !== 'none' && 
-                         styles.visibility !== 'hidden' && 
-                         styles.opacity !== '0' &&
-                         rect.width > 0 && 
-                         rect.height > 0;
-        
-        if (isVisible) {
-          setHighlightPosition({
-            top: rect.top,
-            left: rect.left,
-            width: rect.width,
-            height: rect.height
-          });
+        // Usar requestAnimationFrame duplo para garantir que o DOM está atualizado após navegação
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            const rect = element.getBoundingClientRect();
+            const styles = window.getComputedStyle(element);
+            
+            // Verificar se o elemento está visível e tem dimensões válidas
+            // Remover verificação de rect.top !== 0 e rect.left !== 0 que pode ser muito restritiva
+            const isVisible = styles.display !== 'none' && 
+                             styles.visibility !== 'hidden' && 
+                             styles.opacity !== '0' &&
+                             rect.width > 0 && 
+                             rect.height > 0;
+            
+            if (isVisible) {
+              // Adicionar padding ao highlight para melhor visualização
+              const padding = 4;
+              setHighlightPosition({
+                top: rect.top - padding,
+                left: rect.left - padding,
+                width: rect.width + (padding * 2),
+                height: rect.height + (padding * 2)
+              });
+              setElementFound(true);
+              retryCountRef.current = 0;
 
-          // Scroll para o elemento se necessário (com comportamento diferente para mobile)
-          const isMobile = window.innerWidth < 768;
-          element.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: isMobile ? 'center' : 'center',
-            inline: 'center'
+              // Scroll para o elemento de forma mais rápida
+              requestAnimationFrame(() => {
+                element.scrollIntoView({ 
+                  behavior: 'smooth', 
+                  block: 'center',
+                  inline: 'center'
+                });
+              });
+            } else if (attempt < maxRetries) {
+              // Tentar novamente mais rapidamente
+              const retryDelay = attempt < 3 ? 50 : attempt < 6 ? 100 : 150;
+              setTimeout(() => findAndHighlightElement(attempt + 1), retryDelay);
+            } else {
+              // Se não conseguir encontrar após várias tentativas, usar posição central
+              setHighlightPosition({
+                top: window.innerHeight / 2,
+                left: window.innerWidth / 2,
+                width: 0,
+                height: 0
+              });
+              setElementFound(false);
+            }
           });
-        } else {
-          // Se o elemento não estiver visível, usar posição central
-          setHighlightPosition({
-            top: window.innerHeight / 2,
-            left: window.innerWidth / 2,
-            width: 0,
-            height: 0
-          });
-        }
+        });
+      } else if (attempt < maxRetries) {
+        // Tentar novamente mais rapidamente
+        const retryDelay = attempt < 3 ? 50 : attempt < 6 ? 100 : 150;
+        setTimeout(() => findAndHighlightElement(attempt + 1), retryDelay);
       } else {
-        // Se o elemento não for encontrado, usar posição central
+        // Se não conseguir encontrar após várias tentativas, usar posição central
         setHighlightPosition({
           top: window.innerHeight / 2,
           left: window.innerWidth / 2,
           width: 0,
           height: 0
         });
+        setElementFound(false);
       }
     };
 
-    // Aguardar mais tempo se estiver navegando
-    const delay = isNavigating ? 600 : 300;
-    const timeout = setTimeout(updateHighlight, delay);
-    window.addEventListener('resize', updateHighlight);
-    window.addEventListener('scroll', updateHighlight);
+    // Reduzir delays significativamente para resposta mais rápida
+    const delay = isNavigating ? 250 : 100;
+    const timeout = setTimeout(() => {
+      findAndHighlightElement(0);
+    }, delay);
+
+    // Função para atualizar highlight em eventos de resize/scroll
+    const updateHighlight = () => {
+      retryCountRef.current = 0;
+      findAndHighlightElement(0);
+    };
+
+    // Usar debounce para resize e scroll para melhor performance
+    let resizeTimeout: NodeJS.Timeout;
+    let scrollTimeout: NodeJS.Timeout;
+    
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updateHighlight, 150);
+    };
+
+    const handleScroll = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(updateHighlight, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('resize', updateHighlight);
-      window.removeEventListener('scroll', updateHighlight);
+      clearTimeout(resizeTimeout);
+      clearTimeout(scrollTimeout);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [isOpen, currentStep, step, isNavigating, setActiveView]);
 
@@ -221,12 +275,22 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
     if (isLastStep) {
       onComplete();
     } else {
+      // Pré-navegar para a próxima view se necessário para acelerar
+      const nextStep = tutorialSteps[currentStep + 1];
+      if (nextStep?.view && setActiveView && nextStep.view !== step?.view) {
+        setActiveView(nextStep.view);
+      }
       setCurrentStep(prev => prev + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
+      // Pré-navegar para a view anterior se necessário
+      const prevStep = tutorialSteps[currentStep - 1];
+      if (prevStep?.view && setActiveView && prevStep.view !== step?.view) {
+        setActiveView(prevStep.view);
+      }
       setCurrentStep(prev => prev - 1);
     }
   };
@@ -407,7 +471,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
           >
             {/* Overlay superior */}
             <div
-              className="absolute bg-black/70 backdrop-blur-sm"
+              className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
               style={{
                 top: 0,
                 left: 0,
@@ -417,7 +481,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay esquerdo */}
             <div
-              className="absolute bg-black/70 backdrop-blur-sm"
+              className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
               style={{
                 top: `${Math.max(0, highlightPosition.top)}px`,
                 left: 0,
@@ -427,7 +491,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay direito */}
             <div
-              className="absolute bg-black/70 backdrop-blur-sm"
+              className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
               style={{
                 top: `${Math.max(0, highlightPosition.top)}px`,
                 left: `${highlightPosition.left + highlightPosition.width}px`,
@@ -437,7 +501,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay inferior */}
             <div
-              className="absolute bg-black/70 backdrop-blur-sm"
+              className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
               style={{
                 top: `${Math.max(0, highlightPosition.top + highlightPosition.height)}px`,
                 left: 0,
@@ -447,21 +511,34 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
           </motion.div>
 
-          {/* Highlight do elemento */}
+          {/* Área clicável no elemento destacado - permite interação */}
           {highlightPosition.width > 0 && highlightPosition.height > 0 && (
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="fixed z-[9999] border-2 md:border-4 border-primary rounded-lg shadow-2xl shadow-primary/50 pointer-events-none"
-              style={{
-                top: `${Math.max(0, highlightPosition.top)}px`,
-                left: `${Math.max(0, highlightPosition.left)}px`,
-                width: `${Math.max(0, highlightPosition.width)}px`,
-                height: `${Math.max(0, highlightPosition.height)}px`,
-                boxShadow: '0 0 0 2px rgba(255, 215, 0, 0.5), 0 0 15px rgba(255, 215, 0, 0.3)'
-              }}
-            />
+            <>
+              {/* Área que permite cliques passarem para o elemento abaixo */}
+              <div
+                className="fixed z-[9999] pointer-events-none"
+                style={{
+                  top: `${Math.max(0, highlightPosition.top)}px`,
+                  left: `${Math.max(0, highlightPosition.left)}px`,
+                  width: `${Math.max(0, highlightPosition.width)}px`,
+                  height: `${Math.max(0, highlightPosition.height)}px`,
+                }}
+              />
+              {/* Highlight visual do elemento */}
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="fixed z-[9998] border-2 md:border-4 border-primary rounded-lg shadow-2xl shadow-primary/50 pointer-events-none"
+                style={{
+                  top: `${Math.max(0, highlightPosition.top)}px`,
+                  left: `${Math.max(0, highlightPosition.left)}px`,
+                  width: `${Math.max(0, highlightPosition.width)}px`,
+                  height: `${Math.max(0, highlightPosition.height)}px`,
+                  boxShadow: '0 0 0 2px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.4)'
+                }}
+              />
+            </>
           )}
 
           {/* Tooltip com informações */}
@@ -470,8 +547,9 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-4 md:p-6 mx-auto"
+            className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-4 md:p-6 mx-auto pointer-events-auto"
             style={getTooltipStyle()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="flex-1 pr-2">

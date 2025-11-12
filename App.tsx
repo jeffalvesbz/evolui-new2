@@ -39,8 +39,6 @@ import CommandPalette from './components/CommandPalette';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
-import { OnboardingTutorial } from './components/OnboardingTutorial';
-import { useOnboardingStore } from './stores/useOnboardingStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import NotificationsPanel from './components/NotificationsPanel';
 import { LoginPage } from './components/LoginPage';
@@ -192,8 +190,6 @@ const App: React.FC = () => {
   const { isAuthenticated, user, checkAuth } = useAuthStore();
   const [isAppLoading, setIsAppLoading] = useState(true);
   const { fetchEditais } = useEditalStore();
-  const { hasSeenOnboarding, isLoading: isOnboardingLoading, checkOnboardingStatus, markOnboardingAsSeen } = useOnboardingStore();
-  const [showTutorial, setShowTutorial] = useState(false);
   
   // Listener para abrir Command Palette com Cmd/Ctrl + K
   useEffect(() => {
@@ -257,37 +253,6 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated, fetchEditais]);
 
-  // Verificar status do onboarding quando usuário autentica
-  useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      checkOnboardingStatus(user.id);
-    }
-  }, [isAuthenticated, user?.id, checkOnboardingStatus]);
-
-  // Mostrar tutorial se usuário não viu ainda
-  useEffect(() => {
-    if (isAuthenticated && !isOnboardingLoading && hasSeenOnboarding === false) {
-      // Aguardar um pouco para garantir que o DOM está renderizado
-      const timeout = setTimeout(() => {
-        setShowTutorial(true);
-      }, 500);
-      return () => clearTimeout(timeout);
-    }
-  }, [isAuthenticated, isOnboardingLoading, hasSeenOnboarding]);
-
-  const handleTutorialComplete = async () => {
-    if (user?.id) {
-      await markOnboardingAsSeen(user.id);
-    }
-    setShowTutorial(false);
-  };
-
-  const handleTutorialSkip = async () => {
-    if (user?.id) {
-      await markOnboardingAsSeen(user.id);
-    }
-    setShowTutorial(false);
-  };
 
   useEditalDataSync();
   useFriendsDataSync();
@@ -340,12 +305,6 @@ const App: React.FC = () => {
       <BreadcrumbProvider>
         <div className="flex h-screen bg-background text-foreground font-sans dark overflow-hidden">
           <Toaster />
-          <OnboardingTutorial 
-            isOpen={showTutorial} 
-            onComplete={handleTutorialComplete}
-            onSkip={handleTutorialSkip}
-            setActiveView={setActiveView}
-          />
           <CommandPalette open={isCommandPaletteOpen} onOpenChange={setIsCommandPaletteOpen} />
           <KeyboardShortcutsHelp open={isKeyboardHelpOpen} onOpenChange={setIsKeyboardHelpOpen} />
           <SalvarSessaoModal />
