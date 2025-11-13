@@ -121,7 +121,7 @@ const EditalManagementModal: React.FC = () => {
             </div>
             <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
                 <button onClick={handleStartCreate} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2" data-tutorial="novo-edital-button">
-                    <PlusIcon className="w-4 h-4"/> Novo Edital
+                    <PlusIcon className="w-5 h-5"/> Novo Edital
                 </button>
             </div>
         </>
