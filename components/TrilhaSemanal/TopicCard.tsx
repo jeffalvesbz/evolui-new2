@@ -10,7 +10,7 @@ interface TopicCardProps {
   topic: DraggableTopic;
   isDragging?: boolean;
   isDragOver?: boolean;
-  onRemove?: (topicId: string) => void;
+  onRemove?: (instanceId: string) => void;
   onToggleConcluido: () => void;
 }
 
@@ -140,7 +140,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
 
   return (
     <>
-      <SortableItem id={topic.id} disabled={concluidoNaTrilha}>
+      <SortableItem id={topic.instanceId} disabled={concluidoNaTrilha}>
         <motion.div
           animate={controls}
           whileHover={{ scale: concluidoNaTrilha ? 1 : 1.01 }}
@@ -200,7 +200,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
                 <button
                   onClick={e => {
                     e.stopPropagation();
-                    onRemove(topic.id);
+                    onRemove(topic.instanceId);
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary opacity-0 group-hover:opacity-100 flex-shrink-0"
                   aria-label="Remover tópico"

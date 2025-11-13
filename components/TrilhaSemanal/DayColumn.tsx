@@ -10,7 +10,7 @@ interface DayColumnProps {
   topics: DraggableTopic[];
   stats: DayStats;
   isDiaAtual: boolean;
-  onRemove: (topicId: string, diaId: string) => void;
+  onRemove: (instanceId: string) => void;
   onToggleConcluido: (topicId: string) => void;
   onAddTopics: (diaId: string) => void;
   activeId: string | null;
@@ -81,7 +81,7 @@ const DayColumn: React.FC<DayColumnProps> = ({
 
       {/* Área de tópicos */}
       <SortableContext
-        items={topics.map(topico => topico.id)}
+        items={topics.map(topico => topico.instanceId)}
         strategy={verticalListSortingStrategy}
       >
         {topics.length === 0 ? (
@@ -100,10 +100,10 @@ const DayColumn: React.FC<DayColumnProps> = ({
           <>
             <ul className="flex flex-col gap-4">
               {topics.map((topico) => {
-                const isDragOverThis = overId === topico.id && activeId && activeId !== topico.id;
+                const isDragOverThis = overId === topico.instanceId && activeId && activeId !== topico.instanceId;
                 return (
                   <li
-                    key={topico.id}
+                    key={topico.instanceId}
                     className={`group rounded-lg bg-white/50 dark:bg-black/20 p-4 shadow-sm transition-all ${
                       isDragOverThis
                         ? 'ring-2 ring-primary/60 bg-primary/10'
@@ -115,9 +115,9 @@ const DayColumn: React.FC<DayColumnProps> = ({
                     )}
                     <TopicCard
                       topic={topico}
-                      isDragging={activeId === topico.id}
+                      isDragging={activeId === topico.instanceId}
                       isDragOver={isDragOverThis}
-                      onRemove={topicId => onRemove(topicId, dia.id)}
+                      onRemove={() => onRemove(topico.instanceId)}
                       onToggleConcluido={() => onToggleConcluido(topico.id)}
                     />
                   </li>
