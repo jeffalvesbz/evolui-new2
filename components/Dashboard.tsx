@@ -528,7 +528,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 <div className="flex items-center gap-2">
                     <EditalSelector className="max-w-md flex-1" />
                     <Button variant="outline" onClick={openEditalModal} className="w-10 h-10 p-0 flex-shrink-0" aria-label="Gerenciar editais" data-tutorial="edital-manage-button">
-                        <EditIcon className="h-4 w-4" />
+                        <EditIcon className="h-5 w-5" />
                     </Button>
                 </div>
               </div>
