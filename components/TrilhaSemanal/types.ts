@@ -1,9 +1,15 @@
 import { Topico } from '../../types';
 
-export type DraggableTopic = Topico & { 
-  disciplinaNome: string; 
+export type DraggableTopic = Topico & {
+  disciplinaNome: string;
   disciplinaId: string;
   concluidoNaTrilha?: boolean;
+  /**
+   * Identificador único da instância do tópico na trilha.
+   * Necessário para permitir itens duplicados no mesmo dia.
+   */
+  instanceId: string;
+  occurrenceIndex: number;
 };
 
 export interface TopicPreviewState {

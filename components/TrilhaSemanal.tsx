@@ -11,7 +11,6 @@ import { ptBR } from 'date-fns/locale';
 import { DIAS_SEMANA, DraggableTopic } from './TrilhaSemanal/types';
 import DayColumn from './TrilhaSemanal/DayColumn';
 import { DndContext, rectIntersection, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverEvent } from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
 import { sortTopicosPorNumero } from '../utils/sortTopicos';
 
 // Função para normalizar strings (remover acentos e converter para minúsculas)
@@ -70,6 +69,15 @@ const TrilhaSemanal: React.FC = () => {
             },
         })
     );
+
+    const createInstanceId = (diaId: string, index: number) => `${diaId}__${index}`;
+    const parseInstanceId = (instanceId: string) => {
+        const [diaId, indexStr] = instanceId.split('__');
+        if (!diaId || indexStr === undefined) return null;
+        const index = Number(indexStr);
+        if (Number.isNaN(index)) return null;
+        return { diaId, index } as const;
+    };
 
     // Gerar chave da semana (YYYY-MM-DD - data de início da semana)
     const getWeekKey = (date: Date) => {
@@ -176,14 +184,13 @@ const TrilhaSemanal: React.FC = () => {
     const topicsByDay = useMemo(() => {
         const result: { [key: string]: DraggableTopic[] } = {};
         for (const dia of DIAS_SEMANA) {
-            const topicos = (trilha[dia.id] || []).map(topicId => {
+            const topicos = (trilha[dia.id] || []).map((topicId, index) => {
                 const topico = allTopicsMap.get(topicId);
                 if (!topico) return null;
-                // Verificar conclusão na trilha (não usa o concluido do tópico)
+                const instanceId = createInstanceId(dia.id, index);
                 const concluidoNaTrilha = isTopicoConcluidoNaTrilha(weekKey, dia.id, topicId);
-                return { ...topico, concluidoNaTrilha };
-            }).filter((t): t is DraggableTopic & { concluidoNaTrilha: boolean } => !!t);
-            // Separar concluídos e não concluídos na trilha
+                return { ...topico, concluidoNaTrilha, instanceId, occurrenceIndex: index };
+            }).filter((t): t is DraggableTopic => !!t);
             const pendentes = topicos.filter(t => !t.concluidoNaTrilha);
             const concluidos = topicos.filter(t => t.concluidoNaTrilha);
             result[dia.id] = [...pendentes, ...concluidos];
@@ -214,16 +221,6 @@ const TrilhaSemanal: React.FC = () => {
         return stats;
     }, [topicsByDay]);
 
-    // Helper para encontrar em qual dia está um tópico
-    const findTopicDay = (topicId: string): string | null => {
-        for (const dia of DIAS_SEMANA) {
-            if (trilha[dia.id]?.includes(topicId)) {
-                return dia.id;
-            }
-        }
-        return null;
-    };
-
     // Handler para quando o drag começa
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
@@ -233,19 +230,15 @@ const TrilhaSemanal: React.FC = () => {
     const handleDragOver = (event: DragOverEvent) => {
         const { over } = event;
         if (over) {
-            setOverId(over.id as string);
             const overIdStr = over.id as string;
-            
-            // Se está sobre uma zona de drop
+            setOverId(overIdStr);
+
             if (overIdStr.startsWith('droppable-')) {
                 const diaId = overIdStr.replace('droppable-', '');
                 setDragOverDia(diaId);
             } else {
-                // Se está sobre um tópico, encontrar o dia
-                const diaId = findTopicDay(overIdStr);
-                if (diaId) {
-                    setDragOverDia(diaId);
-                }
+                const info = parseInstanceId(overIdStr);
+                setDragOverDia(info?.diaId || null);
             }
         } else {
             setOverId(null);
@@ -262,71 +255,76 @@ const TrilhaSemanal: React.FC = () => {
             return;
         }
 
-        const activeId = active.id as string;
-        const overId = over.id as string;
+        const activeInstanceId = active.id as string;
+        const overInstanceId = over.id as string;
 
-        // Encontrar o dia de origem
-        const fromDia = findTopicDay(activeId);
-        if (!fromDia) {
+        const activeInfo = parseInstanceId(activeInstanceId);
+        if (!activeInfo) {
             setActiveId(null);
             return;
         }
 
-        // Verificar se está sendo dropado em uma zona de drop (coluna vazia)
-        let targetDia = fromDia;
-        if (overId.startsWith('droppable-')) {
-            // Extrair o ID do dia da zona de drop
-            targetDia = overId.replace('droppable-', '');
-        } else {
-            // Encontrar o dia de destino pelo tópico
-            const toDia = findTopicDay(overId);
-            targetDia = toDia || fromDia;
+        const { diaId: fromDia, index: fromIndex } = activeInfo;
+        const topicId = trilha[fromDia]?.[fromIndex];
+        if (!topicId) {
+            setActiveId(null);
+            return;
         }
 
         const newTrilha = JSON.parse(JSON.stringify(trilha));
-        
-        // Garantir que o dia de destino existe
+        const sourceColumn = newTrilha[fromDia];
+        if (!sourceColumn) {
+            setActiveId(null);
+            return;
+        }
+
+        let targetDia = fromDia;
+        let targetIndex: number | null = null;
+
+        if (overInstanceId.startsWith('droppable-')) {
+            targetDia = overInstanceId.replace('droppable-', '');
+            targetIndex = newTrilha[targetDia]?.length ?? 0;
+        } else if (overInstanceId === activeInstanceId) {
+            setActiveId(null);
+            setOverId(null);
+            setDragOverDia(null);
+            return;
+        } else {
+            const targetInfo = parseInstanceId(overInstanceId);
+            if (targetInfo) {
+                targetDia = targetInfo.diaId;
+                targetIndex = targetInfo.index;
+            }
+        }
+
         if (!newTrilha[targetDia]) {
             newTrilha[targetDia] = [];
         }
 
-        if (fromDia === targetDia) {
-            // Mesmo dia: reordenar
-            const column = newTrilha[fromDia];
-            const oldIndex = column.indexOf(activeId);
-            const newIndex = column.indexOf(overId);
-            
-            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-                const novosTopicos = arrayMove(column, oldIndex, newIndex);
-                newTrilha[fromDia] = novosTopicos;
-            }
-        } else {
-            // Entre dias diferentes
-            const sourceColumn = newTrilha[fromDia];
-            const targetColumn = newTrilha[targetDia];
-            
-            const fromIndex = sourceColumn.indexOf(activeId);
-            if (fromIndex === -1) {
-                setActiveId(null);
-                return;
-            }
-
-            // Remover duplicatas do destino antes de adicionar
-            newTrilha[targetDia] = targetColumn.filter((id: string) => id !== activeId);
-            
-            // Encontrar posição de inserção
-            let toIndex = targetColumn.indexOf(overId);
-            if (toIndex === -1) {
-                toIndex = targetColumn.length;
-            }
-
-            // Remover do source
-            sourceColumn.splice(fromIndex, 1);
-            newTrilha[fromDia] = sourceColumn;
-            
-            // Adicionar no destino
-            newTrilha[targetDia].splice(toIndex, 0, activeId);
+        const [movedTopic] = sourceColumn.splice(fromIndex, 1);
+        if (!movedTopic) {
+            setActiveId(null);
+            return;
         }
+
+        newTrilha[fromDia] = sourceColumn;
+
+        const destinationColumn = newTrilha[targetDia];
+        let insertionIndex = targetIndex ?? destinationColumn.length;
+
+        if (fromDia === targetDia && insertionIndex > fromIndex) {
+            insertionIndex -= 1;
+        }
+
+        if (insertionIndex < 0) {
+            insertionIndex = 0;
+        }
+        if (insertionIndex > destinationColumn.length) {
+            insertionIndex = destinationColumn.length;
+        }
+
+        destinationColumn.splice(insertionIndex, 0, movedTopic);
+        newTrilha[targetDia] = destinationColumn;
 
         setTrilhaCompleta(newTrilha);
         setTrilhaSemana(weekKey, newTrilha);
@@ -342,69 +340,49 @@ const TrilhaSemanal: React.FC = () => {
 
     const adicionarTopicosAoDia = () => {
         if (!diaParaAdicionar) return;
-        
+
         const totalSelecionado = topicosSelecionados.size + revisoesSelecionadas.size;
         if (totalSelecionado === 0) return;
-        
+
         const newTrilha = JSON.parse(JSON.stringify(trilha));
         if (!newTrilha[diaParaAdicionar]) {
             newTrilha[diaParaAdicionar] = [];
         }
-        
-        // Verificar tópicos já existentes APENAS no dia atual (permitir repetição em outros dias)
-        const topicosNoDiaAtual = new Set(newTrilha[diaParaAdicionar] || []);
-        
+
         const adicionados: string[] = [];
-        const jaExistemNoDia: string[] = [];
-        
+
         // Adicionar tópicos selecionados
         topicosSelecionados.forEach(topicId => {
-            if (topicosNoDiaAtual.has(topicId)) {
-                jaExistemNoDia.push(topicId);
-            } else {
-                newTrilha[diaParaAdicionar].push(topicId);
-                adicionados.push(topicId);
-            }
+            newTrilha[diaParaAdicionar].push(topicId);
+            adicionados.push(topicId);
         });
-        
+
         // Adicionar revisões selecionadas (usando o topico_id da revisão)
         revisoesSelecionadas.forEach(revisaoId => {
             const revisao = revisoes.find(r => r.id === revisaoId);
             if (revisao) {
                 const topicId = revisao.topico_id;
-                if (topicosNoDiaAtual.has(topicId)) {
-                    jaExistemNoDia.push(topicId);
-                } else {
-                    newTrilha[diaParaAdicionar].push(topicId);
-                    adicionados.push(topicId);
-                }
+                newTrilha[diaParaAdicionar].push(topicId);
+                adicionados.push(topicId);
             }
         });
-        
+
         if (adicionados.length > 0) {
             setTrilhaCompleta(newTrilha);
             setTrilhaSemana(weekKey, newTrilha);
-            
+
             const diaNome = DIAS_SEMANA.find(d => d.id === diaParaAdicionar)?.nome;
             const totalAdicionado = adicionados.length;
-            const tipoTexto = topicosSelecionados.size > 0 && revisoesSelecionadas.size > 0 
-                ? 'itens' 
-                : topicosSelecionados.size > 0 
+            const tipoTexto = topicosSelecionados.size > 0 && revisoesSelecionadas.size > 0
+                ? 'itens'
+                : topicosSelecionados.size > 0
                     ? 'tópico' + (totalAdicionado > 1 ? 's' : '')
                     : 'revisão' + (totalAdicionado > 1 ? 'ões' : '');
-            
-            let mensagem = `${totalAdicionado} ${tipoTexto} adicionado${totalAdicionado > 1 ? 's' : ''} em ${diaNome}!`;
-            
-            if (jaExistemNoDia.length > 0) {
-                mensagem += ` ${jaExistemNoDia.length} item${jaExistemNoDia.length > 1 ? 's' : ''} já ${jaExistemNoDia.length > 1 ? 'estão' : 'está'} neste dia.`;
-                toast.warning(mensagem);
-            } else {
-                toast.success(mensagem);
-            }
-        } else if (jaExistemNoDia.length > 0) {
-            toast.warning(`Todos os itens selecionados já estão neste dia.`);
+
+            const mensagem = `${totalAdicionado} ${tipoTexto} adicionado${totalAdicionado > 1 ? 's' : ''} em ${diaNome}!`;
+            toast.success(mensagem);
         }
-        
+
         setTopicosSelecionados(new Set());
         setRevisoesSelecionadas(new Set());
         setModalAdicionarAberto(false);
@@ -452,17 +430,19 @@ const TrilhaSemanal: React.FC = () => {
         }
     };
 
-    const removerTopicoDoDia = (topicId: string, diaId: string) => {
+    const removerTopicoDoDia = (instanceId: string) => {
+        const info = parseInstanceId(instanceId);
+        if (!info) return;
+        const { diaId, index } = info;
         const newTrilha = JSON.parse(JSON.stringify(trilha));
         if (newTrilha[diaId]) {
-            const topico = allTopicsMap.get(topicId);
-            newTrilha[diaId] = newTrilha[diaId].filter((id: string) => id !== topicId);
+            const [removedTopicId] = newTrilha[diaId].splice(index, 1);
             setTrilhaCompleta(newTrilha);
-            
-            // Salvar trilha da semana
-            const weekKey = getWeekKey(semanaAtual);
-            setTrilhaSemana(weekKey, newTrilha);
-            
+
+            const weekKeyAtual = getWeekKey(semanaAtual);
+            setTrilhaSemana(weekKeyAtual, newTrilha);
+
+            const topico = removedTopicId ? allTopicsMap.get(removedTopicId) : null;
             toast.success(`Tópico "${topico?.titulo || 'removido'}" removido de ${DIAS_SEMANA.find(d => d.id === diaId)?.nome}`);
         }
     };
