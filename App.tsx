@@ -335,7 +335,7 @@ const App: React.FC = () => {
             </div>
             <div className="flex-1 flex flex-col pt-[40px] min-h-0">
               <Header theme={theme} toggleTheme={toggleTheme} activeView={currentView} setActiveView={setActiveView} />
-              <MobileHeader onOpenSidebar={() => setIsSidebarOpen(true)} />
+              <MobileHeader onOpenSidebar={() => setIsSidebarOpen(true)} theme={theme} toggleTheme={toggleTheme} />
 
               <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 relative min-h-0">
                 <div className="max-w-7xl mx-auto w-full">
