@@ -561,11 +561,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
                 Edital ativo
               </span>
-              <div className="flex items-center gap-3">
-                <EditalSelector className="flex-1" />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <EditalSelector className="w-full sm:flex-1" />
                 <Button
                   onClick={openRegisterEditalModal}
-                  className="h-10 px-4 flex items-center gap-2 flex-shrink-0 bg-gradient-to-r from-primary to-secondary text-white font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity border-0"
+                  className="h-11 w-full sm:w-auto px-4 flex items-center gap-2 bg-gradient-to-r from-primary to-secondary text-white font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity border-0"
                   aria-label="Criar novo edital"
                   data-tutorial="edital-manage-button"
                 >
@@ -574,10 +574,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <button
                 onClick={abrirModalEstudoManual}
-                className="h-11 px-6 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-400 to-violet-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/30 hover:opacity-90 transition-opacity flex-1 min-w-[160px]"
+                className="h-11 w-full sm:flex-1 px-6 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-400 to-violet-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/30 hover:opacity-90 transition-opacity"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Adicionar estudo
@@ -585,7 +585,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               <Button
                 variant='outline'
                 onClick={() => setActiveView('planejamento')}
-                className="h-11 px-6 flex-1 min-w-[160px]"
+                className="h-11 w-full sm:flex-1 px-6"
               >
                 <BookOpenIcon className="h-4 w-4 mr-2" />
                 Ver planejamento
@@ -611,7 +611,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   </h3>
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground mb-1">Estudos realizados</span>
                   <span className="text-lg font-bold text-foreground">{sessoes.length}</span>
