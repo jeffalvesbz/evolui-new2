@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { SettingsIcon, SunIcon, MoonIcon, BellIcon, ClockIcon, TargetIcon, UserIcon, LogOutIcon } from './icons';
+import { SettingsIcon, SunIcon, MoonIcon, BellIcon, ClockIcon, TargetIcon, UserIcon, LogOutIcon, CreditCardIcon } from './icons';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
+import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { Theme } from '../types';
 import { toast } from './Sonner';
+import { createPortalSession } from '../services/stripeService';
 
 interface ConfiguracoesProps {
   theme: Theme;
@@ -15,12 +17,21 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
   const { user, logout } = useAuthStore();
   const { goalMinutes, weeklyGoalHours, setGoalMinutes, setWeeklyGoalHours } = useDailyGoalStore();
   const { pomodoroSettings, updatePomodoroSettings } = useEstudosStore();
+  const { planType, stripeCustomerId } = useSubscriptionStore();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const handleLogout = () => {
     logout();
     toast.success('Logout realizado com sucesso!');
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await createPortalSession();
+    } catch (error) {
+      toast.error('Erro ao abrir portal de assinatura');
+    }
   };
 
   const handlePomodoroUpdate = (key: keyof typeof pomodoroSettings, value: string) => {
@@ -68,7 +79,7 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
               )}
               <h2 className="text-xl font-semibold text-foreground">Aparência</h2>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                 <div>
@@ -93,7 +104,7 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
               <BellIcon className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Notificações</h2>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                 <div>
@@ -139,7 +150,7 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
               <ClockIcon className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Pomodoro</h2>
             </div>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -207,7 +218,7 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
               <TargetIcon className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Metas de Estudo</h2>
             </div>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -241,13 +252,64 @@ const Configuracoes: React.FC<ConfiguracoesProps> = ({ theme, toggleTheme }) => 
             </div>
           </section>
 
+          {/* Seção: Assinatura */}
+          <section className="bg-card border border-border rounded-xl p-6 shadow-lg">
+            <div className="flex items-center gap-3 mb-6">
+              <CreditCardIcon className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">Assinatura</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="mb-3">
+                  <p className="text-sm text-muted-foreground mb-1">Plano Atual</p>
+                  <p className="font-bold text-foreground text-lg uppercase">{planType === 'free' ? 'Gratuito' : planType}</p>
+                </div>
+              </div>
+
+              {planType !== 'free' ? (
+                <>
+                  {stripeCustomerId ? (
+                    <button
+                      onClick={handleManageSubscription}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary/20 text-primary rounded-lg hover:bg-primary/30 transition-colors font-semibold"
+                    >
+                      <CreditCardIcon className="w-5 h-5" />
+                      Gerenciar Assinatura
+                    </button>
+                  ) : (
+                    <div className="w-full p-4 bg-muted/50 rounded-lg border border-muted text-center">
+                      <p className="font-medium text-foreground">Assinatura gerenciada manualmente</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Entre em contato com o suporte para alterações.
+                      </p>
+                    </div>
+                  )}
+                  {stripeCustomerId && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Altere seu plano, método de pagamento ou cancele sua assinatura
+                    </p>
+                  )}
+                </>
+              ) : (
+                <button
+                  onClick={() => window.location.href = '/pagamento'}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-secondary text-black rounded-lg hover:opacity-90 transition-opacity font-semibold shadow-lg shadow-primary/20"
+                >
+                  <TargetIcon className="w-5 h-5" />
+                  Fazer Upgrade Agora
+                </button>
+              )}
+            </div>
+          </section>
+
           {/* Seção: Conta */}
           <section className="bg-card border border-border rounded-xl p-6 shadow-lg">
             <div className="flex items-center gap-3 mb-6">
               <UserIcon className="w-6 h-6 text-primary" />
               <h2 className="text-xl font-semibold text-foreground">Conta</h2>
             </div>
-            
+
             <div className="space-y-4">
               {user && (
                 <div className="p-4 bg-muted/30 rounded-lg">

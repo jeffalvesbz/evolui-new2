@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
-import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay, startOfDay } from 'date-fns';
+import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay, startOfDay, isBefore } from 'date-fns';
 import {
   ClockIcon as Clock3,
   TargetIcon as Target,
@@ -36,11 +36,13 @@ import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { useModalStore } from '../stores/useModalStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import AcoesRecomendadas from './AcoesRecomendadas';
 import { mensagensDiarias } from '../data/motivacoes';
 import { gerarMensagemMotivacionalIA } from '../services/geminiService';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { subDays, differenceInDays } from 'date-fns';
+import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 
 // --- Chart Components ---
 
@@ -121,14 +123,14 @@ const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }
         <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}m`} />
         <Tooltip
-          cursor={{ fill: 'rgba(var(--color-primary-rgb), 0.1)' }}
+          cursor={{ fill: 'var(--color-highlight)' }}
           content={<CustomBarTooltip />}
         />
-        <Bar dataKey="Tempo (min)" fill="url(#colorUv)" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Tempo (min)" fill="url(#colorUv)" radius={[6, 6, 0, 0]} />
         <defs>
           <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.8} />
-            <stop offset="95%" stopColor="var(--color-secondary)" stopOpacity={0.8} />
+            <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={1} />
+            <stop offset="100%" stopColor="var(--color-secondary)" stopOpacity={0.8} />
           </linearGradient>
         </defs>
       </BarChart>
@@ -137,7 +139,7 @@ const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }
 };
 
 const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }> = ({ data }) => {
-  const COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#0ea5e9', '#ec4899', '#3b82f6', '#ef4444'];
+  const COLORS = ['#8B5CF6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#ef4444'];
   return (
     <ResponsiveContainer width="100%" height={250}>
       <PieChart>
@@ -180,11 +182,19 @@ interface DashboardProps {
   setActiveView: (view: string) => void;
 }
 
+import { useEditalSync } from '../hooks/useEditalSync';
+
 const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
+  useEditalSync();
   const user = useAuthStore((state) => state.user);
   const editalAtivo = useEditalStore((state) => state.editalAtivo);
   const abrirModalEstudoManual = useEstudosStore((state) => state.abrirModalEstudoManual);
   const openRegisterEditalModal = useModalStore((state) => state.openRegisterEditalModal);
+
+  // Subscription check
+  const { planType, hasActiveSubscription, isTrialActive } = useSubscriptionStore();
+  const isActive = hasActiveSubscription() || isTrialActive();
+  const isPremiumFeature = planType === 'free' || (!isActive && planType !== 'premium');
 
   const { goalMinutes, weeklyGoalHours, setGoalMinutes, setWeeklyGoalHours } = useDailyGoalStore();
   const { streak } = useUnifiedStreak();
@@ -199,6 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   const sessoes = useEstudosStore((state) => state.sessoes);
   const disciplinas = useDisciplinasStore((state) => state.disciplinas);
   const revisoes = useRevisoesStore((state) => state.revisoes);
+  const atualizarStatusAtrasadas = useRevisoesStore((state) => state.atualizarStatusAtrasadas);
   const erros = useCadernoErrosStore((state) => state.erros);
 
   // Real-time calculations based on active edital data
@@ -235,12 +246,33 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     };
   }, [sessoes]);
 
-  const { revisoesHoje, revisoesPendentes } = useMemo(() => {
+  const { revisoesHoje, revisoesPendentes, revisoesAtrasadas, revisoesAtrasadasCount } = useMemo(() => {
     const hoje = startOfDay(new Date());
     const pendentes = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
+    const atrasadas = revisoes.filter(r => {
+      const dataPrevista = startOfDay(new Date(r.data_prevista));
+      return (r.status === 'pendente' || r.status === 'atrasada') && isBefore(dataPrevista, hoje);
+    });
+
+    // Debug logging
+    console.log('🔍 Dashboard - Revisões Debug:', {
+      totalRevisoes: revisoes.length,
+      revisoesData: revisoes.map(r => ({
+        id: r.id,
+        status: r.status,
+        data_prevista: r.data_prevista,
+        isPast: isBefore(startOfDay(new Date(r.data_prevista)), hoje)
+      })),
+      hoje: hoje.toISOString(),
+      atrasadasCount: atrasadas.length,
+      atrasadasData: atrasadas
+    });
+
     return {
       revisoesHoje: pendentes,
       revisoesPendentes: pendentes.length,
+      revisoesAtrasadas: atrasadas,
+      revisoesAtrasadasCount: atrasadas.length,
     }
   }, [revisoes]);
 
@@ -445,6 +477,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
 
   }, [user, tempoTotalHoje, metaPercentual, revisoesPendentes]);
 
+
+
   const recentStudies = useMemo(() => sessoes
     .slice() // Create a copy to avoid mutating the original array
     .sort((a, b) => new Date(b.data_estudo).getTime() - new Date(a.data_estudo).getTime())
@@ -476,10 +510,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       helper: `Meta diária de ${formattedGoal}`,
     },
     {
-      label: 'Revisões pendentes',
-      value: revisoesPendentes,
+      label: 'Revisões atrasadas',
+      value: revisoesAtrasadasCount,
       icon: Target,
-      helper: `${revisoesPendentes} revisões para hoje`,
+      helper: revisoesAtrasadasCount > 0 ? `${revisoesAtrasadasCount} ${revisoesAtrasadasCount === 1 ? 'revisão atrasada' : 'revisões atrasadas'}` : 'Nenhuma revisão atrasada',
+      isOverdue: revisoesAtrasadasCount > 0,
     },
     {
       label: 'Erros resolvidos',
@@ -508,7 +543,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     <div data-tutorial="dashboard-content" className="space-y-8">
       {/* Seção Principal - Header e Controles */}
       <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-        <Card className="glass-card overflow-hidden shadow-2xl shadow-black/20">
+        <Card className="overflow-hidden">
           <CardHeader className="bg-gradient-to-br from-primary/10 via-background/0 to-background/0 p-6">
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               <Sparkles className="h-4 w-4" />
@@ -560,7 +595,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
         </Card>
 
         {/* Resumo do Edital Ativo */}
-        <Card className="glass-card shadow-2xl shadow-black/20">
+        <Card className="">
           <CardHeader className="p-6 pb-4">
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               <CalendarClockIcon className="h-4 w-4" />
@@ -601,6 +636,32 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   </span>
                 </div>
               </div>
+
+              {/* Progress bar for edital */}
+              {editalAtivo?.data_alvo && (() => {
+                const hoje = new Date();
+                const dataAlvo = new Date(editalAtivo.data_alvo);
+                // Usar 6 meses antes da data alvo como data de início estimada
+                const dataCriacao = subDays(dataAlvo, 180);
+
+                const diasTotais = Math.max(1, differenceInDays(dataAlvo, dataCriacao));
+                const diasDecorridos = Math.max(0, differenceInDays(hoje, dataCriacao));
+                const diasRestantes = Math.max(0, differenceInDays(dataAlvo, hoje));
+                const progressoPercentual = Math.min(100, Math.round((diasDecorridos / diasTotais) * 100));
+
+                return (
+                  <div className="mt-4 pt-3 border-t border-white/10">
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <span className="text-muted-foreground">Progresso até a prova</span>
+                      <span className="text-muted-foreground">{diasRestantes} {diasRestantes === 1 ? 'dia' : 'dias'} restantes</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Progress value={progressoPercentual} className="h-2 flex-1" />
+                      <span className="font-semibold text-foreground text-sm w-12 text-right">{progressoPercentual}%</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -608,7 +669,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
 
       {/* Metas e Status */}
       <section>
-        <Card className="glass-card">
+        <Card className="">
           <CardHeader className="p-6">
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               <Target className="h-4 w-4" />
@@ -620,7 +681,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-4">
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Meta diária</span>
                       <select
@@ -636,13 +697,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         ))}
                       </select>
                     </div>
-                    <span className="font-semibold text-foreground text-base">{metaPercentual}%</span>
                   </div>
-                  <Progress value={metaPercentual} className="h-2" />
+                  <div className="flex items-center gap-3">
+                    <Progress value={metaPercentual} className="h-2 flex-1" />
+                    <span className="font-semibold text-foreground text-sm w-12 text-right">{metaPercentual}%</span>
+                  </div>
                 </div>
 
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Meta semanal</span>
                       <select
@@ -658,9 +721,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         ))}
                       </select>
                     </div>
-                    <span className="font-semibold text-foreground text-base">{progressoSemanal}%</span>
                   </div>
-                  <Progress value={progressoSemanal} className="h-2" />
+                  <div className="flex items-center gap-3">
+                    <Progress value={progressoSemanal} className="h-2 flex-1" />
+                    <span className="font-semibold text-foreground text-sm w-12 text-right">{progressoSemanal}%</span>
+                  </div>
                 </div>
               </div>
 
@@ -687,7 +752,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       </section>
 
       <section>
-        <Card className="p-5 text-center bg-gradient-to-r from-primary/10 via-background/0 to-secondary/10 rounded-2xl shadow-lg border-purple-500/20 min-h-[90px] flex flex-col justify-center">
+        <Card className="p-5 text-center min-h-[90px] flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 opacity-50 group-hover:opacity-100 transition-opacity" />
           {isMessageLoading ? (
             <div className="space-y-2 animate-pulse">
               <div className="h-4 bg-muted/50 rounded-full w-3/4 mx-auto"></div>
@@ -716,7 +782,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           description="Visão geral do seu desempenho e progresso nos estudos."
         />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="glass-card">
+          <Card className="">
             <CardContent className="p-6 min-h-[110px] flex items-center">
               <div className="flex items-center justify-between w-full">
                 <div>
@@ -727,7 +793,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               </div>
             </CardContent>
           </Card>
-          <Card className="glass-card">
+          <Card className="">
             <CardContent className="p-6 min-h-[110px] flex items-center">
               <div className="flex items-center justify-between w-full">
                 <div>
@@ -738,7 +804,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               </div>
             </CardContent>
           </Card>
-          <Card className="glass-card">
+          <Card className="">
             <CardContent className="p-6 min-h-[110px] flex items-center">
               <div className="flex items-center justify-between w-full">
                 <div>
@@ -749,7 +815,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               </div>
             </CardContent>
           </Card>
-          <Card className="glass-card">
+          <Card className="">
             <CardContent className="p-6 min-h-[110px] flex items-center">
               <div className="flex items-center justify-between w-full">
                 <div>
@@ -774,76 +840,51 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           description="Visualize seu desempenho e distribuição de estudos ao longo da semana."
         />
         <div className="grid gap-8 lg:grid-cols-2">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Desempenho Diário</CardTitle>
-              <CardDescription className="text-sm">Minutos estudados na semana atual (segunda a domingo).</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <WeeklyStudyChart data={dadosGraficoSemanal} />
-            </CardContent>
-          </Card>
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Foco por Disciplina</CardTitle>
-              <CardDescription className="text-sm">Distribuição do tempo de estudo por matéria.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {dadosGraficoDisciplinas.length > 0 ? (
-                <DisciplineFocusChart data={dadosGraficoDisciplinas} />
-              ) : (
-                <div className="flex items-center justify-center h-[250px] text-center text-muted-foreground text-sm">
-                  Nenhum estudo registrado esta semana para exibir o foco.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <PremiumFeatureWrapper
+            isLocked={isPremiumFeature}
+            requiredPlan="pro"
+            feature="Gráfico de Desempenho Diário"
+            blurAmount="md"
+          >
+            <Card className="">
+              <CardHeader>
+                <CardTitle>Desempenho Diário</CardTitle>
+                <CardDescription className="text-sm">Minutos estudados na semana atual (segunda a domingo).</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <WeeklyStudyChart data={dadosGraficoSemanal} />
+              </CardContent>
+            </Card>
+          </PremiumFeatureWrapper>
+
+          <PremiumFeatureWrapper
+            isLocked={isPremiumFeature}
+            requiredPlan="pro"
+            feature="Gráfico de Foco por Disciplina"
+            blurAmount="md"
+          >
+            <Card className="">
+              <CardHeader>
+                <CardTitle>Foco por Disciplina</CardTitle>
+                <CardDescription className="text-sm">Distribuição do tempo de estudo por matéria.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {dadosGraficoDisciplinas.length > 0 ? (
+                  <DisciplineFocusChart data={dadosGraficoDisciplinas} />
+                ) : (
+                  <div className="flex items-center justify-center h-[250px] text-center text-muted-foreground text-sm">
+                    Nenhum estudo registrado esta semana para exibir o foco.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </PremiumFeatureWrapper>
         </div>
       </section>
 
-      {/* Seção de Próximas Revisões e Tópicos Mais Estudados */}
+      {/* Seção de Tópicos Mais Estudados e Estudos Recentes */}
       <section className="grid gap-8 lg:grid-cols-2">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              <RefreshCwIcon className="h-4 w-4" />
-              Próximas Revisões
-            </CardDescription>
-            <CardTitle className="text-2xl mt-1">Agenda de Revisões</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {proximasRevisoes.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed border-border bg-background/20 p-6 text-center text-sm text-muted-foreground">
-                Nenhuma revisão agendada no momento.
-              </div>
-            ) : (
-              proximasRevisoes.map((revisao) => {
-                const diasRestantes = differenceInDays(new Date(revisao.data_prevista), new Date());
-                return (
-                  <div
-                    key={revisao.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50"
-                  >
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wide truncate">{revisao.disciplinaNome}</p>
-                      <p className="font-medium text-foreground text-sm truncate">{revisao.topicoNome}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {new Date(revisao.data_prevista).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                      </p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className={`text-sm font-semibold whitespace-nowrap ${diasRestantes === 0 ? 'text-orange-500' : diasRestantes < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {diasRestantes === 0 ? 'Hoje' : diasRestantes === 1 ? 'Amanhã' : diasRestantes < 0 ? `${Math.abs(diasRestantes)} dias atrasado` : `Em ${diasRestantes} dias`}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card">
+        <Card className="">
           <CardHeader>
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               <BookOpenIcon className="h-4 w-4" />
@@ -876,10 +917,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             )}
           </CardContent>
         </Card>
-      </section>
 
-      <section className="grid gap-8 lg:grid-cols-[2fr_1fr]">
-        <Card className="glass-card">
+        <Card className="">
           <CardHeader>
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
               <Sparkles className="h-4 w-4" />
@@ -916,40 +955,10 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             )}
           </CardContent>
         </Card>
-
-        <div className="space-y-4">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-                <Target className="h-4 w-4" />
-                Disciplinas ativas
-              </CardDescription>
-              <CardTitle className="text-2xl mt-1">Foco do edital</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {disciplinas.length === 0 ? (
-                <div className="rounded-xl border-2 border-dashed border-border bg-background/20 p-6 text-center text-sm text-muted-foreground">
-                  Nenhuma disciplina cadastrada para este edital.
-                </div>
-              ) : (
-                disciplinas.map((disciplina) => (
-                  <div
-                    key={disciplina.id}
-                    className="flex items-center justify-between rounded-xl border border-border bg-background/30 p-3"
-                  >
-                    <p className="font-medium text-foreground">{disciplina.nome}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {disciplina.topicos?.length || 0} topicos
-                    </span>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </section>
     </div>
   )
 }
 
 export default Dashboard;
+

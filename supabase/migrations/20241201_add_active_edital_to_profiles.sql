@@ -11,3 +11,5 @@ COMMENT ON COLUMN profiles.active_edital_id IS 'ID do último edital selecionado
 -- Criar índice para melhor performance
 CREATE INDEX IF NOT EXISTS idx_profiles_active_edital_id ON profiles(active_edital_id);
 
+
+

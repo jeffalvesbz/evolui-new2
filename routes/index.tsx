@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedAdminRoute } from '../components/ProtectedAdminRoute';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { DashboardSkeleton } from '../components/skeletons';
 
 // Mapeamento de rotas para views
 const routeToViewMap: Record<string, string> = {
@@ -16,6 +18,8 @@ const routeToViewMap: Record<string, string> = {
   '/simulados': 'simulados',
   '/corretor': 'corretor',
   '/configuracoes': 'configuracoes',
+  '/pagamento': 'pagamento',
+  '/quiz': 'quiz',
 };
 
 const viewToRouteMap: Record<string, string> = {
@@ -31,6 +35,8 @@ const viewToRouteMap: Record<string, string> = {
   'simulados': '/simulados',
   'corretor': '/corretor',
   'configuracoes': '/configuracoes',
+  'pagamento': '/pagamento',
+  'quiz': '/quiz',
 };
 
 // Função para converter pathname em view
@@ -43,43 +49,59 @@ export const getRouteFromView = (view: string): string => {
   return viewToRouteMap[view] || '/dashboard';
 };
 
+// Helper para lazy load seguro
+const safeLazy = <T extends React.ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> => {
+  return lazy(() =>
+    importFn()
+      .then((module) => {
+        // Verificar se o módulo tem um default export válido
+        if (!module || !module.default) {
+          throw new Error('Módulo não possui export default válido');
+        }
+        return module;
+      })
+      .catch((err) => {
+        // Não logar o erro aqui para evitar problemas de conversão
+        // Apenas retornar um componente de fallback seguro
+        return {
+          default: (() => (
+            <div className="p-8 text-center">
+              <p>Erro ao carregar componente. Por favor, recarregue a página.</p>
+            </div>
+          )) as T,
+        };
+      })
+  );
+};
+
 // Lazy load de componentes para code splitting
-const Dashboard = lazy(() => import('../components/Dashboard'));
-const CicloDeEstudos = lazy(() => import('../components/CicloDeEstudos'));
-const TrilhaSemanal = lazy(() => import('../components/TrilhaSemanal'));
-const HistoricoPage = lazy(() => import('../components/HistoricoPage'));
-const Edital = lazy(() => import('../components/Edital').catch(() => {
-  // Fallback em caso de erro no carregamento
-  return { default: () => <div>Erro ao carregar Edital</div> };
-}));
-const FlashcardsPage = lazy(() => import('../components/FlashcardsPage'));
-const Simulados = lazy(() => import('../components/Simulados'));
-const RevisoesPage = lazy(() => import('../components/RevisoesPage'));
-const CadernoErros = lazy(() => import('../components/CadernoErros'));
-const Estatisticas = lazy(() => import('../components/Estatisticas'));
-const CorretorRedacao = lazy(() => import('../components/CorretorRedacao'));
-const Configuracoes = lazy(() => import('../components/Configuracoes'));
+const Dashboard = safeLazy(() => import('../components/Dashboard'));
+const CicloDeEstudos = safeLazy(() => import('../components/CicloDeEstudos'));
+const TrilhaSemanal = safeLazy(() => import('../components/TrilhaSemanal'));
+const HistoricoPage = safeLazy(() => import('../components/HistoricoPage'));
+const Edital = safeLazy(() => import('../components/Edital'));
+const FlashcardsPage = safeLazy(() => import('../components/FlashcardsPage'));
+const Simulados = safeLazy(() => import('../components/Simulados'));
+const RevisoesPage = safeLazy(() => import('../components/RevisoesPage'));
+const CadernoErros = safeLazy(() => import('../components/CadernoErros'));
+const Estatisticas = safeLazy(() => import('../components/Estatisticas'));
+const CorretorRedacao = safeLazy(() => import('../components/CorretorRedacao'));
+const Configuracoes = safeLazy(() => import('../components/Configuracoes'));
+const PaymentPage = safeLazy(() => import('../components/PaymentPageStripe'));
 
 // Admin Pages
-const AdminEditaisList = lazy(() => import('../src/pages/admin/editais/index'));
-const AdminEditalNovo = lazy(() => import('../src/pages/admin/editais/novo'));
-const AdminEditalDetalhes = lazy(() => import('../src/pages/admin/editais/[id]'));
-const AdminDisciplinaDetalhes = lazy(() => import('../src/pages/admin/editais/[id]/disciplina/[disciplinaId]'));
-const AdminSolicitacoesEditais = lazy(() => import('../src/pages/admin/editais/solicitacoes'));
+const AdminEditaisList = safeLazy(() => import('../src/pages/admin/editais/index'));
+const AdminEditalNovo = safeLazy(() => import('../src/pages/admin/editais/novo'));
+const AdminEditalDetalhes = safeLazy(() => import('../src/pages/admin/editais/[id]'));
+const AdminDisciplinaDetalhes = safeLazy(() => import('../src/pages/admin/editais/[id]/disciplina/[disciplinaId]'));
+const AdminSolicitacoesEditais = safeLazy(() => import('../src/pages/admin/editais/solicitacoes'));
 
 // User Pages
-const UserEditaisDashboard = lazy(() => import('../src/pages/dashboard/editais'));
-const MinhasSolicitacoes = lazy(() => import('../src/pages/dashboard/minhas-solicitacoes'));
-
-// Componente de loading para Suspense
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="flex flex-col items-center gap-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      <p className="text-sm text-muted-foreground">Carregando...</p>
-    </div>
-  </div>
-);
+const UserEditaisDashboard = safeLazy(() => import('../src/pages/dashboard/editais'));
+const MinhasSolicitacoes = safeLazy(() => import('../src/pages/dashboard/minhas-solicitacoes'));
+const QuizPage = safeLazy(() => import('../src/pages/QuizPage'));
 
 interface AppRoutesProps {
   setActiveView: (view: string) => void;
@@ -92,7 +114,14 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView, theme = 'da
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard setActiveView={setActiveView} />} />
+        <Route
+          path="/dashboard"
+          element={
+            <Suspense fallback={<DashboardSkeleton />}>
+              <Dashboard setActiveView={setActiveView} />
+            </Suspense>
+          }
+        />
         <Route path="/planejamento" element={<TrilhaSemanal />} />
         <Route path="/ciclos" element={<CicloDeEstudos />} />
         <Route path="/historico" element={<HistoricoPage setActiveView={setActiveView} />} />
@@ -115,6 +144,12 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView, theme = 'da
         {/* User Dashboard Routes */}
         <Route path="/dashboard/editais" element={<UserEditaisDashboard />} />
         <Route path="/dashboard/minhas-solicitacoes" element={<MinhasSolicitacoes />} />
+
+        {/* Payment Route */}
+        <Route path="/pagamento" element={<PaymentPage />} />
+
+        {/* Quiz Route */}
+        <Route path="/quiz" element={<QuizPage />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

@@ -86,3 +86,5 @@ SELECT * FROM storage.buckets WHERE id = 'editais';
 
 Se retornar uma linha, o bucket foi criado com sucesso! ✅
 
+
+

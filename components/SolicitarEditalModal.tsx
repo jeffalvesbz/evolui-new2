@@ -161,11 +161,11 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
 
     return (
         <div 
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
             onClick={onClose}
         >
             <div
-                className="bg-[#0f111a] w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto"
+                className="bg-card w-full max-w-2xl rounded-2xl border border-border shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-start justify-between p-6 border-b border-slate-800 bg-[#131620] sticky top-0">

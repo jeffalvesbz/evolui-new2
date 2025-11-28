@@ -5,3 +5,5 @@ add column if not exists edital_default_id uuid references editais_default(id) o
 -- Create index for faster lookups
 create index if not exists idx_solicitacoes_edital_id on solicitacoes_editais(edital_default_id);
 
+
+

@@ -50,8 +50,8 @@ const AgendarRevisoesModal: React.FC = () => {
     if (!isAgendarRevisoesModalOpen || !agendarRevisoesData) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-card border border-white/10 rounded-xl shadow-xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md mx-4">
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div>
                         <h2 className="text-lg font-bold text-foreground">Deseja agendar revisões?</h2>

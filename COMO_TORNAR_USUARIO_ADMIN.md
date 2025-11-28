@@ -72,3 +72,5 @@ As políticas RLS (Row Level Security) foram atualizadas para verificar se o usu
 
 Mesmo que alguém tente acessar diretamente o banco de dados, as políticas RLS impedirão o acesso se o usuário não for admin.
 
+
+

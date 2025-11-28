@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import Sidebar from './components/Sidebar';
 import { useNavigation } from './hooks/useNavigation';
 import PlaceholderView from './components/PlaceholderView';
@@ -15,79 +15,125 @@ import { useEditalStore } from './stores/useEditalStore';
 import { useDisciplinasStore } from './stores/useDisciplinasStore';
 import { useRevisoesStore } from './stores/useRevisoesStore';
 import { useCadernoErrosStore } from './stores/useCadernoErrosStore';
-import EditalManagementModal from './components/EditalManagementModal';
-import ActivateDefaultEditalModal from './components/ActivateDefaultEditalModal';
-import RegisterEditalModal from './components/RegisterEditalModal';
 import { useModalStore } from './stores/useModalStore';
 import Estatisticas from './components/Estatisticas';
 import { useCiclosStore } from './stores/useCiclosStore';
-import CronometroInteligente from './components/CronometroInteligente';
-import SalvarSessaoModal from './components/SalvarSessaoModal';
-import AdicionarTopicoModal from './components/AdicionarTopicoModal';
-import CriarCicloModal from './components/CriarCicloModal';
 import { useFlashcardsStore } from './stores/useFlashcardStore';
 import { useDailyGoalStore } from './stores/useDailyGoalStore';
 import { useStudyStore } from './stores/useStudyStore';
 import { useRedacaoStore } from './stores/useRedacaoStore';
 import { usePlanejamento } from './stores/usePlanejamento';
 import { useAuthStore } from './stores/useAuthStore';
-import GeradorPlanoModal from './components/GeradorPlanoModal';
+import { useSubscriptionStore } from './stores/useSubscriptionStore';
 import { useFriendsStore } from './stores/useFriendsStore';
-import CriarFlashcardModal from './components/CriarFlashcardModal';
-import AgendarRevisoesModal from './components/AgendarRevisoesModal';
 import MobileHeader from './components/MobileHeader';
 import QuickStartTimerButton from './components/QuickStartTimerButton';
-import CommandPalette from './components/CommandPalette';
-import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import NotificationsPanel from './components/NotificationsPanel';
 import { LoginPage } from './components/LoginPage';
+import { ModalSkeleton } from './components/skeletons';
+
+// Helper para lazy load seguro
+const safeLazy = <T extends React.ComponentType<any>>(
+  importFn: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> => {
+  return lazy(() =>
+    importFn()
+      .then((module) => {
+        // Verificar se o módulo tem um default export válido
+        if (!module || !module.default) {
+          throw new Error('Módulo não possui export default válido');
+        }
+        return module;
+      })
+      .catch((err) => {
+        // Não logar o erro aqui para evitar problemas de conversão
+        // Apenas retornar um componente de fallback seguro
+        return {
+          default: (() => (
+            <div className="p-8 text-center">
+              <p>Erro ao carregar componente. Por favor, recarregue a página.</p>
+            </div>
+          )) as T,
+        };
+      })
+  );
+};
+
+// Lazy load modals for better code splitting
+const EditalManagementModal = safeLazy(() => import('./components/EditalManagementModal'));
+const ActivateDefaultEditalModal = safeLazy(() => import('./components/ActivateDefaultEditalModal'));
+const RegisterEditalModal = safeLazy(() => import('./components/RegisterEditalModal'));
+const SalvarSessaoModal = safeLazy(() => import('./components/SalvarSessaoModal'));
+const AdicionarTopicoModal = safeLazy(() => import('./components/AdicionarTopicoModal'));
+const CriarCicloModal = safeLazy(() => import('./components/CriarCicloModal'));
+const GeradorPlanoModal = safeLazy(() => import('./components/GeradorPlanoModal'));
+const CriarFlashcardModal = safeLazy(() => import('./components/CriarFlashcardModal'));
+const AgendarRevisoesModal = safeLazy(() => import('./components/AgendarRevisoesModal'));
+const ConfirmarAgendarRevisoesModal = safeLazy(() => import('./components/ConfirmarAgendarRevisoesModal'));
+
+// Lazy load heavy components that are conditionally rendered
+const CronometroInteligente = safeLazy(() => import('./components/CronometroInteligente'));
+const CommandPalette = safeLazy(() => import('./components/CommandPalette'));
+const KeyboardShortcutsHelp = safeLazy(() => import('./components/KeyboardShortcutsHelp'));
+const NotificationsPanel = safeLazy(() => import('./components/NotificationsPanel'));
 
 // Hook para buscar dados dos stores quando o edital ativo muda
 const useEditalDataSync = () => {
-    const { editalAtivo } = useEditalStore();
-    const { fetchDisciplinas } = useDisciplinasStore();
-    const { fetchRevisoes } = useRevisoesStore();
-    const { fetchErros } = useCadernoErrosStore();
-    const { fetchSessoes, fetchTrilhas } = useEstudosStore();
-    const { fetchCiclos } = useCiclosStore();
-    const { fetchRedacoes } = useRedacaoStore();
-    const { fetchSimulados } = useStudyStore();
+  const { editalAtivo } = useEditalStore();
+  const { fetchDisciplinas } = useDisciplinasStore();
+  const { fetchRevisoes } = useRevisoesStore();
+  const { fetchErros } = useCadernoErrosStore();
+  const { fetchSessoes, fetchTrilhas } = useEstudosStore();
+  const { fetchCiclos } = useCiclosStore();
+  const { fetchRedacoes } = useRedacaoStore();
+  const { fetchSimulados } = useStudyStore();
 
-    useEffect(() => {
-        if (editalAtivo?.id) {
-            console.log(`Buscando todos os dados para o plano de estudo: ${editalAtivo.nome}`);
-            // ✅ Corrigido: As funções de fetch agora recebem `editalAtivo.id` que representa o `studyPlanId`.
-            Promise.all([
-                fetchDisciplinas(editalAtivo.id),
-                fetchRevisoes(editalAtivo.id),
-                fetchErros(editalAtivo.id),
-                fetchSessoes(editalAtivo.id),
-                fetchCiclos(editalAtivo.id),
-                fetchRedacoes(editalAtivo.id),
-                fetchSimulados(editalAtivo.id),
-                fetchTrilhas(editalAtivo.id),
-            ]).catch(err => {
-                console.error("Falha ao buscar dados do plano de estudo", err);
-                toast.error("Não foi possível carregar os dados do plano de estudo.");
-            });
-        }
-    }, [editalAtivo?.id]);
+  useEffect(() => {
+    if (editalAtivo?.id) {
+      console.log(`Buscando todos os dados para o plano de estudo: ${editalAtivo.nome}`);
+      // ✅ Corrigido: As funções de fetch agora recebem `editalAtivo.id` que representa o `studyPlanId`.
+      Promise.all([
+        fetchDisciplinas(editalAtivo.id),
+        fetchRevisoes(editalAtivo.id),
+        fetchErros(editalAtivo.id),
+        fetchSessoes(editalAtivo.id),
+        fetchCiclos(editalAtivo.id),
+        fetchRedacoes(editalAtivo.id),
+        fetchSimulados(editalAtivo.id),
+        fetchTrilhas(editalAtivo.id),
+      ]).catch(err => {
+        console.error("Falha ao buscar dados do plano de estudo", err);
+        toast.error("Não foi possível carregar os dados do plano de estudo.");
+      });
+    }
+  }, [editalAtivo?.id]);
 };
 
 // Hook to fetch friends data
 const useFriendsDataSync = () => {
-    const { user } = useAuthStore();
-    const { fetchFriends, fetchFriendRequests } = useFriendsStore();
+  const { user } = useAuthStore();
+  const { fetchFriends, fetchFriendRequests } = useFriendsStore();
 
-    useEffect(() => {
-        if (user?.id) {
-            fetchFriends(user.id);
-            fetchFriendRequests(user.id);
-        }
-    }, [user?.id, fetchFriends, fetchFriendRequests]);
+  useEffect(() => {
+    if (user?.id) {
+      fetchFriends(user.id);
+      fetchFriendRequests(user.id);
+    }
+  }, [user?.id, fetchFriends, fetchFriendRequests]);
+}
+
+// Hook to fetch subscription data
+const useSubscriptionDataSync = () => {
+  const { user } = useAuthStore();
+  const { fetchSubscription } = useSubscriptionStore();
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchSubscription();
+    }
+  }, [user?.id, fetchSubscription]);
 }
 
 
@@ -128,50 +174,52 @@ const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: stri
 
     return false;
   }, [revisoes, goalMinutes, sessoes, editalAtivo]);
-  
+
   return (
     <>
       <header data-tutorial="header" className="sticky top-0 z-30 hidden lg:flex items-center justify-between h-[73px] px-6 border-b border-white/10 bg-card/50 backdrop-blur-lg flex-shrink-0">
-         <Breadcrumb activeView={activeView} setActiveView={setActiveView} />
+        <Breadcrumb activeView={activeView} setActiveView={setActiveView} />
         <div className="flex items-center gap-2">
-            <button onClick={openEstudoModal} className="h-9 px-4 flex items-center gap-2 rounded-lg bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity">
-              <PlusCircleIcon className="w-4 h-4" />
-              Registrar estudo
-            </button>
-            
-            <button 
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative h-9 w-9 flex items-center justify-center rounded-lg bg-black/20 text-muted-foreground hover:bg-black/30 transition-colors"
-              aria-label="Notificações"
-            >
-              <BellIcon className="w-5 h-5" />
-              {hasNotifications && (
-                <>
-                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card"></span>
-                  <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
-                </>
-              )}
-            </button>
-            
-            <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} /> 
-            
-            {user && (
-              <div className="flex items-center gap-3 pl-2">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">{user.name.split(' ')[0]}</p>
-                </div>
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary text-black flex items-center justify-center rounded-full font-bold text-lg">
-                  {user.name.charAt(0)}
-                </div>
-              </div>
+          <button onClick={openEstudoModal} className="h-9 px-4 flex items-center gap-2 rounded-lg bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold shadow-lg shadow-primary/30 hover:opacity-90 transition-opacity">
+            <PlusCircleIcon className="w-4 h-4" />
+            Registrar estudo
+          </button>
+
+          <button
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className="relative h-9 w-9 flex items-center justify-center rounded-lg bg-black/20 text-muted-foreground hover:bg-black/30 transition-colors"
+            aria-label="Notificações"
+          >
+            <BellIcon className="w-5 h-5" />
+            {hasNotifications && (
+              <>
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card"></span>
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
+              </>
             )}
+          </button>
+
+          <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />
+
+          {user && (
+            <div className="flex items-center gap-3 pl-2">
+              <div className="text-right">
+                <p className="text-sm font-medium text-foreground">{user.name.split(' ')[0]}</p>
+              </div>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary text-black flex items-center justify-center rounded-full font-bold text-lg">
+                {user.name.charAt(0)}
+              </div>
+            </div>
+          )}
         </div>
       </header>
-      <NotificationsPanel 
-        isOpen={isNotificationsOpen} 
-        onClose={() => setIsNotificationsOpen(false)}
-        setActiveView={setActiveView}
-      />
+      <Suspense fallback={null}>
+        <NotificationsPanel
+          isOpen={isNotificationsOpen}
+          onClose={() => setIsNotificationsOpen(false)}
+          setActiveView={setActiveView}
+        />
+      </Suspense>
     </>
   );
 };
@@ -184,14 +232,14 @@ const App: React.FC = () => {
   const [isKeyboardHelpOpen, setIsKeyboardHelpOpen] = useState(false);
   const editalAtivo = useEditalStore(state => state.editalAtivo);
   const { closeAllModals } = useModalStore();
-  
+
   // Usar hook de navegação para obter view atual e função de navegação
   const { currentView, setActiveView } = useNavigation();
-  
+
   const { isAuthenticated, user, checkAuth } = useAuthStore();
   const [isAppLoading, setIsAppLoading] = useState(true);
   const { fetchEditais } = useEditalStore();
-  
+
   // Listener para abrir Command Palette com Cmd/Ctrl + K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -205,11 +253,11 @@ const App: React.FC = () => {
         setIsKeyboardHelpOpen(true);
       }
     };
-    
+
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
-  
+
   // Usar hook de atalhos de teclado
   useKeyboardShortcuts({
     onOpenCommandPalette: () => setIsCommandPaletteOpen(true),
@@ -227,38 +275,40 @@ const App: React.FC = () => {
   const { simulations } = useStudyStore();
   const themeToggleCount = React.useRef(0);
   const themeToggleTimeout = React.useRef<number | null>(null);
-  
+
   // Initialize auth state listener
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-  
+
   // Fetch initial data once authenticated
   useEffect(() => {
     const loadInitialData = async () => {
-        setIsAppLoading(true);
-        try {
-            await Promise.all([
-                fetchEditais(),
-            ]);
-        } catch (error) {
-            console.error("Failed to load initial data:", error);
-            toast.error("Falha ao carregar dados iniciais.");
-        } finally {
-            setIsAppLoading(false);
-        }
+      setIsAppLoading(true);
+      try {
+        await Promise.all([
+          fetchEditais(),
+        ]);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error || 'Erro desconhecido');
+        console.error("Failed to load initial data:", errorMessage);
+        toast.error("Falha ao carregar dados iniciais.");
+      } finally {
+        setIsAppLoading(false);
+      }
     };
     if (isAuthenticated) {
-        loadInitialData();
+      loadInitialData();
     } else {
-        // If not authenticated, stop loading to show AuthGate
-        setIsAppLoading(false);
+      // If not authenticated, stop loading to show AuthGate
+      setIsAppLoading(false);
     }
   }, [isAuthenticated, fetchEditais]);
 
 
   useEditalDataSync();
   useFriendsDataSync();
+  useSubscriptionDataSync();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as Theme | null;
@@ -271,31 +321,31 @@ const App: React.FC = () => {
     document.documentElement.className = theme;
     localStorage.setItem('theme', theme);
   }, [theme]);
-  
+
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-    
+
     if (themeToggleTimeout.current) {
-        clearTimeout(themeToggleTimeout.current);
+      clearTimeout(themeToggleTimeout.current);
     }
     themeToggleCount.current++;
 
     if (themeToggleCount.current >= 5) {
-        themeToggleCount.current = 0;
+      themeToggleCount.current = 0;
     }
 
     themeToggleTimeout.current = window.setTimeout(() => {
-        themeToggleCount.current = 0;
+      themeToggleCount.current = 0;
     }, 3000); // Reset after 3 seconds of inactivity
   };
 
   if (isAppLoading) {
-     return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-background text-foreground">
-            <LandmarkIcon className="w-16 h-16 text-primary animate-pulse mb-4" />
-            <h2 className="text-2xl font-bold">Carregando seus dados...</h2>
-            <p className="text-muted-foreground">Aguarde um momento.</p>
-        </div>
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-background text-foreground">
+        <LandmarkIcon className="w-16 h-16 text-primary animate-pulse mb-4" />
+        <h2 className="text-2xl font-bold">Carregando seus dados...</h2>
+        <p className="text-muted-foreground">Aguarde um momento.</p>
+      </div>
     );
   }
 
@@ -308,30 +358,41 @@ const App: React.FC = () => {
       <BreadcrumbProvider>
         <div className="flex h-screen bg-background text-foreground font-sans dark overflow-hidden">
           <Toaster />
-          <CommandPalette open={isCommandPaletteOpen} onOpenChange={setIsCommandPaletteOpen} />
-          <KeyboardShortcutsHelp open={isKeyboardHelpOpen} onOpenChange={setIsKeyboardHelpOpen} />
-          <SalvarSessaoModal />
-          <EditalManagementModal />
-          <ActivateDefaultEditalModal />
-          <RegisterEditalModal />
-          <AdicionarTopicoModal />
-          <CriarCicloModal />
-          <GeradorPlanoModal />
-          <CriarFlashcardModal />
-          <AgendarRevisoesModal />
 
-          <Sidebar 
-            activeView={currentView} 
-            setActiveView={setActiveView} 
+          {/* Lazy-loaded modals wrapped in Suspense */}
+          <Suspense fallback={<ModalSkeleton />}>
+            <CommandPalette open={isCommandPaletteOpen} onOpenChange={setIsCommandPaletteOpen} />
+          </Suspense>
+
+          <Suspense fallback={<ModalSkeleton />}>
+            <KeyboardShortcutsHelp open={isKeyboardHelpOpen} onOpenChange={setIsKeyboardHelpOpen} />
+          </Suspense>
+
+          <Suspense fallback={<ModalSkeleton />}>
+            <SalvarSessaoModal />
+            <EditalManagementModal />
+            <ActivateDefaultEditalModal />
+            <RegisterEditalModal />
+            <AdicionarTopicoModal />
+            <CriarCicloModal />
+            <GeradorPlanoModal />
+            <CriarFlashcardModal />
+            <AgendarRevisoesModal />
+            <ConfirmarAgendarRevisoesModal />
+          </Suspense>
+
+          <Sidebar
+            activeView={currentView}
+            setActiveView={setActiveView}
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
           />
-          
+
           <div className="flex-1 flex flex-col min-w-0 relative">
             <div className="absolute left-0 right-0 top-0 min-h-[40px] px-4 py-2 bg-gradient-to-r from-primary to-secondary flex items-center justify-center text-xs sm:text-sm font-bold text-black shadow-lg z-20">
-                <span className="text-center truncate max-w-full">
-                  Plano de Estudo Ativo: {editalAtivo?.nome || 'Nenhum plano selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
-                </span>
+              <span className="text-center truncate max-w-full">
+                Plano de Estudo Ativo: {editalAtivo?.nome || 'Nenhum plano selecionado'} ({editalAtivo?.data_alvo.split('-')[0] || ''})
+              </span>
             </div>
             <div className="flex-1 flex flex-col pt-[40px] min-h-0">
               <Header theme={theme} toggleTheme={toggleTheme} activeView={currentView} setActiveView={setActiveView} />
@@ -343,9 +404,11 @@ const App: React.FC = () => {
                     <AppRoutes setActiveView={setActiveView} theme={theme} toggleTheme={toggleTheme} />
                   </ErrorBoundary>
                 </div>
-                
+
                 <QuickStartTimerButton />
-                <CronometroInteligente />
+                <Suspense fallback={null}>
+                  <CronometroInteligente />
+                </Suspense>
               </main>
             </div>
           </div>

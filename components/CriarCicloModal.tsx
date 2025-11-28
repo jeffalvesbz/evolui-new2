@@ -291,8 +291,8 @@ const CriarCicloModal: React.FC = () => {
     ];
 
     return (
-        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarCicloModal}>
-            <div className="bg-card/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarCicloModal}>
+            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <h2 className="text-lg font-bold">Criar Novo Ciclo de Estudos</h2>
                     <button type="button" onClick={closeCriarCicloModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>

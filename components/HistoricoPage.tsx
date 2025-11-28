@@ -17,210 +17,210 @@ interface HistoricoPageProps {
 }
 
 const LoadingList: React.FC = () => (
-    <div className="space-y-4">
-        {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                <Skeleton className="h-12 w-12 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                </div>
-            </div>
-        ))}
-    </div>
+  <div className="space-y-4">
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+        <Skeleton className="h-12 w-12 rounded-lg" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+    ))}
+  </div>
 );
 
 const EmptyState: React.FC = () => (
-    <div className="text-center py-16">
-        <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Nenhum registro encontrado
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-            Tente ajustar os filtros ou adicione uma nova sessão de estudo.
-        </p>
-    </div>
+  <div className="text-center py-16">
+    <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+    <h3 className="mt-4 text-lg font-semibold text-foreground">
+      Nenhum registro encontrado
+    </h3>
+    <p className="mt-1 text-sm text-muted-foreground">
+      Tente ajustar os filtros ou adicione uma nova sessão de estudo.
+    </p>
+  </div>
 );
 
 const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico }) => {
-    const dados = useMemo(() => {
-        const diasDaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const hoje = new Date();
-        const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(hoje); d.setDate(d.getDate() - i); return d; }).reverse();
+  const dados = useMemo(() => {
+    const diasDaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const hoje = new Date();
+    const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(hoje); d.setDate(d.getDate() - i); return d; }).reverse();
 
-        return dias.map(d => {
-            const minutos = historico
-                .filter(item => {
-                    // Interpretar data como local (YYYY-MM-DD)
-                    const [ano, mes, dia] = item.data.split('-').map(Number)
-                    const dataItem = new Date(ano, mes - 1, dia)
-                    return dataItem.toDateString() === d.toDateString()
-                })
-                .reduce((acc, i) => acc + i.duracao_minutos, 0);
-            return { name: diasDaSemana[d.getDay()], minutos };
-        });
-    }, [historico]);
+    return dias.map(d => {
+      const minutos = historico
+        .filter(item => {
+          // Interpretar data como local (YYYY-MM-DD)
+          const [ano, mes, dia] = item.data.split('-').map(Number)
+          const dataItem = new Date(ano, mes - 1, dia)
+          return dataItem.toDateString() === d.toDateString()
+        })
+        .reduce((acc, i) => acc + (i.duracao_minutos || 0), 0);
+      return { name: diasDaSemana[d.getDay()], minutos };
+    });
+  }, [historico]);
 
-    return (
-        <Card className="border-border shadow-lg">
-            <CardHeader><CardTitle>Análise Semanal</CardTitle></CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={dados}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                        <XAxis dataKey="name" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
-                        <YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
-                        <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
-                        <Bar dataKey="minutos" fill="var(--color-secondary)" name="Minutos" />
-                    </BarChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
-    );
+  return (
+    <Card className="border-border shadow-lg">
+      <CardHeader><CardTitle>Análise Semanal</CardTitle></CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={dados}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="name" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
+            <YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
+            <Bar dataKey="minutos" fill="var(--color-secondary)" name="Minutos" />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
 };
 
 interface EditModalProps {
-    registro: HistoricoItem;
-    onSave: (updatedData: any) => Promise<void>;
-    onCancel: () => void;
-    isSaving: boolean;
+  registro: HistoricoItem;
+  onSave: (updatedData: any) => Promise<void>;
+  onCancel: () => void;
+  isSaving: boolean;
 }
 
 const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSaving }) => {
-    // Limpar marcadores técnicos dos comentários para exibição
-    const comentariosLimpos = limparComentariosParaExibicao(registro.comentarios);
-    const [formData, setFormData] = useState({ 
-        ...registro, 
-        comentarios: comentariosLimpos 
-    });
-    // Guardar comentários originais para preservar marcadores ao salvar
-    const comentariosOriginais = registro.comentarios;
+  // Limpar marcadores técnicos dos comentários para exibição
+  const comentariosLimpos = limparComentariosParaExibicao(registro.comentarios);
+  const [formData, setFormData] = useState({
+    ...registro,
+    comentarios: comentariosLimpos
+  });
+  // Guardar comentários originais para preservar marcadores ao salvar
+  const comentariosOriginais = registro.comentarios;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value, type } = e.target;
-        const isNumber = type === 'number';
-        setFormData(prev => ({
-            ...prev,
-            [name]: isNumber ? Number(value) : value
-        }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    const isNumber = type === 'number';
+    setFormData(prev => ({
+      ...prev,
+      [name]: isNumber ? Number(value) : value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Mesclar comentários do usuário com marcadores técnicos originais
+    const dadosParaSalvar = {
+      ...formData,
+      comentarios: mesclarComentariosComMarcadores(
+        formData.comentarios || '',
+        comentariosOriginais
+      )
     };
+    onSave(dadosParaSalvar);
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Mesclar comentários do usuário com marcadores técnicos originais
-        const dadosParaSalvar = {
-            ...formData,
-            comentarios: mesclarComentariosComMarcadores(
-                formData.comentarios || '', 
-                comentariosOriginais
-            )
-        };
-        onSave(dadosParaSalvar);
-    };
-
-    return (
-        <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="absolute inset-0 bg-background/80 dark:bg-background/90 backdrop-blur-md" onClick={onCancel} />
-            <Card className="relative bg-card border-border shadow-2xl max-w-lg w-full">
-                <form onSubmit={handleSubmit}>
-                    <CardHeader>
-                        <CardTitle className="text-foreground">Editar Registro</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 max-h-[70vh] overflow-y-auto">
-                        {formData.type === 'estudo' && (
-                            <>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Disciplina:</p>
-                                    <p className="text-foreground font-semibold">{formData.disciplina}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Tópico:</p>
-                                    <p className="text-foreground">{formData.topico}</p>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Duração (minutos)</label>
-                                    <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Comentários</label>
-                                    <textarea 
-                                        name="comentarios" 
-                                        value={formData.comentarios || ''} 
-                                        onChange={handleChange} 
-                                        rows={3} 
-                                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                                    />
-                                </div>
-                            </>
-                        )}
-                        {formData.type === 'simulado' && (
-                            <>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Nome do Simulado</label>
-                                    <Input name="nome" value={formData.nome} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-foreground mb-2 block">Acertos</label>
-                                        <Input type="number" name="acertos" value={formData.acertos} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-foreground mb-2 block">Erros</label>
-                                        <Input type="number" name="erros" value={formData.erros} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-foreground mb-2 block">Brancos</label>
-                                        <Input type="number" name="brancos" value={formData.brancos} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Duração (minutos)</label>
-                                    <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} className="bg-background text-foreground border-border" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-foreground mb-2 block">Comentários</label>
-                                    <textarea 
-                                        name="comentarios" 
-                                        value={formData.comentarios || ''} 
-                                        onChange={handleChange} 
-                                        rows={3} 
-                                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </CardContent>
-                    <div className="flex justify-end gap-3 p-4 border-t border-border">
-                        <button 
-                            type="button" 
-                            onClick={onCancel} 
-                            disabled={isSaving} 
-                            className="px-4 py-2 border border-border rounded-lg font-semibold text-foreground bg-background hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Cancelar
-                        </button>
-                        <button 
-                            type="submit" 
-                            disabled={isSaving} 
-                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSaving ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <SaveIcon className="w-4 h-4" />
-                                    Salvar
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </form>
-            </Card>
-        </div>
-    );
+  return (
+    <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onCancel} />
+      <Card className="relative bg-card border-border shadow-2xl max-w-lg w-full">
+        <form onSubmit={handleSubmit}>
+          <CardHeader>
+            <CardTitle className="text-foreground">Editar Registro</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 max-h-[70vh] overflow-y-auto">
+            {formData.type === 'estudo' && (
+              <>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Disciplina:</p>
+                  <p className="text-foreground font-semibold">{formData.disciplina}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Tópico:</p>
+                  <p className="text-foreground">{formData.topico}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Duração (minutos)</label>
+                  <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} className="bg-background text-foreground border-border" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Comentários</label>
+                  <textarea
+                    name="comentarios"
+                    value={formData.comentarios || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </>
+            )}
+            {formData.type === 'simulado' && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Nome do Simulado</label>
+                  <Input name="nome" value={formData.nome} onChange={handleChange} className="bg-background text-foreground border-border" />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Acertos</label>
+                    <Input type="number" name="acertos" value={formData.acertos} onChange={handleChange} className="bg-background text-foreground border-border" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Erros</label>
+                    <Input type="number" name="erros" value={formData.erros} onChange={handleChange} className="bg-background text-foreground border-border" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">Brancos</label>
+                    <Input type="number" name="brancos" value={formData.brancos} onChange={handleChange} className="bg-background text-foreground border-border" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Duração (minutos)</label>
+                  <Input type="number" name="duracao_minutos" value={formData.duracao_minutos} onChange={handleChange} className="bg-background text-foreground border-border" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Comentários</label>
+                  <textarea
+                    name="comentarios"
+                    value={formData.comentarios || ''}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </>
+            )}
+          </CardContent>
+          <div className="flex justify-end gap-3 p-4 border-t border-border">
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isSaving}
+              className="px-4 py-2 border border-border rounded-lg font-semibold text-foreground bg-background hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <SaveIcon className="w-4 h-4" />
+                  Salvar
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
 };
 
 
@@ -236,15 +236,15 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   const setMetaDiaria = useDailyGoalStore((state) => state.setGoalMinutes)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState("")
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string | null; name: string; type: 'estudo' | 'simulado' | null }>({ 
-    isOpen: false, 
-    id: null, 
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string | null; name: string; type: 'estudo' | 'simulado' | null }>({
+    isOpen: false,
+    id: null,
     name: '',
     type: null,
   })
-  const [editModal, setEditModal] = useState<{ isOpen: boolean; registro: HistoricoItem | null }>({ 
-    isOpen: false, 
-    registro: null 
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; registro: HistoricoItem | null }>({
+    isOpen: false,
+    registro: null
   })
   const [isDeleting, setIsDeleting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -259,7 +259,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     const checkMeta = () => {
       const hoje = new Date()
       const dataHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
-      
+
       const tempoHoje = historico
         .filter(item => {
           // Interpretar data como local (YYYY-MM-DD)
@@ -298,12 +298,12 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
       return false
     }
 
-    const matchSearch = item.type === 'estudo' 
+    const matchSearch = item.type === 'estudo'
       ? item.disciplina?.toLowerCase().includes(searchTerm.toLowerCase()) || item.topico?.toLowerCase().includes(searchTerm.toLowerCase())
       : item.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchOrigem = filterOrigem === "all" || item.origem === filterOrigem || (filterOrigem === 'simulado' && item.type === 'simulado')
-    
+
     let matchData = true
     if (filterData !== "all") {
       // Interpretar data como local (YYYY-MM-DD)
@@ -312,24 +312,24 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
       itemData.setHours(0, 0, 0, 0)
       const hoje = new Date()
       hoje.setHours(0, 0, 0, 0)
-      
+
       switch (filterData) {
         case "hoje":
           matchData = itemData.getTime() === hoje.getTime()
           break
-        
+
         case "7dias":
           const data7Dias = new Date(hoje)
           data7Dias.setDate(data7Dias.getDate() - 7)
           matchData = itemData >= data7Dias
           break
-        
+
         case "30dias":
           const data30Dias = new Date(hoje)
           data30Dias.setDate(data30Dias.getDate() - 30)
           matchData = itemData >= data30Dias
           break
-        
+
         case "custom":
           if (dataInicio && dataFim) {
             const [anoInicio, mesInicio, diaInicio] = dataInicio.split('-').map(Number)
@@ -342,7 +342,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
           break
       }
     }
-    
+
     return matchSearch && matchOrigem && matchData
   })
 
@@ -356,7 +356,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     try {
       await HistoricoService.delete(deleteModal.id, deleteModal.type);
       if (editalAtivo?.id) {
-          fetchHistorico(editalAtivo.id);
+        fetchHistorico(editalAtivo.id);
       }
       setDeleteModal({ isOpen: false, id: null, name: '', type: null });
       setNotificationMessage('✅ Registro excluído com sucesso!')
@@ -386,7 +386,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     try {
       await HistoricoService.update(editModal.registro.id, editModal.registro.type, updatedData);
       if (editalAtivo?.id) {
-          fetchHistorico(editalAtivo.id);
+        fetchHistorico(editalAtivo.id);
       }
       setEditModal({ isOpen: false, registro: null })
       setNotificationMessage('✅ Registro atualizado com sucesso!')
@@ -435,7 +435,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
 
       <div className="container mx-auto px-4 md:px-10 py-6 md:py-10 space-y-6">
         <Header />
-        
+
         <Card className="border-border shadow-md">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -450,7 +450,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
                   </p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={() => setActiveView('estatisticas')}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
               >
@@ -461,7 +461,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
           </CardContent>
         </Card>
 
-        <Filters 
+        <Filters
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           filterOrigem={filterOrigem}
@@ -492,8 +492,8 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
             {loading ? (
               <LoadingList />
             ) : historicoFiltrado.length ? (
-              <HistoricoSessoes 
-                historico={historicoFiltrado} 
+              <HistoricoSessoes
+                historico={historicoFiltrado}
                 onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
               />
@@ -513,7 +513,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
 
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="absolute inset-0 bg-background/[0.999] backdrop-blur-md" onClick={handleDeleteCancel} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleDeleteCancel} />
           <Card className="relative bg-card shadow-2xl max-w-md w-full border-red-500/50">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
@@ -589,18 +589,18 @@ function Header() {
     <Card className="border-border bg-card shadow-md">
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground mb-2">
-                  <BookOpenIcon className="h-4 w-4 text-primary" />
-                  Histórico
-                </div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Histórico de Atividades
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Acompanhe seu progresso e todas as suas sessões de estudo e simulados.
-                </p>
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground mb-2">
+              <BookOpenIcon className="h-4 w-4 text-primary" />
+              Histórico
             </div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Histórico de Atividades
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Acompanhe seu progresso e todas as suas sessões de estudo e simulados.
+            </p>
+          </div>
         </div>
       </CardHeader>
     </Card>
@@ -625,14 +625,14 @@ function Filters({ searchTerm, setSearchTerm, filterOrigem, setFilterOrigem, fil
     <Card className="border-border shadow-md">
       <CardContent className="pt-6 space-y-4">
         <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Buscar por disciplina, tópico ou simulado..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+          <Input
+            type="text"
+            placeholder="Buscar por disciplina, tópico ou simulado..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -792,7 +792,7 @@ function HeatMapCalendario({ historico }: { historico: HistoricoItem[] }) {
   return (
     <Card className="border-border shadow-lg"><CardHeader><CardTitle>Calendário de Atividade (90d)</CardTitle></CardHeader>
       <CardContent>
-        <div className="flex items-center justify-end gap-1 mb-2 text-xs text-muted-foreground">Menos{[0,1,2,3,4].map(n => <div key={n} className={`w-3 h-3 rounded-sm ${getNivelCor(n)}`} />)}Mais</div>
+        <div className="flex items-center justify-end gap-1 mb-2 text-xs text-muted-foreground">Menos{[0, 1, 2, 3, 4].map(n => <div key={n} className={`w-3 h-3 rounded-sm ${getNivelCor(n)}`} />)}Mais</div>
         <div className="overflow-x-auto"><div className="flex gap-1 min-w-max">
           {semanas.map((semana, sIdx) => <div key={sIdx} className="flex flex-col gap-1">{semana.map((dia, dIdx) => <div key={dIdx} className={`w-3 h-3 rounded-sm ${getNivelCor(dia.nivel)}`} title={`${dia.data}: ${dia.minutos}min`} />)}</div>)}
         </div></div>
@@ -804,14 +804,14 @@ function HeatMapCalendario({ historico }: { historico: HistoricoItem[] }) {
 function GraficoProgresso({ historico }: { historico: HistoricoItem[] }) {
   const dados = useMemo(() => {
     const dias = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (13 - i)); return d; });
-    return dias.map(d => ({ 
-      data: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), 
+    return dias.map(d => ({
+      data: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
       minutos: historico.filter(item => {
         // Interpretar data como local (YYYY-MM-DD)
         const [ano, mes, dia] = item.data.split('-').map(Number);
         const dataItem = new Date(ano, mes - 1, dia);
         return dataItem.toDateString() === d.toDateString();
-      }).reduce((acc, i) => acc + i.duracao_minutos, 0) 
+      }).reduce((acc, i) => acc + (i.duracao_minutos || 0), 0)
     }));
   }, [historico]);
   return (

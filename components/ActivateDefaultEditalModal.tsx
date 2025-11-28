@@ -141,9 +141,9 @@ const ActivateDefaultEditalModal: React.FC = () => {
     if (!isDefaultEditalModalOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-6" onClick={closeDefaultEditalModal}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6" onClick={closeDefaultEditalModal}>
             <div
-                className="bg-[#0f111a] w-full max-w-5xl h-[90vh] max-h-[820px] rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden"
+                className="bg-card w-full max-w-5xl h-[90vh] max-h-[820px] rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-start justify-between p-6 border-b border-slate-800 bg-[#131620]">

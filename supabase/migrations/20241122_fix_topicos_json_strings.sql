@@ -55,3 +55,5 @@ WHERE nome LIKE '{%'
 
 COMMENT ON FUNCTION extract_titulo_from_json IS 'Extrai o título de uma string JSON que representa um objeto com campo titulo ou nome';
 
+
+

@@ -16,7 +16,7 @@ import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { SectionHeader } from '../lib/dashboardMocks';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
-import { startOfDay, isSameDay } from 'date-fns';
+import { startOfDay, isSameDay, isBefore } from 'date-fns';
 import { toast } from './Sonner';
 import type { SessaoCiclo } from '../types';
 
@@ -34,7 +34,7 @@ const ActionCard: React.FC<ActionCardProps> = ({ icon, title, description, butto
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3 }}
-    className="glass-card p-5 rounded-xl flex flex-col justify-between hover:border-primary/50 transition-colors"
+    className="bg-card border border-border p-5 rounded-xl flex flex-col justify-between hover:border-primary/50 transition-all duration-300 shadow-lg"
   >
     <div>
       <div className="flex items-center gap-3 mb-2">
@@ -71,23 +71,23 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     if (!cicloAtivo || cicloAtivo.sessoes.length === 0) return null;
 
     const sessoesDoCiclo = sessoes.filter(sessao => {
-        const topicInfo = findTopicById(sessao.topico_id);
-        return cicloAtivo.sessoes.some(s => s.disciplina_id === topicInfo?.disciplina.id);
-    }).sort((a,b) => new Date(b.data_estudo).getTime() - new Date(a.data_estudo).getTime());
-    
+      const topicInfo = findTopicById(sessao.topico_id);
+      return cicloAtivo.sessoes.some(s => s.disciplina_id === topicInfo?.disciplina.id);
+    }).sort((a, b) => new Date(b.data_estudo).getTime() - new Date(a.data_estudo).getTime());
+
     // FIX: Explicitly type `proximaSessaoCiclo` to avoid `unknown` type errors.
     let proximaSessaoCiclo: SessaoCiclo | undefined;
-    if(sessoesDoCiclo.length > 0) {
-        const ultimaSessaoEstudada = sessoesDoCiclo[0];
-        const ultimoTopico = findTopicById(ultimaSessaoEstudada.topico_id);
-        const ultimoIndice = cicloAtivo.sessoes.findIndex(s => s.disciplina_id === ultimoTopico?.disciplina.id);
-        proximaSessaoCiclo = cicloAtivo.sessoes[(ultimoIndice + 1) % cicloAtivo.sessoes.length];
+    if (sessoesDoCiclo.length > 0) {
+      const ultimaSessaoEstudada = sessoesDoCiclo[0];
+      const ultimoTopico = findTopicById(ultimaSessaoEstudada.topico_id);
+      const ultimoIndice = cicloAtivo.sessoes.findIndex(s => s.disciplina_id === ultimoTopico?.disciplina.id);
+      proximaSessaoCiclo = cicloAtivo.sessoes[(ultimoIndice + 1) % cicloAtivo.sessoes.length];
     } else {
-        proximaSessaoCiclo = cicloAtivo.sessoes[0];
+      proximaSessaoCiclo = cicloAtivo.sessoes[0];
     }
-    
-    if(!proximaSessaoCiclo) return null;
-    
+
+    if (!proximaSessaoCiclo) return null;
+
     const disciplina = disciplinasMap.get(proximaSessaoCiclo.disciplina_id);
     if (!disciplina) return null;
 
@@ -104,9 +104,40 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     };
   }, [getCicloAtivo, sessoes, findTopicById, disciplinasMap, iniciarSessao]);
 
-  // 2. Ação de Revisões
+  // 2. Ação de Revisões (prioriza atrasadas)
   const revisoesAction = useMemo(() => {
     const hoje = startOfDay(new Date());
+
+    // Primeiro, verificar revisões atrasadas
+    const atrasadas = revisoes.filter(r => {
+      const dataPrevista = startOfDay(new Date(r.data_prevista));
+      return (r.status === 'pendente' || r.status === 'atrasada') && isBefore(dataPrevista, hoje);
+    });
+
+    // Debug logging
+    console.log('🔍 AcoesRecomendadas - Revisões Debug:', {
+      totalRevisoes: revisoes.length,
+      atrasadasCount: atrasadas.length,
+      atrasadasData: atrasadas.map(r => ({
+        id: r.id,
+        status: r.status,
+        data_prevista: r.data_prevista
+      }))
+    });
+
+    if (atrasadas.length > 0) {
+      return {
+        id: 'revisoes-atrasadas',
+        icon: <CalendarClockIcon className="w-5 h-5 text-red-500" />,
+        title: '🚨 Revisões Atrasadas',
+        description: <>Você tem <strong className="text-red-500">{atrasadas.length} {atrasadas.length === 1 ? 'revisão atrasada' : 'revisões atrasadas'}</strong>. Coloque-as em dia!</>,
+        buttonText: 'Ver Revisões',
+        buttonIcon: <ArrowRightIcon className="w-4 h-4" />,
+        onAction: () => setActiveView('revisoes'),
+      };
+    }
+
+    // Se não há atrasadas, verificar revisões de hoje
     const pendentesHoje = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
     if (pendentesHoje.length === 0) return null;
 
@@ -126,7 +157,7 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
     const diaAtual = dias[new Date().getDay()] as keyof typeof trilha;
     const topicosDoDiaIds = trilha[diaAtual] || [];
-    
+
     const primeiroTopicoNaoConcluido = topicosDoDiaIds
       .map(id => findTopicById(id))
       .find(info => info && !info.topico.concluido);
@@ -149,23 +180,22 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     };
   }, [trilha, findTopicById, iniciarSessao]);
 
-  // 4. Ação do Caderno de Erros
-  const errosAction = useMemo(() => {
-    const errosPendentes = erros.filter(e => !e.resolvido);
-    if (errosPendentes.length === 0) return null;
+  // const errosAction = useMemo(() => {
+  //   const errosPendentes = erros.filter(e => !e.resolvido);
+  //   if (errosPendentes.length === 0) return null;
 
-    return {
-      id: 'erros',
-      icon: <BookCopyIcon className="w-5 h-5 text-primary" />,
-      title: 'Caderno de Erros',
-      description: <>Você tem <strong>{errosPendentes.length} erros</strong> não resolvidos. Revise-os para fortalecer seus pontos fracos.</>,
-      buttonText: 'Revisar Erros',
-      buttonIcon: <ArrowRightIcon className="w-4 h-4" />,
-      onAction: () => setActiveView('erros'),
-    };
-  }, [erros, setActiveView]);
+  //   return {
+  //     id: 'erros',
+  //     icon: <BookCopyIcon className="w-5 h-5 text-primary" />,
+  //     title: 'Caderno de Erros',
+  //     description: <>Você tem <strong>{errosPendentes.length} erros</strong> não resolvidos. Revise-os para fortalecer seus pontos fracos.</>,
+  //     buttonText: 'Revisar Erros',
+  //     buttonIcon: <ArrowRightIcon className="w-4 h-4" />,
+  //     onAction: () => setActiveView('erros'),
+  //   };
+  // }, [erros, setActiveView]);
 
-  const actions = [cicloAction, revisoesAction, trilhaAction, errosAction].filter((a): a is NonNullable<typeof a> => a !== null);
+  const actions = [cicloAction, revisoesAction, trilhaAction].filter((a): a is NonNullable<typeof a> => a !== null);
 
   return (
     <section className="space-y-4">
@@ -180,7 +210,7 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
           ))}
         </div>
       ) : (
-        <div className="glass-card rounded-xl p-8 text-center">
+        <div className="bg-card border border-border rounded-xl p-8 text-center shadow-lg">
           <SparklesIcon className="w-12 h-12 text-secondary mx-auto mb-4" />
           <h3 className="font-bold text-lg text-foreground">Tudo em dia!</h3>
           <p className="text-muted-foreground mt-1">Você está em dia com suas tarefas planejadas. Que tal um estudo livre ou adicionar um novo tópico?</p>

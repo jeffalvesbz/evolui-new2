@@ -29,11 +29,11 @@ const RegisterEditalModal: React.FC = () => {
 
     return (
         <div
-            className="fixed inset-0 z-[105] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[105] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={closeRegisterEditalModal}
         >
             <div
-                className="bg-card border border-white/10 rounded-2xl shadow-2xl w-full max-w-3xl p-6 space-y-6"
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl p-6 space-y-6"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-start justify-between gap-4">

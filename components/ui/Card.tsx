@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
-  <div className={`bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl text-card-foreground shadow-sm ${className || ''}`}>
+  <div className={`bg-card/60 backdrop-blur-xl border border-border rounded-xl text-card-foreground shadow-sm ${className || ''}`}>
     {children}
   </div>
 );

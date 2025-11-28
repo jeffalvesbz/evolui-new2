@@ -10,10 +10,10 @@ const isProduction = import.meta.env.PROD;
 
 // Validação rigorosa das variáveis de ambiente
 if (!supabaseUrl || !supabaseAnonKey) {
-  const errorMessage = 
+  const errorMessage =
     'CRÍTICO: Variáveis de ambiente do Supabase não configuradas! ' +
     'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.';
-  
+
   if (isProduction) {
     // Em produção, lançar erro para evitar execução com credenciais inválidas
     throw new Error(errorMessage);
@@ -35,8 +35,27 @@ if (supabaseAnonKey && supabaseAnonKey.length < 100) {
   console.warn('⚠️ VITE_SUPABASE_ANON_KEY parece estar incompleta ou inválida');
 }
 
-// Cria o cliente Supabase
+// Cria o cliente Supabase com configurações otimizadas
 export const supabase = createClient<Database>(
-  supabaseUrl || '', 
-  supabaseAnonKey || ''
+  supabaseUrl || '',
+  supabaseAnonKey || '',
+  {
+    auth: {
+      // Usar localStorage para persistência de sessão
+      storage: window.localStorage,
+      // Tentar recuperar sessão automaticamente
+      autoRefreshToken: true,
+      // Detectar mudanças de sessão
+      detectSessionInUrl: true,
+      // Persistir sessão entre reloads
+      persistSession: true,
+      // Configurações de flow
+      flowType: 'pkce'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'evolui-app'
+      }
+    }
+  }
 );

@@ -11,3 +11,5 @@ COMMENT ON COLUMN profiles.subscription_ends_at IS 'Data de término da assinatu
 -- Criar índice para melhor performance em consultas de planos
 CREATE INDEX IF NOT EXISTS idx_profiles_plan_type ON profiles(plan_type);
 
+
+

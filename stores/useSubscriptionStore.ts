@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabaseClient';
+import { countFlashcardsCreatedThisMonth } from '../services/geminiService';
+import { countQuizQuestionsToday } from '../services/quizStatsService';
 
 type PlanType = 'free' | 'pro' | 'premium';
 
@@ -7,7 +9,10 @@ interface SubscriptionState {
   planType: PlanType;
   trialEndsAt: string | null;
   subscriptionEndsAt: string | null;
+  stripeCustomerId: string | null;
   loading: boolean;
+  flashcardsCreatedThisMonth: number;
+  quizQuestionsGeneratedToday: number;
   fetchSubscription: () => Promise<void>;
   startTrial: (planType: 'pro' | 'premium') => Promise<void>;
   canCreateEdital: (currentCount: number) => boolean;
@@ -16,8 +21,15 @@ interface SubscriptionState {
   getMaxCiclos: () => number;
   canCorrectRedacao: (currentMonthCount: number) => boolean;
   getMaxRedacoesPerMonth: () => number;
+  canCreateFlashcard: (count?: number) => boolean;
+  getMaxFlashcardsPerMonth: () => number;
+  incrementFlashcardCount: (amount?: number) => void;
+  canGenerateQuiz: (questionCount: number) => boolean;
+  getMaxQuizQuestionsPerDay: () => number;
+  incrementQuizQuestionCount: (questionCount: number) => void;
   canAccessPlanning: () => boolean;
   canAccessTimer: () => boolean;
+  canAccessOCR: () => boolean;
   hasActiveSubscription: () => boolean;
   isTrialActive: () => boolean;
 }
@@ -26,7 +38,10 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   planType: 'free',
   trialEndsAt: null,
   subscriptionEndsAt: null,
+  stripeCustomerId: null,
   loading: false,
+  flashcardsCreatedThisMonth: 0,
+  quizQuestionsGeneratedToday: 0,
 
   fetchSubscription: async () => {
     set({ loading: true });
@@ -37,22 +52,32 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         return;
       }
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('plan_type, trial_ends_at, subscription_ends_at')
-        .eq('user_id', user.id)
-        .single();
+      const [profileResult, flashcardsCount, quizQuestionsCount] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('plan_type, trial_ends_at, subscription_ends_at, stripe_customer_id')
+          .eq('user_id', user.id)
+          .single(),
+        countFlashcardsCreatedThisMonth(user.id),
+        countQuizQuestionsToday(user.id)
+      ]);
 
-      if (error) {
+      const { data: profileData, error } = profileResult;
+      const profile = profileData as any;
+
+      if (error || !profile) {
         console.error('Erro ao buscar dados de assinatura:', error);
         set({ loading: false });
         return;
       }
 
       set({
-        planType: (profile?.plan_type as PlanType) || 'free',
-        trialEndsAt: profile?.trial_ends_at || null,
-        subscriptionEndsAt: profile?.subscription_ends_at || null,
+        planType: (profile?.plan_type ?? 'free') as PlanType,
+        trialEndsAt: profile?.trial_ends_at ?? null,
+        subscriptionEndsAt: profile?.subscription_ends_at ?? null,
+        stripeCustomerId: profile?.stripe_customer_id ?? null,
+        flashcardsCreatedThisMonth: flashcardsCount,
+        quizQuestionsGeneratedToday: quizQuestionsCount,
         loading: false,
       });
     } catch (error) {
@@ -75,14 +100,15 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         throw new Error('Você já possui um teste grátis ativo!');
       }
 
-      // Calcular data de término do trial (7 dias a partir de agora)
+      // Calcular data de término do trial (3 dias a partir de agora)
       const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+      trialEndsAt.setDate(trialEndsAt.getDate() + 3);
       const trialEndsAtISO = trialEndsAt.toISOString();
 
       // Atualizar perfil com o plano e data de término do trial
       const { error } = await supabase
         .from('profiles')
+        // @ts-ignore
         .update({
           plan_type: planType,
           trial_ends_at: trialEndsAtISO,
@@ -109,13 +135,30 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   canCreateEdital: (currentCount: number) => {
-    // Sempre permitir criar editais (sem limitações)
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    // FREE: 1 edital
+    if (!isActive && state.planType === 'free') {
+      return currentCount < 1;
+    }
+
+    // PRO: 3 editais
+    if (state.planType === 'pro' && isActive) {
+      return currentCount < 3;
+    }
+
+    // PREMIUM: ilimitado
     return true;
   },
 
   getMaxEditais: () => {
-    // Sempre retornar ilimitado (representado por -1)
-    return -1;
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    if (!isActive && state.planType === 'free') return 1;
+    if (state.planType === 'pro' && isActive) return 3;
+    return -1; // PREMIUM ou trial: ilimitado
   },
 
   hasActiveSubscription: () => {
@@ -147,32 +190,143 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   canCreateCiclo: (currentCount: number) => {
-    // Sempre permitir criar ciclos (sem limitações)
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    // FREE: 1 ciclo
+    if (!isActive && state.planType === 'free') {
+      return currentCount < 1;
+    }
+
+    // PRO: 3 ciclos
+    if (state.planType === 'pro' && isActive) {
+      return currentCount < 3;
+    }
+
+    // PREMIUM: ilimitado
     return true;
   },
 
   getMaxCiclos: () => {
-    // Sempre retornar ilimitado (representado por -1)
-    return -1;
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    if (!isActive && state.planType === 'free') return 1;
+    if (state.planType === 'pro' && isActive) return 3;
+    return -1; // PREMIUM ou trial: ilimitado
   },
 
   canCorrectRedacao: (currentMonthCount: number) => {
-    // Sempre permitir corrigir redações (sem limitações)
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    // FREE: sem correções de IA
+    if (!isActive && state.planType === 'free') {
+      return false;
+    }
+
+    // PRO: 10 correções por mês
+    if (state.planType === 'pro' && isActive) {
+      return currentMonthCount < 10;
+    }
+
+    // PREMIUM: ilimitado
     return true;
   },
 
   getMaxRedacoesPerMonth: () => {
-    // Sempre retornar ilimitado (representado por -1)
-    return -1;
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    if (!isActive && state.planType === 'free') return 0; // FREE: sem IA
+    if (state.planType === 'pro' && isActive) return 10; // PRO: 10/mês
+    return -1; // PREMIUM: ilimitado
+  },
+
+  canCreateFlashcard: (count = 1) => {
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+    const current = state.flashcardsCreatedThisMonth;
+
+    if (state.planType === 'premium' && isActive) {
+      return (current + count) <= 2000;
+    }
+    if (state.planType === 'pro' && isActive) {
+      return (current + count) <= 500;
+    }
+
+    // Free limits (default)
+    return (current + count) <= 50;
+  },
+
+  getMaxFlashcardsPerMonth: () => {
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    if (state.planType === 'premium' && isActive) return 2000;
+    if (state.planType === 'pro' && isActive) return 500;
+    return 50; // Free
+  },
+
+  incrementFlashcardCount: (amount = 1) => {
+    set(state => ({ flashcardsCreatedThisMonth: state.flashcardsCreatedThisMonth + amount }));
+  },
+
+  canGenerateQuiz: (questionCount: number) => {
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+    const current = state.quizQuestionsGeneratedToday;
+
+    // Free: sem acesso a quiz IA
+    if (!isActive && state.planType === 'free') {
+      return false;
+    }
+
+    // Pro: 30 questões/dia
+    if (state.planType === 'pro' && isActive) {
+      return (current + questionCount) <= 30;
+    }
+
+    // Premium: 100 questões/dia
+    if (state.planType === 'premium' && isActive) {
+      return (current + questionCount) <= 100;
+    }
+
+    return false;
+  },
+
+  getMaxQuizQuestionsPerDay: () => {
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    if (!isActive && state.planType === 'free') return 0;
+    if (state.planType === 'pro' && isActive) return 30;
+    if (state.planType === 'premium' && isActive) return 100;
+    return 0;
+  },
+
+  incrementQuizQuestionCount: (questionCount: number) => {
+    set(state => ({ quizQuestionsGeneratedToday: state.quizQuestionsGeneratedToday + questionCount }));
   },
 
   canAccessPlanning: () => {
-    // Sempre permitir acesso ao planejamento (sem limitações)
-    return true;
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    // Planejamento semanal apenas PRO+ com assinatura ativa
+    return (state.planType === 'pro' || state.planType === 'premium') && isActive;
   },
 
   canAccessTimer: () => {
-    // Sempre permitir acesso ao timer (sem limitações)
+    // Timer disponível para todos os planos
     return true;
+  },
+
+  canAccessOCR: () => {
+    const state = get();
+    const isActive = state.hasActiveSubscription() || state.isTrialActive();
+
+    // OCR apenas para PREMIUM com assinatura ativa
+    return state.planType === 'premium' && isActive;
   },
 }));

@@ -66,7 +66,7 @@ const TopicPreviewOverlay: React.FC<TopicPreviewOverlayProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-background/80 backdrop-blur-xl px-4 py-6 sm:px-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-6 sm:px-6"
       onMouseEnter={onKeepOpen}
       onMouseLeave={onScheduleClose}
       onClick={handleOverlayClick}

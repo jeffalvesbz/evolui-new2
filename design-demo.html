@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolui - Comparação de Design: Atual vs Minimalista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020617;
+            color: #e2e8f0;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            grid-column: 1 / -1;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .column-header {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .column-header.current {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .column-header.minimalist {
+            background: rgba(34, 197, 94, 0.1);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        /* ========== ESTILO ATUAL (GLASSMORPHISM) ========== */
+        .card-current {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(139, 92, 246, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card-current:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4),
+                0 0 30px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        /* ========== ESTILO MINIMALISTA ========== */
+        .card-minimalist {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .card-minimalist:hover {
+            transform: translateY(-2px);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ========== STAT CARDS ========== */
+        .stat-card-current {
+            text-align: center;
+        }
+
+        .stat-card-current .icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .stat-card-current .value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-current .label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .stat-card-minimalist {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .stat-card-minimalist .icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #8b5cf6;
+            flex-shrink: 0;
+        }
+
+        .stat-card-minimalist .content {
+            flex: 1;
+        }
+
+        .stat-card-minimalist .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card-minimalist .label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* ========== PROGRESS CARDS ========== */
+        .progress-current {
+            margin-top: 1rem;
+        }
+
+        .progress-current .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-current .progress-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .progress-current .progress-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .progress-current .progress-bar-container {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-current .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+            border-radius: 999px;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+            transition: width 0.3s ease;
+        }
+
+        .progress-minimalist {
+            margin-top: 1.5rem;
+        }
+
+        .progress-minimalist .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1rem;
+        }
+
+        .progress-minimalist .progress-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .progress-minimalist .progress-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+        .progress-minimalist .progress-bar-container {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-minimalist .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+            border-radius: 999px;
+            transition: width 0.3s ease;
+        }
+
+        /* ========== BUTTONS ========== */
+        .button-current {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3),
+                0 0 20px rgba(139, 92, 246, 0.2);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .button-current:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4),
+                0 0 30px rgba(139, 92, 246, 0.3);
+        }
+
+        .button-minimalist {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .button-minimalist:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+
+        /* ========== LIST CARDS ========== */
+        .list-item-current {
+            padding: 0.875rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .list-item-current:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: translateX(4px);
+        }
+
+        .list-item-current .title {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 0.25rem;
+        }
+
+        .list-item-current .subtitle {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin: 0;
+        }
+
+        .list-item-minimalist {
+            padding: 1.25rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .list-item-minimalist:last-child {
+            border-bottom: none;
+        }
+
+        .list-item-minimalist:hover {
+            padding-left: 0.5rem;
+        }
+
+        .list-item-minimalist .title {
+            font-weight: 600;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+            font-size: 0.9375rem;
+        }
+
+        .list-item-minimalist .subtitle {
+            font-size: 0.8125rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        /* ========== TYPOGRAPHY EXAMPLES ========== */
+        .typography-example {
+            padding: 1.5rem;
+        }
+
+        .typography-example h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .typography-example p {
+            margin-bottom: 1rem;
+        }
+
+        .text-display-current {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #8b5cf6, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .text-heading-current {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .text-body-current {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .text-display-minimalist {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .text-heading-minimalist {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            letter-spacing: -0.01em;
+        }
+
+        .text-body-minimalist {
+            font-size: 0.9375rem;
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        /* ========== NOTES ========== */
+        .notes {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: rgba(34, 211, 238, 0.05);
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            border-radius: 12px;
+        }
+
+        .notes h3 {
+            color: #22d3ee;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .notes ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .notes li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .notes li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #22d3ee;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎨 Evolui - Comparação de Design</h1>
+        <p class="subtitle">Estilo Atual (Glassmorphism) vs Proposta Minimalista</p>
+
+        <!-- STAT CARDS -->
+        <div class="comparison-grid">
+            <h2 class="section-title">📊 Cards de Estatísticas</h2>
+
+            <div class="column-header current">❌ Estilo Atual</div>
+            <div class="column-header minimalist">✅ Estilo Minimalista</div>
+
+            <div class="card-current stat-card-current">
+                <div class="icon">⏱️</div>
+                <div class="value">4h 32m</div>
+                <div class="label">Tempo Estudado Hoje</div>
+            </div>
+
+            <div class="card-minimalist stat-card-minimalist">
+                <div class="icon">⏱️</div>
+                <div class="content">
+                    <div class="value">4h 32m</div>
+                    <div class="label">Tempo Estudado Hoje</div>
+                </div>
+            </div>
+
+            <div class="card-current stat-card-current">
+                <div class="icon">📚</div>
+                <div class="value">12</div>
+                <div class="label">Revisões Pendentes</div>
+            </div>
+
+            <div class="card-minimalist stat-card-minimalist">
+                <div class="icon">📚</div>
+                <div class="content">
+                    <div class="value">12</div>
+                    <div class="label">Revisões Pendentes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS CARDS -->
+        <div class="comparison-grid">
+            <h2 class="section-title">📈 Cards de Progresso</h2>
+
+            <div class="column-header current">❌ Estilo Atual</div>
+            <div class="column-header minimalist">✅ Estilo Minimalista</div>
+
+            <div class="card-current">
+                <div class="progress-current">
+                    <div class="progress-header">
+                        <span class="progress-label">Meta Diária</span>
+                        <span class="progress-value">85%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-minimalist">
+                <div class="progress-minimalist">
+                    <div class="progress-header">
+                        <span class="progress-label">Meta Diária</span>
+                        <span class="progress-value">85%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: 85%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="comparison-grid">
+            <h2 class="section-title">🔘 Botões de Ação</h2>
+
+            <div class="column-header current">❌ Estilo Atual</div>
+            <div class="column-header minimalist">✅ Estilo Minimalista</div>
+
+            <div class="card-current">
+                <button class="button-current">Iniciar Sessão de Estudo</button>
+            </div>
+
+            <div class="card-minimalist">
+                <button class="button-minimalist">Iniciar Sessão de Estudo</button>
+            </div>
+        </div>
+
+        <!-- LIST CARDS -->
+        <div class="comparison-grid">
+            <h2 class="section-title">📋 Cards de Lista</h2>
+
+            <div class="column-header current">❌ Estilo Atual</div>
+            <div class="column-header minimalist">✅ Estilo Minimalista</div>
+
+            <div class="card-current">
+                <div class="list-item-current">
+                    <div class="title">Direito Constitucional</div>
+                    <div class="subtitle">Revisão agendada para hoje</div>
+                </div>
+                <div class="list-item-current">
+                    <div class="title">Direito Administrativo</div>
+                    <div class="subtitle">Revisão agendada para amanhã</div>
+                </div>
+                <div class="list-item-current">
+                    <div class="title">Português</div>
+                    <div class="subtitle">Revisão agendada para 25/11</div>
+                </div>
+            </div>
+
+            <div class="card-minimalist">
+                <div class="list-item-minimalist">
+                    <div class="title">Direito Constitucional</div>
+                    <div class="subtitle">Revisão agendada para hoje</div>
+                </div>
+                <div class="list-item-minimalist">
+                    <div class="title">Direito Administrativo</div>
+                    <div class="subtitle">Revisão agendada para amanhã</div>
+                </div>
+                <div class="list-item-minimalist">
+                    <div class="title">Português</div>
+                    <div class="subtitle">Revisão agendada para 25/11</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TYPOGRAPHY -->
+        <div class="comparison-grid">
+            <h2 class="section-title">✍️ Tipografia</h2>
+
+            <div class="column-header current">❌ Estilo Atual</div>
+            <div class="column-header minimalist">✅ Estilo Minimalista</div>
+
+            <div class="card-current typography-example">
+                <h2 class="text-display-current">4h 32m</h2>
+                <h3 class="text-heading-current">Tempo Total</h3>
+                <p class="text-body-current">Você está no caminho certo! Continue assim para atingir sua meta diária de
+                    estudos.</p>
+            </div>
+
+            <div class="card-minimalist typography-example">
+                <h2 class="text-display-minimalist">4h 32m</h2>
+                <h3 class="text-heading-minimalist">Tempo Total</h3>
+                <p class="text-body-minimalist">Você está no caminho certo! Continue assim para atingir sua meta diária
+                    de estudos.</p>
+            </div>
+        </div>
+
+        <!-- NOTES -->
+        <div class="notes">
+            <h3>📝 Principais Diferenças do Design Minimalista</h3>
+            <ul>
+                <li><strong>Espaçamento:</strong> Padding aumentado de 1.25rem → 2rem para melhor respiração visual</li>
+                <li><strong>Bordas:</strong> Bordas mais sutis (0.05 opacity vs 0.1) para menos distração</li>
+                <li><strong>Sombras:</strong> Sombras leves (2-8px) vs pesadas (10-35px) para profundidade sutil</li>
+                <li><strong>Glassmorphism:</strong> Removido o blur pesado, fundo sólido para melhor legibilidade</li>
+                <li><strong>Tipografia:</strong> Tamanhos maiores, menos uppercase, melhor hierarquia</li>
+                <li><strong>Gradientes:</strong> Usados apenas em CTAs e acentos, não em todos os elementos</li>
+                <li><strong>Hover States:</strong> Transições mais sutis e rápidas (0.2s vs 0.3s)</li>
+                <li><strong>Layout:</strong> Alinhamento horizontal nos stat cards para melhor escaneabilidade</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

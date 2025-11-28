@@ -89,8 +89,8 @@ const ErroFormModal: React.FC = () => {
     if (!isErroModalOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeErroModal}>
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-card/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeErroModal}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <h2 className="text-lg font-bold">{erroEmEdicao ? 'Editar Erro' : 'Registrar Novo Erro'}</h2>
                     <button type="button" onClick={closeErroModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
@@ -336,7 +336,7 @@ const CadernoErros: React.FC = () => {
             
             {/* Delete Confirmation Modal */}
             {erroParaExcluir && (
-                <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[101] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[101] flex items-center justify-center p-4">
                      <div className="bg-card rounded-xl border border-red-500/50 shadow-2xl w-full max-w-md p-6 text-center">
                         <AlertTriangleIcon className="w-12 h-12 text-red-500 mx-auto mb-4"/>
                         <h3 className="text-lg font-bold">Confirmar Exclusão</h3>

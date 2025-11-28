@@ -1,9 +1,9 @@
-
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
+import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { RepeatIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon, ClockIcon, PlusCircleIcon, ArrowUpIcon, ArrowDownIcon, PlayIcon, StarIcon, CheckIcon, CheckCircle2Icon, GripVerticalIcon, SearchIcon } from './icons';
 import { toast } from './Sonner';
 import { useModalStore } from '../stores/useModalStore';
@@ -11,20 +11,20 @@ import { useUiStore } from '../stores/useUiStore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Ciclo, SessaoCiclo } from '../types';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -41,10 +41,10 @@ const COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7', '#EC4899', '#6366F1'
 // Tooltip customizado para o gráfico de distribuição de tempo
 const CustomPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
-    
+
     const data = payload[0];
     return (
-        <div 
+        <div
             className="recharts-custom-tooltip"
             style={{
                 backgroundColor: 'rgba(15, 23, 42, 0.98)',
@@ -55,16 +55,16 @@ const CustomPieTooltip = ({ active, payload }: any) => {
                 minWidth: '150px',
             }}
         >
-            <p style={{ 
+            <p style={{
                 color: '#ffffff',
-                margin: '0 0 8px 0', 
+                margin: '0 0 8px 0',
                 fontWeight: 600,
                 fontSize: '0.875rem',
                 lineHeight: '1.25rem',
             }}>
                 {data.name}
             </p>
-            <p style={{ 
+            <p style={{
                 color: '#e2e8f0',
                 margin: '0',
                 fontSize: '0.875rem',
@@ -112,38 +112,35 @@ const SortableSessaoItemComponent: React.FC<{
         <div
             ref={setNodeRef}
             style={style}
-            className={`p-4 flex items-center justify-between group transition-all duration-300 ${
-                isConcluido 
-                    ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500' 
-                    : isParcial
-                        ? 'bg-orange-50/50 dark:bg-orange-900/10 border-l-4 border-orange-400'
-                        : isNext 
-                            ? 'bg-primary/10 border-l-4 border-primary' 
-                            : ''
-            } ${isActive ? 'ring-2 ring-primary/50' : ''}`}
+            className={`p-4 flex items-center justify-between group transition-all duration-300 ${isConcluido
+                ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'
+                : isParcial
+                    ? 'bg-orange-50/50 dark:bg-orange-900/10 border-l-4 border-orange-400'
+                    : isNext
+                        ? 'bg-primary/10 border-l-4 border-primary'
+                        : ''
+                } ${isActive ? 'ring-2 ring-primary/50' : ''}`}
         >
             <div className="flex items-center gap-4 flex-1">
                 <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
                     <GripVerticalIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
-                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${
-                    isConcluido 
-                        ? 'bg-green-500 dark:bg-green-600 text-white' 
-                        : isParcial
-                            ? 'bg-orange-400 dark:bg-orange-500 text-white'
-                            : 'bg-muted/50 text-muted-foreground'
-                }`}>
+                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${isConcluido
+                    ? 'bg-green-500 dark:bg-green-600 text-white'
+                    : isParcial
+                        ? 'bg-orange-400 dark:bg-orange-500 text-white'
+                        : 'bg-muted/50 text-muted-foreground'
+                    }`}>
                     {isConcluido ? <CheckCircle2Icon className="w-4 h-4" /> : isParcial ? <ClockIcon className="w-4 h-4" /> : index + 1}
                 </span>
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
-                        <p className={`font-semibold transition-all duration-300 ${
-                            isConcluido 
-                                ? 'text-green-600 dark:text-green-400 line-through' 
-                                : isParcial
-                                    ? 'text-orange-500 dark:text-orange-400'
-                                    : 'text-foreground'
-                        }`}>
+                        <p className={`font-semibold transition-all duration-300 ${isConcluido
+                            ? 'text-green-600 dark:text-green-400 line-through'
+                            : isParcial
+                                ? 'text-orange-500 dark:text-orange-400'
+                                : 'text-foreground'
+                            }`}>
                             {disciplinaNome}
                         </p>
                         <AnimatePresence>
@@ -181,7 +178,7 @@ const SortableSessaoItemComponent: React.FC<{
                     </div>
                     <div className="flex items-center gap-3 mt-1">
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
-                            <ClockIcon className="w-3 h-3"/> {formatTime(sessao.tempo_previsto)}
+                            <ClockIcon className="w-3 h-3" /> {formatTime(sessao.tempo_previsto)}
                         </p>
                         {tempoDecorrido !== undefined && tempoDecorrido > 0 && (
                             <p className="text-xs text-primary font-medium">
@@ -196,15 +193,14 @@ const SortableSessaoItemComponent: React.FC<{
                     <button
                         onClick={onIniciar}
                         aria-label={`Iniciar sessão de ${disciplinaNome}`}
-                        className={`h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold shadow-sm hover:opacity-90 transition-opacity ${
-                            isNext 
-                                ? 'bg-primary text-black' 
-                                : isParcial
-                                    ? 'bg-orange-400 text-white'
-                                    : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                        }`}
+                        className={`h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold shadow-sm hover:opacity-90 transition-opacity ${isNext
+                            ? 'bg-primary text-black'
+                            : isParcial
+                                ? 'bg-orange-400 text-white'
+                                : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                            }`}
                     >
-                        <PlayIcon className="w-3 h-3"/> {isParcial ? 'Continuar' : 'Iniciar'}
+                        <PlayIcon className="w-3 h-3" /> {isParcial ? 'Continuar' : 'Iniciar'}
                     </button>
                 )}
                 {isActive && (
@@ -212,11 +208,10 @@ const SortableSessaoItemComponent: React.FC<{
                         onClick={onConcluir}
                         disabled={isSaving || isConcluido}
                         aria-label={isConcluido ? `Sessão de ${disciplinaNome} já concluída` : `Concluir sessão de ${disciplinaNome}`}
-                        className={`h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${
-                            isConcluido
-                                ? 'bg-green-500 text-white'
-                                : 'bg-secondary text-black'
-                        }`}
+                        className={`h-8 px-3 flex items-center gap-1.5 rounded-lg text-xs font-bold shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${isConcluido
+                            ? 'bg-green-500 text-white'
+                            : 'bg-secondary text-black'
+                            }`}
                     >
                         {isSaving ? (
                             <>
@@ -225,11 +220,11 @@ const SortableSessaoItemComponent: React.FC<{
                             </>
                         ) : isConcluido ? (
                             <>
-                                <CheckCircle2Icon className="w-3 h-3"/> Concluída
+                                <CheckCircle2Icon className="w-3 h-3" /> Concluída
                             </>
                         ) : (
                             <>
-                                <CheckCircle2Icon className="w-3 h-3"/> Concluir
+                                <CheckCircle2Icon className="w-3 h-3" /> Concluir
                             </>
                         )}
                     </button>
@@ -239,7 +234,7 @@ const SortableSessaoItemComponent: React.FC<{
                     aria-label={`Remover sessão de ${disciplinaNome}`}
                     className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                    <Trash2Icon className="w-4 h-4"/>
+                    <Trash2Icon className="w-4 h-4" />
                 </button>
             </div>
         </div>
@@ -280,7 +275,12 @@ const CicloDeEstudos: React.FC = () => {
     const { disciplinas } = useDisciplinasStore();
     const { iniciarSessao, sessaoAtual, sessoes, salvarSessao, descartarSessao, encerrarSessaoParaSalvar } = useEstudosStore();
     const openCriarCicloModal = useModalStore(state => state.openCriarCicloModal);
-    
+    const { planType, canCreateCiclo, getMaxCiclos } = useSubscriptionStore();
+
+    const maxCiclos = getMaxCiclos();
+    const ciclosCriados = ciclos.length;
+    const podeCriarCiclo = canCreateCiclo();
+
     const [isEditingCiclo, setIsEditingCiclo] = useState(false);
     const [editedCicloName, setEditedCicloName] = useState('');
     const [isAddingSessao, setIsAddingSessao] = useState(false);
@@ -290,7 +290,7 @@ const CicloDeEstudos: React.FC = () => {
     const [buscaDisciplina, setBuscaDisciplina] = useState('');
     const [mostrarConcluidas, setMostrarConcluidas] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    
+
     // Refs para scroll automático
     const sessaoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const proximaSessaoRef = useRef<HTMLDivElement | null>(null);
@@ -380,7 +380,7 @@ const CicloDeEstudos: React.FC = () => {
     // Filtrar sessões por busca e mostrar/ocultar concluídas
     const sessoesFiltradas = useMemo(() => {
         let filtradas = sessoesOrdenadas;
-        
+
         // Filtrar por busca de disciplina
         if (buscaDisciplina.trim()) {
             const buscaLower = buscaDisciplina.toLowerCase().trim();
@@ -389,22 +389,22 @@ const CicloDeEstudos: React.FC = () => {
                 return nomeDisciplina.toLowerCase().includes(buscaLower);
             });
         }
-        
+
         // Filtrar sessões concluídas
         if (!mostrarConcluidas) {
             filtradas = filtradas.filter(sessao => !sessoesConcluidasIds.has(sessao.id));
         }
-        
+
         return filtradas;
     }, [sessoesOrdenadas, buscaDisciplina, mostrarConcluidas, sessoesConcluidasIds, disciplinasMap]);
 
     // Calcular progresso do ciclo (tempo concluído vs total)
     const { totalTempoCiclo, tempoConcluidoCiclo, dadosGrafico, proximaSessao, progressoPercentual, legendaDisciplinas, cicloConcluido, totalSessoes, sessoesConcluidasCount, tempoPorSessaoCiclo } = useMemo(() => {
-        if (!cicloAtivo || sessoesOrdenadas.length === 0) return { 
-            totalTempoCiclo: 0, 
-            tempoConcluidoCiclo: 0, 
-            dadosGrafico: [], 
-            proximaSessao: null, 
+        if (!cicloAtivo || sessoesOrdenadas.length === 0) return {
+            totalTempoCiclo: 0,
+            tempoConcluidoCiclo: 0,
+            dadosGrafico: [],
+            proximaSessao: null,
             progressoPercentual: 0,
             legendaDisciplinas: [],
             cicloConcluido: false,
@@ -412,9 +412,9 @@ const CicloDeEstudos: React.FC = () => {
             sessoesConcluidasCount: 0,
             tempoPorSessaoCiclo: new Map<string, number>()
         };
-        
+
         const tempoTotal = sessoesOrdenadas.reduce((acc: number, s) => acc + Number(s.tempo_previsto || 0), 0);
-        
+
         // Calcular tempo concluído considerando TODAS as sessões do ciclo estudadas (não apenas hoje)
         // Agrupar por sessão do ciclo e SOMAR o tempo estudado de todas as sessões de estudo
         const tempoPorSessaoCiclo = new Map<string, number>();
@@ -437,7 +437,7 @@ const CicloDeEstudos: React.FC = () => {
                 tempoPorSessaoCiclo.set(sessaoCicloId, tempoAtual + s.tempo_estudado);
             }
         });
-        
+
         // Identificar quais sessões estão concluídas (tempo estudado >= tempo previsto)
         const sessoesConcluidas = new Set<string>();
         todasSessoesDoCiclo.forEach(s => {
@@ -456,7 +456,7 @@ const CicloDeEstudos: React.FC = () => {
                     /CICLO_SESSAO_ID:([a-f0-9-]+)/i, // Apenas UUIDs (formato mais específico)
                     /CICLO_SESSAO_ID:([^\s|]+?)(?:\s*\||$)/, // Com separador | opcional no final
                 ];
-                
+
                 for (const pattern of patterns) {
                     const match = s.comentarios.match(pattern);
                     if (match && match[1]) {
@@ -479,14 +479,14 @@ const CicloDeEstudos: React.FC = () => {
                 }
             }
         });
-        
+
         // Somar o tempo de cada sessão do ciclo (limitado ao tempo previsto)
         const tempoConcluido = sessoesOrdenadas.reduce((acc, sessao) => {
             const tempoEstudado = tempoPorSessaoCiclo.get(sessao.id) || 0;
             // Limitar ao tempo previsto para não ultrapassar 100%
             return acc + Math.min(tempoEstudado, sessao.tempo_previsto);
         }, 0);
-        
+
         // Criar mapeamento estável de disciplina para cor (ordenado por nome para consistência)
         const disciplinasUnicas = Array.from(new Set(sessoesOrdenadas.map(s => s.disciplina_id)))
             .sort((a, b) => {
@@ -504,8 +504,8 @@ const CicloDeEstudos: React.FC = () => {
         disciplinasUnicas.forEach((disciplinaId: string) => {
             const sessoesDaDisciplina = sessoesOrdenadas.filter(s => s.disciplina_id === disciplinaId);
             const sessoesConcluidasDaDisciplina = sessoesDaDisciplina.filter(s => sessoesConcluidas.has(s.id));
-            const progresso = sessoesDaDisciplina.length > 0 
-                ? sessoesConcluidasDaDisciplina.length / sessoesDaDisciplina.length 
+            const progresso = sessoesDaDisciplina.length > 0
+                ? sessoesConcluidasDaDisciplina.length / sessoesDaDisciplina.length
                 : 0;
             progressoPorDisciplina.set(disciplinaId, progresso);
         });
@@ -517,17 +517,17 @@ const CicloDeEstudos: React.FC = () => {
             const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
             const isConcluida = sessoesConcluidas.has(sessao.id);
             const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
-            
+
             // Verificar se o tempo estudado atingiu o tempo previsto
             const tempoEstudadoSessao = tempoPorSessaoCiclo.get(sessao.id) || 0;
             const tempoPrevistoSessao = sessao.tempo_previsto || 0;
-            
+
             // Uma sessão só é considerada concluída se o tempo estudado >= tempo previsto
             const sessaoEstaConcluida = isConcluida && tempoEstudadoSessao >= tempoPrevistoSessao;
-            
+
             // Verificar se a sessão está parcialmente concluída (tempo estudado > 0 mas < tempo previsto)
             const sessaoEstaParcial = !sessaoEstaConcluida && tempoEstudadoSessao > 0 && tempoEstudadoSessao < tempoPrevistoSessao;
-            
+
             // Determinar cor final:
             // - Cinza (#9CA3AF) se sessão concluída (independente do progresso da disciplina)
             // - Laranja suave (#FB923C) se sessão parcialmente concluída
@@ -538,7 +538,7 @@ const CicloDeEstudos: React.FC = () => {
             } else if (sessaoEstaParcial) {
                 corFinal = '#FB923C'; // Laranja suave (orange-400) para sessão parcialmente concluída
             }
-            
+
             return {
                 id: sessao.id,
                 disciplinaId: disciplinaId,
@@ -550,16 +550,16 @@ const CicloDeEstudos: React.FC = () => {
                 progressoDisciplina: progressoDisciplina
             };
         });
-        
+
         // Criar legenda única por disciplina (sem repetição)
         const legendaDisciplinas = disciplinasUnicas.map((disciplinaId: string) => {
             const nomeDisciplina = disciplinasMap.get(disciplinaId) || 'Desconhecida';
             const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
             const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
-            
+
             // Cor da legenda: sempre usa a cor base (não verde)
             const corLegenda = corBase;
-            
+
             return {
                 disciplinaId,
                 name: nomeDisciplina,
@@ -567,7 +567,7 @@ const CicloDeEstudos: React.FC = () => {
                 progresso: progressoDisciplina
             };
         });
-        
+
         // Lógica para encontrar a próxima sessão
         let proxima: SessaoCiclo | null = null;
         if (sessoesOrdenadas.length > 0) {
@@ -581,7 +581,7 @@ const CicloDeEstudos: React.FC = () => {
 
         // Calcular progresso: considerar 100% quando tempo concluído >= tempo total
         const progresso = tempoTotal > 0 ? Math.min(100, Math.round((tempoConcluido / tempoTotal) * 100)) : 0;
-        
+
         // Garantir que seja exatamente 100% quando concluído (com margem de erro de 1%)
         const progressoFinal = progresso >= 99 ? 100 : progresso;
 
@@ -595,11 +595,11 @@ const CicloDeEstudos: React.FC = () => {
             ? (sessoesConcluidasCount / totalSessoes) * 100
             : 0;
 
-        return { 
-            totalTempoCiclo: tempoTotal, 
-            tempoConcluidoCiclo: tempoConcluido, 
-            dadosGrafico, 
-            proximaSessao: proxima, 
+        return {
+            totalTempoCiclo: tempoTotal,
+            tempoConcluidoCiclo: tempoConcluido,
+            dadosGrafico,
+            proximaSessao: proxima,
             progressoPercentual: Math.round(progressoPorSessoes),
             legendaDisciplinas,
             cicloConcluido,
@@ -626,7 +626,7 @@ const CicloDeEstudos: React.FC = () => {
                     ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }, 300);
-            
+
             return () => clearTimeout(timeoutId);
         }
     }, [ultimaSessaoConcluidaId, proximaSessao]);
@@ -643,7 +643,7 @@ const CicloDeEstudos: React.FC = () => {
                     ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }, 500);
-            
+
             return () => clearTimeout(timeoutId);
         }
     }, [isSaveModalOpen, sessaoAtual, ultimaSessaoConcluidaId, proximaSessao]);
@@ -655,14 +655,14 @@ const CicloDeEstudos: React.FC = () => {
         }
         setIsEditingCiclo(false);
     }, [cicloAtivo, editedCicloName, updateCiclo]);
-    
+
     const handleRemoveCiclo = useCallback(() => {
         if (cicloAtivo && window.confirm(`Tem certeza que deseja remover o ciclo "${cicloAtivo.nome}"?`)) {
             removeCiclo(cicloAtivo.id);
             toast.success("Ciclo removido.");
         }
     }, [cicloAtivo, removeCiclo]);
-    
+
     const handleAddSessao = useCallback(async () => {
         if (cicloAtivo && novaSessaoData.disciplinaId && parseInt(novaSessaoData.tempoMinutos) > 0) {
             try {
@@ -678,7 +678,7 @@ const CicloDeEstudos: React.FC = () => {
             toast.error("Selecione uma disciplina e defina um tempo válido.");
         }
     }, [cicloAtivo, novaSessaoData, addSessaoAoCiclo]);
-    
+
     const handleIniciarEstudoCiclo = useCallback((sessao: SessaoCiclo) => {
         const disciplina = disciplinas.find(d => d.id === sessao.disciplina_id);
         if (disciplina && cicloAtivo) {
@@ -693,14 +693,14 @@ const CicloDeEstudos: React.FC = () => {
 
     const handleConcluirSessao = useCallback(() => {
         if (!cicloAtivo || !proximaSessao || !sessaoAtivaParaCiclo || isSaving) return;
-        
+
         // Abrir o modal de salvar sessão para escolher o tópico
         encerrarSessaoParaSalvar();
     }, [cicloAtivo, proximaSessao, sessaoAtivaParaCiclo, isSaving, encerrarSessaoParaSalvar]);
 
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
-        
+
         if (!cicloAtivo || !over || active.id === over.id) return;
 
         const oldIndex = sessoesOrdenadas.findIndex(s => s.id === active.id);
@@ -710,7 +710,7 @@ const CicloDeEstudos: React.FC = () => {
 
         const sessoesReordenadas = arrayMove(sessoesOrdenadas, oldIndex, newIndex);
         const sessoesComOrdem = sessoesReordenadas.map((s: SessaoCiclo, i: number) => ({ ...s, ordem: i }));
-        
+
         try {
             await updateCiclo(cicloAtivo.id, { sessoes: sessoesComOrdem });
             toast.success("Sessões reordenadas.");
@@ -724,12 +724,12 @@ const CicloDeEstudos: React.FC = () => {
         if (!cicloAtivo) return;
         const sessao = cicloAtivo.sessoes?.find(s => s.id === sessaoId);
         if (!sessao) return;
-        
+
         const novoTempo = Math.max(60, sessao.tempo_previsto + delta); // Mínimo de 1 minuto
-        const sessoesAtualizadas = cicloAtivo.sessoes?.map(s => 
+        const sessoesAtualizadas = cicloAtivo.sessoes?.map(s =>
             s.id === sessaoId ? { ...s, tempo_previsto: novoTempo } : s
         );
-        
+
         try {
             await updateCiclo(cicloAtivo.id, { sessoes: sessoesAtualizadas });
             toast.success(`Tempo atualizado para ${formatTime(novoTempo)}`);
@@ -745,11 +745,11 @@ const CicloDeEstudos: React.FC = () => {
 
     const handleSelecionarSessao = useCallback((sessaoSelecionada: SessaoCiclo) => {
         if (!cicloAtivo) return;
-        
+
         // Atualizar a última sessão concluída para a sessão anterior à selecionada
         // Isso faz com que a sessão selecionada se torne a nova "próxima sessão"
         const indiceSelecionado = sessoesOrdenadas.findIndex(s => s.id === sessaoSelecionada.id);
-        
+
         if (indiceSelecionado > 0) {
             // Se não é a primeira, marca a anterior como concluída
             const sessaoAnterior = sessoesOrdenadas[indiceSelecionado - 1];
@@ -758,7 +758,7 @@ const CicloDeEstudos: React.FC = () => {
             // Se é a primeira, limpa o estado (volta ao início do ciclo)
             setUltimaSessaoConcluida(cicloAtivo.id, sessoesOrdenadas[sessoesOrdenadas.length - 1].id);
         }
-        
+
         handleIniciarEstudoCiclo(sessaoSelecionada);
         setIsTrocarSessaoModalOpen(false);
         toast.success(`Iniciando estudos de ${disciplinasMap.get(sessaoSelecionada.disciplina_id)}!`);
@@ -777,16 +777,33 @@ const CicloDeEstudos: React.FC = () => {
         <div data-tutorial="ciclos-content" className="max-w-7xl mx-auto space-y-6">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><RepeatIcon className="w-8 h-8"/> Ciclos de Estudos</h1>
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                            <RepeatIcon className="w-8 h-8" /> Ciclos de Estudos
+                        </h1>
+                        <span className="text-sm text-muted-foreground font-medium">
+                            {ciclosCriados}/{maxCiclos === Infinity ? '∞' : maxCiclos} ciclos
+                        </span>
+                    </div>
                     <p className="text-muted-foreground mt-1">Organize suas disciplinas em um ciclo rotativo para garantir um estudo equilibrado.</p>
                 </div>
-                <button 
-                    onClick={openCriarCicloModal} 
+                <button
+                    onClick={() => {
+                        if (!podeCriarCiclo) {
+                            toast.error(`Limite de ${maxCiclos} ${maxCiclos === 1 ? 'ciclo atingido' : 'ciclos atingido'}. Faça upgrade para criar mais!`);
+                            return;
+                        }
+                        openCriarCicloModal();
+                    }}
+                    disabled={!podeCriarCiclo}
                     aria-label="Criar novo ciclo de estudos"
-                    className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className={`h-10 px-4 flex items-center gap-2 rounded-lg text-sm font-medium transition-colors ${podeCriarCiclo
+                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                            : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                        }`}
                 >
                     <PlusCircleIcon className="w-4 h-4" />
-                    Criar Novo Ciclo
+                    {podeCriarCiclo ? 'Criar Novo Ciclo' : `Limite Atingido (${planType.toUpperCase()})`}
                 </button>
             </header>
 
@@ -877,11 +894,10 @@ const CicloDeEstudos: React.FC = () => {
                                             key={ciclo.id}
                                             onClick={() => setCicloAtivoId(ciclo.id)}
                                             aria-label={`Selecionar ciclo ${ciclo.nome}`}
-                                            className={`w-full text-left p-3 rounded-lg border transition-all ${
-                                                cicloAtivoId === ciclo.id
-                                                    ? 'bg-primary/10 border-primary text-foreground font-semibold'
-                                                    : 'bg-background border-border text-muted-foreground hover:bg-muted hover:border-primary/50'
-                                            }`}
+                                            className={`w-full text-left p-3 rounded-lg border transition-all ${cicloAtivoId === ciclo.id
+                                                ? 'bg-primary/10 border-primary text-foreground font-semibold'
+                                                : 'bg-background border-border text-muted-foreground hover:bg-muted hover:border-primary/50'
+                                                }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="text-sm truncate">{ciclo.nome}</span>
@@ -897,318 +913,314 @@ const CicloDeEstudos: React.FC = () => {
                     </div>
 
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm">
-                        <header className="p-4 border-b border-border flex items-center justify-between">
-                            {isEditingCiclo ? (
-                                <div className="flex items-center gap-2">
+                        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm">
+                            <header className="p-4 border-b border-border flex items-center justify-between">
+                                {isEditingCiclo ? (
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            value={editedCicloName}
+                                            onChange={(e) => setEditedCicloName(e.target.value)}
+                                            className="bg-input border border-border rounded-md px-3 py-1.5 text-lg font-bold text-foreground"
+                                            autoFocus
+                                            onBlur={handleUpdateCicloName}
+                                            onKeyDown={e => e.key === 'Enter' && handleUpdateCicloName()}
+                                        />
+                                        <button
+                                            onClick={handleUpdateCicloName}
+                                            aria-label="Salvar nome do ciclo"
+                                            className="p-2 rounded-md hover:bg-muted"
+                                        >
+                                            <SaveIcon className="w-4 h-4 text-primary" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                        {cicloAtivo.nome}
+                                        <button
+                                            onClick={() => { setIsEditingCiclo(true); setEditedCicloName(cicloAtivo.nome); }}
+                                            aria-label="Editar nome do ciclo"
+                                            className="p-1.5 text-muted-foreground hover:text-primary"
+                                        >
+                                            <EditIcon className="w-4 h-4" />
+                                        </button>
+                                    </h2>
+                                )}
+                                <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                        <p className="font-bold text-foreground">{formatTime(totalTempoCiclo)}</p>
+                                        <p className="text-xs text-muted-foreground">Tempo total</p>
+                                    </div>
+                                    <button
+                                        onClick={handleRemoveCiclo}
+                                        aria-label="Remover ciclo"
+                                        className="p-2 text-muted-foreground hover:text-red-500"
+                                    >
+                                        <Trash2Icon className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </header>
+
+                            {/* Campo de Busca e Filtro */}
+                            <div className="p-4 border-b border-border bg-muted/10 flex flex-col sm:flex-row gap-3">
+                                <div className="flex-1 relative">
                                     <input
-                                        value={editedCicloName}
-                                        onChange={(e) => setEditedCicloName(e.target.value)}
-                                        className="bg-input border border-border rounded-md px-3 py-1.5 text-lg font-bold text-foreground"
-                                        autoFocus
-                                        onBlur={handleUpdateCicloName}
-                                        onKeyDown={e => e.key === 'Enter' && handleUpdateCicloName()}
+                                        type="text"
+                                        placeholder="Buscar por disciplina..."
+                                        value={buscaDisciplina}
+                                        onChange={(e) => setBuscaDisciplina(e.target.value)}
+                                        className="w-full bg-background border border-border rounded-md px-3 py-2 pl-9 text-sm text-foreground focus:ring-primary focus:border-primary"
+                                        aria-label="Buscar sessão por disciplina"
                                     />
-                                    <button 
-                                        onClick={handleUpdateCicloName}
-                                        aria-label="Salvar nome do ciclo"
-                                        className="p-2 rounded-md hover:bg-muted"
-                                    >
-                                        <SaveIcon className="w-4 h-4 text-primary"/>
-                                    </button>
+                                    <SearchIcon className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
                                 </div>
-                            ) : (
-                                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                                    {cicloAtivo.nome}
-                                    <button 
-                                        onClick={() => { setIsEditingCiclo(true); setEditedCicloName(cicloAtivo.nome); }} 
-                                        aria-label="Editar nome do ciclo"
-                                        className="p-1.5 text-muted-foreground hover:text-primary"
-                                    >
-                                        <EditIcon className="w-4 h-4"/>
-                                    </button>
-                                </h2>
-                            )}
-                            <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="font-bold text-foreground">{formatTime(totalTempoCiclo)}</p>
-                                    <p className="text-xs text-muted-foreground">Tempo total</p>
-                                </div>
-                                <button 
-                                    onClick={handleRemoveCiclo}
-                                    aria-label="Remover ciclo"
-                                    className="p-2 text-muted-foreground hover:text-red-500"
-                                >
-                                    <Trash2Icon className="w-4 h-4"/>
-                                </button>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={mostrarConcluidas}
+                                        onChange={(e) => setMostrarConcluidas(e.target.checked)}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                                        aria-label="Mostrar sessões concluídas"
+                                    />
+                                    <span className="text-sm text-muted-foreground">Mostrar concluídas</span>
+                                </label>
                             </div>
-                        </header>
 
-                        {/* Campo de Busca e Filtro */}
-                        <div className="p-4 border-b border-border bg-muted/10 flex flex-col sm:flex-row gap-3">
-                            <div className="flex-1 relative">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por disciplina..."
-                                    value={buscaDisciplina}
-                                    onChange={(e) => setBuscaDisciplina(e.target.value)}
-                                    className="w-full bg-background border border-border rounded-md px-3 py-2 pl-9 text-sm text-foreground focus:ring-primary focus:border-primary"
-                                    aria-label="Buscar sessão por disciplina"
-                                />
-                                <SearchIcon className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" />
-                            </div>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={mostrarConcluidas}
-                                    onChange={(e) => setMostrarConcluidas(e.target.checked)}
-                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                                    aria-label="Mostrar sessões concluídas"
-                                />
-                                <span className="text-sm text-muted-foreground">Mostrar concluídas</span>
-                            </label>
-                        </div>
-
-                        {/* Barra de Progresso e Badge */}
-                        <div className="p-4 border-b border-border bg-muted/20">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <span className={`text-sm font-medium transition-all duration-300 flex items-center ${
-                                        cicloConcluido 
-                                            ? 'text-green-500' 
+                            {/* Barra de Progresso e Badge */}
+                            <div className="p-4 border-b border-border bg-muted/20">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-sm font-medium transition-all duration-300 flex items-center ${cicloConcluido
+                                            ? 'text-green-500'
                                             : 'text-muted-foreground'
-                                    }`}>
-                                        Progresso do Ciclo
-                                        {cicloConcluido && <CheckCircle2Icon className="w-4 h-4 ml-2 text-green-500" />}
-                                    </span>
-                                    {cicloConcluido ? (
-                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-green-500/20 text-green-600 dark:text-green-400 flex items-center gap-1 transition-all duration-300">
-                                            <CheckCircle2Icon className="w-3 h-3" />
-                                            Ciclo Concluído
+                                            }`}>
+                                            Progresso do Ciclo
+                                            {cicloConcluido && <CheckCircle2Icon className="w-4 h-4 ml-2 text-green-500" />}
                                         </span>
-                                    ) : (
-                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-primary/20 text-primary transition-all duration-300">
-                                            {sessoesHojeDoCiclo.length} {sessoesHojeDoCiclo.length === 1 ? 'sessão' : 'sessões'} hoje
-                                        </span>
-                                    )}
-                                </div>
-                                <span className={`text-sm font-bold transition-all duration-300 ${
-                                    cicloConcluido 
-                                        ? 'text-green-500' 
+                                        {cicloConcluido ? (
+                                            <span className="text-xs px-2 py-1 rounded-full font-bold bg-green-500/20 text-green-600 dark:text-green-400 flex items-center gap-1 transition-all duration-300">
+                                                <CheckCircle2Icon className="w-3 h-3" />
+                                                Ciclo Concluído
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs px-2 py-1 rounded-full font-bold bg-primary/20 text-primary transition-all duration-300">
+                                                {sessoesHojeDoCiclo.length} {sessoesHojeDoCiclo.length === 1 ? 'sessão' : 'sessões'} hoje
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className={`text-sm font-bold transition-all duration-300 ${cicloConcluido
+                                        ? 'text-green-500'
                                         : 'text-foreground'
-                                }`}>
-                                    {progressoPercentual}%
-                                </span>
-                            </div>
-                            {/* Barra de Progresso Moderna */}
-                            <div 
-                                className="w-full bg-muted/30 rounded-full h-3 mt-3 overflow-hidden relative group cursor-pointer"
-                                title={`${progressoPercentual}% concluído`}
-                                aria-label={`Progresso do ciclo: ${progressoPercentual}% concluído`}
-                            >
+                                        }`}>
+                                        {progressoPercentual}%
+                                    </span>
+                                </div>
+                                {/* Barra de Progresso Moderna */}
                                 <div
-                                    className={`h-full rounded-full transition-[width] duration-700 ease-out ${
-                                        progressoPercentual === 100
+                                    className="w-full bg-muted/30 rounded-full h-3 mt-3 overflow-hidden relative group cursor-pointer"
+                                    title={`${progressoPercentual}% concluído`}
+                                    aria-label={`Progresso do ciclo: ${progressoPercentual}% concluído`}
+                                >
+                                    <div
+                                        className={`h-full rounded-full transition-[width] duration-700 ease-out ${progressoPercentual === 100
                                             ? 'bg-green-500'
                                             : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
-                                    }`}
-                                    style={{ width: `${progressoPercentual}%` }}
-                                />
-                                {/* Tooltip customizado */}
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-card border border-border rounded-md text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
-                                    {progressoPercentual}% concluído
-                                </div>
-                            </div>
-                            <p className="text-xs mt-1 text-gray-400 dark:text-gray-500 text-right">
-                                {progressoPercentual.toFixed(0)}%
-                            </p>
-                            <div className={`flex justify-between text-xs mt-2 transition-all duration-300 ${
-                                cicloConcluido 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : 'text-muted-foreground'
-                            }`}>
-                                <span>
-                                    {sessoesConcluidasCount} de {totalSessoes} {totalSessoes === 1 ? 'sessão' : 'sessões'} concluída{totalSessoes !== 1 ? 's' : ''}
-                                </span>
-                                <span>{formatTime(totalTempoCiclo)} total</span>
-                            </div>
-                        </div>
-
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleDragEnd}
-                        >
-                            <SortableContext
-                                items={sessoesFiltradas.map(s => s.id)}
-                                strategy={verticalListSortingStrategy}
-                            >
-                                <div className="divide-y divide-border">
-                                    {sessoesFiltradas.length === 0 ? (
-                                        <div className="p-8 text-center text-muted-foreground">
-                                            <p className="text-sm">Nenhuma sessão encontrada.</p>
-                                        </div>
-                                    ) : (
-                                        sessoesFiltradas.map((sessao, index) => {
-                                            const isNext = sessao.id === proximaSessao?.id;
-                                            const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
-                                            const tempoDecorrido = isActive ? sessaoAtivaParaCiclo.elapsedSeconds : undefined;
-                                            
-                                            // Verificar se a sessão foi concluída (tempo estudado >= tempo previsto)
-                                            const tempoEstudadoSessao = tempoPorSessaoCiclo.get(sessao.id) || 0;
-                                            const tempoPrevistoSessao = sessao.tempo_previsto || 0;
-                                            const isConcluido = sessoesConcluidasIds.has(sessao.id) && tempoEstudadoSessao >= tempoPrevistoSessao;
-                                            
-                                            // Verificar se a sessão está parcialmente concluída (tempo estudado > 0 mas < tempo previsto)
-                                            const isParcial = !isConcluido && tempoEstudadoSessao > 0 && tempoEstudadoSessao < tempoPrevistoSessao;
-                                            const tempoFaltante = isParcial ? tempoPrevistoSessao - tempoEstudadoSessao : undefined;
-                                            
-                                            // Encontrar índice original na lista completa para numeração
-                                            const indiceOriginal = sessoesOrdenadas.findIndex(s => s.id === sessao.id);
-                                            
-                                            return (
-                                                <div
-                                                    key={sessao.id}
-                                                    ref={(el) => setSessaoRef(sessao.id, el)}
-                                                >
-                                                    <SortableSessaoItem
-                                                        sessao={sessao}
-                                                        index={indiceOriginal >= 0 ? indiceOriginal : index}
-                                                        isNext={isNext}
-                                                        isActive={isActive}
-                                                        disciplinaNome={disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}
-                                                        tempoDecorrido={tempoDecorrido}
-                                                        isConcluido={isConcluido}
-                                                        isParcial={isParcial}
-                                                        tempoFaltante={tempoFaltante}
-                                                        isSaving={isSaving && isActive}
-                                                        onIniciar={() => handleIniciarEstudoCiclo(sessao)}
-                                                        onConcluir={handleConcluirSessao}
-                                                        onRemove={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)}
-                                                        onUpdateTempo={(delta) => handleUpdateTempo(sessao.id, delta)}
-                                                    />
-                                                </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            </SortableContext>
-                        </DndContext>
-                            
-                        {isAddingSessao && (
-                            <div className="p-4 bg-muted/20 flex items-end gap-3 border-t border-border">
-                                <div className="flex-1">
-                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Disciplina</label>
-                                    <select
-                                        value={novaSessaoData.disciplinaId}
-                                        onChange={e => setNovaSessaoData({...novaSessaoData, disciplinaId: e.target.value})}
-                                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-                                    </select>
-                                </div>
-                                <div className="w-32">
-                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Tempo (min)</label>
-                                    <input
-                                        type="number"
-                                        value={novaSessaoData.tempoMinutos}
-                                        onChange={e => setNovaSessaoData({...novaSessaoData, tempoMinutos: e.target.value})}
-                                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                                            }`}
+                                        style={{ width: `${progressoPercentual}%` }}
                                     />
-                                </div>
-                                <button 
-                                    onClick={handleAddSessao}
-                                    aria-label="Adicionar sessão ao ciclo"
-                                    className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-medium text-sm"
-                                >
-                                    Adicionar
-                                </button>
-                                <button 
-                                    onClick={() => setIsAddingSessao(false)}
-                                    aria-label="Cancelar adição de sessão"
-                                    className="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:bg-muted"
-                                >
-                                    <XIcon className="w-4 h-4 mx-auto"/>
-                                </button>
-                            </div>
-                        )}
-                        {!isAddingSessao && (
-                            <div className="p-4 border-t border-border">
-                                <button 
-                                    onClick={() => setIsAddingSessao(true)}
-                                    aria-label="Adicionar nova sessão de estudo"
-                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-primary font-medium text-sm hover:bg-primary/10"
-                                >
-                                    <PlusIcon className="w-4 h-4"/> Adicionar Sessão de Estudo
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    <div className={`bg-card rounded-xl border border-border shadow-sm p-4 space-y-4 ${progressoPercentual === 100 ? 'opacity-90' : ''}`}>
-                        <h3 className={`font-bold text-center ${progressoPercentual === 100 ? 'text-gray-500 line-through' : 'text-foreground'}`}>Distribuição do Tempo</h3>
-                        {dadosGrafico.length > 0 ? (
-                            <>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <PieChart>
-                                        <Pie 
-                                            data={dadosGrafico} 
-                                            dataKey="value" 
-                                            nameKey="name" 
-                                            cx="50%" 
-                                            cy="50%" 
-                                            innerRadius={60} 
-                                            outerRadius={80} 
-                                            fill="#8884d8" 
-                                            paddingAngle={5}
-                                        >
-                                            {dadosGrafico.map((entry) => (
-                                                <Cell 
-                                                    key={`cell-${entry.id}`} 
-                                                    fill={entry.color}
-                                                    style={{ transition: 'fill 0.3s ease' }}
-                                                />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            content={<CustomPieTooltip />}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                                {/* Legenda customizada - apenas disciplinas únicas */}
-                                {legendaDisciplinas.length > 0 && (
-                                    <div className="flex flex-wrap gap-3 justify-center pt-2">
-                                        {legendaDisciplinas.map((item) => (
-                                            <div 
-                                                key={item.disciplinaId} 
-                                                className="flex items-center gap-2 text-xs"
-                                            >
-                                                <div 
-                                                    className="w-3 h-3 rounded-full flex-shrink-0"
-                                                    style={{ backgroundColor: item.color }}
-                                                />
-                                                <span className="text-muted-foreground">
-                                                    {item.name}
-                                                    {item.progresso >= 1.0 && (
-                                                        <span className="ml-1 text-green-500">✓</span>
-                                                    )}
-                                                </span>
-                                            </div>
-                                        ))}
+                                    {/* Tooltip customizado */}
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-card border border-border rounded-md text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                                        {progressoPercentual}% concluído
                                     </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">Adicione sessões para ver o gráfico.</div>
-                        )}
-                        {proximaSessao && (
-                             <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
-                                <p className="text-xs font-bold text-primary mb-1">PRÓXIMA SESSÃO</p>
-                                <p className="font-semibold text-lg text-foreground">{disciplinasMap.get(proximaSessao.disciplina_id)}</p>
-                                <p className="text-sm text-muted-foreground">{formatTime(proximaSessao.tempo_previsto)}</p>
+                                </div>
+                                <p className="text-xs mt-1 text-gray-400 dark:text-gray-500 text-right">
+                                    {progressoPercentual.toFixed(0)}%
+                                </p>
+                                <div className={`flex justify-between text-xs mt-2 transition-all duration-300 ${cicloConcluido
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : 'text-muted-foreground'
+                                    }`}>
+                                    <span>
+                                        {sessoesConcluidasCount} de {totalSessoes} {totalSessoes === 1 ? 'sessão' : 'sessões'} concluída{totalSessoes !== 1 ? 's' : ''}
+                                    </span>
+                                    <span>{formatTime(totalTempoCiclo)} total</span>
+                                </div>
                             </div>
-                        )}
-                    </div>
+
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={sessoesFiltradas.map(s => s.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="divide-y divide-border">
+                                        {sessoesFiltradas.length === 0 ? (
+                                            <div className="p-8 text-center text-muted-foreground">
+                                                <p className="text-sm">Nenhuma sessão encontrada.</p>
+                                            </div>
+                                        ) : (
+                                            sessoesFiltradas.map((sessao, index) => {
+                                                const isNext = sessao.id === proximaSessao?.id;
+                                                const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
+                                                const tempoDecorrido = isActive ? sessaoAtivaParaCiclo.elapsedSeconds : undefined;
+
+                                                // Verificar se a sessão foi concluída (tempo estudado >= tempo previsto)
+                                                const tempoEstudadoSessao = tempoPorSessaoCiclo.get(sessao.id) || 0;
+                                                const tempoPrevistoSessao = sessao.tempo_previsto || 0;
+                                                const isConcluido = sessoesConcluidasIds.has(sessao.id) && tempoEstudadoSessao >= tempoPrevistoSessao;
+
+                                                // Verificar se a sessão está parcialmente concluída (tempo estudado > 0 mas < tempo previsto)
+                                                const isParcial = !isConcluido && tempoEstudadoSessao > 0 && tempoEstudadoSessao < tempoPrevistoSessao;
+                                                const tempoFaltante = isParcial ? tempoPrevistoSessao - tempoEstudadoSessao : undefined;
+
+                                                // Encontrar índice original na lista completa para numeração
+                                                const indiceOriginal = sessoesOrdenadas.findIndex(s => s.id === sessao.id);
+
+                                                return (
+                                                    <div
+                                                        key={sessao.id}
+                                                        ref={(el) => setSessaoRef(sessao.id, el)}
+                                                    >
+                                                        <SortableSessaoItem
+                                                            sessao={sessao}
+                                                            index={indiceOriginal >= 0 ? indiceOriginal : index}
+                                                            isNext={isNext}
+                                                            isActive={isActive}
+                                                            disciplinaNome={disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}
+                                                            tempoDecorrido={tempoDecorrido}
+                                                            isConcluido={isConcluido}
+                                                            isParcial={isParcial}
+                                                            tempoFaltante={tempoFaltante}
+                                                            isSaving={isSaving && isActive}
+                                                            onIniciar={() => handleIniciarEstudoCiclo(sessao)}
+                                                            onConcluir={handleConcluirSessao}
+                                                            onRemove={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)}
+                                                            onUpdateTempo={(delta) => handleUpdateTempo(sessao.id, delta)}
+                                                        />
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+
+                            {isAddingSessao && (
+                                <div className="p-4 bg-muted/20 flex items-end gap-3 border-t border-border">
+                                    <div className="flex-1">
+                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Disciplina</label>
+                                        <select
+                                            value={novaSessaoData.disciplinaId}
+                                            onChange={e => setNovaSessaoData({ ...novaSessaoData, disciplinaId: e.target.value })}
+                                            className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="w-32">
+                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Tempo (min)</label>
+                                        <input
+                                            type="number"
+                                            value={novaSessaoData.tempoMinutos}
+                                            onChange={e => setNovaSessaoData({ ...novaSessaoData, tempoMinutos: e.target.value })}
+                                            className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleAddSessao}
+                                        aria-label="Adicionar sessão ao ciclo"
+                                        className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-medium text-sm"
+                                    >
+                                        Adicionar
+                                    </button>
+                                    <button
+                                        onClick={() => setIsAddingSessao(false)}
+                                        aria-label="Cancelar adição de sessão"
+                                        className="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                                    >
+                                        <XIcon className="w-4 h-4 mx-auto" />
+                                    </button>
+                                </div>
+                            )}
+                            {!isAddingSessao && (
+                                <div className="p-4 border-t border-border">
+                                    <button
+                                        onClick={() => setIsAddingSessao(true)}
+                                        aria-label="Adicionar nova sessão de estudo"
+                                        className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-primary font-medium text-sm hover:bg-primary/10"
+                                    >
+                                        <PlusIcon className="w-4 h-4" /> Adicionar Sessão de Estudo
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className={`bg-card rounded-xl border border-border shadow-sm p-4 space-y-4 ${progressoPercentual === 100 ? 'opacity-90' : ''}`}>
+                            <h3 className={`font-bold text-center ${progressoPercentual === 100 ? 'text-gray-500 line-through' : 'text-foreground'}`}>Distribuição do Tempo</h3>
+                            {dadosGrafico.length > 0 ? (
+                                <>
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <PieChart>
+                                            <Pie
+                                                data={dadosGrafico}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={80}
+                                                fill="#8884d8"
+                                                paddingAngle={5}
+                                            >
+                                                {dadosGrafico.map((entry) => (
+                                                    <Cell
+                                                        key={`cell-${entry.id}`}
+                                                        fill={entry.color}
+                                                        style={{ transition: 'fill 0.3s ease' }}
+                                                    />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                content={<CustomPieTooltip />}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    {/* Legenda customizada - apenas disciplinas únicas */}
+                                    {legendaDisciplinas.length > 0 && (
+                                        <div className="flex flex-wrap gap-3 justify-center pt-2">
+                                            {legendaDisciplinas.map((item) => (
+                                                <div
+                                                    key={item.disciplinaId}
+                                                    className="flex items-center gap-2 text-xs"
+                                                >
+                                                    <div
+                                                        className="w-3 h-3 rounded-full flex-shrink-0"
+                                                        style={{ backgroundColor: item.color }}
+                                                    />
+                                                    <span className="text-muted-foreground">
+                                                        {item.name}
+                                                        {item.progresso >= 1.0 && (
+                                                            <span className="ml-1 text-green-500">✓</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">Adicione sessões para ver o gráfico.</div>
+                            )}
+                            {proximaSessao && (
+                                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
+                                    <p className="text-xs font-bold text-primary mb-1">PRÓXIMA SESSÃO</p>
+                                    <p className="font-semibold text-lg text-foreground">{disciplinasMap.get(proximaSessao.disciplina_id)}</p>
+                                    <p className="text-sm text-muted-foreground">{formatTime(proximaSessao.tempo_previsto)}</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             ) : (
@@ -1216,7 +1228,7 @@ const CicloDeEstudos: React.FC = () => {
                     <RepeatIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                     <h3 className="text-xl font-semibold text-foreground">Nenhum ciclo de estudos criado</h3>
                     <p className="text-muted-foreground mt-2 mb-6">Comece a organizar seus estudos de forma mais eficiente.</p>
-                    <button 
+                    <button
                         onClick={openCriarCicloModal}
                         aria-label="Criar meu primeiro ciclo de estudos"
                         className="h-11 px-6 flex items-center mx-auto gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -1229,12 +1241,12 @@ const CicloDeEstudos: React.FC = () => {
 
             {/* Modal de Trocar Sessão */}
             {isTrocarSessaoModalOpen && cicloAtivo && (
-                <div 
-                    className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-4"
+                <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
                     onClick={() => setIsTrocarSessaoModalOpen(false)}
                 >
-                    <div 
-                        className="bg-card rounded-xl border border-white/10 shadow-2xl w-full max-w-2xl"
+                    <div
+                        className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl"
                         onClick={e => e.stopPropagation()}
                     >
                         <header className="p-4 border-b border-border flex items-center justify-between">
@@ -1242,7 +1254,7 @@ const CicloDeEstudos: React.FC = () => {
                                 <RepeatIcon className="w-6 h-6 text-primary" />
                                 <h2 className="text-lg font-bold">Trocar Sessão de Estudo</h2>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsTrocarSessaoModalOpen(false)}
                                 aria-label="Fechar modal de trocar sessão"
                                 className="p-1.5 rounded-full hover:bg-muted"
@@ -1255,34 +1267,32 @@ const CicloDeEstudos: React.FC = () => {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Selecione qual disciplina deseja estudar agora:
                             </p>
-                            
+
                             <div className="space-y-2">
                                 {sessoesOrdenadas.map((sessao, index) => {
                                     const disciplinaNome = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
                                     const isProxima = sessao.id === proximaSessao?.id;
                                     const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
-                                    
+
                                     return (
                                         <button
                                             key={sessao.id}
                                             onClick={() => handleSelecionarSessao(sessao)}
                                             disabled={isActive}
                                             aria-label={`Selecionar sessão de ${disciplinaNome}`}
-                                            className={`w-full p-4 rounded-lg border transition-all text-left ${
-                                                isActive
-                                                    ? 'bg-muted/50 border-muted cursor-not-allowed opacity-60'
-                                                    : isProxima
+                                            className={`w-full p-4 rounded-lg border transition-all text-left ${isActive
+                                                ? 'bg-muted/50 border-muted cursor-not-allowed opacity-60'
+                                                : isProxima
                                                     ? 'bg-primary/10 border-primary hover:bg-primary/20'
                                                     : 'bg-background border-border hover:bg-muted/50 hover:border-primary/50'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${
-                                                        isProxima 
-                                                            ? 'bg-primary text-black' 
-                                                            : 'bg-muted/50 text-muted-foreground'
-                                                    }`}>
+                                                    <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${isProxima
+                                                        ? 'bg-primary text-black'
+                                                        : 'bg-muted/50 text-muted-foreground'
+                                                        }`}>
                                                         {index + 1}
                                                     </span>
                                                     <div>

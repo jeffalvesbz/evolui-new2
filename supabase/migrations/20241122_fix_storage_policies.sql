@@ -48,3 +48,5 @@ create policy "Admins can update all solicitacoes"
   for update
   using (bucket_id = 'editais');
 
+
+

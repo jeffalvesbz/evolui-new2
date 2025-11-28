@@ -288,8 +288,8 @@ const SalvarSessaoModal: React.FC = () => {
                     white-space: nowrap;
                 }
             `}</style>
-            <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
-                <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-white/10 shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
+                <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <BookOpenIcon className="w-6 h-6 text-primary" />

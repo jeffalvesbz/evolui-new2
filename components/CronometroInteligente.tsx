@@ -46,15 +46,15 @@ const PomodoroSettings: React.FC = () => {
             <h4 className="font-bold text-sm text-foreground">Configurações Pomodoro</h4>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Foco (min)</label>
-                <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+                <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"/>
             </div>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Pausa Curta (min)</label>
-                <input type="number" value={pomodoroSettings.shortBreak / 60} onChange={e => handleUpdate('shortBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+                <input type="number" value={pomodoroSettings.shortBreak / 60} onChange={e => handleUpdate('shortBreak', e.target.value)} className="w-16 bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"/>
             </div>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Pausa Longa (min)</label>
-                <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+                <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"/>
             </div>
         </div>
     );
@@ -157,7 +157,7 @@ const CronometroInteligente: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className={`fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
+                className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
             >
                 <motion.div
                     initial={{ scale: 0.95, y: 20, opacity: 0 }}

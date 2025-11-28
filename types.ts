@@ -82,7 +82,84 @@ export interface Flashcard {
   easeFactor: number; // multiplier
   dueDate: string; // ISO string date
   estilo?: EstiloFlashcard;
+  tags?: string[]; // Tags para categorização e busca
 }
+
+// Tipos para sincronização de sessões de estudo
+export interface FlashcardStudySession {
+  id: string;
+  user_id: string;
+  deck_id: string;
+  current_index: number;
+  deck_data: string[]; // Array de flashcard IDs
+  answers: Record<number, 'errei' | 'dificil' | 'bom' | 'facil'>;
+  session_start_time: string;
+  last_updated: string;
+}
+
+// Tipo para histórico de revisões
+export interface FlashcardReview {
+  id: string;
+  user_id: string;
+  flashcard_id: string;
+  quality: 0 | 1 | 2 | 3 | 4 | 5;
+  response_time_ms?: number;
+  reviewed_at: string;
+}
+
+// Tipo para estatísticas de flashcards
+export interface FlashcardStats {
+  cardsStudiedToday: number;
+  cardsStudiedThisWeek: number;
+  totalReviews: number;
+  accuracyRate: number; // 0-100
+  currentStreak: number;
+  bestStreak: number;
+  reviewsByDay: { date: string; count: number }[]; // Para heatmap
+  accuracyByDisciplina: { disciplinaId: string; nome: string; accuracy: number }[];
+}
+
+// Tipos para Modo Quiz
+export interface QuizQuestion {
+  flashcard: Flashcard;
+  options: string[]; // 4 opções (1 correta + 3 distrações)
+  correctAnswer: string;
+  explanation?: string; // Explicação do porquê a resposta está correta
+}
+
+export interface QuizSession {
+  questions: QuizQuestion[];
+  currentQuestionIndex: number;
+  answers: Record<number, { selected: string; correct: boolean; timeSpent: number }>;
+  startTime: number;
+  questionStartTime: number; // Tempo de início da questão atual
+  timerEnabled: boolean;
+  timeLimit?: number; // em segundos por pergunta
+}
+
+export interface QuizResult {
+  totalQuestions: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  accuracy: number;
+  totalTime: number;
+  averageTimePerQuestion: number;
+}
+
+export interface Quiz {
+  id: string;
+  user_id: string;
+  title: string;
+  description?: string;
+  mode: 'standard' | 'true_false';
+  questions: QuizQuestion[];
+  created_at: string;
+  updated_at: string;
+  studyPlanId?: string;
+}
+
+
+
 
 export interface RevisaoErro {
   data: string;
@@ -185,16 +262,29 @@ export interface DisciplinaParaIA {
 
 // Tipos para o sistema de Amigos (usando o tipo definido acima)
 export interface Friendship {
-    id: string;
-    user_id_1: string; // requester
-    user_id_2: string; // receiver
-    status: FriendshipStatus;
-    created_at: string;
+  id: string;
+  user_id_1: string; // requester
+  user_id_2: string; // receiver
+  status: FriendshipStatus;
+  created_at: string;
 }
 
 export interface FriendRequest {
-    friendship_id: string;
-    requester_id: string;
-    requester_name: string;
+  friendship_id: string;
+  requester_id: string;
+  requester_name: string;
+}
+
+export interface Simulation {
+  id: string;
+  name: string;
+  correct: number;
+  wrong: number;
+  blank?: number;
+  duration_minutes: number; // Campo do banco em snake_case
+  notes?: string;
+  date: string; // ISO string
+  studyPlanId: string; // Campo mapeado do banco
+  is_cebraspe?: boolean; // Campo do banco em snake_case
 }
 

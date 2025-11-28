@@ -16,7 +16,7 @@ const EmptyDashboardState: React.FC<EmptyDashboardStateProps> = ({ onCreateEdita
       transition={{ duration: 0.4 }}
       className="w-full"
     >
-      <Card className="glass-card border-primary/30 shadow-2xl shadow-primary/20 overflow-hidden">
+      <Card className="border-primary/30 overflow-hidden">
         <CardHeader className="bg-gradient-to-br from-primary/20 via-background/0 to-secondary/10 p-8 sm:p-12 text-center">
           <motion.div
             initial={{ scale: 0 }}
@@ -34,7 +34,7 @@ const EmptyDashboardState: React.FC<EmptyDashboardStateProps> = ({ onCreateEdita
             Comece sua jornada de estudos
           </CardTitle>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Crie seu primeiro plano de estudos e organize sua rotina de forma inteligente. 
+            Crie seu primeiro plano de estudos e organize sua rotina de forma inteligente.
             Você está a poucos passos de começar!
           </p>
         </CardHeader>

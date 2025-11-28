@@ -91,14 +91,14 @@ const tutorialSteps: TutorialStep[] = [
     position: 'bottom',
     view: 'revisoes'
   },
-  {
-    id: 'erros',
-    target: '[data-tutorial="erros-content"]',
-    title: 'Caderno de Erros',
-    description: 'Registre e analise os erros que cometeu em questões. O caderno de erros ajuda você a identificar padrões de erro e focar nos pontos que precisam de mais atenção.',
-    position: 'bottom',
-    view: 'erros'
-  },
+  // {
+  //   id: 'erros',
+  //   target: '[data-tutorial="erros-content"]',
+  //   title: 'Caderno de Erros',
+  //   description: 'Registre e analise os erros que cometeu em questões. O caderno de erros ajuda você a identificar padrões de erro e focar nos pontos que precisam de mais atenção.',
+  //   position: 'bottom',
+  //   view: 'erros'
+  // },
   {
     id: 'simulados',
     target: '[data-tutorial="simulados-content"]',
@@ -123,7 +123,7 @@ const tutorialSteps: TutorialStep[] = [
     position: 'bottom',
     view: 'estatisticas'
   },
- {
+  {
     id: 'corretor',
     target: '[data-tutorial="corretor-content"]',
     title: 'Corretor de Redação',
@@ -165,22 +165,22 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
 
     const findAndHighlightElement = (attempt: number = 0): void => {
       const element = document.querySelector(step.target) as HTMLElement;
-      
+
       if (element && element.isConnected) {
         // Usar requestAnimationFrame duplo para garantir que o DOM está atualizado após navegação
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             const rect = element.getBoundingClientRect();
             const styles = window.getComputedStyle(element);
-            
+
             // Verificar se o elemento está visível e tem dimensões válidas
             // Remover verificação de rect.top !== 0 e rect.left !== 0 que pode ser muito restritiva
-            const isVisible = styles.display !== 'none' && 
-                             styles.visibility !== 'hidden' && 
-                             styles.opacity !== '0' &&
-                             rect.width > 0 && 
-                             rect.height > 0;
-            
+            const isVisible = styles.display !== 'none' &&
+              styles.visibility !== 'hidden' &&
+              styles.opacity !== '0' &&
+              rect.width > 0 &&
+              rect.height > 0;
+
             if (isVisible) {
               // Adicionar padding ao highlight para melhor visualização
               const padding = 4;
@@ -195,8 +195,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
 
               // Scroll para o elemento de forma mais rápida
               requestAnimationFrame(() => {
-                element.scrollIntoView({ 
-                  behavior: 'smooth', 
+                element.scrollIntoView({
+                  behavior: 'smooth',
                   block: 'center',
                   inline: 'center'
                 });
@@ -248,7 +248,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
     // Usar debounce para resize e scroll para melhor performance
     let resizeTimeout: NodeJS.Timeout;
     let scrollTimeout: NodeJS.Timeout;
-    
+
     const handleResize = () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(updateHighlight, 150);
@@ -574,9 +574,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
                   {tutorialSteps.map((_, index) => (
                     <div
                       key={index}
-                      className={`h-1.5 rounded-full transition-all flex-shrink-0 ${
-                        index === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-muted'
-                      }`}
+                      className={`h-1.5 rounded-full transition-all flex-shrink-0 ${index === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-muted'
+                        }`}
                     />
                   ))}
                 </div>

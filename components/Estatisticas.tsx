@@ -19,10 +19,11 @@ import { useRevisoesStore } from '../stores/useRevisoesStore';
 import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useStudyStore } from '../stores/useStudyStore';
 import { useEditalStore } from '../stores/useEditalStore';
+import { useSubscriptionStore } from '../stores/useSubscriptionStore';
+import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { subDays, format } from 'date-fns';
 
 const formatStudyDuration = (minutes: number) => {
@@ -55,9 +56,10 @@ const Estatisticas: React.FC = () => {
     const todosErros = useCadernoErrosStore(state => state.erros);
     const todosSimulados = useStudyStore(state => state.simulations);
     const { streak } = useUnifiedStreak();
+    const { planType } = useSubscriptionStore();
 
     // ✅ Corrigido: Filtrar dados por studyPlanId para mostrar apenas do edital ativo
-    const sessoes = editalAtivo?.id 
+    const sessoes = editalAtivo?.id
         ? todasSessoes.filter(s => s.studyPlanId === editalAtivo.id)
         : [];
     const revisoes = editalAtivo?.id
@@ -76,7 +78,7 @@ const Estatisticas: React.FC = () => {
         const totalMinutosEstudo = sessoes.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
         const totalMinutosSimulado = simulados.reduce((acc, s) => acc + s.durationMinutes, 0);
         const totalMinutos = totalMinutosEstudo + totalMinutosSimulado;
-        
+
         const totalSessoes = sessoes.length;
         const totalAtividades = totalSessoes + simulados.length;
         const mediaSessao = totalAtividades > 0 ? totalMinutos / totalAtividades : 0;
@@ -89,12 +91,12 @@ const Estatisticas: React.FC = () => {
             totalSessoes: totalAtividades,
         };
     }, [sessoes, simulados, getAverageProgress]);
-    
+
     const performanceStats = useMemo(() => {
         const totalRevisoes = revisoes.length;
         const revisoesConcluidas = revisoes.filter(r => r.status === 'concluida').length;
         const taxaRevisao = totalRevisoes > 0 ? Math.round((revisoesConcluidas / totalRevisoes) * 100) : 0;
-        
+
         const totalErros = erros.length;
         const errosResolvidos = erros.filter(e => e.resolvido).length;
         const taxaResolucaoErros = totalErros > 0 ? Math.round((errosResolvidos / totalErros) * 100) : 0;
@@ -118,7 +120,7 @@ const Estatisticas: React.FC = () => {
             const tempoMinutos = sessao.tempo_estudado / 60;
             tempoPorDisciplina[nomeDisciplina] = (tempoPorDisciplina[nomeDisciplina] || 0) + tempoMinutos;
         });
-        
+
         const tempoSimulados = simulados.reduce((acc, s) => acc + s.durationMinutes, 0);
         if (tempoSimulados > 0) {
             tempoPorDisciplina['Simulados'] = tempoSimulados;
@@ -175,76 +177,97 @@ const Estatisticas: React.FC = () => {
                 <MetricCard icon={FlameIcon} title="Dias Seguidos" value={`${streak} dias`} color="text-orange-500" />
                 <MetricCard icon={BookCopyIcon} title="Total de Atividades" value={generalStats.totalSessoes} color="text-purple-500" />
             </section>
-            
+
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card className="border-border shadow-md">
+                <Card className="border-border shadow-md">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BarChart3Icon className="w-5 h-5 text-primary"/> Desempenho Diário (Últimos 30 dias)</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><BarChart3Icon className="w-5 h-5 text-primary" /> Desempenho Diário (Últimos 30 dias)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={dailyPerformanceLast30Days}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                                <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}m`} />
-                                <Tooltip
-                                    cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
-                                    contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
-                                />
-                                <Bar dataKey="Tempo (min)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Gráfico de Desempenho Diário"
+                            showPreview={true}
+                        >
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={dailyPerformanceLast30Days}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}m`} />
+                                    <Tooltip
+                                        cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
+                                        contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+                                    />
+                                    <Bar dataKey="Tempo (min)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
 
                 <Card className="border-border shadow-md">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary"/> Foco por Disciplina</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary" /> Foco por Disciplina</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {studyTimeDistribution.length > 0 ? (
-                             <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={studyTimeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
-                                        {studyTimeDistribution.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} formatter={(value: number) => `${formatStudyDuration(value)}`} />
-                                    <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}}/>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        ) : (
-                             <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
-                                Nenhum estudo registrado para exibir o foco por disciplina.
-                            </div>
-                        )}
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Gráfico de Foco por Disciplina"
+                            showPreview={true}
+                        >
+                            {studyTimeDistribution.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie data={studyTimeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
+                                            {studyTimeDistribution.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} formatter={(value: number) => `${formatStudyDuration(value)}`} />
+                                        <Legend iconSize={10} wrapperStyle={{ fontSize: '0.8rem', paddingTop: '10px' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
+                                    Nenhum estudo registrado para exibir o foco por disciplina.
+                                </div>
+                            )}
+                        </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
             </section>
-            
+
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <Card className="border-border shadow-md lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><TrendingUpIcon className="w-5 h-5 text-primary"/> Desempenho em Simulados</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><TrendingUpIcon className="w-5 h-5 text-primary" /> Desempenho em Simulados</CardTitle>
                     </CardHeader>
                     <CardContent>
-                       {simulationTrend.length > 1 ? (
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={simulationTrend}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} />
-                                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} unit="%" domain={[0, 100]} />
-                                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
-                                    <Legend wrapperStyle={{fontSize: '0.8rem'}}/>
-                                    <Line type="monotone" dataKey="Acertos (%)" stroke="var(--color-secondary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        ) : (
-                            <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
-                                {simulados.length > 0 ? "Registre mais simulados para ver a tendência." : "Nenhum simulado registrado."}
-                            </div>
-                        )}
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Gráfico de Tendência de Simulados"
+                            showPreview={true}
+                        >
+                            {simulationTrend.length > 1 ? (
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={simulationTrend}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                        <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} />
+                                        <YAxis stroke="var(--color-muted-foreground)" fontSize={12} unit="%" domain={[0, 100]} />
+                                        <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
+                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                        <Line type="monotone" dataKey="Acertos (%)" stroke="var(--color-secondary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
+                                    {simulados.length > 0 ? "Registre mais simulados para ver a tendência." : "Nenhum simulado registrado."}
+                                </div>
+                            )}
+                        </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
                 <div className="space-y-6">

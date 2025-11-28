@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { Disciplina, Topico } from '../types';
-import { 
-    ChevronDownIcon, 
-    Trash2Icon, 
-    EditIcon, 
-    LandmarkIcon, 
+import {
+    ChevronDownIcon,
+    Trash2Icon,
+    EditIcon,
+    LandmarkIcon,
     CheckIcon,
     SaveIcon,
     UploadIcon,
@@ -51,9 +51,9 @@ const TopicoItem: React.FC<{
     };
 
     const handleDelete = () => {
-        if(window.confirm(`Tem certeza que deseja remover o tópico "${topico.titulo}"?`)){
+        if (window.confirm(`Tem certeza que deseja remover o tópico "${topico.titulo}"?`)) {
             removeTopico(disciplinaId, topico.id)
-                .catch(() => {}); // Error is already toasted in the store
+                .catch(() => { }); // Error is already toasted in the store
         }
     };
 
@@ -63,7 +63,7 @@ const TopicoItem: React.FC<{
         </div>
     ) : (
         <div className="w-5 h-5 flex-shrink-0 rounded-full border-2 border-muted flex items-center justify-center cursor-pointer" title="Marcar como concluído">
-             <div className="w-1.5 h-1.5 bg-muted rounded-full"></div>
+            <div className="w-1.5 h-1.5 bg-muted rounded-full"></div>
         </div>
     );
 
@@ -103,7 +103,7 @@ const TopicoItem: React.FC<{
 };
 
 
-const DisciplinaCard: React.FC<{ 
+const DisciplinaCard: React.FC<{
     disciplina: Disciplina;
     onEdit: () => void;
     onAddTopic: () => void;
@@ -111,75 +111,77 @@ const DisciplinaCard: React.FC<{
     onDelete: () => void;
 }> = ({ disciplina, onEdit, onAddTopic, onAddTopicBatch, onDelete }) => {
     const [isExpanded, setIsExpanded] = useState(false);
-    
+
     // Ordena os tópicos numericamente
     const topicosOrdenados = useMemo(() => {
         return sortTopicosPorNumero(disciplina.topicos);
     }, [disciplina.topicos]);
-    
+
     return (
         <div className="bg-card rounded-xl border border-border">
             <header className={`p-4 transition-colors ${isExpanded ? 'bg-muted/20' : ''}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                     <div className="flex items-center justify-between flex-1">
-                        <h3 
-                            className="font-bold text-lg text-foreground cursor-pointer" 
+                        <h3
+                            className="font-bold text-lg text-foreground cursor-pointer"
                             onClick={() => setIsExpanded(!isExpanded)}
                         >
                             {disciplina.nome}
                         </h3>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                             className="p-2 rounded-full hover:bg-muted text-muted-foreground sm:hidden"
                         >
                             <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                         </button>
                     </div>
                     <div className="flex items-center flex-wrap justify-end gap-2">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onAddTopic(); }} 
-                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onAddTopic(); }}
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors"
                             title="Adicionar Tópico"
                         >
                             <PlusCircleIcon className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} 
-                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }}
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors"
                             title="Adicionar Tópicos em Lote"
                         >
                             <UploadIcon className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onEdit(); }} 
-                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors" 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-primary transition-colors"
                             title="Editar Disciplina"
                         >
                             <EditIcon className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(); }} 
-                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500 transition-colors" 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                            className="p-2 rounded-md hover:bg-background text-muted-foreground hover:text-red-500 transition-colors"
                             title="Excluir Disciplina"
                         >
                             <Trash2Icon className="w-4 h-4" />
                         </button>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }} 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
                             className="hidden sm:flex p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors"
                         >
-                        <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
+                            <ChevronDownIcon className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
                     </div>
                 </div>
-                <div 
-                    className="flex items-center gap-3 cursor-pointer" 
+            </header>
+            <div className="px-4 pb-4">
+                <div
+                    className="flex items-center gap-3 cursor-pointer"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
-                    <Progress value={disciplina.progresso} />
-                    <span className="text-sm font-bold text-secondary w-14 text-right">{disciplina.progresso.toFixed(0)}%</span>
+                    <Progress value={disciplina.progresso} className="h-2 flex-1" />
+                    <span className="text-sm font-semibold text-foreground w-12 text-right">{disciplina.progresso.toFixed(0)}%</span>
                 </div>
-            </header>
+            </div>
             {isExpanded && (
                 <div className="border-t border-border">
                     <div className="divide-y divide-border">
@@ -187,12 +189,12 @@ const DisciplinaCard: React.FC<{
                             <TopicoItem key={topico.id} topico={topico} disciplinaId={disciplina.id} />
                         )) : (
                             <div className="text-center py-8">
-                               <p className="text-sm text-muted-foreground">Nenhum tópico adicionado.</p>
-                               <div className="mt-3 flex items-center justify-center gap-2">
-                                   <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar tópico</button>
-                                   <span className="text-muted-foreground">ou</span>
-                                   <button onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar em lote</button>
-                               </div>
+                                <p className="text-sm text-muted-foreground">Nenhum tópico adicionado.</p>
+                                <div className="mt-3 flex items-center justify-center gap-2">
+                                    <button onClick={(e) => { e.stopPropagation(); onAddTopic(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar tópico</button>
+                                    <span className="text-muted-foreground">ou</span>
+                                    <button onClick={(e) => { e.stopPropagation(); onAddTopicBatch(); }} className="text-sm font-semibold text-primary hover:underline">Adicionar em lote</button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -225,8 +227,8 @@ const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({ onEditDiscipl
     return (
         <div className="space-y-4">
             {disciplinas.map(disciplina => (
-                <DisciplinaCard 
-                    key={disciplina.id} 
+                <DisciplinaCard
+                    key={disciplina.id}
                     disciplina={disciplina}
                     onEdit={() => onEditDisciplina(disciplina)}
                     onAddTopic={() => onAddTopic(disciplina.id)}

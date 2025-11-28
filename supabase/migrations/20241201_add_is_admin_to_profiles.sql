@@ -11,3 +11,5 @@ create index if not exists idx_profiles_is_admin on profiles(is_admin) where is_
 -- Comment
 comment on column profiles.is_admin is 'Indica se o usuário tem permissões de administrador';
 
+
+

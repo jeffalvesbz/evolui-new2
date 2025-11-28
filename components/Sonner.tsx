@@ -29,11 +29,24 @@ export const Toaster: React.FC = () => {
 
   useEffect(() => {
     const newToastListener = (newToast: Omit<ToastMessage, 'id'>) => {
-      const id = toastId++;
-      setToasts((currentToasts) => [...currentToasts, { ...newToast, id }]);
-      setTimeout(() => {
-        setToasts((currentToasts) => currentToasts.filter((t) => t.id !== id));
-      }, 3000);
+      setToasts((currentToasts) => {
+        // Evitar mensagens duplicadas consecutivas
+        const lastToast = currentToasts[currentToasts.length - 1];
+        if (lastToast && lastToast.message === newToast.message && lastToast.type === newToast.type) {
+          return currentToasts;
+        }
+
+        // Limitar a 3 toasts simultâneos
+        const limitedToasts = currentToasts.slice(-2);
+        const id = toastId++;
+        const newToasts = [...limitedToasts, { ...newToast, id }];
+        
+        setTimeout(() => {
+          setToasts((current) => current.filter((t) => t.id !== id));
+        }, 3000);
+        
+        return newToasts;
+      });
     };
 
     listeners.push(newToastListener);
@@ -59,11 +72,11 @@ export const Toaster: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-5 right-5 z-[100] space-y-2">
+    <div className="fixed top-4 right-4 sm:top-5 sm:right-5 z-[100] space-y-2 max-w-[calc(100vw-2rem)] sm:max-w-md">
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`px-4 py-3 rounded-md text-white border-b-4 shadow-lg text-sm font-medium animate-fade-in-down ${getToastClasses(t.type)}`}
+          className={`px-3 py-2 sm:px-4 sm:py-3 rounded-md text-white border-b-4 shadow-lg text-xs sm:text-sm font-medium animate-fade-in-down ${getToastClasses(t.type)}`}
         >
           {t.message}
         </div>

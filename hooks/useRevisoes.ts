@@ -15,13 +15,13 @@ export interface RevisoesProcessadas {
   programadasFuturas: Revisao[]
   atrasadas: Revisao[]
   concluidas: Revisao[]
-  
+
   // Métricas
   totalPendentes: number
   totalProgramadas: number
   totalAtrasadas: number
   totalConcluidas: number
-  
+
   // Estatísticas
   estatisticas: {
     porOrigem: Record<string, number>
@@ -29,13 +29,13 @@ export interface RevisoesProcessadas {
     porStatus: Record<string, number>
     taxaConclusao: number
   }
-  
+
   // Funções
   concluirRevisao: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => Promise<void>
   reagendarRevisao: (id: string, dias: number) => Promise<void>
   removeRevisao: (id: string) => Promise<void>
   atualizarStatusAtrasadas: () => Promise<void>
-  
+
   // Estado
   loading: boolean
   error: string | null
@@ -80,33 +80,36 @@ export const useRevisoes = (): RevisoesProcessadas => {
     );
 
     // Filtrar revisões por status e data
-    const pendentesHoje = revisoesProcessadas.filter(revisao => 
+    const pendentesHoje = revisoesProcessadas.filter(revisao =>
       isSameDay(new Date(revisao.data_prevista), hoje) && revisao.status === 'pendente'
     )
 
-    const programadas = revisoesProcessadas.filter(revisao => 
+    const programadas = revisoesProcessadas.filter(revisao =>
       isAfter(startOfDay(new Date(revisao.data_prevista)), hoje) && revisao.status === 'pendente'
     )
-    
+
     // Novas categorias de programadas
     const programadasAmanha = programadas.filter(r => isSameDay(new Date(r.data_prevista), amanha));
     const programadasProximaSemana = programadas.filter(r => {
-        const data = startOfDay(new Date(r.data_prevista));
-        // isAfter(data, amanha) -> to exclude tomorrow which is already categorized
-        // isBefore(data, proximos7dias) -> up to day 7
-        return isAfter(data, amanha) && isBefore(data, proximos7dias);
+      const data = startOfDay(new Date(r.data_prevista));
+      // isAfter(data, amanha) -> to exclude tomorrow which is already categorized
+      // isBefore(data, proximos7dias) -> up to day 7
+      return isAfter(data, amanha) && isBefore(data, proximos7dias);
     });
     const programadasFuturas = programadas.filter(r => {
-        const data = startOfDay(new Date(r.data_prevista));
-        // Not before 8 days from today, meaning day 8 and onwards
-        return !isBefore(data, proximos7dias);
+      const data = startOfDay(new Date(r.data_prevista));
+      // Not before 8 days from today, meaning day 8 and onwards
+      return !isBefore(data, proximos7dias);
     });
 
 
-    const atrasadas = revisoesProcessadas.filter(revisao => revisao.status === 'atrasada');
+    const atrasadas = revisoesProcessadas.filter(revisao =>
+      revisao.status === 'atrasada' ||
+      (revisao.status === 'pendente' && isBefore(startOfDay(new Date(revisao.data_prevista)), hoje))
+    );
 
 
-    const concluidas = revisoesProcessadas.filter(revisao => 
+    const concluidas = revisoesProcessadas.filter(revisao =>
       revisao.status === 'concluida'
     )
 
@@ -138,7 +141,7 @@ export const useRevisoes = (): RevisoesProcessadas => {
     }, {} as Record<string, number>)
 
     // Taxa de conclusão
-    const taxaConclusao = revisoesProcessadas.length > 0 
+    const taxaConclusao = revisoesProcessadas.length > 0
       ? Math.round((totalConcluidas / revisoesProcessadas.length) * 100)
       : 0
 
@@ -166,7 +169,7 @@ export const useRevisoes = (): RevisoesProcessadas => {
 
   // Função wrapper para concluir revisão
   const concluirRevisao = async (
-    id: string, 
+    id: string,
     resultado: 'acertou' | 'errou' | 'adiou',
     novaDificuldade?: 'facil' | 'medio' | 'dificil'
   ) => {
@@ -196,10 +199,10 @@ export const useRevisoesPorPeriodo = (periodo: 'hoje' | 'semana' | 'mes') => {
   const revisoesFiltradas = useMemo(() => {
     const agora = new Date();
     const hoje = startOfDay(agora);
-    
+
     return revisoes.filter(revisao => {
       const dataPrevista = new Date(revisao.data_prevista);
-      
+
       switch (periodo) {
         case 'hoje':
           return isSameDay(dataPrevista, hoje);
@@ -207,8 +210,8 @@ export const useRevisoesPorPeriodo = (periodo: 'hoje' | 'semana' | 'mes') => {
           const umaSemanaAtras = subDays(hoje, 7);
           return isAfter(dataPrevista, umaSemanaAtras) && isBefore(dataPrevista, addDays(hoje, 1));
         case 'mes':
-            const umMesAtras = subDays(hoje, 30);
-            return isAfter(dataPrevista, umMesAtras) && isBefore(dataPrevista, addDays(hoje, 1));
+          const umMesAtras = subDays(hoje, 30);
+          return isAfter(dataPrevista, umMesAtras) && isBefore(dataPrevista, addDays(hoje, 1));
         default:
           return true
       }

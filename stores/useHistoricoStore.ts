@@ -92,7 +92,7 @@ const buildHistoricoFromStores = (editalId: string): HistoricoItem[] => {
       id: sessao.id,
       type: 'estudo',
       data: sessao.data_estudo,
-      duracao_minutos: Math.round(sessao.tempo_estudado / 60),
+      duracao_minutos: Math.round((sessao.tempo_estudado || 0) / 60),
       disciplina: disciplinaNome,
       topico: topicoTitulo,
       origem,
@@ -113,7 +113,7 @@ const buildHistoricoFromStores = (editalId: string): HistoricoItem[] => {
       id: sim.id,
       type: 'simulado',
       data: sim.date.split('T')[0],
-      duracao_minutos: sim.duration_minutes,
+      duracao_minutos: sim.duration_minutes || 0,
       nome: sim.name,
       acertos: sim.correct,
       erros: sim.wrong,
@@ -139,10 +139,13 @@ export const useHistoricoStore = create<HistoricoState>((set) => ({
 
 // Inicializar subscriptions de forma lazy para evitar dependência circular
 let subscriptionsInitialized = false;
+let subscriptionsInitializing = false;
+let isUpdating = false; // Flag to prevent cascading updates
+
 
 const initializeSubscriptionsLazy = () => {
-  if (subscriptionsInitialized) return;
-  subscriptionsInitialized = true;
+  if (subscriptionsInitialized || subscriptionsInitializing) return;
+  subscriptionsInitializing = true;
 
   // Usar setTimeout para garantir que todos os stores estejam inicializados
   setTimeout(() => {
@@ -175,28 +178,37 @@ const initializeHistoricoSubscriptions = () => {
   subscriptionsInitialized = true;
 
   useEstudosStore.subscribe((state, prevState) => {
+    if (isUpdating) return;
     if (state.sessoes !== prevState.sessoes) {
+      isUpdating = true;
       updateHistoricoFromStores();
+      isUpdating = false;
     }
   });
 
   useStudyStore.subscribe((state, prevState) => {
+    if (isUpdating) return;
     if (state.simulations !== prevState.simulations) {
+      isUpdating = true;
       updateHistoricoFromStores();
+      isUpdating = false;
     }
   });
 
   useEditalStore.subscribe((state, prevState) => {
+    if (isUpdating) return;
     const currentId = state.editalAtivo?.id;
     const previousId = prevState.editalAtivo?.id;
 
     if (currentId === previousId) return;
 
+    isUpdating = true;
     if (currentId) {
       useHistoricoStore.getState().fetchHistorico(currentId);
     } else {
       useHistoricoStore.setState({ historico: [], loading: false });
     }
+    isUpdating = false;
   });
 };
 
