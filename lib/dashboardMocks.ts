@@ -53,10 +53,14 @@ export const Button: React.FC<{ children: React.ReactNode; className?: string; v
 export const Progress: React.FC<{ value: number; className?: string }> = ({ value, className }) => (
   React.createElement(
     'div',
-    { className: `progress-modern ${className || ''}` },
+    { className: `w-full bg-white/10 rounded-full h-2 overflow-hidden relative ${className || ''}` },
     React.createElement('div', {
-      className: "progress-bar",
-      style: { width: `${Math.min(value, 100)}%` }
+      className: "h-full rounded-full transition-all duration-300 ease-out",
+      style: {
+        width: `${Math.min(value, 100)}%`,
+        background: 'linear-gradient(90deg, #8B5CF6, #06b6d4)',
+        boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)'
+      }
     })
   )
 );
