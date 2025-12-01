@@ -279,7 +279,7 @@ const CicloDeEstudos: React.FC = () => {
 
     const maxCiclos = getMaxCiclos();
     const ciclosCriados = ciclos.length;
-    const podeCriarCiclo = canCreateCiclo();
+    const podeCriarCiclo = canCreateCiclo(ciclosCriados);
 
     const [isEditingCiclo, setIsEditingCiclo] = useState(false);
     const [editedCicloName, setEditedCicloName] = useState('');
@@ -775,7 +775,7 @@ const CicloDeEstudos: React.FC = () => {
 
     return (
         <div data-tutorial="ciclos-content" className="max-w-7xl mx-auto space-y-6">
-            <header className="flex items-center justify-between">
+            <header className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -798,8 +798,8 @@ const CicloDeEstudos: React.FC = () => {
                     disabled={!podeCriarCiclo}
                     aria-label="Criar novo ciclo de estudos"
                     className={`h-10 px-4 flex items-center gap-2 rounded-lg text-sm font-medium transition-colors ${podeCriarCiclo
-                            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                            : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
                         }`}
                 >
                     <PlusCircleIcon className="w-4 h-4" />
@@ -810,7 +810,7 @@ const CicloDeEstudos: React.FC = () => {
             {/* CTA Fixo da Próxima Sessão */}
             {cicloAtivo && proximaSessao && (
                 <div className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-4 shadow-lg">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-xs font-bold text-primary uppercase">Próxima Sessão</span>
@@ -828,12 +828,12 @@ const CicloDeEstudos: React.FC = () => {
                                 Tempo previsto: {formatTime(proximaSessao.tempo_previsto)}
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                             {!sessaoAtivaParaCiclo ? (
                                 <button
                                     onClick={() => handleIniciarEstudoCiclo(proximaSessao)}
                                     aria-label={`Iniciar sessão de ${disciplinasMap.get(proximaSessao.disciplina_id)}`}
-                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-primary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+                                    className="h-12 px-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
                                 >
                                     <PlayIcon className="w-4 h-4" />
                                     Iniciar Agora
@@ -843,7 +843,7 @@ const CicloDeEstudos: React.FC = () => {
                                     onClick={handleConcluirSessao}
                                     disabled={isSaving}
                                     aria-label={`Concluir sessão de ${disciplinasMap.get(proximaSessao.disciplina_id)}`}
-                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-12 px-6 flex items-center justify-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                                 >
                                     {isSaving ? (
                                         <>
@@ -861,7 +861,7 @@ const CicloDeEstudos: React.FC = () => {
                             <button
                                 onClick={handleTrocarSessao}
                                 aria-label="Trocar sessão de estudo"
-                                className="h-12 px-4 flex items-center gap-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors"
+                                className="h-12 px-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors w-full sm:w-auto"
                             >
                                 Trocar Sessão
                             </button>
@@ -871,9 +871,9 @@ const CicloDeEstudos: React.FC = () => {
             )}
 
             {cicloAtivo ? (
-                <div className="flex gap-6">
+                <div className="flex flex-col lg:flex-row gap-6">
                     {/* Sidebar Fixa com Todos os Ciclos */}
-                    <div className={`${sidebarOpen ? 'w-64' : 'w-12'} transition-all duration-300 flex-shrink-0`}>
+                    <div className={`${sidebarOpen ? 'w-full lg:w-64' : 'w-12'} transition-all duration-300 flex-shrink-0`}>
                         <div className="sticky top-6 bg-card rounded-xl border border-border shadow-sm p-4">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className={`font-bold text-foreground transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
@@ -914,7 +914,7 @@ const CicloDeEstudos: React.FC = () => {
 
                     <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm">
-                            <header className="p-4 border-b border-border flex items-center justify-between">
+                            <header className="p-4 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
                                 {isEditingCiclo ? (
                                     <div className="flex items-center gap-2">
                                         <input

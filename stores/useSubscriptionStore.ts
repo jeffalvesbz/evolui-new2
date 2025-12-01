@@ -138,27 +138,20 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    // FREE: 1 edital
-    if (!isActive && state.planType === 'free') {
-      return currentCount < 1;
-    }
+    if (state.planType === 'premium' && isActive) return true;
+    if (state.planType === 'pro' && isActive) return currentCount < 3;
 
-    // PRO: 3 editais
-    if (state.planType === 'pro' && isActive) {
-      return currentCount < 3;
-    }
-
-    // PREMIUM: ilimitado
-    return true;
+    return currentCount < 1;
   },
 
   getMaxEditais: () => {
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (!isActive && state.planType === 'free') return 1;
+    if (state.planType === 'premium' && isActive) return -1;
     if (state.planType === 'pro' && isActive) return 3;
-    return -1; // PREMIUM ou trial: ilimitado
+
+    return 1;
   },
 
   hasActiveSubscription: () => {
@@ -168,12 +161,16 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return false;
     }
 
+    // Se não tiver data de término, mas o plano não for free, assume ativo (ex: vitalício ou erro de sync)
     if (!state.subscriptionEndsAt) {
-      return false;
+      return true;
     }
 
     const now = new Date();
     const endsAt = new Date(state.subscriptionEndsAt);
+    // Adiciona uma tolerância de 1 dia para evitar bloqueios por fuso horário
+    endsAt.setDate(endsAt.getDate() + 1);
+
     return endsAt > now;
   },
 
@@ -193,54 +190,40 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    // FREE: 1 ciclo
-    if (!isActive && state.planType === 'free') {
-      return currentCount < 1;
-    }
+    if (state.planType === 'premium' && isActive) return true;
+    if (state.planType === 'pro' && isActive) return currentCount < 3;
 
-    // PRO: 3 ciclos
-    if (state.planType === 'pro' && isActive) {
-      return currentCount < 3;
-    }
-
-    // PREMIUM: ilimitado
-    return true;
+    return currentCount < 1;
   },
 
   getMaxCiclos: () => {
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (!isActive && state.planType === 'free') return 1;
+    if (state.planType === 'premium' && isActive) return -1;
     if (state.planType === 'pro' && isActive) return 3;
-    return -1; // PREMIUM ou trial: ilimitado
+
+    return 1;
   },
 
   canCorrectRedacao: (currentMonthCount: number) => {
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    // FREE: sem correções de IA
-    if (!isActive && state.planType === 'free') {
-      return false;
-    }
+    if (state.planType === 'premium' && isActive) return true;
+    if (state.planType === 'pro' && isActive) return currentMonthCount < 10;
 
-    // PRO: 10 correções por mês
-    if (state.planType === 'pro' && isActive) {
-      return currentMonthCount < 10;
-    }
-
-    // PREMIUM: ilimitado
-    return true;
+    return false;
   },
 
   getMaxRedacoesPerMonth: () => {
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (!isActive && state.planType === 'free') return 0; // FREE: sem IA
-    if (state.planType === 'pro' && isActive) return 10; // PRO: 10/mês
-    return -1; // PREMIUM: ilimitado
+    if (state.planType === 'premium' && isActive) return -1;
+    if (state.planType === 'pro' && isActive) return 10;
+
+    return 0;
   },
 
   canCreateFlashcard: (count = 1) => {

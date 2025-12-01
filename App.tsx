@@ -228,6 +228,11 @@ const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: stri
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>('dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    // Carregar estado do localStorage
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved === 'true';
+  });
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isKeyboardHelpOpen, setIsKeyboardHelpOpen] = useState(false);
   const editalAtivo = useEditalStore(state => state.editalAtivo);
@@ -322,6 +327,18 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Persistir estado da sidebar colapsada
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', isSidebarCollapsed.toString());
+  }, [isSidebarCollapsed]);
+
+  // Auto-expandir sidebar quando abrir em mobile
+  useEffect(() => {
+    if (isSidebarOpen && window.innerWidth < 1024) {
+      setIsSidebarCollapsed(false);
+    }
+  }, [isSidebarOpen]);
+
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
 
@@ -386,6 +403,8 @@ const App: React.FC = () => {
             setActiveView={setActiveView}
             isOpen={isSidebarOpen}
             onClose={() => setIsSidebarOpen(false)}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(prev => !prev)}
           />
 
           <div className="flex-1 flex flex-col min-w-0 relative">

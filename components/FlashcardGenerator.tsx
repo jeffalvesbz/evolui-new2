@@ -465,6 +465,9 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                                     <option value={5}>5 cards</option>
                                     <option value={10}>10 cards</option>
                                     <option value={15}>15 cards</option>
+                                    <option value={20}>20 cards</option>
+                                    <option value={30}>30 cards</option>
+                                    <option value={50}>50 cards</option>
                                 </select>
                             </div>
                             <div>
@@ -514,6 +517,9 @@ Exemplos de uso:
                                     <option value={5}>~5 cards</option>
                                     <option value={10}>~10 cards</option>
                                     <option value={15}>~15 cards</option>
+                                    <option value={20}>~20 cards</option>
+                                    <option value={30}>~30 cards</option>
+                                    <option value={50}>~50 cards</option>
                                 </select>
                             </div>
                             <div>

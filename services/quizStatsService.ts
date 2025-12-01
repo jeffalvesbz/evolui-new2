@@ -4,6 +4,10 @@ import { supabase } from './supabaseClient';
  * Conta quantas questões de quiz foram geradas hoje pelo usuário
  */
 export async function countQuizQuestionsToday(userId: string): Promise<number> {
+    if (!userId || userId.trim() === '') {
+        console.warn('countQuizQuestionsToday chamado com userId vazio, retornando 0');
+        return 0;
+    }
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);

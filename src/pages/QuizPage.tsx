@@ -36,6 +36,8 @@ const QuizPage: React.FC = () => {
     useEffect(() => {
         if (geracaoEmAndamento || isGenerating) {
             setQuizMode('generating');
+        } else if (quizSession?.completed) {
+            setQuizMode('result');
         } else if (quizSession) {
             setQuizMode('active');
         } else {
@@ -66,7 +68,8 @@ const QuizPage: React.FC = () => {
     };
 
     const handleQuizComplete = () => {
-        clearPersistedSession();
+        const { completeQuiz } = useQuizStore.getState();
+        completeQuiz();
         setQuizMode('result');
     };
 

@@ -1539,8 +1539,8 @@ export const gerarFlashcardsIA = async (
         throw new Error('O tema não pode estar vazio.');
     }
 
-    if (quantidade < 1 || quantidade > 20) {
-        throw new Error('A quantidade deve estar entre 1 e 20 flashcards.');
+    if (quantidade < 1 || quantidade > 50) {
+        throw new Error('A quantidade deve estar entre 1 e 50 flashcards.');
     }
 
     const prompt = `Você é um especialista em criar material de estudo eficaz.
@@ -1599,7 +1599,9 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
             .map((fc: any) => ({
                 pergunta: String(fc.pergunta).trim(),
                 resposta: String(fc.resposta).trim(),
-                tags: Array.isArray(fc.tags) ? fc.tags.slice(0, 3).map((t: any) => String(t).trim()) : []
+                tags: Array.isArray(fc.tags)
+                    ? [...fc.tags.slice(0, 3).map((t: any) => String(t).trim()), 'Gerado por IA']
+                    : ['Gerado por IA']
             }));
 
         if (validFlashcards.length === 0) {
@@ -1647,8 +1649,8 @@ export const gerarFlashcardsPorTexto = async (
         throw new Error('O texto deve ter pelo menos 50 caracteres para gerar flashcards relevantes.');
     }
 
-    if (quantidade < 1 || quantidade > 20) {
-        throw new Error('A quantidade deve estar entre 1 e 20 flashcards.');
+    if (quantidade < 1 || quantidade > 50) {
+        throw new Error('A quantidade deve estar entre 1 e 50 flashcards.');
     }
 
     // Limita o texto a 10000 caracteres para evitar problemas com tokens
@@ -1722,7 +1724,9 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
             .map((fc: any) => ({
                 pergunta: String(fc.pergunta).trim(),
                 resposta: String(fc.resposta).trim(),
-                tags: Array.isArray(fc.tags) ? fc.tags.slice(0, 3).map((t: any) => String(t).trim()) : []
+                tags: Array.isArray(fc.tags)
+                    ? [...fc.tags.slice(0, 3).map((t: any) => String(t).trim()), 'Gerado por IA']
+                    : ['Gerado por IA']
             }));
 
         if (validFlashcards.length === 0) {
@@ -2388,7 +2392,7 @@ export const getSessoes = async (studyPlanId: string): Promise<SessaoEstudo[]> =
 
     const { data, error } = await supabase
         .from('sessoes_estudo')
-        .select('*')
+        .select('*, questoes_certas, questoes_erradas, banca, is_cebraspe')
         .eq('study_plan_id', studyPlanId)
         .eq('user_id', userId)
         .order('data_estudo', { ascending: false });
@@ -2437,14 +2441,7 @@ export const createSessao = async (studyPlanId: string, itemData: Omit<SessaoEst
     }
 
     // Criar payload apenas com os campos necessários e no formato correto
-    const payload: {
-        user_id: string;
-        study_plan_id: string;
-        topico_id: string;
-        tempo_estudado: number;
-        data_estudo: string;
-        comentarios?: string | null;
-    } = {
+    const payload: any = {
         user_id: userId,
         study_plan_id: studyPlanId,
         topico_id: itemData.topico_id,
@@ -2456,6 +2453,12 @@ export const createSessao = async (studyPlanId: string, itemData: Omit<SessaoEst
     if (itemData.comentarios !== undefined && itemData.comentarios !== null) {
         payload.comentarios = itemData.comentarios;
     }
+
+    // Adicionar campos de questões se existirem
+    if (itemData.questoes_certas !== undefined) payload.questoes_certas = itemData.questoes_certas;
+    if (itemData.questoes_erradas !== undefined) payload.questoes_erradas = itemData.questoes_erradas;
+    if (itemData.banca !== undefined) payload.banca = itemData.banca;
+    if (itemData.is_cebraspe !== undefined) payload.is_cebraspe = itemData.is_cebraspe;
 
     const { data, error } = await supabase.from('sessoes_estudo').insert(payload as any).select('*').single();
     if (error) {
@@ -2507,6 +2510,10 @@ const mapDbToRedacao = (dbData: any): RedacaoCorrigida => {
 };
 
 export const getRedacoes = async (studyPlanId: string): Promise<RedacaoCorrigida[]> => {
+    if (!studyPlanId || studyPlanId.trim() === '') {
+        console.warn('getRedacoes chamado com studyPlanId vazio, retornando array vazio');
+        return [];
+    }
     const { data, error } = await supabase.from('redacoes_corrigidas').select('*').eq('study_plan_id', studyPlanId);
     if (error) throw error;
     return (data as any[]).map(mapDbToRedacao);
@@ -2545,11 +2552,13 @@ const mapSimuladoToDb = (simuladoData: Partial<Simulation>) => {
 };
 
 const mapDbToSimulado = (dbData: any): Simulation => {
-    // O banco retorna study_plan_id em snake_case, mas durationMinutes e isCebraspe em camelCase
-    const { study_plan_id, ...rest } = dbData;
+    // O banco pode retornar duration_minutes (snake) ou durationMinutes (camel) dependendo da query/view
+    const { study_plan_id, durationMinutes, duration_minutes, isCebraspe, is_cebraspe, ...rest } = dbData;
     return {
         ...rest,
         studyPlanId: study_plan_id,
+        duration_minutes: duration_minutes || durationMinutes || 0,
+        is_cebraspe: is_cebraspe !== undefined ? is_cebraspe : isCebraspe,
     } as Simulation;
 };
 
@@ -3233,20 +3242,41 @@ export const declineFriendRequest = async (friendshipId: string) => {
 
 
 export const countFlashcardsCreatedThisMonth = async (userId: string): Promise<number> => {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count, error } = await supabase
-        .from('flashcards')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', startOfMonth.toISOString());
+    try {
+        // Fetch all flashcards created this month
+        const { data, error } = await supabase
+            .from('flashcards')
+            .select('tags')
+            .eq('user_id', userId)
+            .gte('created_at', startOfMonth.toISOString());
 
-    if (error) {
-        console.error('Erro ao contar flashcards:', error);
+        if (error) {
+            console.error('Erro ao contar flashcards:', error);
+            return 0;
+        }
+
+        if (!data) return 0;
+
+        // Filter in memory to ensure we catch the tag regardless of DB column type nuances
+        const aiFlashcards = data.filter((fc: any) => {
+            if (!fc.tags) return false;
+            if (Array.isArray(fc.tags)) {
+                return fc.tags.includes('Gerado por IA');
+            }
+            // Fallback for string storage (e.g. JSON string or simple text)
+            if (typeof fc.tags === 'string') {
+                return fc.tags.includes('Gerado por IA');
+            }
+            return false;
+        });
+
+        return aiFlashcards.length;
+    } catch (error) {
+        console.error('Erro inesperado ao contar flashcards:', error);
         return 0;
     }
-
-    return count || 0;
 };

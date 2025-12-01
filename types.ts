@@ -34,6 +34,11 @@ export interface SessaoEstudo {
   data_estudo: string;
   comentarios?: string;
   studyPlanId: string;
+  questoes_certas?: number;
+  questoes_erradas?: number;
+  banca?: string;
+  is_cebraspe?: boolean;
+  created_at?: string;
 }
 
 export interface SessaoCiclo {
@@ -135,6 +140,7 @@ export interface QuizSession {
   questionStartTime: number; // Tempo de início da questão atual
   timerEnabled: boolean;
   timeLimit?: number; // em segundos por pergunta
+  completed?: boolean;
 }
 
 export interface QuizResult {

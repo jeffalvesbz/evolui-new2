@@ -13,7 +13,7 @@ export interface Plan {
 export const plans: Plan[] = [
     {
         name: 'Pro',
-        monthlyPrice: 29.00,
+        monthlyPrice: 20.93,
         yearlyPrice: 251.16,
         features: [
             '3 Editais e Planos',
@@ -28,7 +28,7 @@ export const plans: Plan[] = [
     },
     {
         name: 'Premium',
-        monthlyPrice: 49.90,
+        monthlyPrice: 34.93,
         yearlyPrice: 419.16,
         features: [
             'Tudo Ilimitado',

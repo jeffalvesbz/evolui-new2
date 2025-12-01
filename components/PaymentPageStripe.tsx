@@ -40,7 +40,7 @@ const faqData: FAQItem[] = [
 const comparisonData = [
     { feature: 'Editais e Planos', free: '1', pro: '3', premium: '∞' },
     { feature: 'Ciclos de Estudos', free: '1', pro: '3', premium: '∞' },
-    { feature: 'Correções IA/mês', free: '0', pro: '10', premium: '30' },
+    { feature: 'Correções IA/mês', free: '0', pro: '10', premium: '∞' },
     { feature: 'Flashcards/mês', free: '50', pro: '500', premium: '2000' },
     { feature: 'OCR Redação', free: '✗', pro: '✗', premium: '✓' },
     { feature: 'Suporte Prioritário', free: '✗', pro: '✗', premium: '✓' },

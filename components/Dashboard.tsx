@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, CartesianGrid, Tooltip, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfWeek, endOfWeek, isWithinInterval, eachDayOfInterval, format, isSameDay, startOfDay, isBefore } from 'date-fns';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   ClockIcon as Clock3,
   TargetIcon as Target,
@@ -116,8 +117,9 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 };
 
 const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }[] }> = ({ data }) => {
+  const isMobile = useIsMobile();
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
       <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
         <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
@@ -140,16 +142,17 @@ const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }
 
 const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }> = ({ data }) => {
   const COLORS = ['#8B5CF6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#ef4444'];
+  const isMobile = useIsMobile();
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
-          cy="50%"
+          cy={isMobile ? "40%" : "50%"}
           labelLine={false}
-          outerRadius={90}
-          innerRadius={60}
+          outerRadius={isMobile ? 70 : 90}
+          innerRadius={isMobile ? 50 : 60}
           fill="#8884d8"
           dataKey="value"
           paddingAngle={5}
@@ -159,7 +162,13 @@ const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }
           ))}
         </Pie>
         <Tooltip content={<CustomPieTooltip />} />
-        <Legend iconSize={10} layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }} />
+        <Legend
+          iconSize={10}
+          layout={isMobile ? 'horizontal' : 'vertical'}
+          verticalAlign={isMobile ? 'bottom' : 'middle'}
+          align={isMobile ? 'center' : 'right'}
+          wrapperStyle={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}
+        />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -542,7 +551,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   return (
     <div data-tutorial="dashboard-content" className="space-y-8">
       {/* Seção Principal - Header e Controles */}
-      <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+      <section className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
         <Card className="overflow-hidden">
           <CardHeader className="bg-gradient-to-br from-primary/10 via-background/0 to-background/0 p-6">
             <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
@@ -574,7 +583,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
               <button
                 onClick={abrirModalEstudoManual}
                 className="h-11 px-6 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-400 to-violet-500 text-white text-sm font-bold shadow-lg shadow-emerald-500/30 hover:opacity-90 transition-opacity flex-1 min-w-[160px]"
@@ -678,7 +687,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             <CardTitle className="text-xl mt-1">Acompanhamento de Progresso</CardTitle>
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
               <div className="space-y-4">
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between text-sm mb-2">
@@ -729,7 +738,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="rounded-lg border border-border bg-background/30 p-4 flex flex-col items-center justify-center">
                   <div className="flex items-center justify-center gap-1.5 mb-2">
                     <Flame className="h-4 w-4 text-orange-500" />
@@ -901,15 +910,15 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               topicosMaisEstudados.map((topico, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50"
                 >
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className="text-xs font-bold text-primary w-6 h-6 flex items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                       {index + 1}
                     </span>
-                    <p className="font-medium text-foreground text-sm truncate">{topico.nome}</p>
+                    <p className="font-medium text-foreground text-sm break-words">{topico.nome}</p>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto mt-1 sm:mt-0">
                     <p className="font-semibold text-foreground whitespace-nowrap">{topico.tempoFormatado}</p>
                   </div>
                 </div>
@@ -935,18 +944,18 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               recentStudies.map((study) => (
                 <div
                   key={study.id}
-                  className="flex items-center justify-between rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50 hover:shadow-md"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50 hover:shadow-md"
                 >
                   <div className="space-y-1">
                     {study.disciplinaNome && (
                       <p className="text-xs font-semibold text-primary uppercase tracking-wide">{study.disciplinaNome}</p>
                     )}
-                    <p className="font-medium text-foreground">{study.disciplina}</p>
+                    <p className="font-medium text-foreground break-words">{study.disciplina}</p>
                     <p className="text-xs text-muted-foreground">
                       {study.data ? new Date(study.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data não disponível'}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right w-full sm:w-auto mt-1 sm:mt-0">
                     <p className="font-medium text-foreground">{study.tempo}</p>
                     <p className="text-xs text-muted-foreground capitalize">{study.status}</p>
                   </div>

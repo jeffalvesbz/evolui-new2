@@ -37,6 +37,7 @@ interface QuizStore {
   getCurrentQuestion: () => QuizQuestion | null;
   isQuizComplete: () => boolean;
   endQuiz: () => QuizResult | null;
+  completeQuiz: () => void;
   clearPersistedSession: () => void;
 }
 
@@ -158,6 +159,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
         questionStartTime: now,
         timerEnabled,
         timeLimit: timerEnabled ? 60 : undefined, // 60 segundos por padrão
+        completed: false
       };
 
       // Incrementar contador de questões geradas
@@ -194,6 +196,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
       questionStartTime: now,
       timerEnabled,
       timeLimit: timerEnabled ? 60 : undefined,
+      completed: false
     };
 
     set({ session, isGenerating: false, generationProgress: 100, geracaoEmAndamento: null });
@@ -284,6 +287,18 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
       totalTime,
       averageTimePerQuestion,
     };
+  },
+
+  completeQuiz: () => {
+    const { session } = get();
+    if (!session) return;
+
+    set({
+      session: {
+        ...session,
+        completed: true
+      }
+    });
   },
 
   clearPersistedSession: () => {
