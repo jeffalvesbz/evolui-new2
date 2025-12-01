@@ -143,7 +143,7 @@ const DeckCard: React.FC<{
 
 const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => void; onStartQuiz: () => void; onViewSavedQuizzes: () => void }> = ({ onSelectDeck, onStartQuiz, onViewSavedQuizzes }) => {
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
-    const { flashcards, getDueFlashcards, fetchFlashcardsForTopics, loading, getAllTags, searchFlashcards, filterByTags, deleteAllFlashcards } = useFlashcardsStore();
+    const { flashcards, getDueFlashcards, fetchFlashcardsForTopics, loading, getAllTags, searchFlashcards, filterByTags, deleteAllFlashcards, loadFlashcardsContent } = useFlashcardsStore();
     const { openCriarFlashcardModal } = useModalStore();
     const { planType, flashcardsCreatedThisMonth, getMaxFlashcardsPerMonth } = useSubscriptionStore();
 
@@ -251,6 +251,37 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
 
     const availableTags = useMemo(() => getAllTags(), [flashcards, getAllTags]);
 
+    const handleDeckSelection = async (session: StudySession) => {
+        const cardsToLoad = session.deck.filter(c => !c._contentLoaded && !c.pergunta);
+
+        if (cardsToLoad.length > 0) {
+            const toastId = toast.loading("Carregando conteúdo dos flashcards...");
+            try {
+                const cardIds = cardsToLoad.map(c => c.id);
+                await loadFlashcardsContent(cardIds);
+                toast.dismiss(toastId);
+
+                // Obter cards atualizados da store
+                // Precisamos acessar o estado atualizado da store
+                // Como estamos dentro de um componente, podemos usar useFlashcardsStore.getState() se fosse fora, 
+                // mas aqui flashcards pode não ter atualizado ainda no render cycle.
+                // No entanto, loadFlashcardsContent é async e espera o set state.
+                // Vamos usar uma referência direta à store ou confiar que o hook atualizará?
+                // O hook vai atualizar, mas precisamos dos dados AGORA para passar para onSelectDeck.
+                // A melhor forma é pegar o estado mais recente da store diretamente.
+                const updatedStoreFlashcards = useFlashcardsStore.getState().flashcards;
+                const updatedDeck = session.deck.map(c => updatedStoreFlashcards.find(fc => fc.id === c.id) || c);
+
+                onSelectDeck({ ...session, deck: updatedDeck });
+            } catch (error) {
+                toast.dismiss(toastId);
+                toast.error("Erro ao carregar conteúdo. Tente novamente.");
+            }
+        } else {
+            onSelectDeck(session);
+        }
+    };
+
     if (loading && flashcards.length === 0) {
         return <div className="text-center py-20 text-muted-foreground">Carregando seus flashcards...</div>
     }
@@ -309,7 +340,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                     color="text-secondary"
                     onSelect={() => {
                         if (dueFlashcards.length > 0) {
-                            onSelectDeck({ deck: dueFlashcards, name: 'Revisão', isReviewSession: true });
+                            handleDeckSelection({ deck: dueFlashcards, name: 'Revisão', isReviewSession: true, totalCards: dueFlashcards.length });
                         } else {
                             toast("Nenhum card para revisar hoje! 🎉");
                         }
@@ -346,7 +377,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                                 onDeleteAll={handleDeleteAllForDisciplina}
                                 onSelect={() => {
                                     if (cardsInDeck.length > 0) {
-                                        onSelectDeck({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false });
+                                        handleDeckSelection({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false, totalCards: cardsInDeck.length });
                                     } else {
                                         toast(`Nenhum flashcard encontrado para ${disciplina.nome}.`);
                                     }

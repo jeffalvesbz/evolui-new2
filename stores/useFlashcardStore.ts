@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Flashcard, Disciplina } from '../types';
-import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as deleteFlashcardApi } from '../services/geminiService';
+import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as deleteFlashcardApi, getFlashcardsMetadata, getFlashcardsContent } from '../services/geminiService';
 import { toast } from '../components/Sonner';
 // FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
@@ -21,6 +21,7 @@ interface FlashcardStore {
   getFlashcardsByDisciplinaId: (disciplina: Disciplina, allFlashcards: Flashcard[]) => Flashcard[];
   getDueFlashcards: () => Flashcard[];
   removeFlashcardsByTopicIds: (topicIds: string[]) => void;
+  loadFlashcardsContent: (flashcardIds: string[]) => Promise<void>;
 
   // Novas funcionalidades
   undo: () => Promise<void>;
@@ -97,13 +98,13 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
     set({ loading: true });
     try {
-      const promises = idsToFetch.map(id => getFlashcards(id));
-      const newFlashcardsArrays = await Promise.all(promises);
-      const newFlashcards = newFlashcardsArrays.flat();
+      // Use metadata fetching instead of full content
+      const newFlashcards = await getFlashcardsMetadata(idsToFetch);
 
       set(state => {
         const existingIds = new Set(state.flashcards.map(fc => fc.id));
-        const uniqueNewFlashcards = newFlashcards.filter(fc => !existingIds.has(fc.id));
+        // Cast to Flashcard since we know we are handling partials internally
+        const uniqueNewFlashcards = newFlashcards.filter(fc => !existingIds.has(fc.id!)) as Flashcard[];
         return {
           flashcards: [...state.flashcards, ...uniqueNewFlashcards]
         };
@@ -111,6 +112,39 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to fetch flashcards for topics", error);
       toast.error("Erro ao carregar alguns flashcards.");
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  loadFlashcardsContent: async (flashcardIds: string[]) => {
+    if (!flashcardIds || flashcardIds.length === 0) return;
+
+    // Filter out cards that already have content loaded
+    const state = get();
+    const idsToFetch = flashcardIds.filter(id => {
+      const card = state.flashcards.find(fc => fc.id === id);
+      return card && !card._contentLoaded && card.pergunta === '';
+    });
+
+    if (idsToFetch.length === 0) return;
+
+    set({ loading: true });
+    try {
+      const fullFlashcards = await getFlashcardsContent(idsToFetch);
+
+      set(state => ({
+        flashcards: state.flashcards.map(fc => {
+          const fullCard = fullFlashcards.find(full => full.id === fc.id);
+          if (fullCard) {
+            return { ...fullCard, _contentLoaded: true };
+          }
+          return fc;
+        })
+      }));
+    } catch (error) {
+      console.error("Failed to load flashcard content:", error);
+      toast.error("Erro ao carregar conteúdo dos flashcards.");
     } finally {
       set({ loading: false });
     }

@@ -88,6 +88,7 @@ export interface Flashcard {
   dueDate: string; // ISO string date
   estilo?: EstiloFlashcard;
   tags?: string[]; // Tags para categorização e busca
+  _contentLoaded?: boolean; // Flag para indicar se o conteúdo completo foi carregado
 }
 
 // Tipos para sincronização de sessões de estudo

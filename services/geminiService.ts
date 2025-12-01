@@ -2918,6 +2918,47 @@ export const getFlashcards = async (topicId: string): Promise<Flashcard[]> => {
     if (error) throw error;
     return (data as any[]).map(mapDbToFlashcard);
 };
+
+export const getFlashcardsMetadata = async (topicIds: string[]): Promise<Partial<Flashcard>[]> => {
+    if (!topicIds || topicIds.length === 0) return [];
+
+    // Filtrar IDs vazios
+    const validIds = topicIds.filter(id => id && id.trim() !== '');
+    if (validIds.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from('flashcards')
+        .select('id, topico_id, due_date, interval, ease_factor, tags')
+        .in('topico_id', validIds);
+
+    if (error) throw error;
+
+    return (data as any[]).map(item => ({
+        id: item.id,
+        topico_id: item.topico_id,
+        dueDate: item.due_date,
+        interval: item.interval,
+        easeFactor: item.ease_factor,
+        tags: item.tags,
+        // Campos obrigatórios que virão vazios inicialmente
+        pergunta: '',
+        resposta: '',
+        _contentLoaded: false // Flag interna para indicar que precisa carregar conteúdo
+    } as unknown as Partial<Flashcard>));
+};
+
+export const getFlashcardsContent = async (flashcardIds: string[]): Promise<Flashcard[]> => {
+    if (!flashcardIds || flashcardIds.length === 0) return [];
+
+    const { data, error } = await supabase
+        .from('flashcards')
+        .select('*')
+        .in('id', flashcardIds);
+
+    if (error) throw error;
+
+    return (data as any[]).map(mapDbToFlashcard);
+};
 export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
     const userId = await getUserId();
     // Flashcards recém-criados devem ter interval = 0 (não estudados ainda)

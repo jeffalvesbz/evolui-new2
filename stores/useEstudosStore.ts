@@ -58,6 +58,7 @@ interface EstudosStore {
   pomodoroSettings: PomodoroSettings;
   trilhaConclusao: Record<string, boolean>; // Chave: "weekKey-diaId-topicId", valor: true se concluído
   semanaAtualKey: string; // Chave da semana atual
+  lastTickTimestamp: number | null; // Timestamp do último tick para cálculo de delta
 
   fetchSessoes: (studyPlanId: string) => Promise<void>;
 
@@ -111,6 +112,7 @@ export const useEstudosStore = create<EstudosStore>()(
         longBreak: 15 * 60,
         cyclesBeforeLongBreak: 4,
       },
+      lastTickTimestamp: null,
 
       // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
       fetchSessoes: async (studyPlanId: string) => {
@@ -140,7 +142,35 @@ export const useEstudosStore = create<EstudosStore>()(
             return {};
           }
 
-          const newElapsed = state.sessaoAtual.elapsedSeconds + 1;
+          const now = Date.now();
+          // Se não houver lastTickTimestamp (primeiro tick ou recuperação), usa o momento atual
+          // Isso evita saltos gigantes se o timer estava "parado" mas o intervalo rodou
+          const lastTick = state.lastTickTimestamp || now;
+
+          // Calcula o delta em segundos
+          const deltaSeconds = (now - lastTick) / 1000;
+
+          // Se o delta for muito grande (ex: > 1 dia) ou negativo, algo está errado, ignora
+          if (deltaSeconds < 0 || deltaSeconds > 86400) {
+            return { lastTickTimestamp: now };
+          }
+
+          // Adiciona o delta ao tempo decorrido
+          // Usamos Math.round para evitar problemas de precisão flutuante acumulada na exibição,
+          // mas mantemos a precisão no cálculo se quiséssemos. 
+          // Como o elapsedSeconds original era int, vamos manter a lógica de inteiros somando 1, 
+          // mas agora somamos o delta arredondado ou acumulamos frações se necessário.
+          // Para simplificar e manter compatibilidade: vamos somar o delta e arredondar o total.
+          // Mas espere, se somarmos delta (float) em elapsedSeconds (int), pode quebrar tipos se não for number.
+          // O tipo é number. Vamos somar o delta exato e arredondar apenas na exibição se precisar, 
+          // ou arredondar o delta agora.
+          // Melhor abordagem: Acumular o delta real.
+
+          // IMPORTANTE: O setInterval pode rodar mais rápido ou devagar. 
+          // Se rodar rápido (ex: 4ms), delta é 0.004.
+          // Se rodar devagar (background), delta é 10.
+
+          const newElapsed = state.sessaoAtual.elapsedSeconds + deltaSeconds;
 
           if (state.sessaoAtual.mode === 'pomodoro') {
             const { pomodoroSettings, sessaoAtual } = state;
@@ -151,6 +181,7 @@ export const useEstudosStore = create<EstudosStore>()(
               let { pomodoroStage, pomodoroCycle, workSecondsAccumulated } = sessaoAtual;
 
               if (pomodoroStage === 'work') {
+                // Adiciona o tempo total do estágio, não apenas o delta
                 workSecondsAccumulated += currentStageDuration;
                 pomodoroCycle++;
                 pomodoroStage = pomodoroCycle % pomodoroSettings.cyclesBeforeLongBreak === 0 ? 'long_break' : 'short_break';
@@ -165,12 +196,16 @@ export const useEstudosStore = create<EstudosStore>()(
                   pomodoroStage,
                   pomodoroCycle,
                   workSecondsAccumulated,
-                }
+                },
+                lastTickTimestamp: now
               };
             }
           }
 
-          return { sessaoAtual: { ...state.sessaoAtual, elapsedSeconds: newElapsed } };
+          return {
+            sessaoAtual: { ...state.sessaoAtual, elapsedSeconds: newElapsed },
+            lastTickTimestamp: now
+          };
         });
       },
 
@@ -193,6 +228,7 @@ export const useEstudosStore = create<EstudosStore>()(
             origemTrilha: options?.origemTrilha ?? false,
           },
           timerInterval: interval,
+          lastTickTimestamp: Date.now(),
         });
         useUiStore.getState().closeSaveModal();
       },
@@ -214,6 +250,7 @@ export const useEstudosStore = create<EstudosStore>()(
             origemTrilha: options?.origemTrilha ?? false
           },
           timerInterval: null,
+          lastTickTimestamp: null,
         });
 
         // Aciona imediatamente o modal de salvamento
@@ -239,6 +276,7 @@ export const useEstudosStore = create<EstudosStore>()(
             isConclusaoRapida: true, // Marca a sessão como manual
           },
           timerInterval: null,
+          lastTickTimestamp: null,
         });
 
         // Aciona imediatamente o modal de salvamento
@@ -251,7 +289,8 @@ export const useEstudosStore = create<EstudosStore>()(
           if (state.sessaoAtual) {
             return {
               sessaoAtual: { ...state.sessaoAtual, status: 'paused' },
-              timerInterval: null
+              timerInterval: null,
+              lastTickTimestamp: null
             };
           }
           return {};
@@ -264,7 +303,8 @@ export const useEstudosStore = create<EstudosStore>()(
           const interval = window.setInterval(_tick, 1000);
           set({
             sessaoAtual: { ...sessaoAtual, status: 'running' },
-            timerInterval: interval
+            timerInterval: interval,
+            lastTickTimestamp: Date.now()
           });
         }
       },
@@ -370,7 +410,7 @@ export const useEstudosStore = create<EstudosStore>()(
       descartarSessao: () => {
         set(state => {
           if (state.timerInterval) clearInterval(state.timerInterval);
-          return { sessaoAtual: null, timerInterval: null };
+          return { sessaoAtual: null, timerInterval: null, lastTickTimestamp: null };
         });
         useUiStore.getState().closeSaveModal();
       },
