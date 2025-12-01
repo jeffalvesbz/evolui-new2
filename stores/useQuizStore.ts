@@ -14,6 +14,7 @@ interface GeracaoEmAndamento {
   quizMode: 'standard' | 'true_false';
   disciplineName?: string;
   questionCount: number;
+  difficulty: 'Fácil' | 'Médio' | 'Difícil';
   dataInicio: string;
 }
 
@@ -28,7 +29,8 @@ interface QuizStore {
     quizMode: 'standard' | 'true_false',
     disciplineName: string,
     questionCount: number,
-    topicos?: Array<{ id: string; titulo: string }>
+    topicos?: Array<{ id: string; titulo: string }>,
+    difficulty?: 'Fácil' | 'Médio' | 'Difícil'
   ) => Promise<void>;
   loadSavedQuiz: (quiz: Quiz, timerEnabled?: boolean) => void;
   resetQuiz: () => void;
@@ -62,7 +64,8 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
     quizMode: 'standard' | 'true_false' = 'standard',
     disciplineName: string,
     questionCount: number = 5,
-    topicos?: Array<{ id: string; titulo: string }>
+    topicos?: Array<{ id: string; titulo: string }>,
+    difficulty: 'Fácil' | 'Médio' | 'Difícil' = 'Médio'
   ) => {
     // Verificar se já há uma geração em andamento
     if (get().geracaoEmAndamento) {
@@ -96,6 +99,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
         quizMode,
         disciplineName,
         questionCount,
+        difficulty,
         dataInicio: new Date().toISOString()
       }
     });
@@ -109,7 +113,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
 
       // Gerar questões em lote
       const batchQuestions = await import('../services/geminiService').then(m =>
-        m.gerarBatchQuiz(disciplineName, quizMode, questionCount, banca, topicos)
+        m.gerarBatchQuiz(disciplineName, quizMode, questionCount, banca, topicos, difficulty)
       );
 
       const questions: QuizQuestion[] = batchQuestions.map((q, index) => ({

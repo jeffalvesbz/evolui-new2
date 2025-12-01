@@ -1426,12 +1426,16 @@ FORMATO DE SAÍDA (JSON):
 /**
  * Gera um lote de questões de quiz de uma só vez
  */
+/**
+ * Gera um lote de questões de quiz de uma só vez
+ */
 export const gerarBatchQuiz = async (
     disciplina: string,
     mode: 'standard' | 'true_false',
     questionCount: number,
     banca?: string,
-    topicos?: Array<{ id: string; titulo: string }>
+    topicos?: Array<{ id: string; titulo: string }>,
+    difficulty: 'Fácil' | 'Médio' | 'Difícil' = 'Médio'
 ): Promise<Array<{ question: string; options: string[]; correctAnswer: string; explanation: string }>> => {
     if (!ai || !apiKey) {
         throw new Error('API Key do Gemini não configurada.');
@@ -1459,13 +1463,17 @@ TÓPICOS SELECIONADOS: ${titulosTopicos}
     
 TAREFA: Crie ${questionCount} questões de concursos públicos sobre a disciplina: "${disciplina}".
 MODO: ${estilo}
+NÍVEL DE DIFICULDADE: ${difficulty}
 ${topicosStr}
 ${banca ? `BANCA: ${banca}` : ''}
 
 INSTRUÇÕES CRÍTICAS DE ESTILO:
 1. SEJA DIRETO E SUSCINTO: Enunciados curtos e objetivos. Sem textos longos ou enrolação.
 2. FOCO EM VELOCIDADE: O aluno deve conseguir ler e responder rápido.
-3. DIFICULDADE EQUILIBRADA: Questões desafiadoras mas claras.
+3. DIFICULDADE (${difficulty.toUpperCase()}):
+   ${difficulty === 'Fácil' ? '- Questões diretas, cobrando conceitos fundamentais e definições básicas.\n   - Evite pegadinhas complexas.\n   - Alternativas incorretas devem ser claramente erradas.' : ''}
+   ${difficulty === 'Médio' ? '- Questões que exigem compreensão e aplicação dos conceitos.\n   - Pode incluir casos práticos simples.\n   - Alternativas incorretas devem ser plausíveis.' : ''}
+   ${difficulty === 'Difícil' ? '- Questões complexas, exigindo análise crítica, jurisprudência ou detalhes técnicos.\n   - Use casos práticos mais elaborados ou exceções à regra.\n   - Alternativas incorretas devem ser muito próximas da correta (distratores fortes).' : ''}
 4. ${mode === 'true_false' ? 'Para Certo/Errado: Gere afirmações diretas.' : 'Para Múltipla Escolha: Gere enunciados curtos e 4 alternativas curtas.'}
 
 FORMATO DE SAÍDA (JSON ARRAY):

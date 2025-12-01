@@ -90,6 +90,7 @@ interface EstudosStore {
   fetchTrilhas: (studyPlanId: string) => Promise<void>;
   loadTrilhaSemanal: (studyPlanId: string, weekKey?: string) => Promise<void>;
   saveTrilhasToDb: () => Promise<void>;
+  syncTimer: () => void;
   _tick: () => void;
 }
 
@@ -674,17 +675,44 @@ export const useEstudosStore = create<EstudosStore>()(
             toast.error("Erro ao salvar trilha no banco de dados.");
           }
         }
+      }
+    },
+      syncTimer: () => {
+        const state = get();
+        if (state.sessaoAtual?.status === 'running') {
+          const now = Date.now();
+          const lastTick = state.lastTickTimestamp || now;
+          const deltaSeconds = (now - lastTick) / 1000;
+
+          // Se o delta for válido (não negativo e não absurdo), atualiza
+          if (deltaSeconds > 0 && deltaSeconds < 86400) {
+            // Reutiliza a lógica do _tick para processar o tempo
+            // Mas precisamos forçar a atualização do lastTickTimestamp e elapsed
+            // Vamos chamar o _tick? O _tick usa o estado atual.
+            // Se chamarmos _tick, ele vai calcular o delta baseado no lastTickTimestamp atual.
+            // Então basta garantir que o intervalo esteja rodando.
+          }
+
+          // Se não tiver intervalo rodando (ex: reload de página), inicia
+          if (!state.timerInterval) {
+            const interval = window.setInterval(state._tick, 1000);
+            set({ timerInterval: interval });
+            // Força um tick imediato para atualizar o tempo
+            state._tick();
+          }
+        }
       },
     }),
-    {
-      name: 'evolui-estudos-store',
-      storage: createJSONStorage(() => localStorage),
-      // Persistir apenas trilhasPorSemana e trilhaConclusao no localStorage como fallback
-      // O banco de dados é a fonte principal
+{
+  name: 'evolui-estudos-store',
+    storage: createJSONStorage(() => localStorage),
+      // Persistir sessaoAtual e lastTickTimestamp para sobreviver a reloads
       partialize: (state) => ({
         trilhasPorSemana: state.trilhasPorSemana,
         trilhaConclusao: state.trilhaConclusao,
         semanaAtualKey: state.semanaAtualKey,
+        sessaoAtual: state.sessaoAtual,
+        lastTickTimestamp: state.lastTickTimestamp,
       }),
     }
   )

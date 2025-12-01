@@ -16,6 +16,7 @@ export interface QuizConfig {
     disciplinaId: string | null; // null = todas as disciplinas
     topicos: Array<{ id: string; titulo: string }>; // Tópicos selecionados com títulos (vazio = todos os tópicos da disciplina)
     mode: 'standard' | 'true_false';
+    difficulty: 'Fácil' | 'Médio' | 'Difícil';
 }
 
 export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
@@ -27,6 +28,7 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
     const [selectedDisciplina, setSelectedDisciplina] = useState<string | null>(null);
     const [selectedTopicos, setSelectedTopicos] = useState<Set<string>>(new Set());
     const [mode, setMode] = useState<'standard' | 'true_false'>('standard');
+    const [difficulty, setDifficulty] = useState<'Fácil' | 'Médio' | 'Difícil'>('Médio');
 
     // Dados de assinatura
     const {
@@ -120,7 +122,8 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
             questionCount,
             disciplinaId: selectedDisciplina,
             topicos: topicosCompletos,
-            mode
+            mode,
+            difficulty
         });
     };
 
@@ -156,48 +159,69 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-6 space-y-8">
-                        {/* Modo de Quiz */}
-                        <section>
-                            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <BrainIcon className="w-4 h-4 text-primary" />
-                                Modo de Estudo
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button
-                                    onClick={() => setMode('standard')}
-                                    className={`relative p-4 rounded-xl border-2 text-left transition-all hover:shadow-md ${mode === 'standard'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-border bg-card hover:border-primary/50'
-                                        }`}
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'standard' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                            <LayersIcon className="w-5 h-5" />
+                        {/* Modo de Quiz e Dificuldade */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <section>
+                                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                    <BrainIcon className="w-4 h-4 text-primary" />
+                                    Modo de Estudo
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => setMode('standard')}
+                                        className={`relative p-3 rounded-xl border-2 text-left transition-all hover:shadow-md ${mode === 'standard'
+                                            ? 'border-primary bg-primary/5'
+                                            : 'border-border bg-card hover:border-primary/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${mode === 'standard' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                <LayersIcon className="w-4 h-4" />
+                                            </div>
+                                            {mode === 'standard' && <CheckIcon className="w-4 h-4 text-primary" />}
                                         </div>
-                                        {mode === 'standard' && <CheckIcon className="w-5 h-5 text-primary" />}
-                                    </div>
-                                    <div className="font-semibold text-foreground">Múltipla Escolha</div>
-                                    <div className="text-xs text-muted-foreground mt-1">Questões com 4 ou 5 alternativas para treinar.</div>
-                                </button>
+                                        <div className="font-semibold text-sm text-foreground">Múltipla Escolha</div>
+                                    </button>
 
-                                <button
-                                    onClick={() => setMode('true_false')}
-                                    className={`relative p-4 rounded-xl border-2 text-left transition-all hover:shadow-md ${mode === 'true_false'
-                                        ? 'border-primary bg-primary/5'
-                                        : 'border-border bg-card hover:border-primary/50'
-                                        }`}
-                                >
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${mode === 'true_false' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                            <CheckIcon className="w-5 h-5" />
+                                    <button
+                                        onClick={() => setMode('true_false')}
+                                        className={`relative p-3 rounded-xl border-2 text-left transition-all hover:shadow-md ${mode === 'true_false'
+                                            ? 'border-primary bg-primary/5'
+                                            : 'border-border bg-card hover:border-primary/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-start justify-between mb-2">
+                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${mode === 'true_false' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                                                <CheckIcon className="w-4 h-4" />
+                                            </div>
+                                            {mode === 'true_false' && <CheckIcon className="w-4 h-4 text-primary" />}
                                         </div>
-                                        {mode === 'true_false' && <CheckIcon className="w-5 h-5 text-primary" />}
-                                    </div>
-                                    <div className="font-semibold text-foreground">Certo / Errado</div>
-                                    <div className="text-xs text-muted-foreground mt-1">Julgue os itens como verdadeiros ou falsos.</div>
-                                </button>
-                            </div>
-                        </section>
+                                        <div className="font-semibold text-sm text-foreground">Certo / Errado</div>
+                                    </button>
+                                </div>
+                            </section>
+
+                            <section>
+                                <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                    <TrophyIcon className="w-4 h-4 text-primary" />
+                                    Nível de Dificuldade
+                                </h3>
+                                <div className="flex p-1 bg-muted rounded-lg">
+                                    {(['Fácil', 'Médio', 'Difícil'] as const).map((level) => (
+                                        <button
+                                            key={level}
+                                            onClick={() => setDifficulty(level)}
+                                            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${difficulty === level
+                                                ? 'bg-background text-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                                }`}
+                                        >
+                                            {level}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
 
                         {/* Configurações Gerais */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -380,3 +404,4 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
         </AnimatePresence>
     );
 };
+
