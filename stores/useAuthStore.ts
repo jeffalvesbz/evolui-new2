@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   isAuthenticated: false,
   loading: false,
-  
+
   login: async (email, password) => {
     set({ loading: true });
     try {
@@ -37,28 +37,28 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ loading: false });
       throw error;
     } finally {
-        set({ loading: false });
+      set({ loading: false });
     }
   },
 
   signup: async (email, password, name) => {
     set({ loading: true });
     try {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              name: name,
-            },
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
           },
-        });
-        if (error) throw error;
+        },
+      });
+      if (error) throw error;
     } catch (error) {
-        console.error("Signup failed:", error);
-        throw error;
+      console.error("Signup failed:", error);
+      throw error;
     } finally {
-        set({ loading: false });
+      set({ loading: false });
     }
   },
 
@@ -68,7 +68,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}`,
+          redirectTo: import.meta.env.VITE_APP_URL || window.location.origin,
         },
       });
       if (error) throw error;
@@ -83,7 +83,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true });
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/reset-password`,
       });
       if (error) throw error;
     } catch (error) {
@@ -99,23 +99,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     await supabase.auth.signOut();
     set({ user: null, session: null, isAuthenticated: false });
   },
-  
+
   checkAuth: () => {
     supabase.auth.onAuthStateChange((_event, session) => {
-        const user = session?.user;
-        if (user) {
-            set({ 
-                user: {
-                    id: user.id,
-                    name: user.user_metadata.name || 'Usuário',
-                    email: user.email || ''
-                },
-                session, 
-                isAuthenticated: true 
-            });
-        } else {
-            set({ user: null, session: null, isAuthenticated: false });
-        }
+      const user = session?.user;
+      if (user) {
+        set({
+          user: {
+            id: user.id,
+            name: user.user_metadata.name || 'Usuário',
+            email: user.email || ''
+          },
+          session,
+          isAuthenticated: true
+        });
+      } else {
+        set({ user: null, session: null, isAuthenticated: false });
+      }
     });
   },
 }));

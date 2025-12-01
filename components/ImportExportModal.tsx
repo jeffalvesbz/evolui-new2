@@ -201,7 +201,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
                         )}
 
                         <p className="text-xs text-muted-foreground mt-2">
-                            💡 Aceita separadores , ou ; e arquivos sem cabeçalho (ordem: pergunta, resposta, tags)
+                            💡 <strong>CSV:</strong> aceita separadores , ou ; com/sem cabeçalho (pergunta,resposta,tags)<br />
+                            💡 <strong>TXT:</strong> uma pergunta por linha separada por | ou tab (Pergunta|Resposta)
                         </p>
                     </div>
                 </div>

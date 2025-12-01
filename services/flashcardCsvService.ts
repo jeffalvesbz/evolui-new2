@@ -45,6 +45,26 @@ export const downloadCSV = (csv: string, filename: string = 'flashcards.csv') =>
 };
 
 /**
+ * Detecta o formato do arquivo (CSV ou TXT)
+ */
+function detectFileFormat(content: string): 'csv' | 'txt' {
+    const firstLine = content.trim().split('\n')[0];
+
+    // Se contém pipe ou tab, provavelmente é TXT
+    if (firstLine.includes('|') || firstLine.includes('\t')) {
+        return 'txt';
+    }
+
+    // Se contém vírgula ou ponto e vírgula, provavelmente é CSV
+    if (firstLine.includes(',') || firstLine.includes(';')) {
+        return 'csv';
+    }
+
+    // Default para TXT se não detectar
+    return 'txt';
+}
+
+/**
  * Detecta o delimitador mais provável (vírgula ou ponto e vírgula)
  */
 function detectDelimiter(line: string): string {
@@ -54,10 +74,75 @@ function detectDelimiter(line: string): string {
 }
 
 /**
- * Importa flashcards de arquivo CSV
+ * Importa flashcards de arquivo TXT
+ * Formato esperado: pergunta|resposta ou pergunta\tresposta (uma por linha)
  */
-export const importFlashcardsFromCSV = (csvContent: string): CsvFlashcard[] => {
-    const lines = csvContent.trim().split('\n').filter(line => line.trim());
+export const importFlashcardsFromTXT = (txtContent: string): CsvFlashcard[] => {
+    const lines = txtContent.trim().split('\n').filter(line => line.trim());
+
+    if (lines.length < 1) {
+        throw new Error('Arquivo TXT vazio ou inválido');
+    }
+
+    const flashcards: CsvFlashcard[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        // Detectar separador (pipe ou tab)
+        let parts: string[];
+        if (line.includes('|')) {
+            parts = line.split('|');
+        } else if (line.includes('\t')) {
+            parts = line.split('\t');
+        } else {
+            console.warn(`Linha ${i + 1} ignorada: formato inválido (use | ou tab como separador)`);
+            continue;
+        }
+
+        if (parts.length < 2) {
+            console.warn(`Linha ${i + 1} ignorada: número de campos insuficiente`);
+            continue;
+        }
+
+        const pergunta = parts[0]?.trim() || '';
+        const resposta = parts[1]?.trim() || '';
+        const tags = parts[2]?.trim() || '';
+        const topico_id = parts[3]?.trim() || '';
+
+        // Validar campos obrigatórios
+        if (!pergunta || !resposta) {
+            console.warn(`Linha ${i + 1} ignorada: pergunta ou resposta vazia`);
+            continue;
+        }
+
+        flashcards.push({
+            pergunta,
+            resposta,
+            tags,
+            topico_id,
+        });
+    }
+
+    if (flashcards.length === 0) {
+        throw new Error('Nenhum flashcard válido encontrado no arquivo TXT');
+    }
+
+    return flashcards;
+};
+
+/**
+ * Importa flashcards de arquivo CSV ou TXT (auto-detecta formato)
+ */
+export const importFlashcardsFromCSV = (content: string): CsvFlashcard[] => {
+    const format = detectFileFormat(content);
+
+    if (format === 'txt') {
+        return importFlashcardsFromTXT(content);
+    }
+
+    // Processar como CSV
+    const lines = content.trim().split('\n').filter(line => line.trim());
 
     if (lines.length < 1) {
         throw new Error('CSV vazio ou inválido');
@@ -169,16 +254,31 @@ function parseCsvLine(line: string, delimiter: string = ','): string[] {
 }
 
 /**
- * Valida formato do CSV antes de importar
+ * Valida formato do arquivo (CSV ou TXT) antes de importar
  */
-export const validateCsvFormat = (csvContent: string): { valid: boolean; error?: string } => {
+export const validateCsvFormat = (content: string): { valid: boolean; error?: string } => {
     try {
-        const lines = csvContent.trim().split('\n').filter(l => l.trim());
+        const lines = content.trim().split('\n').filter(l => l.trim());
 
         if (lines.length < 1) {
             return { valid: false, error: 'O arquivo está vazio' };
         }
 
+        const format = detectFileFormat(content);
+
+        if (format === 'txt') {
+            // Validar formato TXT
+            const firstLine = lines[0];
+            if (!firstLine.includes('|') && !firstLine.includes('\t')) {
+                return {
+                    valid: false,
+                    error: 'Formato TXT inválido. Use | ou tab para separar pergunta e resposta. Exemplo: "Pergunta|Resposta"'
+                };
+            }
+            return { valid: true };
+        }
+
+        // Validar formato CSV
         const delimiter = detectDelimiter(lines[0]);
         const firstLineValues = parseCsvLine(lines[0], delimiter);
 
@@ -189,7 +289,7 @@ export const validateCsvFormat = (csvContent: string): { valid: boolean; error?:
         if (!hasHeaders && firstLineValues.length < 2) {
             return {
                 valid: false,
-                error: 'Formato inválido. O arquivo deve ter cabeçalhos "pergunta,resposta" OU pelo menos 2 colunas de dados.'
+                error: 'Formato CSV inválido. O arquivo deve ter cabeçalhos "pergunta,resposta" OU pelo menos 2 colunas de dados.'
             };
         }
 
@@ -198,3 +298,4 @@ export const validateCsvFormat = (csvContent: string): { valid: boolean; error?:
         return { valid: false, error: error.message };
     }
 };
+
