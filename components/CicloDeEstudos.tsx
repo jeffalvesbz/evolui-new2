@@ -807,6 +807,38 @@ const CicloDeEstudos: React.FC = () => {
                 </button>
             </header>
 
+            {/* Seletor de Ciclos (Topo) */}
+            {cicloAtivo && (
+                <div className="flex items-center gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {ciclos.map(ciclo => (
+                        <button
+                            key={ciclo.id}
+                            onClick={() => setCicloAtivoId(ciclo.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all whitespace-nowrap ${cicloAtivoId === ciclo.id
+                                ? 'bg-primary/10 border-primary text-primary font-bold'
+                                : 'bg-card border-border text-muted-foreground hover:bg-muted hover:border-primary/50'
+                                }`}
+                        >
+                            <span className="text-sm">{ciclo.nome}</span>
+                            {cicloAtivoId === ciclo.id && (
+                                <CheckCircle2Icon className="w-4 h-4" />
+                            )}
+                        </button>
+                    ))}
+                    <button
+                        onClick={openCriarCicloModal}
+                        disabled={!podeCriarCiclo}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full border border-dashed transition-all whitespace-nowrap ${podeCriarCiclo
+                            ? 'border-muted-foreground/50 text-muted-foreground hover:border-primary hover:text-primary'
+                            : 'border-muted/50 text-muted/50 cursor-not-allowed'
+                            }`}
+                    >
+                        <PlusIcon className="w-4 h-4" />
+                        <span className="text-sm">Novo Ciclo</span>
+                    </button>
+                </div>
+            )}
+
             {/* CTA Fixo da Próxima Sessão */}
             {cicloAtivo && proximaSessao && (
                 <div className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-4 shadow-lg">
@@ -871,49 +903,10 @@ const CicloDeEstudos: React.FC = () => {
             )}
 
             {cicloAtivo ? (
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Sidebar Fixa com Todos os Ciclos */}
-                    <div className={`${sidebarOpen ? 'w-full lg:w-64' : 'w-12'} transition-all duration-300 flex-shrink-0`}>
-                        <div className="sticky top-6 bg-card rounded-xl border border-border shadow-sm p-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className={`font-bold text-foreground transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
-                                    Ciclos
-                                </h3>
-                                <button
-                                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                                    aria-label={sidebarOpen ? "Ocultar sidebar" : "Mostrar sidebar"}
-                                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    {sidebarOpen ? <XIcon className="w-4 h-4" /> : <RepeatIcon className="w-4 h-4" />}
-                                </button>
-                            </div>
-                            {sidebarOpen && (
-                                <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-                                    {ciclos.map(ciclo => (
-                                        <button
-                                            key={ciclo.id}
-                                            onClick={() => setCicloAtivoId(ciclo.id)}
-                                            aria-label={`Selecionar ciclo ${ciclo.nome}`}
-                                            className={`w-full text-left p-3 rounded-lg border transition-all ${cicloAtivoId === ciclo.id
-                                                ? 'bg-primary/10 border-primary text-foreground font-semibold'
-                                                : 'bg-background border-border text-muted-foreground hover:bg-muted hover:border-primary/50'
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm truncate">{ciclo.nome}</span>
-                                                {cicloAtivoId === ciclo.id && (
-                                                    <CheckCircle2Icon className="w-4 h-4 text-primary flex-shrink-0 ml-2" />
-                                                )}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm">
+                <div className="flex flex-col gap-6">
+                    {/* Conteúdo Principal */}
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-2 bg-card rounded-xl border border-border shadow-sm">
                             <header className="p-4 border-b border-border flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0">
                                 {isEditingCiclo ? (
                                     <div className="flex items-center gap-2">
