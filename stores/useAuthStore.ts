@@ -65,15 +65,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   signInWithOAuth: async (provider: 'google' | 'github') => {
     set({ loading: true });
     try {
-      const redirectUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-
-      // Debug em produção (alert não é removido pelo build)
-      alert(`🔍 Debug OAuth:\nVITE_APP_URL: ${import.meta.env.VITE_APP_URL}\nwindow.location.origin: ${window.location.origin}\nRedirect URL: ${redirectUrl}`);
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: import.meta.env.VITE_APP_URL || window.location.origin,
         },
       });
       if (error) throw error;
