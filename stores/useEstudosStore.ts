@@ -70,7 +70,7 @@ interface EstudosStore {
   pausarSessao: () => void;
   retomarSessao: () => void;
   encerrarSessaoParaSalvar: () => void;
-  salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id' | 'studyPlanId'> & { topico_id: string }, tempoEmSegundos?: number) => Promise<void>;
+  salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id' | 'studyPlanId'> & { topico_id: string, data_estudo?: string }, tempoEmSegundos?: number) => Promise<void>;
   descartarSessao: () => void;
   alternarModoTimer: () => void;
   updatePomodoroSettings: (settings: Partial<PomodoroSettings>) => void;
@@ -382,17 +382,22 @@ export const useEstudosStore = create<EstudosStore>()(
         }
 
         try {
-          // Obter data local no formato YYYY-MM-DD (não UTC)
-          const hoje = new Date();
-          const ano = hoje.getFullYear();
-          const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-          const dia = String(hoje.getDate()).padStart(2, '0');
-          const dataLocal = `${ano}-${mes}-${dia}`;
+          // Se a data foi fornecida, usa ela. Caso contrário, usa a data atual local.
+          let dataFinal = detalhes.data_estudo;
+
+          if (!dataFinal) {
+            // Obter data local no formato YYYY-MM-DD (não UTC)
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            dataFinal = `${ano}-${mes}-${dia}`;
+          }
 
           await addSessao({
             ...detalhesComCiclo,
             tempo_estudado: Math.round(tempoEstudado),
-            data_estudo: dataLocal,
+            data_estudo: dataFinal,
           });
 
           // Recarregar sessões para atualizar o progresso do ciclo e histórico
@@ -675,37 +680,27 @@ export const useEstudosStore = create<EstudosStore>()(
             toast.error("Erro ao salvar trilha no banco de dados.");
           }
         }
-      }
-    },
+      },
       syncTimer: () => {
         const state = get();
         if (state.sessaoAtual?.status === 'running') {
           const now = Date.now();
-          const lastTick = state.lastTickTimestamp || now;
-          const deltaSeconds = (now - lastTick) / 1000;
-
-          // Se o delta for válido (não negativo e não absurdo), atualiza
-          if (deltaSeconds > 0 && deltaSeconds < 86400) {
-            // Reutiliza a lógica do _tick para processar o tempo
-            // Mas precisamos forçar a atualização do lastTickTimestamp e elapsed
-            // Vamos chamar o _tick? O _tick usa o estado atual.
-            // Se chamarmos _tick, ele vai calcular o delta baseado no lastTickTimestamp atual.
-            // Então basta garantir que o intervalo esteja rodando.
-          }
-
-          // Se não tiver intervalo rodando (ex: reload de página), inicia
+          // Se não tiver intervalo rodando (ex: reload de página ou retorno de background), inicia
           if (!state.timerInterval) {
             const interval = window.setInterval(state._tick, 1000);
             set({ timerInterval: interval });
             // Força um tick imediato para atualizar o tempo
             state._tick();
+          } else {
+            // Se já estiver rodando, força um tick para garantir atualização visual imediata
+            state._tick();
           }
         }
       },
     }),
-{
-  name: 'evolui-estudos-store',
-    storage: createJSONStorage(() => localStorage),
+    {
+      name: 'evolui-estudos-store',
+      storage: createJSONStorage(() => localStorage),
       // Persistir sessaoAtual e lastTickTimestamp para sobreviver a reloads
       partialize: (state) => ({
         trilhasPorSemana: state.trilhasPorSemana,

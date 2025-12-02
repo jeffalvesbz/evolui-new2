@@ -89,6 +89,23 @@ const CronometroInteligente: React.FC = () => {
         }
     }, [sessaoAtual?.pomodoroStage, sessaoAtual?.pomodoroCycle, sessaoAtual?.mode]);
 
+    // Sync timer when app becomes visible (fixes background throttling issues on mobile)
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                useEstudosStore.getState().syncTimer();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleVisibilityChange);
+        };
+    }, []);
+
     const { displayTime, progress, pomodoroStatusText } = useMemo(() => {
         if (!sessaoAtual) return { displayTime: '00:00:00', progress: 0, pomodoroStatusText: '' };
 

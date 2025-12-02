@@ -25,6 +25,7 @@ interface SalvarSessaoFormData {
     questoesErradas?: number;
     banca?: string;
     isCebraspe?: boolean;
+    dataEstudo?: string;
 }
 
 const SalvarSessaoModal: React.FC = () => {
@@ -63,6 +64,7 @@ const SalvarSessaoModal: React.FC = () => {
             questoesErradas: 0,
             banca: '',
             isCebraspe: false,
+            dataEstudo: format(new Date(), 'yyyy-MM-dd'),
         },
     });
 
@@ -112,6 +114,7 @@ const SalvarSessaoModal: React.FC = () => {
                 questoesErradas: 0,
                 banca: '',
                 isCebraspe: false,
+                dataEstudo: format(new Date(), 'yyyy-MM-dd'),
             });
 
             // Resetar intervalos para os padrão quando o modal abrir
@@ -183,6 +186,7 @@ const SalvarSessaoModal: React.FC = () => {
             questoes_erradas: (data.categoria === 'Questões' || data.categoria === 'Simulado') ? Number(data.questoesErradas) : undefined,
             banca: (data.categoria === 'Questões' || data.categoria === 'Simulado') ? data.banca : undefined,
             is_cebraspe: (data.categoria === 'Questões' || data.categoria === 'Simulado') ? data.isCebraspe : undefined,
+            data_estudo: data.dataEstudo,
         }, tempoParaSalvar);
 
         if (data.teoriaFinalizada) {
@@ -408,6 +412,17 @@ const SalvarSessaoModal: React.FC = () => {
                                 </div>
                                 {errors.topico && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                             </div>
+
+                            {/* Novo campo de Data */}
+                            <div className="md:col-span-2">
+                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Data do Estudo</label>
+                                <input
+                                    type="date"
+                                    {...register('dataEstudo')}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary"
+                                />
+                            </div>
+
                             <div>
                                 <label className="text-sm font-medium text-muted-foreground mb-1 block">Material utilizado</label>
                                 <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
@@ -464,8 +479,8 @@ const SalvarSessaoModal: React.FC = () => {
                                     <div className="col-span-2 sm:col-span-1">
                                         <label className="text-xs font-medium text-muted-foreground mb-1 block">Saldo Líquido</label>
                                         <div className={`w-full px-3 py-2 text-sm font-bold rounded-md border ${saldoLiquido > 0 ? 'bg-green-500/10 text-green-600 border-green-200 dark:border-green-900' :
-                                                saldoLiquido < 0 ? 'bg-red-500/10 text-red-600 border-red-200 dark:border-red-900' :
-                                                    'bg-muted text-muted-foreground border-border'
+                                            saldoLiquido < 0 ? 'bg-red-500/10 text-red-600 border-red-200 dark:border-red-900' :
+                                                'bg-muted text-muted-foreground border-border'
                                             }`}>
                                             {saldoLiquido}
                                         </div>
