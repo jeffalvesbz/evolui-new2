@@ -8,9 +8,16 @@ interface HistoryDayGroupProps {
     items: HistoricoItem[];
     onEdit: (registro: HistoricoItem) => void;
     onDelete: (id: string, type: 'estudo' | 'simulado', name: string) => void;
+    isToday?: boolean;
+    allHistorico?: HistoricoItem[];
 }
 
-const HistoryDayGroup: React.FC<HistoryDayGroupProps> = ({ data, items, onEdit, onDelete }) => {
+const HistoryDayGroup: React.FC<HistoryDayGroupProps> = ({
+    data,
+    items,
+    onEdit,
+    onDelete
+}) => {
     const formatDataCompleta = (data: string) => {
         const [ano, mes, dia] = data.split('-').map(Number);
         const date = new Date(ano, mes - 1, dia);
@@ -37,25 +44,26 @@ const HistoryDayGroup: React.FC<HistoryDayGroupProps> = ({ data, items, onEdit, 
 
     return (
         <div className="space-y-3">
-            {/* Header do dia */}
-            <div className="flex items-center justify-between pb-3 border-b border-border/50">
-                <div className="flex items-center gap-2">
+            {/* Header do dia - Estilo da imagem */}
+            <div className="flex items-center justify-between pb-1">
+                <div className="flex items-center gap-2 text-foreground">
                     <CalendarDaysIcon className="w-4 h-4 text-primary" />
-                    <h3 className="text-base font-bold text-foreground capitalize">
+                    <span className="font-bold capitalize text-base">
                         {formatDataCompleta(data)}
-                    </h3>
-                    <span className="text-xs text-muted-foreground">
+                    </span>
+                    <span className="text-sm text-muted-foreground">
                         · {items.length} {items.length === 1 ? 'atividade' : 'atividades'}
                     </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm">
+
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                     <ClockIcon className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-semibold text-foreground">{formatarTempo(tempoTotalDia)}</span>
+                    <span>{formatarTempo(tempoTotalDia)}</span>
                 </div>
             </div>
 
             {/* Lista de itens */}
-            <div className="space-y-2">
+            <div className="space-y-3">
                 {items.map((item) => (
                     <HistoryItem key={item.id} item={item} onEdit={onEdit} onDelete={onDelete} />
                 ))}

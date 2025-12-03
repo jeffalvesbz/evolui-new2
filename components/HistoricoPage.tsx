@@ -515,16 +515,25 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
             {loading ? (
               <LoadingList />
             ) : historicoFiltrado.length ? (
-              <div className="space-y-8">
-                {historicoAgrupado.map(({ data, items }) => (
-                  <HistoryDayGroup
-                    key={data}
-                    data={data}
-                    items={items}
-                    onEdit={handleEditClick}
-                    onDelete={handleDeleteClick}
-                  />
-                ))}
+              <div className="space-y-6">
+                {historicoAgrupado.map(({ data, items }, index) => {
+                  // Verificar se é hoje
+                  const hoje = new Date();
+                  const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+                  const isToday = data === hojeStr;
+
+                  return (
+                    <HistoryDayGroup
+                      key={data}
+                      data={data}
+                      items={items}
+                      onEdit={handleEditClick}
+                      onDelete={handleDeleteClick}
+                      isToday={isToday}
+                      allHistorico={historico}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <EmptyState />
