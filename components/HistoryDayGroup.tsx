@@ -45,7 +45,7 @@ const HistoryDayGroup: React.FC<HistoryDayGroupProps> = ({
     return (
         <div className="space-y-3">
             {/* Header do dia - Estilo da imagem */}
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
                 <div className="flex items-center gap-2 text-foreground">
                     <CalendarDaysIcon className="w-4 h-4 text-primary" />
                     <span className="font-bold capitalize text-base">

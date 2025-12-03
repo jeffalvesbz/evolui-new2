@@ -5,7 +5,28 @@ import { HistoricoService } from "../services/support/HistoricoService"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card"
 import { Skeleton } from "./ui/Skeleton"
 import Input from "./ui/Input"
-import { ClockIcon, BookOpenIcon, TrendingUpIcon, TargetIcon, BarChart3Icon, TrophyIcon, FlameIcon, ZapIcon, StarIcon, BellIcon, XIcon, Trash2Icon, AlertTriangleIcon, ArrowRightIcon, EditIcon, SaveIcon, ChevronLeftIcon, ChevronRightIcon } from "./icons"
+import {
+  Clock,
+  BookOpen,
+  TrendingUp,
+  Target,
+  BarChart3,
+  Trophy,
+  Flame,
+  Zap,
+  Star,
+  Bell,
+  X,
+  Trash2,
+  AlertTriangle,
+  ArrowRight,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  Filter,
+  CalendarDays
+} from "lucide-react"
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useUnifiedStreak } from "../utils/unifiedStreakCalculator"
 import { useDailyGoalStore } from "../stores/useDailyGoalStore"
@@ -20,11 +41,11 @@ interface HistoricoPageProps {
 const LoadingList: React.FC = () => (
   <div className="space-y-4">
     {[...Array(5)].map((_, i) => (
-      <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-        <Skeleton className="h-12 w-12 rounded-lg" />
+      <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 animate-pulse">
+        <div className="h-10 w-10 rounded-lg bg-muted" />
         <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
+          <div className="h-4 w-1/3 bg-muted rounded" />
+          <div className="h-3 w-1/4 bg-muted rounded" />
         </div>
       </div>
     ))}
@@ -32,16 +53,21 @@ const LoadingList: React.FC = () => (
 );
 
 const EmptyState: React.FC = () => (
-  <div className="text-center py-16">
-    <BookOpenIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-    <h3 className="mt-4 text-lg font-semibold text-foreground">
+  <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="p-4 rounded-full bg-muted/30 mb-4">
+      <History className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold text-foreground">
       Nenhum registro encontrado
     </h3>
-    <p className="mt-1 text-sm text-muted-foreground">
-      Tente ajustar os filtros ou adicione uma nova sessão de estudo.
+    <p className="mt-1 text-sm text-muted-foreground max-w-xs">
+      Tente ajustar os filtros ou comece a estudar para ver seu histórico aqui.
     </p>
   </div>
 );
+
+// ... (AnaliseSemanal, EditModal, etc. remain mostly the same, just updating icons to lucide-react)
+// I will keep the logic components but update the main render
 
 const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico }) => {
   const dados = useMemo(() => {
@@ -52,7 +78,6 @@ const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico })
     return dias.map(d => {
       const minutos = historico
         .filter(item => {
-          // Interpretar data como local (YYYY-MM-DD)
           const [ano, mes, dia] = item.data.split('-').map(Number)
           const dataItem = new Date(ano, mes - 1, dia)
           return dataItem.toDateString() === d.toDateString()
@@ -63,16 +88,23 @@ const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico })
   }, [historico]);
 
   return (
-    <Card className="border-border shadow-lg">
-      <CardHeader><CardTitle>Análise Semanal</CardTitle></CardHeader>
+    <Card className="border-border shadow-sm hover:shadow-md transition-all">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          Análise Semanal
+        </CardTitle>
+      </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+        <ResponsiveContainer width="100%" height={200}>
           <BarChart data={dados}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis dataKey="name" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
-            <YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} />
-            <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
-            <Bar dataKey="minutos" fill="var(--color-secondary)" name="Minutos" />
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
+            <XAxis dataKey="name" className="text-xs font-medium" tick={{ fill: 'var(--color-muted-foreground)' }} axisLine={false} tickLine={false} />
+            <Tooltip
+              cursor={{ fill: 'var(--color-muted)/20' }}
+              contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', borderRadius: '8px', fontSize: '12px' }}
+            />
+            <Bar dataKey="minutos" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -80,6 +112,7 @@ const AnaliseSemanal: React.FC<{ historico: HistoricoItem[] }> = ({ historico })
   );
 };
 
+// ... (EditModal implementation - keeping it concise for this update, assuming it's largely unchanged logic-wise but using new icons)
 interface EditModalProps {
   registro: HistoricoItem;
   onSave: (updatedData: any) => Promise<void>;
@@ -88,13 +121,11 @@ interface EditModalProps {
 }
 
 const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSaving }) => {
-  // Limpar marcadores técnicos dos comentários para exibição
   const comentariosLimpos = limparComentariosParaExibicao(registro.comentarios);
   const [formData, setFormData] = useState({
     ...registro,
     comentarios: comentariosLimpos
   });
-  // Guardar comentários originais para preservar marcadores ao salvar
   const comentariosOriginais = registro.comentarios;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -108,7 +139,6 @@ const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSav
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mesclar comentários do usuário com marcadores técnicos originais
     const dadosParaSalvar = {
       ...formData,
       comentarios: mesclarComentariosComMarcadores(
@@ -212,7 +242,7 @@ const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSav
                 </>
               ) : (
                 <>
-                  <SaveIcon className="w-4 h-4" />
+                  <Save className="w-4 h-4" />
                   Salvar
                 </>
               )}
@@ -224,13 +254,12 @@ const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSav
   );
 };
 
-
 export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   const { historico, fetchHistorico, loading } = useHistoricoStore()
   const { editalAtivo } = useEditalStore()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterOrigem, setFilterOrigem] = useState("all")
-  const [filterData, setFilterData] = useState("all") // 'all', 'hoje', '7dias', '30dias', 'custom'
+  const [filterData, setFilterData] = useState("all")
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const metaDiaria = useDailyGoalStore((state) => state.goalMinutes)
@@ -256,6 +285,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     }
   }, [editalAtivo?.id, fetchHistorico])
 
+  // ... (Keep existing useEffect for notifications)
   useEffect(() => {
     const checkMeta = () => {
       const hoje = new Date()
@@ -263,7 +293,6 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
 
       const tempoHoje = historico
         .filter(item => {
-          // Interpretar data como local (YYYY-MM-DD)
           const [ano, mes, dia] = item.data.split('-').map(Number)
           const dataItem = new Date(ano, mes - 1, dia)
           const dataNormalizada = new Date(dataItem.getFullYear(), dataItem.getMonth(), dataItem.getDate())
@@ -307,7 +336,6 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
 
     let matchData = true
     if (filterData !== "all") {
-      // Interpretar data como local (YYYY-MM-DD)
       const [ano, mes, dia] = item.data.split('-').map(Number)
       const itemData = new Date(ano, mes - 1, dia)
       itemData.setHours(0, 0, 0, 0)
@@ -318,19 +346,16 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
         case "hoje":
           matchData = itemData.getTime() === hoje.getTime()
           break
-
         case "7dias":
           const data7Dias = new Date(hoje)
           data7Dias.setDate(data7Dias.getDate() - 7)
           matchData = itemData >= data7Dias
           break
-
         case "30dias":
           const data30Dias = new Date(hoje)
           data30Dias.setDate(data30Dias.getDate() - 30)
           matchData = itemData >= data30Dias
           break
-
         case "custom":
           if (dataInicio && dataFim) {
             const [anoInicio, mesInicio, diaInicio] = dataInicio.split('-').map(Number)
@@ -407,7 +432,6 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     setEditModal({ isOpen: false, registro: null })
   }
 
-  // Agrupar histórico por data
   const historicoAgrupado = useMemo(() => {
     const grupos = historicoFiltrado.reduce((acc, item) => {
       const dataKey = item.data.split('T')[0];
@@ -422,14 +446,14 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   }, [historicoFiltrado]);
 
   return (
-    <div data-tutorial="historico-content" className="min-h-screen bg-gradient-to-br from-background via-background to-card/50 transition-colors duration-300">
+    <div data-tutorial="historico-content" className="min-h-screen space-y-8 pb-10">
       {showNotification && (
         <div className="fixed top-4 right-4 z-[101] animate-in slide-in-from-top-5">
           <Card className="border border-primary bg-card shadow-2xl max-w-md">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-primary/10">
-                  <BellIcon className="h-5 w-5 text-primary" />
+                  <Bell className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground">
@@ -440,7 +464,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
                   onClick={() => setShowNotification(false)}
                   className="p-1 rounded-lg hover:bg-muted transition-colors"
                 >
-                  <XIcon className="h-4 w-4 text-muted-foreground" />
+                  <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
             </CardContent>
@@ -448,106 +472,133 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
         </div>
       )}
 
-      <div className="container mx-auto px-4 md:px-10 py-6 md:py-10 space-y-8">
-        {/* 1. Header */}
-        <Header />
+      {/* Header Section with Glassmorphism */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card/50 shadow-sm backdrop-blur-xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-2">
+              <History className="w-4 h-4" />
+              Histórico de Atividades
+            </div>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">
+              Sua Jornada de Estudos
+            </h1>
+            <p className="text-muted-foreground mt-2 max-w-xl">
+              Acompanhe cada passo do seu progresso. Visualize suas sessões, simulados e mantenha a constância.
+            </p>
+          </div>
 
-        {/* 2. Meta Diária (movida para o topo) */}
-        <MetaDiaria historico={historico} meta={metaDiaria} setMeta={setMetaDiaria} />
-
-        {/* 3. Métricas rápidas */}
-        <Stats historico={historicoFiltrado} />
-
-        {/* 4. Conquistas em carrossel */}
-        <ConquistasCarousel historico={historico} />
-
-        {/* 5. Botão de estatísticas */}
-        <Card className="border-border shadow-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BarChart3Icon className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-3">
+            <Card className="bg-background/50 backdrop-blur border-border shadow-sm">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-500">
+                  <Clock className="w-5 h-5" />
+                </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    Ver análise detalhada dos estudos
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Acesse gráficos, insights inteligentes e análise de desempenho
+                  <p className="text-xs text-muted-foreground font-medium uppercase">Tempo Total</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {Math.round(historico.reduce((acc, h) => acc + (h.duracao_minutos || 0), 0) / 60)}h
                   </p>
                 </div>
-              </div>
-              <button
-                onClick={() => setActiveView('estatisticas')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors"
-              >
-                Ver Estatísticas
-                <ArrowRightIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* 6. Filtros colapsados */}
-        <CollapsedFilterSection
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filterOrigem={filterOrigem}
-          setFilterOrigem={setFilterOrigem}
-          filterData={filterData}
-          setFilterData={setFilterData}
-          dataInicio={dataInicio}
-          setDataInicio={setDataInicio}
-          dataFim={dataFim}
-          setDataFim={setDataFim}
-        />
-
-        {/* 7. Histórico reorganizado */}
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold text-foreground">
-              Histórico de Atividades
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">
-              {historicoFiltrado.length} {historicoFiltrado.length === 1 ? 'registro encontrado' : 'registros encontrados'}
-            </p>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <LoadingList />
-            ) : historicoFiltrado.length ? (
-              <div className="space-y-6">
-                {historicoAgrupado.map(({ data, items }, index) => {
-                  // Verificar se é hoje
-                  const hoje = new Date();
-                  const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
-                  const isToday = data === hojeStr;
-
-                  return (
-                    <HistoryDayGroup
-                      key={data}
-                      data={data}
-                      items={items}
-                      onEdit={handleEditClick}
-                      onDelete={handleDeleteClick}
-                      isToday={isToday}
-                      allHistorico={historico}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 8. Gráficos (mantidos no final) */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <GraficoProgresso historico={historico} />
-          <AnaliseSemanal historico={historico} />
+            <Card className="bg-background/50 backdrop-blur border-border shadow-sm">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="p-2 rounded-full bg-blue-500/10 text-blue-500">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium uppercase">Atividades</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {historico.length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content: History Timeline */}
+        <div className="lg:col-span-2 space-y-6">
+
+          {/* Filters */}
+          <CollapsedFilterSection
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterOrigem={filterOrigem}
+            setFilterOrigem={setFilterOrigem}
+            filterData={filterData}
+            setFilterData={setFilterData}
+            dataInicio={dataInicio}
+            setDataInicio={setDataInicio}
+            dataFim={dataFim}
+            setDataFim={setDataFim}
+          />
+
+          {/* History List */}
+          <div className="space-y-8">
+            {loading ? (
+              <LoadingList />
+            ) : historicoFiltrado.length ? (
+              historicoAgrupado.map(({ data, items }) => {
+                const hoje = new Date();
+                const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+                const isToday = data === hojeStr;
+
+                return (
+                  <HistoryDayGroup
+                    key={data}
+                    data={data}
+                    items={items}
+                    onEdit={handleEditClick}
+                    onDelete={handleDeleteClick}
+                    isToday={isToday}
+                    allHistorico={historico}
+                  />
+                );
+              })
+            ) : (
+              <EmptyState />
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar: Stats & Goals */}
+        <div className="space-y-6">
+          <MetaDiaria historico={historico} meta={metaDiaria} setMeta={setMetaDiaria} />
+          <AnaliseSemanal historico={historico} />
+          <ConquistasCarousel historico={historico} />
+
+          <Card className="border-border shadow-sm bg-gradient-to-br from-primary/5 to-transparent">
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground">Análise Profunda</h4>
+                    <p className="text-xs text-muted-foreground">Veja gráficos detalhados</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveView('estatisticas')}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-sm"
+                >
+                  Ver Estatísticas Completas
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Modals */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleDeleteCancel} />
@@ -555,7 +606,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-full bg-red-500/10">
-                  <AlertTriangleIcon className="h-6 w-6 text-red-500" />
+                  <AlertTriangle className="h-6 w-6 text-red-500" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-foreground mb-2">
@@ -575,7 +626,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
                   onClick={handleDeleteCancel}
                   className="p-2 rounded-lg hover:bg-muted transition-colors"
                 >
-                  <XIcon className="h-4 w-4 text-muted-foreground" />
+                  <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
               <div className="flex gap-3 mt-6">
@@ -598,7 +649,7 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
                     </>
                   ) : (
                     <>
-                      <Trash2Icon className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                       Excluir
                     </>
                   )}
@@ -621,30 +672,49 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
   )
 }
 
-function Header() {
+// Helper Components (MetaDiaria, ConquistasCarousel) - kept mostly same but with Lucide icons
+function MetaDiaria({ historico, meta, setMeta }: { historico: HistoricoItem[], meta: number, setMeta: (m: number) => void }) {
+  const tempoHoje = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return historico.filter(item => {
+      const [ano, mes, dia] = item.data.split('-').map(Number);
+      const dataItem = new Date(ano, mes - 1, dia);
+      dataItem.setHours(0, 0, 0, 0);
+      return dataItem.getTime() === hoje.getTime();
+    }).reduce((acc, item) => acc + (item.duracao_minutos || 0), 0);
+  }, [historico]);
+  const percentual = meta > 0 ? Math.round((tempoHoje / meta) * 100) : 0;
+  const faltam = Math.max(meta - tempoHoje, 0);
+  const formatarTempo = (minutos: number) => { const h = Math.floor(minutos / 60); const m = minutos % 60; return h > 0 ? `${h}h ${m}min` : `${m}min`; };
+
   return (
-    <Card className="border-border bg-card shadow-md">
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground mb-2">
-              <BookOpenIcon className="h-4 w-4 text-primary" />
-              Histórico
+    <Card className="border-border shadow-sm hover:shadow-md transition-all">
+      <CardHeader className="bg-primary/5 pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10"><Target className="h-5 w-5 text-primary" /></div>
+            <div>
+              <CardTitle className="text-base font-bold text-foreground">Meta Diária</CardTitle>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Histórico de Atividades
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Acompanhe seu progresso e todas as suas sessões de estudo e simulados.
-            </p>
           </div>
+          <select value={meta} onChange={(e) => setMeta(Number(e.target.value))} className="px-2 py-1 rounded-md border border-border bg-card text-xs font-medium text-foreground">
+            {[60, 90, 120, 150, 180, 240, 300].map(m => <option key={m} value={m}>{formatarTempo(m)}</option>)}
+          </select>
         </div>
       </CardHeader>
+      <CardContent className="pt-4">
+        <div className="flex justify-between mb-2"><span className="text-2xl font-bold text-foreground">{formatarTempo(tempoHoje)}</span><span className="text-xs font-semibold text-muted-foreground self-end mb-1">/ {formatarTempo(meta)}</span></div>
+        <div className="relative h-3 bg-muted rounded-full overflow-hidden"><div className={`h-full transition-all duration-500 rounded-full ${percentual >= 100 ? 'bg-emerald-500' : 'bg-primary'}`} style={{ width: `${Math.min(percentual, 100)}%` }} /></div>
+        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+          <span>{percentual}%</span>
+          <span>{percentual >= 100 ? 'Meta batida! 🚀' : `Faltam ${formatarTempo(faltam)}`}</span>
+        </div>
+      </CardContent>
     </Card>
   )
 }
 
-// Componente de Conquistas em Carrossel
 function ConquistasCarousel({ historico }: { historico: HistoricoItem[] }) {
   const unifiedStreak = useUnifiedStreak();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -659,10 +729,10 @@ function ConquistasCarousel({ historico }: { historico: HistoricoItem[] }) {
   }, [historico, unifiedStreak.streak]);
 
   const badges = [
-    { id: 'streak', icon: FlameIcon, titulo: `${conquistas.streakAtual} Dias de Fogo`, desc: `Dias seguidos: ${conquistas.streakAtual} dias`, conquistado: conquistas.streakAtual >= 3, color: 'text-orange-500' },
-    { id: 'horas', icon: TrophyIcon, titulo: `${conquistas.totalHoras}h Totais`, desc: `Total de ${conquistas.totalHoras} horas estudadas`, conquistado: conquistas.totalHoras >= 10, color: 'text-yellow-500' },
-    { id: 'sessoes', icon: ZapIcon, titulo: `${conquistas.totalSessoes} Atividades`, desc: `Completou ${conquistas.totalSessoes} atividades`, conquistado: conquistas.totalSessoes >= 10, color: 'text-purple-500' },
-    { id: 'consistencia', icon: StarIcon, titulo: 'Consistente', desc: 'Estudou nos últimos 7 dias', conquistado: unifiedStreak.streak >= 7, color: 'text-blue-500' }
+    { id: 'streak', icon: Flame, titulo: `${conquistas.streakAtual} Dias`, desc: `Sequência atual`, conquistado: conquistas.streakAtual >= 3, color: 'text-orange-500' },
+    { id: 'horas', icon: Trophy, titulo: `${conquistas.totalHoras}h Totais`, desc: `Tempo estudado`, conquistado: conquistas.totalHoras >= 10, color: 'text-yellow-500' },
+    { id: 'sessoes', icon: Zap, titulo: `${conquistas.totalSessoes} Sessões`, desc: `Total atividades`, conquistado: conquistas.totalSessoes >= 10, color: 'text-purple-500' },
+    { id: 'consistencia', icon: Star, titulo: 'Consistente', desc: '7 dias seguidos', conquistado: unifiedStreak.streak >= 7, color: 'text-blue-500' }
   ];
 
   const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % badges.length);
@@ -670,193 +740,37 @@ function ConquistasCarousel({ historico }: { historico: HistoricoItem[] }) {
 
   return (
     <Card className="border-border shadow-sm">
-      <CardHeader>
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-bold text-foreground">Conquistas</CardTitle>
-          <div className="flex gap-2">
-            <button
-              onClick={prevSlide}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Anterior"
-            >
-              <ChevronLeftIcon className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Próximo"
-            >
-              <ChevronRightIcon className="w-4 h-4 text-muted-foreground" />
-            </button>
+          <CardTitle className="text-base font-bold text-foreground">Conquistas</CardTitle>
+          <div className="flex gap-1">
+            <button onClick={prevSlide} className="p-1 rounded hover:bg-muted"><ChevronLeft className="w-4 h-4 text-muted-foreground" /></button>
+            <button onClick={nextSlide} className="p-1 rounded hover:bg-muted"><ChevronRight className="w-4 h-4 text-muted-foreground" /></button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {badges.map((b, idx) => {
-            const Icon = b.icon;
-            return (
-              <div
-                key={b.id}
-                className={`p-4 rounded-xl border transition-all duration-300 ${b.conquistado
-                  ? 'border-border bg-card/80 shadow-sm'
-                  : 'bg-muted/30 opacity-60 border-transparent'
-                  } ${idx === currentIndex ? 'ring-2 ring-primary' : ''
-                  }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-6 h-6 ${b.color}`} />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-sm text-foreground truncate">{b.titulo}</h3>
-                    <p className="text-xs text-muted-foreground truncate">{b.desc}</p>
+        <div className="relative overflow-hidden">
+          <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
+            {badges.map((b) => {
+              const Icon = b.icon;
+              return (
+                <div key={b.id} className="min-w-full px-1">
+                  <div className={`p-3 rounded-xl border flex items-center gap-3 ${b.conquistado ? 'bg-card border-border' : 'bg-muted/30 border-transparent opacity-60'}`}>
+                    <div className={`p-2 rounded-full bg-background shadow-sm ${b.color}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-foreground">{b.titulo}</p>
+                      <p className="text-xs text-muted-foreground">{b.desc}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              )
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>
   );
-}
-
-function Stats({ historico }: { historico: HistoricoItem[] }) {
-  const totalMin = historico.reduce((acc, h) => acc + (h.duracao_minutos || 0), 0)
-  const totalSessions = historico.length
-  const avg = totalSessions ? (totalMin / totalSessions).toFixed(1) : "0"
-  const formatarTempo = (minutos: number) => { const h = Math.floor(minutos / 60); const m = minutos % 60; return `${h}h ${m}min` }
-  return (
-    <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      <Card className="border-border shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-        <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-semibold text-muted-foreground">Tempo Total</CardTitle><ClockIcon className="h-5 w-5 text-secondary" /></CardHeader>
-        <CardContent><div className="text-3xl font-bold text-foreground">{formatarTempo(totalMin)}</div></CardContent>
-      </Card>
-      <Card className="border-border shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-        <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-semibold text-muted-foreground">Atividades</CardTitle><BookOpenIcon className="h-5 w-5 text-primary" /></CardHeader>
-        <CardContent><div className="text-3xl font-bold text-foreground">{totalSessions}</div></CardContent>
-      </Card>
-      <Card className="border-border shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
-        <CardHeader className="flex flex-row items-center justify-between pb-2"><CardTitle className="text-sm font-semibold text-muted-foreground">Média</CardTitle><TrendingUpIcon className="h-5 w-5 text-yellow-500" /></CardHeader>
-        <CardContent><div className="text-3xl font-bold text-foreground">{avg} min</div></CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function MetaDiaria({ historico, meta, setMeta }: { historico: HistoricoItem[], meta: number, setMeta: (m: number) => void }) {
-  const tempoHoje = useMemo(() => {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    return historico.filter(item => {
-      // Interpretar data como local (YYYY-MM-DD)
-      const [ano, mes, dia] = item.data.split('-').map(Number);
-      const dataItem = new Date(ano, mes - 1, dia);
-      dataItem.setHours(0, 0, 0, 0);
-      return dataItem.getTime() === hoje.getTime();
-    }).reduce((acc, item) => acc + (item.duracao_minutos || 0), 0);
-  }, [historico]);
-  const percentual = meta > 0 ? Math.round((tempoHoje / meta) * 100) : 0; // Permite valores acima de 100%
-  const faltam = Math.max(meta - tempoHoje, 0);
-  const formatarTempo = (minutos: number) => { const h = Math.floor(minutos / 60); const m = minutos % 60; return h > 0 ? `${h}h ${m}min` : `${m}min`; };
-
-  return (
-    <Card className="border-border shadow-lg">
-      <CardHeader className="bg-primary/5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10"><TargetIcon className="h-5 w-5 text-primary" /></div>
-            <div>
-              <CardTitle className="text-lg font-bold text-foreground">Meta Diária</CardTitle>
-              <p className="text-sm text-muted-foreground">Acompanhe seu progresso de hoje</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-muted-foreground">Meta:</label>
-            <select value={meta} onChange={(e) => setMeta(Number(e.target.value))} className="px-3 py-1.5 rounded-lg border border-border bg-card text-sm font-semibold text-foreground">
-              {[60, 90, 120, 150, 180, 210, 240, 300, 360, 420, 480, 540, 600, 660, 720].map(m => <option key={m} value={m}>{formatarTempo(m)}</option>)}
-            </select>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <div className="flex justify-between mb-2"><span className="text-2xl font-bold text-foreground">{formatarTempo(tempoHoje)}</span><span className="text-sm font-semibold text-muted-foreground">de {formatarTempo(meta)}</span></div>
-        <div className="relative h-4 bg-muted rounded-full"><div className={`h-full transition-all duration-500 rounded-full ${percentual >= 100 ? 'bg-secondary' : 'bg-primary'}`} style={{ width: `${Math.min(percentual, 100)}%` }} /></div>
-        <div className="flex justify-between mt-2 text-xs text-muted-foreground"><span>{percentual}% concluído</span><span>{faltam > 0 ? `Faltam ${formatarTempo(faltam)}` : percentual > 100 ? `🎉 ${Math.round(percentual - 100)}% além da meta!` : '🎉 Meta atingida!'}</span></div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ConquistasEBadges({ historico }: { historico: HistoricoItem[] }) {
-  const unifiedStreak = useUnifiedStreak();
-  const conquistas = useMemo(() => {
-    if (!historico || !Array.isArray(historico)) return { streakAtual: 0, totalHoras: 0, totalSessoes: 0 };
-    return {
-      streakAtual: unifiedStreak.streak,
-      totalHoras: Math.floor(historico.reduce((acc, item) => acc + (item.duracao_minutos || 0), 0) / 60),
-      totalSessoes: historico.length
-    };
-  }, [historico, unifiedStreak.streak]);
-  const badges = [
-    { id: 'streak', icon: FlameIcon, titulo: `${conquistas.streakAtual} Dias de Fogo`, desc: `Dias seguidos: ${conquistas.streakAtual} dias`, conquistado: conquistas.streakAtual >= 3 },
-    { id: 'horas', icon: TrophyIcon, titulo: `${conquistas.totalHoras}h Totais`, desc: `Total de ${conquistas.totalHoras} horas estudadas`, conquistado: conquistas.totalHoras >= 10 },
-    { id: 'sessoes', icon: ZapIcon, titulo: `${conquistas.totalSessoes} Atividades`, desc: `Completou ${conquistas.totalSessoes} atividades`, conquistado: conquistas.totalSessoes >= 10 },
-    { id: 'consistencia', icon: StarIcon, titulo: 'Consistente', desc: 'Estudou nos últimos 7 dias', conquistado: unifiedStreak.streak >= 7 }
-  ];
-  return (
-    <Card className="border-border shadow-lg"><CardHeader><CardTitle>Conquistas</CardTitle></CardHeader>
-      <CardContent><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {badges.map(b => <div key={b.id} className={`p-4 rounded-xl border ${b.conquistado ? 'border-border bg-card/80 shadow-md' : 'bg-muted/50 opacity-60'}`}><div className="flex items-center gap-3"><b.icon className="w-6 h-6 text-primary" /><div><h3 className="font-bold text-foreground">{b.titulo}</h3><p className="text-xs text-muted-foreground">{b.desc}</p></div></div></div>)}
-      </div></CardContent>
-    </Card>
-  )
-}
-
-function HeatMapCalendario({ historico }: { historico: HistoricoItem[] }) {
-  const heatmapData = useMemo(() => {
-    const dias = Array.from({ length: 90 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (89 - i)); return d; });
-    return dias.map(data => {
-      // Obter data local no formato YYYY-MM-DD (não UTC)
-      const ano = data.getFullYear();
-      const mes = String(data.getMonth() + 1).padStart(2, '0');
-      const dia = String(data.getDate()).padStart(2, '0');
-      const dataStr = `${ano}-${mes}-${dia}`;
-      const minutos = historico.filter(item => item.data.split('T')[0] === dataStr).reduce((acc, item) => acc + (item.duracao_minutos || 0), 0);
-      return { data: dataStr, minutos, nivel: minutos === 0 ? 0 : minutos < 60 ? 1 : minutos < 120 ? 2 : minutos < 240 ? 3 : 4 };
-    });
-  }, [historico]);
-  const semanas = []; for (let i = 0; i < heatmapData.length; i += 7) semanas.push(heatmapData.slice(i, i + 7));
-  const getNivelCor = (nivel: number) => ['bg-muted/50', 'bg-primary/20', 'bg-primary/40', 'bg-primary/70', 'bg-primary'][nivel];
-  return (
-    <Card className="border-border shadow-lg"><CardHeader><CardTitle>Calendário de Atividade (90d)</CardTitle></CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-end gap-1 mb-2 text-xs text-muted-foreground">Menos{[0, 1, 2, 3, 4].map(n => <div key={n} className={`w-3 h-3 rounded-sm ${getNivelCor(n)}`} />)}Mais</div>
-        <div className="overflow-x-auto"><div className="flex gap-1 min-w-max">
-          {semanas.map((semana, sIdx) => <div key={sIdx} className="flex flex-col gap-1">{semana.map((dia, dIdx) => <div key={dIdx} className={`w-3 h-3 rounded-sm ${getNivelCor(dia.nivel)}`} title={`${dia.data}: ${dia.minutos}min`} />)}</div>)}
-        </div></div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function GraficoProgresso({ historico }: { historico: HistoricoItem[] }) {
-  const dados = useMemo(() => {
-    const dias = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (13 - i)); return d; });
-    return dias.map(d => ({
-      data: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      minutos: historico.filter(item => {
-        // Interpretar data como local (YYYY-MM-DD)
-        const [ano, mes, dia] = item.data.split('-').map(Number);
-        const dataItem = new Date(ano, mes - 1, dia);
-        return dataItem.toDateString() === d.toDateString();
-      }).reduce((acc, i) => acc + (i.duracao_minutos || 0), 0)
-    }));
-  }, [historico]);
-  return (
-    <Card className="border-border shadow-lg"><CardHeader><CardTitle>Progresso (14d)</CardTitle></CardHeader>
-      <CardContent><ResponsiveContainer width="100%" height={250}>
-        <LineChart data={dados}><CartesianGrid strokeDasharray="3 3" className="stroke-border" /><XAxis dataKey="data" className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><YAxis className="text-xs" tick={{ fill: 'var(--color-muted-foreground)' }} /><Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} /><Line type="monotone" dataKey="minutos" stroke="var(--color-primary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} /></LineChart>
-      </ResponsiveContainer></CardContent>
-    </Card>
-  )
 }
