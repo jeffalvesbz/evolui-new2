@@ -6,6 +6,7 @@ import { useEstudosStore } from '../stores/useEstudosStore';
 import { useEditalStore } from '../stores/useEditalStore';
 import { useModalStore } from '../stores/useModalStore';
 import { startOfDay, isSameDay, isBefore } from 'date-fns';
+import { getLocalDateISO } from '../utils/dateUtils';
 
 interface Notification {
   id: string;
@@ -82,7 +83,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onClose
     }
 
     // Meta diária
-    const hojeISO = new Date().toISOString().split('T')[0];
+    const hojeISO = getLocalDateISO();
     const sessoesDeHoje = sessoes.filter(s => s.data_estudo === hojeISO);
     const tempoTotalSegundos = sessoesDeHoje.reduce((acc, s) => acc + s.tempo_estudado, 0);
     const tempoTotalMinutos = Math.round(tempoTotalSegundos / 60);
@@ -154,11 +155,11 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onClose
   return (
     <>
       {/* Overlay */}
-      <div 
+      <div
         className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Panel */}
       <div className="fixed top-20 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-card border border-border rounded-xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">

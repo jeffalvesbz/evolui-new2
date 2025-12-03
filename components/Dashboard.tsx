@@ -44,6 +44,7 @@ import { gerarMensagemMotivacionalIA } from '../services/geminiService';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { subDays, differenceInDays } from 'date-fns';
 import PremiumFeatureWrapper from './PremiumFeatureWrapper';
+import { getYesterdayLocalDateISO } from '../utils/dateUtils';
 
 // --- Chart Components ---
 
@@ -296,7 +297,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
     const totalTopicosEstudados = new Set(sessoes.map(s => s.topico_id)).size;
 
     // Tempo ontem
-    const ontemISO = subDays(new Date(), 1).toISOString().split('T')[0];
+    const ontemISO = getYesterdayLocalDateISO();
     const sessoesOntem = sessoes.filter(s => s.data_estudo === ontemISO);
     const tempoOntem = Math.round(sessoesOntem.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60);
 

@@ -30,20 +30,20 @@ export const scheduleAutoRevisoes = async ({
 
   const base = typeof referencia === 'string' ? new Date(referencia) : referencia;
   // Spaced Repetition System intervals - usa intervalos customizados ou padrão
-  const intervalsToUse = intervals && intervals.length > 0 ? intervals : [1, 7, 15, 30]; 
+  const intervalsToUse = intervals && intervals.length > 0 ? intervals : [1, 7, 15, 30];
 
   const makeRevision = (days: number): Omit<Revisao, 'id' | 'studyPlanId'> => ({
     topico_id: topicoId,
     disciplinaId,
-    conteudo: `Revisão de ${days} dia(s): ${topicoNome || disciplinaNome}`,
+    conteudo: topicoNome || disciplinaNome,
     data_prevista: addDays(base, days).toISOString(),
     status: 'pendente',
     origem: 'teorica',
     dificuldade: 'médio',
   });
-  
-  const existingPendingRevisions = revisoes.filter(r => 
-    r.topico_id === topicoId && 
+
+  const existingPendingRevisions = revisoes.filter(r =>
+    r.topico_id === topicoId &&
     r.origem === 'teorica' &&
     r.status === 'pendente'
   );
@@ -51,7 +51,7 @@ export const scheduleAutoRevisoes = async ({
   const newItemsToCreate = [];
   for (const days of intervalsToUse) {
     const targetDate = addDays(base, days);
-    
+
     const hasExisting = existingPendingRevisions.some(existing => {
       // Check if there is an existing pending review for roughly the same day
       return Math.abs(differenceInHours(new Date(existing.data_prevista), targetDate)) < 12;

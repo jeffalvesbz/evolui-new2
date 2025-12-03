@@ -5,11 +5,12 @@ import { HistoricoService } from "../services/support/HistoricoService"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card"
 import { Skeleton } from "./ui/Skeleton"
 import Input from "./ui/Input"
-import { SearchIcon, ClockIcon, BookOpenIcon, CalendarDaysIcon, TrendingUpIcon, FilterIcon, TargetIcon, BarChart3Icon, TrophyIcon, FlameIcon, ZapIcon, StarIcon, CheckCircle2Icon, BellIcon, XIcon, Trash2Icon, AlertTriangleIcon, ArrowRightIcon, EditIcon, FileTextIcon, SaveIcon } from "./icons"
+import { ClockIcon, BookOpenIcon, TrendingUpIcon, TargetIcon, BarChart3Icon, TrophyIcon, FlameIcon, ZapIcon, StarIcon, BellIcon, XIcon, Trash2Icon, AlertTriangleIcon, ArrowRightIcon, EditIcon, SaveIcon, ChevronLeftIcon, ChevronRightIcon } from "./icons"
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useUnifiedStreak } from "../utils/unifiedStreakCalculator"
 import { useDailyGoalStore } from "../stores/useDailyGoalStore"
-import HistoricoSessoes from "./HistoricoSessoes"
+import CollapsedFilterSection from "./CollapsedFilterSection"
+import HistoryDayGroup from "./HistoryDayGroup"
 import { limparComentariosParaExibicao, mesclarComentariosComMarcadores } from "../utils/cicloSessions"
 
 interface HistoricoPageProps {
@@ -406,6 +407,20 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
     setEditModal({ isOpen: false, registro: null })
   }
 
+  // Agrupar histórico por data
+  const historicoAgrupado = useMemo(() => {
+    const grupos = historicoFiltrado.reduce((acc, item) => {
+      const dataKey = item.data.split('T')[0];
+      if (!acc[dataKey]) acc[dataKey] = [];
+      acc[dataKey].push(item);
+      return acc;
+    }, {} as Record<string, HistoricoItem[]>);
+
+    return Object.keys(grupos)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .map(data => ({ data, items: grupos[data] }));
+  }, [historicoFiltrado]);
+
   return (
     <div data-tutorial="historico-content" className="min-h-screen bg-gradient-to-br from-background via-background to-card/50 transition-colors duration-300">
       {showNotification && (
@@ -433,10 +448,21 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
         </div>
       )}
 
-      <div className="container mx-auto px-4 md:px-10 py-6 md:py-10 space-y-6">
+      <div className="container mx-auto px-4 md:px-10 py-6 md:py-10 space-y-8">
+        {/* 1. Header */}
         <Header />
 
-        <Card className="border-border shadow-md">
+        {/* 2. Meta Diária (movida para o topo) */}
+        <MetaDiaria historico={historico} meta={metaDiaria} setMeta={setMetaDiaria} />
+
+        {/* 3. Métricas rápidas */}
+        <Stats historico={historicoFiltrado} />
+
+        {/* 4. Conquistas em carrossel */}
+        <ConquistasCarousel historico={historico} />
+
+        {/* 5. Botão de estatísticas */}
+        <Card className="border-border shadow-sm">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -461,7 +487,8 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
           </CardContent>
         </Card>
 
-        <Filters
+        {/* 6. Filtros colapsados */}
+        <CollapsedFilterSection
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           filterOrigem={filterOrigem}
@@ -473,18 +500,14 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
           dataFim={dataFim}
           setDataFim={setDataFim}
         />
-        <Stats historico={historicoFiltrado} />
 
-        <MetaDiaria historico={historico} meta={metaDiaria} setMeta={setMetaDiaria} />
-
-        <ConquistasEBadges historico={historico} />
-
-        <Card className="border-border shadow-lg">
+        {/* 7. Histórico reorganizado */}
+        <Card className="border-border shadow-sm">
           <CardHeader>
-            <CardTitle className="text-xl font-bold text-foreground">
+            <CardTitle className="text-lg font-bold text-foreground">
               Histórico de Atividades
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {historicoFiltrado.length} {historicoFiltrado.length === 1 ? 'registro encontrado' : 'registros encontrados'}
             </p>
           </CardHeader>
@@ -492,19 +515,24 @@ export default function HistoricoPage({ setActiveView }: HistoricoPageProps) {
             {loading ? (
               <LoadingList />
             ) : historicoFiltrado.length ? (
-              <HistoricoSessoes
-                historico={historicoFiltrado}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteClick}
-              />
+              <div className="space-y-8">
+                {historicoAgrupado.map(({ data, items }) => (
+                  <HistoryDayGroup
+                    key={data}
+                    data={data}
+                    items={items}
+                    onEdit={handleEditClick}
+                    onDelete={handleDeleteClick}
+                  />
+                ))}
+              </div>
             ) : (
               <EmptyState />
             )}
           </CardContent>
         </Card>
 
-        <HeatMapCalendario historico={historico} />
-
+        {/* 8. Gráficos (mantidos no final) */}
         <div className="grid gap-6 lg:grid-cols-2">
           <GraficoProgresso historico={historico} />
           <AnaliseSemanal historico={historico} />
@@ -607,79 +635,80 @@ function Header() {
   )
 }
 
-interface FiltersProps {
-  searchTerm: string
-  setSearchTerm: (term: string) => void
-  filterOrigem: string
-  setFilterOrigem: (origem: string) => void
-  filterData: string
-  setFilterData: (data: string) => void
-  dataInicio: string
-  setDataInicio: (data: string) => void
-  dataFim: string
-  setDataFim: (data: string) => void
-}
+// Componente de Conquistas em Carrossel
+function ConquistasCarousel({ historico }: { historico: HistoricoItem[] }) {
+  const unifiedStreak = useUnifiedStreak();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-function Filters({ searchTerm, setSearchTerm, filterOrigem, setFilterOrigem, filterData, setFilterData, dataInicio, setDataInicio, dataFim, setDataFim }: FiltersProps) {
+  const conquistas = useMemo(() => {
+    if (!historico || !Array.isArray(historico)) return { streakAtual: 0, totalHoras: 0, totalSessoes: 0 };
+    return {
+      streakAtual: unifiedStreak.streak,
+      totalHoras: Math.floor(historico.reduce((acc, item) => acc + (item.duracao_minutos || 0), 0) / 60),
+      totalSessoes: historico.length
+    };
+  }, [historico, unifiedStreak.streak]);
+
+  const badges = [
+    { id: 'streak', icon: FlameIcon, titulo: `${conquistas.streakAtual} Dias de Fogo`, desc: `Dias seguidos: ${conquistas.streakAtual} dias`, conquistado: conquistas.streakAtual >= 3, color: 'text-orange-500' },
+    { id: 'horas', icon: TrophyIcon, titulo: `${conquistas.totalHoras}h Totais`, desc: `Total de ${conquistas.totalHoras} horas estudadas`, conquistado: conquistas.totalHoras >= 10, color: 'text-yellow-500' },
+    { id: 'sessoes', icon: ZapIcon, titulo: `${conquistas.totalSessoes} Atividades`, desc: `Completou ${conquistas.totalSessoes} atividades`, conquistado: conquistas.totalSessoes >= 10, color: 'text-purple-500' },
+    { id: 'consistencia', icon: StarIcon, titulo: 'Consistente', desc: 'Estudou nos últimos 7 dias', conquistado: unifiedStreak.streak >= 7, color: 'text-blue-500' }
+  ];
+
+  const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % badges.length);
+  const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + badges.length) % badges.length);
+
   return (
-    <Card className="border-border shadow-md">
-      <CardContent className="pt-6 space-y-4">
-        <div className="relative flex-1">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-          <Input
-            type="text"
-            placeholder="Buscar por disciplina, tópico ou simulado..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <FilterIcon className="w-4 h-4 text-muted-foreground" />
-            <label className="text-sm font-semibold text-foreground">Tipo:</label>
+    <Card className="border-border shadow-sm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-bold text-foreground">Conquistas</CardTitle>
+          <div className="flex gap-2">
+            <button
+              onClick={prevSlide}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Anterior"
+            >
+              <ChevronLeftIcon className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Próximo"
+            >
+              <ChevronRightIcon className="w-4 h-4 text-muted-foreground" />
+            </button>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {['all', 'manual', 'timer', 'ciclo_estudos', 'trilha', 'simulado'].map(origem => (
-              <button
-                key={origem}
-                onClick={() => setFilterOrigem(origem)}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${filterOrigem === origem ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {badges.map((b, idx) => {
+            const Icon = b.icon;
+            return (
+              <div
+                key={b.id}
+                className={`p-4 rounded-xl border transition-all duration-300 ${b.conquistado
+                  ? 'border-border bg-card/80 shadow-sm'
+                  : 'bg-muted/30 opacity-60 border-transparent'
+                  } ${idx === currentIndex ? 'ring-2 ring-primary' : ''
+                  }`}
               >
-                {origem === 'all' ? 'Todos' : origem === 'ciclo_estudos' ? 'Ciclo' : origem === 'trilha' ? 'Trilha' : origem.charAt(0).toUpperCase() + origem.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <CalendarDaysIcon className="w-4 h-4 text-muted-foreground" />
-            <label className="text-sm font-semibold text-foreground">Período:</label>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'hoje', '7dias', '30dias', 'custom'].map(periodo => (
-                <button
-                  key={periodo}
-                  onClick={() => setFilterData(periodo)}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${filterData === periodo ? "bg-primary text-primary-foreground shadow-md" : "bg-muted/50 text-muted-foreground hover:bg-muted"}`}
-                >
-                  {periodo === 'all' ? 'Tudo' : periodo === '7dias' ? '7 dias' : periodo === '30dias' ? '30 dias' : periodo.charAt(0).toUpperCase() + periodo.slice(1)}
-                </button>
-              ))}
-            </div>
-            {filterData === "custom" && (
-              <div className="flex gap-2 items-center flex-wrap">
-                <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-40" />
-                <span className="text-muted-foreground">até</span>
-                <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-40" />
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-6 h-6 ${b.color}`} />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-sm text-foreground truncate">{b.titulo}</h3>
+                    <p className="text-xs text-muted-foreground truncate">{b.desc}</p>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function Stats({ historico }: { historico: HistoricoItem[] }) {

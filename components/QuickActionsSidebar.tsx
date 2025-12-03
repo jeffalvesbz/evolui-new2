@@ -17,23 +17,23 @@ import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { useModalStore } from '../stores/useModalStore';
-// FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfDay, isSameDay } from 'date-fns';
 import { toast } from './Sonner';
 import { Progress } from '../lib/dashboardMocks';
+import { getLocalDateISO } from '../utils/dateUtils';
 import type { SessaoCiclo } from '../types';
 
 interface QuickActionsSidebarProps {
-  setActiveView: (view: string) => void;
+    setActiveView: (view: string) => void;
 }
 
 const formatStudyDuration = (minutes: number) => {
-  const totalMinutes = Math.max(0, Math.round(minutes ?? 0));
-  const hours = Math.floor(totalMinutes / 60);
-  const remaining = totalMinutes % 60;
-  if (hours <= 0) return `${remaining} min`;
-  if (remaining === 0) return `${hours}h`;
-  return `${hours}h ${remaining}min`;
+    const totalMinutes = Math.max(0, Math.round(minutes ?? 0));
+    const hours = Math.floor(totalMinutes / 60);
+    const remaining = totalMinutes % 60;
+    if (hours <= 0) return `${remaining} min`;
+    if (remaining === 0) return `${hours}h`;
+    return `${hours}h ${remaining}min`;
 };
 
 const QuickActionCard: React.FC<{ children: React.ReactNode, title: string, icon: React.ReactNode }> = ({ children, title, icon }) => (
@@ -62,14 +62,14 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
             const sessoesOrdenadas = [...cicloAtivo.sessoes].sort((a, b) => a.ordem - b.ordem);
             // FIX: Add explicit type to 'proximaSessaoCiclo' to resolve 'unknown' type error.
             let proximaSessaoCiclo: SessaoCiclo | undefined;
-            
+
             if (!ultimaSessaoConcluidaId) {
                 proximaSessaoCiclo = sessoesOrdenadas[0];
             } else {
                 const ultimoIndice = sessoesOrdenadas.findIndex(s => s.id === ultimaSessaoConcluidaId);
                 proximaSessaoCiclo = sessoesOrdenadas[(ultimoIndice + 1) % sessoesOrdenadas.length];
             }
-            
+
             if (proximaSessaoCiclo) {
                 const disciplina = disciplinasMap.get(proximaSessaoCiclo.disciplina_id);
                 if (disciplina) {
@@ -87,7 +87,7 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
                 }
             }
         }
-        
+
         // 2. Prioridade: Revisões do Dia
         const hoje = startOfDay(new Date());
         const pendentesHoje = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
@@ -109,7 +109,7 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
         const primeiroTopicoNaoConcluido = topicosDoDiaIds
             .map(id => findTopicById(id))
             .find(info => info && !info.topico.concluido);
-        
+
         if (primeiroTopicoNaoConcluido) {
             const { topico, disciplina } = primeiroTopicoNaoConcluido;
             return {
@@ -155,11 +155,11 @@ const ResumoDia: React.FC = () => {
     const goalMinutes = useDailyGoalStore(state => state.goalMinutes);
 
     const tempoTotalHoje = useMemo(() => {
-        const hojeISO = new Date().toISOString().split('T')[0];
+        const hojeISO = getLocalDateISO();
         const sessoesDeHoje = sessoes.filter(s => s.data_estudo === hojeISO);
         return Math.round(sessoesDeHoje.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60);
     }, [sessoes]);
-    
+
     const metaPercentual = goalMinutes > 0 ? Math.round((tempoTotalHoje / goalMinutes) * 100) : 0; // Permite valores acima de 100%
 
     return (
@@ -203,24 +203,24 @@ const AdicionarRapido: React.FC = () => {
 
 
 const QuickActionsSidebar: React.FC<QuickActionsSidebarProps> = ({ setActiveView }) => {
-  return (
-    <aside className="w-72 bg-card/40 backdrop-blur-xl border-l border-white/10 flex-shrink-0 hidden lg:flex flex-col">
-        <div className="flex items-center space-x-3 p-5 h-[73px] border-b border-white/10 flex-shrink-0">
-            <h2 className="text-base font-bold text-foreground tracking-wider">Ações Rápidas</h2>
-        </div>
-        <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
-            <QuickActionCard title="Próximo Passo Inteligente" icon={<SparklesIcon className="w-5 h-5 text-primary" />}>
-                <ProximoPasso setActiveView={setActiveView} />
-            </QuickActionCard>
-            <QuickActionCard title="Resumo do Dia" icon={<TargetIcon className="w-5 h-5 text-primary" />}>
-                <ResumoDia />
-            </QuickActionCard>
-             <QuickActionCard title="Adicionar Rápido" icon={<PlusCircleIcon className="w-5 h-5 text-primary" />}>
-                <AdicionarRapido />
-            </QuickActionCard>
-        </div>
-    </aside>
-  );
+    return (
+        <aside className="w-72 bg-card/40 backdrop-blur-xl border-l border-white/10 flex-shrink-0 hidden lg:flex flex-col">
+            <div className="flex items-center space-x-3 p-5 h-[73px] border-b border-white/10 flex-shrink-0">
+                <h2 className="text-base font-bold text-foreground tracking-wider">Ações Rápidas</h2>
+            </div>
+            <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+                <QuickActionCard title="Próximo Passo Inteligente" icon={<SparklesIcon className="w-5 h-5 text-primary" />}>
+                    <ProximoPasso setActiveView={setActiveView} />
+                </QuickActionCard>
+                <QuickActionCard title="Resumo do Dia" icon={<TargetIcon className="w-5 h-5 text-primary" />}>
+                    <ResumoDia />
+                </QuickActionCard>
+                <QuickActionCard title="Adicionar Rápido" icon={<PlusCircleIcon className="w-5 h-5 text-primary" />}>
+                    <AdicionarRapido />
+                </QuickActionCard>
+            </div>
+        </aside>
+    );
 };
 
 export default QuickActionsSidebar;

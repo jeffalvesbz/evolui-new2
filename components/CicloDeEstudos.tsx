@@ -27,6 +27,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { getLocalDateISO } from '../utils/dateUtils';
 
 // Helper to format time
 const formatTime = (seconds: number) => {
@@ -340,7 +341,7 @@ const CicloDeEstudos: React.FC = () => {
 
     // Calcular sessões do ciclo concluídas hoje (derivado de sessoesDoCiclo)
     const sessoesHojeDoCiclo = useMemo(() => {
-        const hojeISO = new Date().toISOString().split('T')[0];
+        const hojeISO = getLocalDateISO();
         return sessoesDoCiclo.filter(s => s.data_estudo === hojeISO);
     }, [sessoesDoCiclo]);
 

@@ -33,6 +33,7 @@ import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginPage } from './components/LoginPage';
 import { ModalSkeleton } from './components/skeletons';
+import { getLocalDateISO } from './utils/dateUtils';
 
 // Helper para lazy load seguro
 const safeLazy = <T extends React.ComponentType<any>>(
@@ -150,7 +151,7 @@ const Header: React.FC<{ theme: Theme; toggleTheme: () => void; activeView: stri
   const hasNotifications = React.useMemo(() => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    const hojeISO = hoje.toISOString().split('T')[0];
+    const hojeISO = getLocalDateISO(hoje);
 
     // Revisões pendentes ou atrasadas
     const revisoesPendentes = revisoes.filter(r => {

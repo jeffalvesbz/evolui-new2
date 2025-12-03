@@ -43,6 +43,35 @@ const getDificuldadeInfo = (dificuldade: Revisao['dificuldade']) => {
     }
 };
 
+// Helper function to extract topic code (e.g., "2.1" from "2.1 - Title")
+const extractTopicCode = (titulo: string): string => {
+    const match = titulo.match(/^(\d+\.?\d*)\s*[-–]\s*/);
+    return match ? match[1] : '';
+};
+
+// Helper function to create short title (e.g., "2.1 – Funções da Administração")
+const getShortTitle = (titulo: string): string => {
+    // Extract code and main title, remove detailed description after colon
+    const withoutDetails = titulo.replace(/:\s*.+$/, '');
+    // Ensure proper formatting with en-dash
+    return withoutDetails.replace(/^(\d+\.?\d*)\s*[-–]\s*/, '$1 – ').trim();
+};
+
+// Helper function to get topic summary (short description without code)
+const getTopicSummary = (titulo: string): string => {
+    // Remove code prefix
+    const withoutCode = titulo.replace(/^(\d+\.?\d*)\s*[-–]\s*/, '');
+    // Remove main title before colon, keep only description
+    const description = withoutCode.includes(':')
+        ? withoutCode.split(':')[1].trim()
+        : withoutCode;
+    // Limit to 8 words
+    const words = description.split(/\s+/);
+    return words.length > 8
+        ? words.slice(0, 8).join(' ') + '...'
+        : description;
+};
+
 const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagendar, onRemover }) => {
     const findTopicById = useDisciplinasStore(state => state.findTopicById);
     const [isReagendarMenuOpen, setIsReagendarMenuOpen] = useState(false);
@@ -75,36 +104,49 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
         >
             <div className="p-4 flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 space-y-2">
-                    <p className="font-bold text-foreground">{revisao.conteudo}</p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded">{disciplina?.nome || 'Disciplina'}</span>
-                        <span className="text-xs text-muted-foreground">{topico?.titulo || 'Tópico'}</span>
+                    {/* TÍTULO */}
+                    <p className="text-lg font-bold text-foreground leading-snug">
+                        {topico?.titulo ? getShortTitle(topico.titulo) : revisao.conteudo}
+                    </p>
+                    {/* SUBTÍTULO */}
+                    <div className="flex items-center gap-2 flex-wrap text-sm">
+                        <span className="font-medium text-primary">{disciplina?.nome || 'Disciplina'}</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground">
+                            {topico?.titulo ? getTopicSummary(topico.titulo) : 'Tópico'}
+                        </span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className={`font-medium px-2 py-0.5 rounded border text-xs ${dificuldadeColor}`}>{dificuldadeLabel}</span>
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:items-end gap-2 text-sm">
-                    <div className={`flex items-center gap-1.5 font-medium ${statusColor}`}>
-                        <StatusIcon className="w-4 h-4" /> {statusLabel}
+                {/* METADADOS */}
+                <div className="flex flex-col sm:items-end gap-3 text-xs sm:min-w-[160px]">
+                    <div className={`flex items-center gap-1.5 ${statusColor}`}>
+                        <span>⏳</span>
+                        <span className="font-semibold">{statusLabel}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <CalendarDaysIcon className="w-4 h-4" /> {dataFormatada}
+                        <span>📅</span>
+                        <span>{dataFormatada}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <OrigemIcon className="w-4 h-4" /> {origemLabel}
+                        <span>📚</span>
+                        <span>{origemLabel}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="border-t border-border p-2 flex justify-end items-center gap-2">
+            <div className="border-t border-border p-2.5 flex justify-end items-center gap-2">
                 {revisao.status !== 'concluida' && (
                     <>
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setIsReagendarMenuOpen(!isReagendarMenuOpen)}
                                 onBlur={() => setTimeout(() => setIsReagendarMenuOpen(false), 200)}
-                                className="h-8 px-3 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 flex items-center gap-1"
+                                className="h-8 px-3 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 flex items-center gap-1.5"
                             >
-                                <RefreshCwIcon className="w-3 h-3" /> Reagendar
+                                <RefreshCwIcon className="w-3.5 h-3.5" /> Reagendar
                             </button>
                             {isReagendarMenuOpen && (
                                 <div className="absolute bottom-full right-0 mb-2 w-40 bg-background border border-border rounded-md shadow-lg z-10 p-1">
@@ -121,14 +163,14 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                             )}
                         </div>
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setIsConcluirMenuOpen(!isConcluirMenuOpen)}
                                 onBlur={() => setTimeout(() => setIsConcluirMenuOpen(false), 200)}
                                 className="h-8 px-4 text-xs font-bold rounded-md bg-secondary text-black hover:bg-secondary/90 flex items-center gap-1.5"
                             >
-                                <CheckCircle2Icon className="w-4 h-4" /> Concluir <ChevronDownIcon className="w-3 h-3" />
+                                <CheckCircle2Icon className="w-3.5 h-3.5" /> Concluir <ChevronDownIcon className="w-3 h-3" />
                             </button>
-                             {isConcluirMenuOpen && (
+                            {isConcluirMenuOpen && (
                                 <div className="absolute bottom-full right-0 mb-2 w-40 bg-background border border-border rounded-md shadow-lg z-10 p-1">
                                     <button
                                         onClick={() => { onConcluir(revisao.id, 'acertou'); setIsConcluirMenuOpen(false); }}
@@ -154,10 +196,10 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                         </div>
                     </>
                 )}
-                <button 
+                <button
                     onClick={() => {
                         const confirmar = window.confirm(
-                            revisao.status === 'concluida' 
+                            revisao.status === 'concluida'
                                 ? 'Tem certeza que deseja excluir esta revisão concluída?'
                                 : 'Tem certeza que deseja excluir esta revisão?'
                         );
@@ -165,10 +207,10 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                             onRemover(revisao.id);
                         }
                     }}
-                    className="h-8 w-8 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 hover:text-red-500"
+                    className="h-8 w-8 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 hover:text-red-500 flex items-center justify-center"
                     title="Excluir revisão"
                 >
-                    <Trash2Icon className="w-4 h-4 mx-auto" />
+                    <Trash2Icon className="w-3.5 h-3.5" />
                 </button>
             </div>
         </motion.div>

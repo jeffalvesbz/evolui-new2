@@ -282,6 +282,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
         }
     };
 
+    // Check loading state AFTER all hooks have been called
     if (loading && flashcards.length === 0) {
         return <div className="text-center py-20 text-muted-foreground">Carregando seus flashcards...</div>
     }
