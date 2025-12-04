@@ -137,7 +137,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
               </button>
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-2xl shadow-lg">E</div>
+                <div className="relative bg-gradient-to-br from-primary to-primary-dark w-10 h-10 flex items-center justify-center rounded-xl shadow-lg overflow-hidden">
+                  <span className="text-2xl font-bold text-white font-display">E</span>
+                </div>
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-wide font-display">EVOLUI</h1>
@@ -156,7 +158,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
               </button>
               <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-2xl shadow-lg">E</div>
+                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-8 h-8 flex items-center justify-center rounded-lg shadow-lg overflow-hidden">
+                  <span className="text-lg font-bold font-display">E</span>
+                </div>
               </div>
             </>
           )}

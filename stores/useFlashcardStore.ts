@@ -4,6 +4,7 @@ import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as
 import { toast } from '../components/Sonner';
 // FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
+// import { useSubscriptionStore } from './useSubscriptionStore'; // Removed to fix circular dependency
 
 interface FlashcardStore {
   flashcards: Flashcard[];
@@ -152,7 +153,8 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
   addFlashcard: async (newFlashcard, topicoId) => {
     // Verificar limite de flashcards
-    const { canCreateFlashcard, incrementFlashcardCount } = await import('./useSubscriptionStore').then(m => m.useSubscriptionStore.getState());
+    const { useSubscriptionStore } = await import('./useSubscriptionStore');
+    const { canCreateFlashcard, incrementFlashcardCount } = useSubscriptionStore.getState();
 
     if (!canCreateFlashcard(1)) {
       toast.error("Você atingiu o limite mensal de flashcards do seu plano.");
@@ -173,7 +175,8 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
   addFlashcards: async (newFlashcards, topicoId) => {
     // Verificar limite de flashcards
-    const { canCreateFlashcard, incrementFlashcardCount } = await import('./useSubscriptionStore').then(m => m.useSubscriptionStore.getState());
+    const { useSubscriptionStore } = await import('./useSubscriptionStore');
+    const { canCreateFlashcard, incrementFlashcardCount } = useSubscriptionStore.getState();
 
     if (!canCreateFlashcard(newFlashcards.length)) {
       toast.error(`Você não tem limite suficiente para criar ${newFlashcards.length} flashcards.`);

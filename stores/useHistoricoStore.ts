@@ -29,6 +29,8 @@ interface HistoricoState {
   historico: HistoricoItem[];
   loading: boolean;
   fetchHistorico: (editalId: string) => Promise<void>;
+  updateHistoricoItem: (id: string, data: Partial<HistoricoItem>) => Promise<void>;
+  deleteHistoricoItem: (id: string) => Promise<void>;
 }
 
 const buildHistoricoFromStores = (editalId: string): HistoricoItem[] => {
@@ -127,13 +129,48 @@ const buildHistoricoFromStores = (editalId: string): HistoricoItem[] => {
     .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 };
 
-export const useHistoricoStore = create<HistoricoState>((set) => ({
+export const useHistoricoStore = create<HistoricoState>((set, get) => ({
   historico: [],
   loading: false,
   fetchHistorico: async (editalId: string) => {
     set({ loading: true });
     const historicoCompleto = buildHistoricoFromStores(editalId);
     set({ historico: historicoCompleto, loading: false });
+  },
+  updateHistoricoItem: async (id, data) => {
+    if (data.type === 'estudo') {
+      await useEstudosStore.getState().updateSessao(id, {
+        disciplina_id: undefined, // Não atualizamos disciplina por aqui diretamente por enquanto
+        topico_id: undefined, // Nem tópico
+        // Apenas campos editáveis simples
+        comentarios: data.comentarios,
+        tempo_estudado: data.duracao_minutos ? data.duracao_minutos * 60 : undefined,
+        data_estudo: data.data ? data.data.split('T')[0] : undefined
+      });
+    } else if (data.type === 'simulado') {
+      await useStudyStore.getState().updateSimulation(id, {
+        name: data.nome,
+        duration_minutes: data.duracao_minutos,
+        date: data.data,
+        notes: data.comentarios
+      });
+    }
+    // Refresh historico
+    const editalId = useEditalStore.getState().editalAtivo?.id;
+    if (editalId) get().fetchHistorico(editalId);
+  },
+  deleteHistoricoItem: async (id) => {
+    const item = get().historico.find(i => i.id === id);
+    if (!item) return;
+
+    if (item.type === 'estudo') {
+      await useEstudosStore.getState().removeSessao(id);
+    } else if (item.type === 'simulado') {
+      await useStudyStore.getState().deleteSimulation(id);
+    }
+    // Refresh historico
+    const editalId = useEditalStore.getState().editalAtivo?.id;
+    if (editalId) get().fetchHistorico(editalId);
   }
 }));
 

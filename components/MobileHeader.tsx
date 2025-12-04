@@ -17,8 +17,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({ onOpenSidebar, theme, toggl
           <MenuIcon className="w-6 h-6" />
         </button>
         <div className="flex items-center space-x-3 ml-4">
-            <div className="bg-gradient-to-br from-primary to-secondary text-black w-8 h-8 flex items-center justify-center rounded-lg font-bold text-xl shadow-md shadow-primary/20">E</div>
-            <h1 className="text-sm font-bold text-foreground tracking-wider">EVOLUI</h1>
+          <div className="bg-gradient-to-br from-primary to-primary-dark w-8 h-8 flex items-center justify-center rounded-lg shadow-md shadow-primary/20 overflow-hidden">
+            <span className="text-lg font-bold text-white font-display">E</span>
+          </div>
+          <h1 className="text-sm font-bold text-foreground tracking-wider">EVOLUI</h1>
         </div>
       </div>
       <ThemeSwitcher theme={theme} toggleTheme={toggleTheme} />

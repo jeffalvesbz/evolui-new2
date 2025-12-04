@@ -2213,6 +2213,12 @@ export const saveTrilhasPorSemana = async (
 };
 
 export const getTrilhasPorSemana = async (studyPlanId: string) => {
+    if (!studyPlanId || studyPlanId.trim() === '') {
+        return {
+            trilhasPorSemana: {},
+            trilhaConclusao: {}
+        };
+    }
     const { data, error } = await supabase
         .from('study_plans')
         .select('trilhas_por_semana, trilha_conclusao')
@@ -2261,6 +2267,7 @@ export const getPlanningConfig = async (studyPlanId: string) => {
 // Disciplinas (with nested topicos)
 // ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
 export const getDisciplinas = async (studyPlanId: string): Promise<Disciplina[]> => {
+    if (!studyPlanId || studyPlanId.trim() === '') return [];
     const { data, error } = await supabase
         .from('disciplinas')
         .select('*, topicos(*)')
@@ -2667,6 +2674,7 @@ const mapDbToRevisao = (dbData: any): Revisao => {
 };
 
 export const getRevisoes = async (studyPlanId: string): Promise<Revisao[]> => {
+    if (!studyPlanId || studyPlanId.trim() === '') return [];
     const { data, error } = await supabase
         .from('revisoes')
         .select('*')
@@ -2732,6 +2740,7 @@ const mapCadernoErroToDb = (erroData: Partial<CadernoErro>) => {
 };
 
 export const getErros = async (studyPlanId: string): Promise<CadernoErro[]> => {
+    if (!studyPlanId || studyPlanId.trim() === '') return [];
     const { data, error } = await supabase
         .from('caderno_erros')
         .select('*, disciplina:disciplinas(nome), topico:topicos(titulo)')
@@ -2805,6 +2814,7 @@ export const deleteErro = async (id: string) => {
 
 // ✅ Corrigido: Funções CRUD para Ciclos movidas para implementações customizadas para lidar com a relação com `sessoes_ciclo`.
 export const getCiclos = async (studyPlanId: string): Promise<Ciclo[]> => {
+    if (!studyPlanId || studyPlanId.trim() === '') return [];
     const { data, error } = await supabase
         .from('ciclos')
         .select('*, sessoes_ciclo(*)')

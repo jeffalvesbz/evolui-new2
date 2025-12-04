@@ -25,6 +25,7 @@ const AdminDisciplinaDetalhes: React.FC = () => {
     }, [disciplinaId]);
 
     const fetchData = async () => {
+        if (!disciplinaId) return;
         setLoading(true);
 
         // Fetch Disciplina Name
@@ -117,8 +118,8 @@ const AdminDisciplinaDetalhes: React.FC = () => {
                 <button
                     onClick={() => setMode('manual')}
                     className={`px-4 py-2 rounded-md font-medium transition-colors ${mode === 'manual'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                         }`}
                 >
                     Modo Manual (Linhas)
@@ -126,8 +127,8 @@ const AdminDisciplinaDetalhes: React.FC = () => {
                 <button
                     onClick={() => setMode('json')}
                     className={`px-4 py-2 rounded-md font-medium transition-colors ${mode === 'json'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                         }`}
                 >
                     Modo JSON
