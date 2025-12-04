@@ -1,0 +1,18 @@
+O que é Computação Quântica?|Campo que usa princípios da mecânica quântica (como superposição e entrelaçamento) para resolver problemas mais rapidamente do que computadores clássicos.
+Qual a diferença entre um bit clássico e um qubit?|O bit clássico é um 0 ou 1. O qubit pode estar em superposição de 0 e 1 ao mesmo tempo, aumentando o poder computacional.
+O que são portas lógicas quânticas?|Manipulam qubits (como AND/OR fazem com bits). Exemplos: <div>Manipulam qubits</div>
+Inverte o qubit|X: inverte o qubit
+Inverte o segundo qubit se o primeiro for 1|CNOT: inverte o segundo qubit se o primeiro for 1
+Troca dois qubits|SWAP: troca dois qubits
+O que é IA enviesada?|IA que reproduz ou amplifica preconceitos dos dados com que foi treinada.
+O que é Machine Learning?|Subcampo de IA que ensina máquinas a aprenderem padrões nos dados e tomarem decisões sem programação explícita.
+Tipos de aprendizado de máquina|Supervisionado: dados rotulados|Não supervisionado: poucos dados rotulados|Semi-supervisionado: poucos dados rotulados|Por reforço: decisões por tentativa e erro
+Não supervisionado: descreve padrões ocultos|Não supervisionado: descreve padrões ocultos
+Deep Learning: usa redes neurais profundas|Deep Learning: usa redes neurais profundas
+O que é neurônio artificial?|Função de ativação: introduz não-linearidade, permitindo que a rede aprenda padrões complexos.
+O que são LLMs?|Modelos de linguagem grande volume de texto para gerar e compreender linguagem natural (ex: GPT-4, Gemini, Claude).
+Arquitetura base dos LLMs|Transformers, com mecanismo de atenção e aprendizado contextual.
+Pré-treinamento: aprendizado genérico|Pré-treinamento: aprendizado genérico
+Fine-tuning: ajuste para tarefas específicas|Fine-tuning: ajuste para tarefas específicas
+Engenharia de Prompt|Técnica de formular instruções específicas para direcionar corretamente a resposta da IA gerativa.
+Métodos de engenharia em LLMs|Zero-shot: exemplo|Few-shot: poucos exemplos|In-context learning: aprendizado durante a conversa

@@ -1,0 +1,44 @@
+# 🔑 Variáveis de Ambiente para Vercel
+# Copie e cole estas variáveis no Vercel Dashboard
+# Vá em: Settings → Environment Variables
+
+# ============================================
+# SUPABASE (Já configurado)
+# ============================================
+
+VITE_SUPABASE_URL=https://ilzbcfamqkfcochldtxn.supabase.co
+
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsemJjZmFtcWtmY29jaGxkdHhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTUzNTIsImV4cCI6MjA3NzE5MTM1Mn0.ywCtrjlKOIN6OYBDdvP7f5o5L7_rPUhMZXRDv2DczDk
+
+# ============================================
+# GEMINI AI (Adicione sua chave aqui)
+# ============================================
+
+VITE_GEMINI_API_KEY=SUA_CHAVE_GEMINI_AQUI
+
+GEMINI_API_KEY=SUA_CHAVE_GEMINI_AQUI
+
+# ============================================
+# INSTRUÇÕES:
+# ============================================
+# 1. No Vercel Dashboard, vá em:
+#    Settings → Environment Variables
+#
+# 2. Adicione cada variável uma por uma:
+#    - Clique em "Add New"
+#    - Key: VITE_SUPABASE_URL
+#    - Value: https://ilzbcfamqkfcochldtxn.supabase.co
+#    - Environments: Production, Preview, Development (marque todos)
+#    - Clique em "Save"
+#
+# 3. Repita para cada variável acima
+#
+# 4. Para obter a chave do Gemini:
+#    https://aistudio.google.com/app/apikey
+#
+# 5. Após adicionar todas, faça um novo deploy
+# ============================================
+
+
+
+
