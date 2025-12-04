@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, Flashcard, RedacaoCorrigida, CorrecaoCompleta, Friendship } from '../types';
+=======
+import { User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, Flashcard, RedacaoCorrigida, CorrecaoCompleta, GamificationStats, XpLogEntry, XpLogEvent, Badge, Friendship } from '../types';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 import { Simulation } from '../stores/useStudyStore';
 // FIX: Changed date-fns import for subDays to use a named import to resolve module export errors.
 import { subDays } from 'date-fns';
@@ -182,6 +186,85 @@ export const MOCK_SIMULADOS: Simulation[] = [
     }
 ];
 
+<<<<<<< HEAD
+=======
+// --- Gamification Mocks ---
+export const MOCK_BADGES: Badge[] = [
+    { id: 'badge-1', name: 'Primeiros Passos', description: 'Complete sua primeira sessão de estudo.', icon: 'StarIcon', xp: 10 },
+    { id: 'badge-2', name: 'Maratonista', description: 'Estude por mais de 10 horas no total.', icon: 'TrendingUpIcon', xp: 50 },
+    { id: 'badge-3', name: 'Sequência de 7 Dias', description: 'Mantenha uma sequência de 7 dias de estudos.', icon: 'FlameIcon', xp: 70 },
+    { id: 'badge-4', name: 'Revisor Dedicado', description: 'Complete 10 revisões agendadas.', icon: 'RepeatIcon', xp: 30 },
+    { id: 'badge-5', name: 'Caça-Erros', description: 'Resolva 5 erros no seu caderno.', icon: 'BookCopyIcon', xp: 15 },
+    { id: 'badge-6', name: 'Edital Concluído', description: 'Conclua 100% de um edital.', icon: 'TrophyIcon', xp: 200 },
+    // New public achievements
+    { id: 'badge-7', name: 'Mestre do Tempo', description: 'Estude por um total de 50 horas.', icon: 'ClockIcon', xp: 100 },
+    { id: 'badge-8', name: 'Senhor do Tempo', description: 'Estude por um total de 100 horas.', icon: 'HistoryIcon', xp: 200 },
+    { id: 'badge-9', name: 'Guardião da Memória', description: 'Revise 500 flashcards.', icon: 'LayersIcon', xp: 150 },
+    { id: 'badge-10', name: 'A Lenda', description: 'Mantenha uma sequência de 100 dias de estudos.', icon: 'TrophyIcon', xp: 300 },
+    { id: 'badge-11', name: 'Imparável', description: 'Estude por 10 horas em um único dia.', icon: 'ZapIcon', xp: 120 },
+    { id: 'badge-12', name: 'Exterminador de Débitos', description: 'Conclua 20 revisões que estavam atrasadas.', icon: 'CheckCircle2Icon', xp: 80 },
+    // Secret Achievements
+    { id: 'badge-secret-1', name: 'Matrix', description: 'Qual realidade você escolheu?', icon: 'RefreshCwIcon', xp: 150, is_secret: true },
+    { id: 'badge-secret-2', name: 'Interestelar', description: 'O tempo é relativo. Você estudou por 5 horas seguidas.', icon: 'HistoryIcon', xp: 300, is_secret: true },
+    { id: 'badge-secret-3', name: 'Memento Vivere', description: 'A vida é constância. Você manteve um streak de 30 dias.', icon: 'SunIcon', xp: 250, is_secret: true },
+    { id: 'badge-secret-4', name: 'O Sábio', description: 'Você não teme o conhecimento. Resolveu 10 erros difíceis.', icon: 'BookOpenCheckIcon', xp: 200, is_secret: true },
+];
+
+export const MOCK_GAMIFICATION_STATS: GamificationStats = {
+    user_id: MOCK_USER_ID,
+    xp_total: 480,
+    level: 4,
+    current_streak_days: 3,
+    best_streak_days: 15,
+    unlockedBadgeIds: ['badge-1'],
+};
+
+// --- Add more stats for ranking users ---
+export const MOCK_GAMIFICATION_STATS_LIST: GamificationStats[] = [
+    MOCK_GAMIFICATION_STATS,
+    ...MOCK_USERS_FOR_RANKING.map((user, i) => ({
+        user_id: user.id,
+        xp_total: 100 + (i * 150),
+        level: Math.floor(Math.sqrt(100 + (i * 150)) / 10) + 1,
+        current_streak_days: i,
+        best_streak_days: i + 5,
+        unlockedBadgeIds: [],
+    }))
+];
+
+// --- Add more xp logs for ranking ---
+const generateRandomLogs = (): XpLogEntry[] => {
+    const logs: XpLogEntry[] = [];
+    const events: XpLogEvent[] = ['cronometro_finalizado', 'revisao_concluida', 'estudo_extra'];
+    const users = [MOCK_USER, ...MOCK_USERS_FOR_RANKING];
+    for (let i = 0; i < 30; i++) { // Generate logs for the last 30 days
+        for (let j = 0; j < Math.floor(Math.random() * 5); j++) { // 0 to 4 logs per day
+            const user = users[Math.floor(Math.random() * users.length)];
+            const event = events[Math.floor(Math.random() * events.length)];
+            const amount = 10 + Math.floor(Math.random() * 10);
+            const date = subDays(new Date(), i);
+            logs.push({
+                id: `xp-${i}-${j}-${user.id}`,
+                user_id: user.id,
+                event,
+                amount,
+                meta_json: {},
+                created_at: date.toISOString(),
+            });
+        }
+    }
+    return logs;
+}
+
+
+export const MOCK_XP_LOG: XpLogEntry[] = [
+    { id: 'xp-1', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-p-1' }, created_at: today.toISOString() },
+    { id: 'xp-2', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-m-1' }, created_at: yesterday.toISOString() },
+    { id: 'xp-3', user_id: MOCK_USER_ID, event: 'cronometro_finalizado', amount: 10, meta_json: { topico_id: 'top-m-2' }, created_at: twoDaysAgo.toISOString() },
+    ...generateRandomLogs(),
+];
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 // --- Friends Mocks ---
 export const MOCK_FRIENDSHIPS: Friendship[] = [
     // Jefferson's accepted friends
@@ -194,4 +277,8 @@ export const MOCK_FRIENDSHIPS: Friendship[] = [
     // Pending requests for Jefferson to accept
     { id: 'friend-4', user_id_1: 'user-3', user_id_2: 'user-1', status: 'pending', created_at: subDays(new Date(), 1).toISOString() },
     { id: 'friend-5', user_id_1: 'user-6', user_id_2: 'user-1', status: 'pending', created_at: subDays(new Date(), 3).toISOString() },
+<<<<<<< HEAD
 ];
+=======
+];
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

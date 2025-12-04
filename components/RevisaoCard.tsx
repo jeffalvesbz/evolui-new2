@@ -34,6 +34,7 @@ const getOrigemInfo = (origem: Revisao['origem']) => {
     }
 };
 
+<<<<<<< HEAD
 const getDificuldadeInfo = (dificuldade: Revisao['dificuldade']) => {
     switch (dificuldade) {
         case 'fácil': return { label: 'Fácil', color: 'bg-green-500/10 text-green-600 border-green-500/10' };
@@ -72,6 +73,8 @@ const getTopicSummary = (titulo: string): string => {
         : description;
 };
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagendar, onRemover }) => {
     const findTopicById = useDisciplinasStore(state => state.findTopicById);
     const [isReagendarMenuOpen, setIsReagendarMenuOpen] = useState(false);
@@ -87,7 +90,10 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
 
     const { Icon: StatusIcon, color: statusColor, label: statusLabel } = getStatusInfo(revisao.status);
     const { Icon: OrigemIcon, label: origemLabel } = getOrigemInfo(revisao.origem);
+<<<<<<< HEAD
     const { label: dificuldadeLabel, color: dificuldadeColor } = getDificuldadeInfo(revisao.dificuldade);
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     const dataFormatada = useMemo(() => {
         // FIX: Changed locale import to a named import.
@@ -104,6 +110,7 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
         >
             <div className="p-4 flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 space-y-2">
+<<<<<<< HEAD
                     {/* TÍTULO */}
                     <p className="text-lg font-bold text-foreground leading-snug">
                         {topico?.titulo ? getShortTitle(topico.titulo) : revisao.conteudo}
@@ -133,10 +140,29 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                         <span>📚</span>
                         <span>{origemLabel}</span>
+=======
+                    <p className="font-bold text-foreground">{revisao.conteudo}</p>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded">{disciplina?.nome || 'Disciplina'}</span>
+                        <span className="text-xs text-muted-foreground">{topico?.titulo || 'Tópico'}</span>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:items-end gap-2 text-sm">
+                    <div className={`flex items-center gap-1.5 font-medium ${statusColor}`}>
+                        <StatusIcon className="w-4 h-4" /> {statusLabel}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <CalendarDaysIcon className="w-4 h-4" /> {dataFormatada}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <OrigemIcon className="w-4 h-4" /> {origemLabel}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     </div>
                 </div>
             </div>
 
+<<<<<<< HEAD
             <div className="border-t border-border p-2.5 flex justify-end items-center gap-2">
                 {revisao.status !== 'concluida' && (
                     <>
@@ -213,6 +239,72 @@ const RevisaoCard: React.FC<RevisaoCardProps> = ({ revisao, onConcluir, onReagen
                     <Trash2Icon className="w-3.5 h-3.5" />
                 </button>
             </div>
+=======
+            {revisao.status !== 'concluida' && (
+                <div className="border-t border-border p-2 flex justify-end items-center gap-2">
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsReagendarMenuOpen(!isReagendarMenuOpen)}
+                            onBlur={() => setTimeout(() => setIsReagendarMenuOpen(false), 200)}
+                            className="h-8 px-3 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 flex items-center gap-1"
+                        >
+                            <RefreshCwIcon className="w-3 h-3" /> Reagendar
+                        </button>
+                        {isReagendarMenuOpen && (
+                            <div className="absolute bottom-full right-0 mb-2 w-40 bg-background border border-border rounded-md shadow-lg z-10 p-1">
+                                {[1, 3, 7, 15].map(dias => (
+                                    <button
+                                        key={dias}
+                                        onClick={() => { onReagendar(revisao.id, dias); setIsReagendarMenuOpen(false); }}
+                                        className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted"
+                                    >
+                                        +{dias} dia(s)
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <button 
+                        onClick={() => onRemover(revisao.id)}
+                        className="h-8 w-8 text-xs font-medium rounded-md bg-muted text-muted-foreground hover:bg-muted/80 hover:text-red-500"
+                    >
+                        <Trash2Icon className="w-4 h-4 mx-auto" />
+                    </button>
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsConcluirMenuOpen(!isConcluirMenuOpen)}
+                            onBlur={() => setTimeout(() => setIsConcluirMenuOpen(false), 200)}
+                            className="h-8 px-4 text-xs font-bold rounded-md bg-secondary text-black hover:bg-secondary/90 flex items-center gap-1.5"
+                        >
+                            <CheckCircle2Icon className="w-4 h-4" /> Concluir <ChevronDownIcon className="w-3 h-3" />
+                        </button>
+                         {isConcluirMenuOpen && (
+                            <div className="absolute bottom-full right-0 mb-2 w-40 bg-background border border-border rounded-md shadow-lg z-10 p-1">
+                                <button
+                                    onClick={() => { onConcluir(revisao.id, 'acertou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-green-600 font-medium"
+                                >
+                                    ✓ Acertei
+                                </button>
+                                <button
+                                    onClick={() => { onConcluir(revisao.id, 'errou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-red-400 font-medium"
+                                >
+                                    ✗ Errei
+                                </button>
+                                <div className="border-t border-border my-1"></div>
+                                <button
+                                    onClick={() => { onConcluir(revisao.id, 'adiou'); setIsConcluirMenuOpen(false); }}
+                                    className="w-full text-left text-sm px-3 py-1.5 rounded hover:bg-muted text-muted-foreground"
+                                >
+                                    ⏸ Adiar
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </motion.div>
     );
 };

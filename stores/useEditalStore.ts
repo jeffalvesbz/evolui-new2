@@ -2,13 +2,20 @@ import { create } from 'zustand';
 import { StudyPlan } from '../types';
 import { getStudyPlans, createStudyPlan, updateStudyPlanApi, deleteStudyPlan } from '../services/geminiService';
 import { toast } from '../components/Sonner';
+<<<<<<< HEAD
 import { supabase } from '../services/supabaseClient';
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 interface EditalStore {
   editais: StudyPlan[];
   editalAtivo: StudyPlan | null;
   loading: boolean;
+<<<<<<< HEAD
   setEditalAtivo: (edital: StudyPlan | null) => Promise<void>;
+=======
+  setEditalAtivo: (edital: StudyPlan | null) => void;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   fetchEditais: () => Promise<void>;
   addEdital: (editalData: Omit<StudyPlan, 'id'>) => Promise<StudyPlan>;
   updateEdital: (id: string, updates: Partial<StudyPlan>) => Promise<void>;
@@ -19,6 +26,7 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
   editais: [],
   editalAtivo: null,
   loading: false,
+<<<<<<< HEAD
   setEditalAtivo: async (edital) => {
     set({ editalAtivo: edital });
     
@@ -36,12 +44,16 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
       // Não mostrar erro ao usuário, pois é uma operação silenciosa
     }
   },
+=======
+  setEditalAtivo: (edital) => set({ editalAtivo: edital }),
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
   fetchEditais: async () => {
     set({ loading: true });
     try {
       const editais = await getStudyPlans();
       set({ editais, loading: false });
+<<<<<<< HEAD
       
       // Tentar carregar o último edital selecionado do banco
       try {
@@ -69,6 +81,10 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
       // Se não encontrou edital salvo ou houve erro, usar o primeiro disponível
       if (get().editalAtivo === null && editais.length > 0) {
         set({ editalAtivo: editais[0] });
+=======
+      if (get().editalAtivo === null && editais.length > 0) {
+          set({ editalAtivo: editais[0] });
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       }
     } catch (error) {
       console.error("Failed to fetch editais:", error);
@@ -82,7 +98,11 @@ export const useEditalStore = create<EditalStore>((set, get) => ({
       const newEdital = await createStudyPlan(editalData);
       set(state => ({ editais: [...state.editais, newEdital] }));
       return newEdital;
+<<<<<<< HEAD
     } catch (error: any) {
+=======
+    } catch (error) {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       console.error("Failed to create edital:", error);
       toast.error("Falha ao criar o edital.");
       throw error;

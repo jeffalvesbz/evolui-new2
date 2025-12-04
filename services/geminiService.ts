@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿
 
 import { GoogleGenAI, Type } from '@google/genai';
@@ -17,6 +18,29 @@ const getApiKey = () => {
     }
     // Return empty string if not found (will cause error when trying to use AI features)
     return '';
+=======
+
+
+import { GoogleGenAI, Type } from '@google/genai';
+import { supabase } from './supabaseClient';
+import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, XpLogEvent, XpLogEntry, GamificationStats, Friendship, FriendRequest, NivelDificuldade, NotasPesosEntrada } from '../types';
+import { Simulation } from '../stores/useStudyStore';
+import { subDays } from 'date-fns';
+import { WeeklyRankingData } from '../stores/useGamificationStore';
+
+// Get API key from environment or use empty string (will fail gracefully)
+const getApiKey = () => {
+  // Try Vite env variable first (VITE_ prefix required for client-side access)
+  if (import.meta.env.VITE_GEMINI_API_KEY) {
+    return import.meta.env.VITE_GEMINI_API_KEY;
+  }
+  // Fallback to process.env (defined in vite.config.ts)
+  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
+  // Return empty string if not found (will cause error when trying to use AI features)
+  return '';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 };
 
 const apiKey = getApiKey();
@@ -25,6 +49,7 @@ const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 // --- Helper para obter o user_id ---
 const getUserId = async () => {
     const { data } = await supabase.auth.getSession();
+<<<<<<< HEAD
     if (!data.session?.user.id) throw new Error("Usuário não autenticado.");
     return data.session.user.id;
 }
@@ -94,6 +119,18 @@ const ensureProfileExists = async (userId: string) => {
 }
 
 // --- Helper para calcular nível ---
+=======
+    if (!data.session?.user.id) throw new Error("Usuário не autenticado.");
+    return data.session.user.id;
+}
+
+// --- Helper para calcular nível ---
+const calculateLevel = (xp: number): number => {
+    if (xp <= 0) return 1;
+    return Math.floor(Math.pow(xp / 100, 0.6)) + 1;
+};
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 // --- AUTH SERVICE ---
 export const login = async (email, password) => {
@@ -136,6 +173,7 @@ const correcaoSchema = {
         banca: { type: Type.STRING },
         notaMaxima: { type: Type.NUMBER },
         avaliacaoGeral: { type: Type.STRING },
+<<<<<<< HEAD
         avaliacaoDetalhada: {
             type: Type.ARRAY,
             items: {
@@ -162,6 +200,34 @@ const correcaoSchema = {
                     sugestao: { type: Type.STRING }
                 }
             }
+=======
+        avaliacaoDetalhada: { 
+            type: Type.ARRAY, 
+            items: { 
+                type: Type.OBJECT, 
+                properties: { 
+                    criterio: { type: Type.STRING }, 
+                    pontuacao: { type: Type.NUMBER }, 
+                    maximo: { type: Type.NUMBER },
+                    peso: { type: Type.NUMBER },
+                    feedback: { type: Type.STRING } 
+                } 
+            } 
+        },
+        comentariosGerais: { type: Type.STRING },
+        notaFinal: { type: Type.NUMBER },
+        errosDetalhados: { 
+            type: Type.ARRAY, 
+            items: { 
+                type: Type.OBJECT, 
+                properties: { 
+                    trecho: { type: Type.STRING }, 
+                    tipo: { type: Type.STRING }, 
+                    explicacao: { type: Type.STRING }, 
+                    sugestao: { type: Type.STRING } 
+                } 
+            } 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         },
         textoCorrigido: { type: Type.STRING },
         sinteseFinal: { type: Type.STRING }
@@ -169,13 +235,20 @@ const correcaoSchema = {
 };
 
 export const corrigirRedacao = async (
+<<<<<<< HEAD
     redacao: string,
     banca: string,
     notaMaxima: number,
+=======
+    redacao: string, 
+    banca: string, 
+    notaMaxima: number, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     tema?: string,
     notasPesos?: NotasPesosEntrada
 ): Promise<CorrecaoCompleta> => {
     if (!ai) {
+<<<<<<< HEAD
         throw new Error('API Key do Gemini não configurada. Configure a variável VITE_GEMINI_API_KEY no arquivo .env');
     }
 
@@ -190,11 +263,18 @@ export const corrigirRedacao = async (
     // Validar tamanho do texto
     if (redacao.length > 10000) {
         console.warn('⚠️ Texto muito longo, pode causar lentidão');
+=======
+        throw new Error('API Key do Gemini não configurada. Configure a variável GEMINI_API_KEY no arquivo .env');
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }
 
     // Determinar critérios e notas/pesos baseado na entrada do usuário
     const criteriosEntrada: Array<{ nome: string; nota: number; peso: number; maximo: number }> = [];
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (notasPesos) {
         if (notasPesos.conteudo) criteriosEntrada.push({ nome: 'Conteúdo / Argumentação', ...notasPesos.conteudo });
         if (notasPesos.estrutura) criteriosEntrada.push({ nome: 'Estrutura / Coesão', ...notasPesos.estrutura });
@@ -210,9 +290,14 @@ export const corrigirRedacao = async (
         // Sem notas/pesos definidos, a IA calculará tudo
         notaFinalCalculada = 0; // Será calculado pela IA
     } else {
+<<<<<<< HEAD
         // Calcular nota final como soma direta das notas informadas
         // Os pesos são calculados automaticamente e usados apenas para contexto da IA
         notaFinalCalculada = criteriosEntrada.reduce((sum, c) => sum + c.nota, 0);
+=======
+        // Calcular nota final baseada nos pesos e notas definidos pelo usuário
+        notaFinalCalculada = criteriosEntrada.reduce((sum, c) => sum + (c.nota * c.peso), 0);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }
 
     // Critérios específicos do Enem (5 competências)
@@ -230,7 +315,11 @@ export const corrigirRedacao = async (
     // Estilos de avaliação por banca
     const estiloBanca: Record<string, string> = {
         'Cebraspe': 'Estilo técnico e objetivo; correção analítica. Valorize clareza, concisão e densidade argumentativa. Penalize repetições e desvios da norma culta. Use linguagem impessoal e avaliativa.',
+<<<<<<< HEAD
         'FGV': 'Estilo técnico e rigoroso para questões discursivas. Valorize objetividade, precisão conceitual, clareza e rigor terminológico. Penalize superficialidade, divagações, repetições desnecessárias e falta de tecnicidade. Exija texto corrido (não aceite listas ou tópicos soltos). Tom analítico e avaliativo, focado em domínio técnico e correção linguística.',
+=======
+        'FGV': 'Estilo crítico e interpretativo. Valorize reflexão social e originalidade argumentativa. Penalize superficialidade ou discurso genérico. Tom analítico com foco na profundidade das ideias.',
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         'FCC': 'Estilo formalista e técnico. Valorize coesão, paralelismo sintático e precisão gramatical. Penalize erros de concordância, ambiguidades e pobreza vocabular. Tom metódico e avaliativo.',
         'VUNESP': 'Estilo direto e objetivo. Valorize clareza e adequação ao tema. Penalize erros básicos e conclusões vagas. Tom de parecer didático e equilibrado.',
         'ENEM': 'Estilo pedagógico e detalhado, com 5 competências. Linguagem acessível, mas técnica, com foco em autodesenvolvimento. Atenção especial à proposta de intervenção.',
@@ -244,6 +333,7 @@ export const corrigirRedacao = async (
 
     // Construir seção de critérios para o prompt
     const secoesCriterios = criteriosEntrada.length > 0
+<<<<<<< HEAD
         ? criteriosEntrada.map(c =>
             `- ${c.nome}: Nota atribuída ${c.nota.toFixed(1)} / ${c.maximo.toFixed(1)} (peso: ${(c.peso * 100).toFixed(0)}%)`
         ).join('\n')
@@ -286,6 +376,23 @@ FUNÇÃO: ${criteriosEntrada.length > 0
             ? 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, INTERPRETANDO E EXPLICANDO as notas já atribuídas pelo avaliador. Você NÃO atribui notas, apenas explica e justifica as notas dadas de forma detalhada e fundamentada.'
             : 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, ATRIBUINDO NOTAS para cada critério baseado na avaliação rigorosa do texto. Calcule a nota final somando as pontuações dos critérios, sendo criterioso e justo.'
         }
+=======
+        ? criteriosEntrada.map(c => 
+            `- ${c.nome}: Nota atribuída ${c.nota.toFixed(1)} / ${c.maximo.toFixed(1)} (peso: ${(c.peso * 100).toFixed(0)}%)`
+        ).join('\n')
+        : banca === 'Enem' || banca === 'ENEM'
+            ? `A IA deve calcular as notas para as 5 COMPETÊNCIAS DO ENEM:
+${criteriosEnem.map(c => `- ${c.nome}: Máximo ${c.maximo} pontos (peso ${(c.peso * 100).toFixed(0)}%)`).join('\n')}
+Total: 1000 pontos (200 pontos por competência)`
+            : `A IA deve calcular as notas para os critérios padrão da banca ${bancaNormalizada}.`;
+
+    const prompt = `Você é um corretor especializado em redações de concursos públicos, com conhecimento profundo dos critérios de avaliação da banca "${bancaNormalizada}".
+
+FUNÇÃO: ${criteriosEntrada.length > 0 
+    ? 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, INTERPRETANDO E EXPLICANDO as notas já atribuídas pelo avaliador. Você NÃO atribui notas, apenas explica e justifica as notas dadas.'
+    : 'Gerar uma correção textual completa com análise técnica e devolutiva pedagógica, ATRIBUINDO NOTAS para cada critério baseado na avaliação do texto. Calcule a nota final somando as pontuações dos critérios.'
+}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 ╔════════════════════════════════════════════════════════════════╗
 ║  DADOS DA AVALIAÇÃO (JÁ DEFINIDOS PELO AVALIADOR)            ║
@@ -298,16 +405,25 @@ NOTA MÁXIMA: ${notaMaxima} pontos
 CRITÉRIOS E NOTAS ATRIBUÍDAS:
 ${secoesCriterios}
 
+<<<<<<< HEAD
 ${criteriosEntrada.length > 0 ? `NOTA FINAL CALCULADA: ${notaFinalCalculada.toFixed(1)} / ${notaMaxima}` : 'A IA deve calcular a nota final baseada na avaliação rigorosa dos critérios.'}
+=======
+${criteriosEntrada.length > 0 ? `NOTA FINAL CALCULADA: ${notaFinalCalculada.toFixed(1)} / ${notaMaxima}` : 'A IA deve calcular a nota final baseada na avaliação dos critérios.'}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.observacaoAvaliador}\n` : ''}
 
 ╔════════════════════════════════════════════════════════════════╗
+<<<<<<< HEAD
 ║  INSTRUÇÕES DETALHADAS PARA A CORREÇÃO                         ║
+=======
+║  INSTRUÇÕES PARA A CORREÇÃO                                    ║
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 ╚════════════════════════════════════════════════════════════════╝
 
 1. USE O ESTILO DE CORREÇÃO DA BANCA INDICADA:
    ${estilo}
+<<<<<<< HEAD
    
    IMPORTANTE: Adapte seu vocabulário e critérios de avaliação para refletir exatamente como a banca ${bancaNormalizada} corrige redações. Use exemplos concretos do texto para fundamentar suas observações.
 
@@ -317,11 +433,20 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
    - Explique o que precisa ser melhorado em cada eixo para atingir pontuação máxima
    - Seja técnico e objetivo, usando linguagem de avaliador oficial
    - Cite trechos específicos do texto para fundamentar cada observação
+=======
+
+2. INTERPRETE E EXPLIQUE AS NOTAS DADAS:
+   - Justifique por que o texto MERECE a nota informada em cada critério
+   - Identifique os elementos que justificam essa pontuação (ou poderiam elevá-la)
+   - Explique o que precisa ser melhorado em cada eixo para atingir pontuação máxima
+   - Seja técnico e objetivo, usando linguagem de avaliador oficial
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 3. MANTENHA TOM TÉCNICO DE CORRETOR:
    - Linguagem formal e objetiva, mas pedagógica e construtiva
    - Use termos e critérios característicos da banca ${bancaNormalizada}
    - Evite subjetividade excessiva; seja preciso e fundamentado
+<<<<<<< HEAD
    - Sempre relacione suas observações a trechos específicos do texto
 
 4. SEJA METICULOSO NA IDENTIFICAÇÃO DE ERROS:
@@ -331,6 +456,10 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
    - Para cada erro, forneça contexto suficiente para o candidato entender o problema
 
 5. APRESENTE O PARECER FINAL EM 6 PARTES DETALHADAS:
+=======
+
+4. APRESENTE O PARECER FINAL EM 6 PARTES:
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    📊 1️⃣ AVALIAÇÃO GERAL
@@ -341,8 +470,13 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    📋 2️⃣ ANÁLISE POR CRITÉRIO ${criteriosEntrada.length > 0 ? '(com base nas notas atribuídas)' : '(avaliar e atribuir notas)'}
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<<<<<<< HEAD
    ${criteriosEntrada.length > 0
             ? `Para cada critério abaixo, forneça:
+=======
+   ${criteriosEntrada.length > 0 
+    ? `Para cada critério abaixo, forneça:
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
    - Justificativa técnica da nota atribuída
    - Elementos que justificam a pontuação (acertos, pontos fortes)
    - Lacunas e aspectos que impedem pontuação máxima
@@ -351,6 +485,7 @@ ${notasPesos?.observacaoAvaliador ? `OBSERVAÇÃO DO AVALIADOR: ${notasPesos.obs
 ${criteriosEntrada.map(c => `
    • ${c.nome} (${c.nota.toFixed(1)}/${c.maximo.toFixed(1)} - peso ${(c.peso * 100).toFixed(0)}%):
      Justifique a nota atribuída, mencione acertos, lacunas, exemplos e relevância.`).join('')}`
+<<<<<<< HEAD
             : (bancaNormalizada === 'Cebraspe' || banca === 'CESPE')
                 ? `Avalie seguindo EXATAMENTE os critérios oficiais da CEBRASPE para QUESTÃO DISCURSIVA:
    
@@ -435,22 +570,35 @@ ${criteriosEntrada.map(c => `
    - Zeramento total se houver fuga ao tema, ilegitibilidade ou ausência de resposta`
                     : banca === 'Enem' || banca === 'ENEM'
                         ? `Avalie e atribua notas para as 5 COMPETÊNCIAS DO ENEM. Para cada competência, forneça:
+=======
+    : banca === 'Enem' || banca === 'ENEM'
+        ? `Avalie e atribua notas para as 5 COMPETÊNCIAS DO ENEM. Para cada competência, forneça:
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
    - Pontuação atribuída (0 a 200 pontos, justificada)
    - Elementos que justificam a pontuação (acertos, pontos fortes)
    - Lacunas e aspectos que impedem pontuação máxima
    - Sugestões específicas de melhoria
 
 ${criteriosEnem.map(c => `   • ${c.nome} (0-200 pontos, peso ${(c.peso * 100).toFixed(0)}%):`).join('\n')}`
+<<<<<<< HEAD
                         : `Avalie e atribua notas para os critérios padrão da banca ${bancaNormalizada}. Para cada critério, forneça:
+=======
+        : `Avalie e atribua notas para os critérios padrão da banca ${bancaNormalizada}. Para cada critério, forneça:
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
    - Pontuação atribuída (justificada)
    - Elementos que justificam a pontuação (acertos, pontos fortes)
    - Lacunas e aspectos que impedem pontuação máxima
    - Sugestões específicas de melhoria`
+<<<<<<< HEAD
         }
+=======
+}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ✏️ 3️⃣ EXEMPLOS DE CORREÇÕES E SUGESTÕES DE MELHORIA
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<<<<<<< HEAD
    Identifique e detalhe TODOS os erros encontrados de forma sistemática:
    
    CATEGORIAS DE ERROS A IDENTIFICAR:
@@ -471,6 +619,21 @@ ${criteriosEnem.map(c => `   • ${c.nome} (0-200 pontos, peso ${(c.peso * 100).
    - Nível de gravidade (leve, moderado, grave) - isso ajuda o candidato a priorizar correções
    
    IMPORTANTE: Seja generoso na identificação de erros. É melhor identificar muitos erros pequenos do que deixar passar problemas que podem ser corrigidos.
+=======
+   Identifique e detalhe TODOS os erros encontrados:
+   - Erros gramaticais (concordância, regência, pontuação, etc.)
+   - Erros ortográficos
+   - Problemas de coesão (uso inadequado de conectivos, repetições, etc.)
+   - Problemas de coerência (contradições, falta de lógica, etc.)
+   - Desvios da norma culta
+   - Problemas de estruturação (parágrafos, desenvolvimento, conclusão)
+   
+   Para cada erro, forneça:
+   - Trecho exato do texto
+   - Tipo do erro
+   - Explicação clara do problema
+   - Sugestão de correção (reescreva o trecho corrigido)
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    📝 4️⃣ TEXTO CORRIGIDO (OPCIONAL)
@@ -481,6 +644,7 @@ ${criteriosEnem.map(c => `   • ${c.nome} (0-200 pontos, peso ${(c.peso * 100).
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    💡 5️⃣ SÍNTESE FINAL (FEEDBACK PEDAGÓGICO)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+<<<<<<< HEAD
    Forneça um feedback pedagógico completo e acionável:
    
    PONTOS FORTES DO TEXTO:
@@ -505,6 +669,13 @@ ${criteriosEnem.map(c => `   • ${c.nome} (0-200 pontos, peso ${(c.peso * 100).
    PLANO DE AÇÃO:
    - Forneça 3-5 ações concretas que o candidato pode tomar imediatamente
    - Seja específico e prático (ex: "Pratique o uso de conectivos de causa e consequência")
+=======
+   Liste:
+   - Pontos fortes do texto
+   - Aspectos a desenvolver urgentemente
+   - Sugestões personalizadas para a próxima redação
+   - Foco nos critérios que mais impactam a nota na banca ${bancaNormalizada}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    🏛️ 6️⃣ ESTILO E VOCABULÁRIO ESPECÍFICOS DA BANCA
@@ -529,6 +700,7 @@ Retorne a resposta APENAS em formato JSON, seguindo rigorosamente o schema forne
 - "textoCorrigido": Versão revisada (seção 4) - opcional
 - "comentariosGerais": Comentários gerais consolidados
 - "sinteseFinal": Feedback pedagógico final (seção 5)
+<<<<<<< HEAD
 - "notaFinal": OBRIGATÓRIO - A nota final calculada (soma de todas as pontuações dos critérios em "avaliacaoDetalhada")
 
 ╔════════════════════════════════════════════════════════════════╗
@@ -771,12 +943,22 @@ INSTRUÇÕES PARA A CORREÇÃO:
 - No "textoCorrigido", forneça a versão reescrita nota 100
 - IMPORTANTE: Seja rigoroso e técnico, seguindo exatamente os padrões da FGV` : (banca === 'Enem' || banca === 'ENEM') && criteriosEntrada.length === 0 ? `
 OBRIGATÓRIO PARA ENEM: Retorne EXATAMENTE 5 competências do Enem na "avaliacaoDetalhada":
+=======
+
+IMPORTANTE: 
+- Use a linguagem característica da banca ${bancaNormalizada}
+- Seja detalhado, específico e pedagógico em todos os feedbacks
+- JUSTIFIQUE as notas dadas, não as calcule
+${(banca === 'Enem' || banca === 'ENEM') && criteriosEntrada.length === 0 ? `
+- OBRIGATÓRIO: Retorne EXATAMENTE 5 competências do Enem na "avaliacaoDetalhada":
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   1. Competência 1: Domínio da modalidade escrita formal da Língua Portuguesa (0-200)
   2. Competência 2: Compreender a proposta de redação e aplicar conceitos (0-200)
   3. Competência 3: Selecionar, relacionar, organizar e interpretar informações (0-200)
   4. Competência 4: Demonstrar conhecimento dos mecanismos linguísticos para argumentação (0-200)
   5. Competência 5: Elaborar proposta de intervenção respeitando direitos humanos (0-200)
 - Cada competência deve ter máximo de 200 pontos e peso de 0.2 (20%)
+<<<<<<< HEAD
 - A nota final ("notaFinal") DEVE ser a SOMA EXATA das 5 competências (máximo 1000 pontos)
 - Para cada competência, forneça feedback detalhado explicando a pontuação atribuída
 - IMPORTANTE: Calcule "notaFinal" somando todas as pontuações de "avaliacaoDetalhada"` : criteriosEntrada.length === 0 ? `
@@ -1024,11 +1206,37 @@ OBRIGATÓRIO PARA ENEM: Retorne EXATAMENTE 5 competências do Enem na "avaliacao
         banca: bancaNormalizada,
         notaMaxima: notaMaximaFinal,
         notaFinal: notaFinalCalculadaFinal,
+=======
+- A nota final deve ser a soma das 5 competências (máximo 1000 pontos)` : ''}
+- Mantenha tom técnico de corretor oficial`;
+
+    const response = await ai.models.generateContent({ 
+        model: 'gemini-2.5-pro', 
+        contents: prompt, 
+        config: { 
+            responseMimeType: 'application/json', 
+            responseSchema: correcaoSchema 
+        } 
+    });
+    
+    let jsonText = response.text.trim().replace(/^```json\n?|```$/g, '');
+    const resultado = JSON.parse(jsonText) as any;
+    
+    // Garantir que os dados de entrada sejam preservados na resposta
+    // Se a IA calculou a nota, usar o valor retornado; senão, usar o calculado
+    const notaFinalRetornada = resultado.notaFinal ?? notaFinalCalculada;
+    
+    const correcaoCompleta: CorrecaoCompleta = {
+        banca: bancaNormalizada,
+        notaMaxima: notaMaxima,
+        notaFinal: criteriosEntrada.length > 0 ? notaFinalCalculada : notaFinalRetornada,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         avaliacaoGeral: resultado.avaliacaoGeral || '',
         comentariosGerais: resultado.comentariosGerais || '',
         sinteseFinal: resultado.sinteseFinal || '',
         textoCorrigido: resultado.textoCorrigido || undefined,
         errosDetalhados: resultado.errosDetalhados || [],
+<<<<<<< HEAD
         avaliacaoDetalhada: avaliacaoDetalhadaProcessada
     };
 
@@ -1043,6 +1251,30 @@ OBRIGATÓRIO PARA ENEM: Retorne EXATAMENTE 5 competências do Enem na "avaliacao
         console.log(`  - Nota Final: ${notaFinalCalculadaFinal.toFixed(2)}/${notaMaximaFinal}`);
     }
 
+=======
+        avaliacaoDetalhada: resultado.avaliacaoDetalhada?.map((item: any, index: number) => {
+            // Se há critérios definidos pelo usuário, usar os valores definidos
+            if (criteriosEntrada.length > 0 && criteriosEntrada[index]) {
+                return {
+                    criterio: item.criterio || criteriosEntrada[index].nome,
+                    pontuacao: criteriosEntrada[index].nota,
+                    maximo: criteriosEntrada[index].maximo,
+                    peso: criteriosEntrada[index].peso,
+                    feedback: item.feedback || ''
+                };
+            }
+            // Se a IA calculou, usar os valores retornados
+            return {
+                criterio: item.criterio || '',
+                pontuacao: item.pontuacao ?? 0,
+                maximo: item.maximo ?? 0,
+                peso: item.peso ?? 0,
+                feedback: item.feedback || ''
+            };
+        }) || []
+    };
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return correcaoCompleta;
 };
 
@@ -1063,8 +1295,13 @@ export const gerarMensagemMotivacionalIA = async (
     diasStreak: number,
     revisoesPendentes: number
 ): Promise<string> => {
+<<<<<<< HEAD
     if (!ai || !apiKey) {
         // Se não houver API key, retornar mensagem padrão silenciosamente
+=======
+    if (!ai) {
+        // Se não houver API key, retornar mensagem padrão
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         return "Continue estudando! Cada esforço te aproxima do seu objetivo.";
     }
 
@@ -1092,6 +1329,7 @@ INSTRUÇÕES:
 Retorne APENAS a mensagem motivacional, sem aspas ou formatação adicional.`;
 
     try {
+<<<<<<< HEAD
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt
@@ -1102,11 +1340,21 @@ Retorne APENAS a mensagem motivacional, sem aspas ou formatação adicional.`;
         if (error?.error?.code !== 400 || !error?.error?.message?.includes('API key')) {
             console.error("Erro ao gerar mensagem motivacional:", error);
         }
+=======
+        const response = await ai.models.generateContent({ 
+            model: 'gemini-2.5-flash', 
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error("Erro ao gerar mensagem motivacional:", error);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Retornar mensagem padrão em caso de erro
         return "Continue estudando! Cada esforço te aproxima do seu objetivo.";
     }
 };
 
+<<<<<<< HEAD
 /**
  * Gera alternativas plausíveis para um quiz baseado em um flashcard usando IA
  * @param pergunta A pergunta do flashcard
@@ -2111,6 +2359,192 @@ IMPORTANTE:
 
 
 
+=======
+
+
+// --- GAMIFICATION SERVICES ---
+export const getGamificationStats = async (userId: string): Promise<GamificationStats | null> => {
+    // FIX: Cast data to any to bypass 'never' type issue.
+    const { data: profileData, error: profileError } = await supabase.from('profiles').select('xp_total, current_streak_days, best_streak_days').eq('user_id', userId).single<any>();
+    if (profileError && profileError.code !== 'PGRST116') throw profileError;
+
+    // FIX: Cast data to any to bypass 'never' type issue.
+    const { data: badgesData, error: badgesError } = await supabase.from('user_badges').select('badge_id').eq('user_id', userId);
+    if (badgesError) throw badgesError;
+
+    if (!profileData) return null;
+
+    return {
+        user_id: userId,
+        xp_total: profileData.xp_total,
+        current_streak_days: profileData.current_streak_days,
+        best_streak_days: profileData.best_streak_days,
+        unlockedBadgeIds: (badgesData as any[]).map(b => b.badge_id),
+        level: 0 // O nível é calculado no store
+    };
+};
+
+export const updateGamificationStats = async (userId: string, statsUpdates: Partial<GamificationStats>) => {
+    // FIX: Exclude the 'level' property as it is not part of the 'profiles' table.
+    const { unlockedBadgeIds, level, ...profileUpdates } = statsUpdates;
+
+    if (Object.keys(profileUpdates).length > 0) {
+        // FIX: Cast data to any to bypass 'never' type issue.
+        const { error: profileError } = await supabase.from('profiles').update(profileUpdates as any).eq('user_id', userId);
+        if (profileError) throw profileError;
+    }
+
+    if (unlockedBadgeIds) {
+        const { data: existingBadges, error: getError } = await supabase
+            .from('user_badges')
+            .select('badge_id')
+            .eq('user_id', userId);
+        if (getError) throw getError;
+
+        const existingBadgeIds = new Set((existingBadges as any[]).map(b => b.badge_id));
+        const newBadgesToInsert = unlockedBadgeIds
+            .filter(id => !existingBadgeIds.has(id))
+            .map(badge_id => ({ user_id: userId, badge_id }));
+
+        if (newBadgesToInsert.length > 0) {
+            // FIX: Cast data to any to bypass 'never' type issue.
+            const { error: insertError } = await supabase.from('user_badges').insert(newBadgesToInsert as any);
+            if (insertError) throw insertError;
+        }
+    }
+    
+    return getGamificationStats(userId);
+};
+
+// ✅ Corrigido: Assinatura da função alinhada com a tabela `xp_log` do SQL (sem `tipo_evento` ou `multiplicador`).
+export const logXpEvent = async (userId: string, event: XpLogEvent, amount: number, meta: Record<string, any> = {}) => {
+    // FIX: Cast data to any to bypass 'never' type issue.
+    const { data: logData, error: logError } = await supabase.from('xp_log').insert({ user_id: userId, event, amount, meta_json: meta } as any).select().single();
+    if (logError) throw logError;
+
+    // A database function/trigger would be better here, but for now we update manually.
+    const { data: profile, error: fetchError } = await supabase.from('profiles').select('xp_total').eq('user_id', userId).single<any>();
+    if (fetchError) throw fetchError;
+    
+    const newXpTotal = (profile?.xp_total || 0) + amount;
+    // FIX: Cast data to any to bypass 'never' type issue.
+    const { error: updateError } = await supabase.from('profiles').update({ xp_total: newXpTotal } as any).eq('user_id', userId);
+    if (updateError) throw updateError;
+
+    return logData;
+};
+
+export const getBadges = async () => {
+    const { data, error } = await supabase.from('badges').select('*');
+    if (error) throw error;
+    return data;
+};
+export const getXpLog = async (userId: string) => {
+    const { data, error } = await supabase.from('xp_log').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+};
+
+// Helper function to reduce code duplication between global and friends ranking
+const _getRankingForUserIds = async (userIds: string[], currentUserId: string): Promise<WeeklyRankingData> => {
+    if (userIds.length === 0) {
+        return { ranking: [], currentUserRank: null };
+    }
+    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+
+    const { data: xpLogsData, error: logError } = await supabase
+        .from('xp_log')
+        .select('user_id, amount')
+        .in('user_id', userIds)
+        .gte('created_at', sevenDaysAgo);
+    
+    if (logError) throw logError;
+    const xpLogs = (xpLogsData || []) as any[];
+
+    const weeklyXpMap = new Map<string, number>();
+    for (const log of xpLogs) {
+        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
+    }
+    
+    const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total')
+        .in('user_id', userIds);
+        
+    if (profileError) throw profileError;
+    const profiles = (profilesData || []) as any[];
+
+    const fullRanking = profiles.map(p => ({
+        user_id: p.user_id,
+        name: p.name,
+        level: calculateLevel(p.xp_total),
+        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
+    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
+    
+    const currentUserIndex = fullRanking.findIndex(u => u.user_id === currentUserId);
+    const currentUserRank = currentUserIndex !== -1 
+        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
+        : null;
+
+    return {
+        ranking: fullRanking,
+        currentUserRank,
+    };
+};
+
+export const getWeeklyRanking = async (userId: string): Promise<WeeklyRankingData> => {
+    const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+
+    // Buscar todos os perfis de usuários
+    const { data: profilesData, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, name, xp_total');
+        
+    if (profileError) throw profileError;
+    const profiles = (profilesData || []) as any[];
+
+    if (profiles.length === 0) {
+        return { ranking: [], currentUserRank: null };
+    }
+
+    // Buscar XP da última semana para todos os usuários
+    const userIds = profiles.map(p => p.user_id);
+    const { data: xpLogsData, error: logError } = await supabase
+        .from('xp_log')
+        .select('user_id, amount')
+        .in('user_id', userIds)
+        .gte('created_at', sevenDaysAgo);
+    
+    if (logError) throw logError;
+    const xpLogs = (xpLogsData || []) as any[];
+
+    // Calcular XP semanal de cada usuário
+    const weeklyXpMap = new Map<string, number>();
+    for (const log of xpLogs) {
+        weeklyXpMap.set(log.user_id, (weeklyXpMap.get(log.user_id) || 0) + log.amount);
+    }
+
+    // Criar ranking completo com todos os usuários (incluindo os com 0 XP)
+    const fullRanking = profiles.map(p => ({
+        user_id: p.user_id,
+        name: p.name,
+        level: calculateLevel(p.xp_total),
+        weekly_xp: weeklyXpMap.get(p.user_id) || 0,
+    })).sort((a, b) => b.weekly_xp - a.weekly_xp);
+    
+    const currentUserIndex = fullRanking.findIndex(u => u.user_id === userId);
+    const currentUserRank = currentUserIndex !== -1 
+        ? { ...fullRanking[currentUserIndex], rank: currentUserIndex + 1 } 
+        : null;
+
+    return {
+        ranking: fullRanking,
+        currentUserRank,
+    };
+};
+
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 // --- DATA SERVICES ---
 
 // StudyPlans (Editais)
@@ -2122,6 +2556,7 @@ export const getStudyPlans = async () => {
 };
 export const createStudyPlan = async (studyPlanData: Omit<StudyPlan, 'id'>) => {
     const userId = await getUserId();
+<<<<<<< HEAD
 
     // Garante que o perfil existe antes de criar o study_plan
     // Isso evita erro 409 (foreign key constraint violation)
@@ -2133,6 +2568,11 @@ export const createStudyPlan = async (studyPlanData: Omit<StudyPlan, 'id'>) => {
         console.error('Erro ao criar study_plan:', error);
         throw error;
     }
+=======
+    // FIX: Cast data to any to bypass 'never' type issue.
+    const { data, error } = await supabase.from('study_plans').insert({ ...studyPlanData, user_id: userId } as any).select().single();
+    if (error) throw error;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return data;
 };
 export const updateStudyPlanApi = async (id: string, updates: Partial<StudyPlan>) => {
@@ -2170,21 +2610,34 @@ export const getTrilhaSemanal = async (studyPlanId: string) => {
 
 // Salvar trilhas por semana e estado de conclusão
 export const saveTrilhasPorSemana = async (
+<<<<<<< HEAD
     studyPlanId: string,
     trilhasPorSemana: Record<string, any>,
+=======
+    studyPlanId: string, 
+    trilhasPorSemana: Record<string, any>, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     trilhaConclusao: Record<string, boolean>
 ) => {
     try {
         const { data, error } = await supabase
             .from('study_plans')
+<<<<<<< HEAD
             .update({
+=======
+            .update({ 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 trilhas_por_semana: trilhasPorSemana,
                 trilha_conclusao: trilhaConclusao
             } as any)
             .eq('id', studyPlanId)
             .select()
             .single();
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (error) {
             // Se for erro de coluna não encontrada, tentar usar trilha_semanal como fallback
             if (error.code === '42703' || error.message?.includes('column')) {
@@ -2192,14 +2645,22 @@ export const saveTrilhasPorSemana = async (
                 // Pegar a primeira trilha (semana atual) ou criar objeto com todas
                 const weekKey = Object.keys(trilhasPorSemana)[0];
                 const trilhaAtual = weekKey ? trilhasPorSemana[weekKey] : { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 const { data: fallbackData, error: fallbackError } = await supabase
                     .from('study_plans')
                     .update({ trilha_semanal: trilhaAtual } as any)
                     .eq('id', studyPlanId)
                     .select()
                     .single();
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 if (fallbackError) throw fallbackError;
                 return fallbackData;
             }
@@ -2213,18 +2674,25 @@ export const saveTrilhasPorSemana = async (
 };
 
 export const getTrilhasPorSemana = async (studyPlanId: string) => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') {
         return {
             trilhasPorSemana: {},
             trilhaConclusao: {}
         };
     }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase
         .from('study_plans')
         .select('trilhas_por_semana, trilha_conclusao')
         .eq('id', studyPlanId)
         .single();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Se der erro de coluna não encontrada, retorna vazio (colunas podem não existir ainda)
     if (error) {
         if (error.code === '42703' || error.message?.includes('column')) {
@@ -2236,7 +2704,11 @@ export const getTrilhasPorSemana = async (studyPlanId: string) => {
         }
         throw error;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return {
         trilhasPorSemana: (data as any)?.trilhas_por_semana || {},
         trilhaConclusao: (data as any)?.trilha_conclusao || {}
@@ -2267,13 +2739,20 @@ export const getPlanningConfig = async (studyPlanId: string) => {
 // Disciplinas (with nested topicos)
 // ✅ Corrigido: Parâmetro renomeado de `editalId` para `studyPlanId` para consistência.
 export const getDisciplinas = async (studyPlanId: string): Promise<Disciplina[]> => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') return [];
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase
         .from('disciplinas')
         .select('*, topicos(*)')
         .eq('study_plan_id', studyPlanId);
     if (error) throw error;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Manual mapping to fix snake_case from DB to camelCase for the app
     const disciplinesWithMappedTopics = data.map((d: any) => {
         if (!d.topicos) {
@@ -2281,8 +2760,13 @@ export const getDisciplinas = async (studyPlanId: string): Promise<Disciplina[]>
         }
         const mappedTopics = d.topicos.map((t: any) => {
             const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...rest } = t;
+<<<<<<< HEAD
             return {
                 ...rest,
+=======
+            return { 
+                ...rest, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 nivelDificuldade: nivel_dificuldade,
                 ultimaRevisao: ultima_revisao,
                 proximaRevisao: proxima_revisao,
@@ -2322,15 +2806,25 @@ export const deleteDisciplina = async (id: string) => {
 export const createTopico = async (disciplinaId: string, topicoData: Omit<Topico, 'id'>): Promise<Topico> => {
     const userId = await getUserId();
     const { nivelDificuldade, ultimaRevisao, proximaRevisao, ...rest } = topicoData;
+<<<<<<< HEAD
     const payload = {
         ...rest,
         disciplina_id: disciplinaId,
+=======
+    const payload = { 
+        ...rest, 
+        disciplina_id: disciplinaId, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         user_id: userId,
         nivel_dificuldade: nivelDificuldade,
         ultima_revisao: ultimaRevisao,
         proxima_revisao: proximaRevisao,
     };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // FIX: Cast payload to 'any' to resolve Supabase client 'never' type error.
     const { data, error } = await supabase.from('topicos').insert(payload as any).select().single();
 
@@ -2339,11 +2833,19 @@ export const createTopico = async (disciplinaId: string, topicoData: Omit<Topico
         throw error;
     }
     if (!data) throw new Error("Failed to create topic, no data returned.");
+<<<<<<< HEAD
 
     // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
     const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...returnData } = data as any;
     return {
         ...returnData,
+=======
+    
+    // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
+    const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...returnData } = data as any;
+    return { 
+        ...returnData, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         nivelDificuldade: nivel_dificuldade,
         ultimaRevisao: ultima_revisao,
         proximaRevisao: proxima_revisao,
@@ -2352,7 +2854,11 @@ export const createTopico = async (disciplinaId: string, topicoData: Omit<Topico
 export const updateTopicoApi = async (topicoId: string, updates: Partial<Topico>): Promise<Topico> => {
     const { nivelDificuldade, ultimaRevisao, proximaRevisao, ...restOfUpdates } = updates;
     const payload: { [key: string]: any } = { ...restOfUpdates };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (nivelDificuldade !== undefined) {
         payload.nivel_dificuldade = nivelDificuldade;
     }
@@ -2365,12 +2871,17 @@ export const updateTopicoApi = async (topicoId: string, updates: Partial<Topico>
 
     // FIX: Cast payload to 'any' to resolve Supabase client 'never' type error.
     const { data, error } = await supabase.from('topicos').update(payload as any).eq('id', topicoId).select().single();
+<<<<<<< HEAD
 
+=======
+     
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (error) {
         console.error("Failed to update topico:", error);
         throw error;
     }
     if (!data) throw new Error("Failed to update topic, no data returned.");
+<<<<<<< HEAD
 
     // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
     const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...restOfData } = data as any;
@@ -2379,6 +2890,16 @@ export const updateTopicoApi = async (topicoId: string, updates: Partial<Topico>
         nivelDificuldade: nivel_dificuldade,
         ultimaRevisao: ultima_revisao,
         proximaRevisao: proxima_revisao,
+=======
+     
+     // FIX: Cast data to 'any' to allow destructuring with rest operator, which fails on the inferred 'never' type.
+     const { nivel_dificuldade, ultima_revisao, proxima_revisao, ...restOfData } = data as any;
+     return { 
+         ...restOfData, 
+         nivelDificuldade: nivel_dificuldade,
+         ultimaRevisao: ultima_revisao,
+         proximaRevisao: proxima_revisao,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     } as Topico;
 };
 export const deleteTopico = async (id: string) => {
@@ -2407,7 +2928,11 @@ export const getSessoes = async (studyPlanId: string): Promise<SessaoEstudo[]> =
 
     const { data, error } = await supabase
         .from('sessoes_estudo')
+<<<<<<< HEAD
         .select('*, questoes_certas, questoes_erradas, banca, is_cebraspe')
+=======
+        .select('*')
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         .eq('study_plan_id', studyPlanId)
         .eq('user_id', userId)
         .order('data_estudo', { ascending: false });
@@ -2416,6 +2941,7 @@ export const getSessoes = async (studyPlanId: string): Promise<SessaoEstudo[]> =
 };
 export const createSessao = async (studyPlanId: string, itemData: Omit<SessaoEstudo, 'id' | 'studyPlanId'>): Promise<SessaoEstudo> => {
     const userId = await getUserId();
+<<<<<<< HEAD
 
     // Garantir que o perfil existe antes de criar a sessão
     await ensureProfileExists(userId);
@@ -2498,6 +3024,14 @@ export const createSessao = async (studyPlanId: string, itemData: Omit<SessaoEst
         throw new Error('Erro ao criar sessão: nenhum dado retornado após inserção.');
     }
 
+=======
+    const payload = { ...itemData, study_plan_id: studyPlanId, user_id: userId };
+    const { data, error } = await supabase.from('sessoes_estudo').insert(payload as any).select('*').single();
+    if (error) {
+        console.error("Failed to create session:", error);
+        throw error;
+    }
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return mapDbToSessao(data);
 };
 export const updateSessaoApi = async (id: string, updates: Partial<Omit<SessaoEstudo, 'id'>>): Promise<SessaoEstudo> => {
@@ -2525,10 +3059,13 @@ const mapDbToRedacao = (dbData: any): RedacaoCorrigida => {
 };
 
 export const getRedacoes = async (studyPlanId: string): Promise<RedacaoCorrigida[]> => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') {
         console.warn('getRedacoes chamado com studyPlanId vazio, retornando array vazio');
         return [];
     }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase.from('redacoes_corrigidas').select('*').eq('study_plan_id', studyPlanId);
     if (error) throw error;
     return (data as any[]).map(mapDbToRedacao);
@@ -2541,6 +3078,7 @@ export const createRedacao = async (studyPlanId: string, itemData: Omit<RedacaoC
     if (error) throw error;
     return mapDbToRedacao(data);
 };
+<<<<<<< HEAD
 export const deleteRedacao = async (redacaoId: string): Promise<void> => {
     console.log(`[DEBUG] Tentando excluir redação: ${redacaoId}`);
     const { error, count } = await supabase.from('redacoes_corrigidas').delete({ count: 'exact' }).eq('id', redacaoId);
@@ -2556,6 +3094,8 @@ export const deleteRedacao = async (redacaoId: string): Promise<void> => {
         console.warn("[DEBUG] Nenhuma redação foi excluída. Verifique ID e permissões.");
     }
 };
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 // --- Custom CRUD for Simulados ---
 // NOTA: O banco de dados usa camelCase para estas colunas (não snake_case)
@@ -2567,6 +3107,7 @@ const mapSimuladoToDb = (simuladoData: Partial<Simulation>) => {
 };
 
 const mapDbToSimulado = (dbData: any): Simulation => {
+<<<<<<< HEAD
     // O banco pode retornar duration_minutes (snake) ou durationMinutes (camel) dependendo da query/view
     const { study_plan_id, durationMinutes, duration_minutes, isCebraspe, is_cebraspe, ...rest } = dbData;
     return {
@@ -2574,6 +3115,13 @@ const mapDbToSimulado = (dbData: any): Simulation => {
         studyPlanId: study_plan_id,
         duration_minutes: duration_minutes || durationMinutes || 0,
         is_cebraspe: is_cebraspe !== undefined ? is_cebraspe : isCebraspe,
+=======
+    // O banco retorna study_plan_id em snake_case, mas durationMinutes e isCebraspe em camelCase
+    const { study_plan_id, ...rest } = dbData;
+    return {
+        ...rest,
+        studyPlanId: study_plan_id,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     } as Simulation;
 };
 
@@ -2582,20 +3130,32 @@ export const getSimulados = async (studyPlanId: string): Promise<Simulation[]> =
         console.warn("getSimulados: studyPlanId não fornecido, retornando array vazio");
         return [];
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Verificar se o usuário está autenticado
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
         console.warn("getSimulados: usuário não autenticado, retornando array vazio");
         return [];
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     try {
         const { data, error } = await supabase
             .from('simulados')
             .select('*')
             .eq('study_plan_id', studyPlanId);
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (error) {
             // Se for erro 400, pode ser problema de permissões RLS - não lançar erro, apenas retornar vazio
             if (error.code === 'PGRST116' || error.message?.includes('permission denied') || error.message?.includes('row-level security')) {
@@ -2605,11 +3165,19 @@ export const getSimulados = async (studyPlanId: string): Promise<Simulation[]> =
             console.error("Erro ao buscar simulados:", error);
             throw error;
         }
+<<<<<<< HEAD
 
         if (!data) {
             return [];
         }
 
+=======
+        
+        if (!data) {
+            return [];
+        }
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         return (data as any[]).map(mapDbToSimulado);
     } catch (err: any) {
         // Se for erro 400 HTTP, tratar como problema de permissões
@@ -2628,16 +3196,28 @@ export const createSimulado = async (studyPlanId: string, simuladoData: Omit<Sim
     dbPayload.user_id = userId;
 
     const { data, error } = await supabase.from('simulados').insert(dbPayload as any).select().single();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (error) {
         console.error('Erro ao criar simulado:', error);
         throw error;
     }
+<<<<<<< HEAD
 
     if (!data) {
         throw new Error('Simulado criado, mas nenhum dado foi retornado');
     }
 
+=======
+    
+    if (!data) {
+        throw new Error('Simulado criado, mas nenhum dado foi retornado');
+    }
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return mapDbToSimulado(data);
 };
 
@@ -2674,7 +3254,10 @@ const mapDbToRevisao = (dbData: any): Revisao => {
 };
 
 export const getRevisoes = async (studyPlanId: string): Promise<Revisao[]> => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') return [];
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase
         .from('revisoes')
         .select('*')
@@ -2710,6 +3293,7 @@ export const updateRevisaoApi = async (id: string, updates: Partial<Omit<Revisao
 };
 
 export const deleteRevisao = async (id: string) => {
+<<<<<<< HEAD
     console.log(`[DEBUG] Tentando excluir revisão: ${id}`);
     const { error, count } = await supabase.from('revisoes').delete({ count: 'exact' }).eq('id', id);
 
@@ -2723,6 +3307,10 @@ export const deleteRevisao = async (id: string) => {
     if (count === 0) {
         console.warn("[DEBUG] Nenhuma revisão foi excluída. Verifique ID e permissões.");
     }
+=======
+    const { error } = await supabase.from('revisoes').delete().eq('id', id);
+    if (error) throw error;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 };
 
 
@@ -2740,12 +3328,19 @@ const mapCadernoErroToDb = (erroData: Partial<CadernoErro>) => {
 };
 
 export const getErros = async (studyPlanId: string): Promise<CadernoErro[]> => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') return [];
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase
         .from('caderno_erros')
         .select('*, disciplina:disciplinas(nome), topico:topicos(titulo)')
         .eq('study_plan_id', studyPlanId);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (error) throw error;
 
     return (data as any[]).map((e: any) => ({
@@ -2760,7 +3355,11 @@ export const getErros = async (studyPlanId: string): Promise<CadernoErro[]> => {
 export const createErro = async (studyPlanId: string, erroData: Omit<CadernoErro, 'id' | 'studyPlanId'>): Promise<CadernoErro> => {
     const userId = await getUserId();
     const dbPayload = mapCadernoErroToDb(erroData);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     dbPayload.study_plan_id = studyPlanId;
     dbPayload.user_id = userId;
 
@@ -2769,12 +3368,20 @@ export const createErro = async (studyPlanId: string, erroData: Omit<CadernoErro
     }
 
     const { data, error } = await supabase.from('caderno_erros').insert(dbPayload).select().single();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (error) {
         console.error("Failed to add erro:", error);
         throw error;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return {
         ...(data as any),
         ...erroData,
@@ -2793,7 +3400,11 @@ export const updateErroApi = async (id: string, updates: Partial<Omit<CadernoErr
         console.error("Failed to update erro:", error);
         throw error;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { disciplina, topico, disciplina_id, topico_id, ...rest } = data as any;
 
     return {
@@ -2814,14 +3425,21 @@ export const deleteErro = async (id: string) => {
 
 // ✅ Corrigido: Funções CRUD para Ciclos movidas para implementações customizadas para lidar com a relação com `sessoes_ciclo`.
 export const getCiclos = async (studyPlanId: string): Promise<Ciclo[]> => {
+<<<<<<< HEAD
     if (!studyPlanId || studyPlanId.trim() === '') return [];
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase
         .from('ciclos')
         .select('*, sessoes_ciclo(*)')
         .eq('study_plan_id', studyPlanId);
 
     if (error) throw error;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return (data || []).map((ciclo: any) => ({
         ...ciclo,
         sessoes: (ciclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
@@ -2854,7 +3472,11 @@ export const createCiclo = async (studyPlanId: string, cicloData: Omit<Ciclo, 'i
         if (sessoesError) throw sessoesError;
         return { ...ciclo, sessoes: (insertedSessoes || []).sort((a: any, b: any) => a.ordem - b.ordem) } as any as Ciclo;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return { ...ciclo, sessoes: [] } as any as Ciclo;
 };
 
@@ -2872,19 +3494,32 @@ export const updateCicloApi = async (id: string, updates: Partial<Omit<Ciclo, 'i
 
     if (sessoes) {
         await supabase.from('sessoes_ciclo').delete().eq('ciclo_id', id);
+<<<<<<< HEAD
 
         if (sessoes.length > 0) {
             const sessoesToInsert = sessoes.map(s => ({
+=======
+        
+        if (sessoes.length > 0) {
+             const sessoesToInsert = sessoes.map(s => ({
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 disciplina_id: s.disciplina_id,
                 ordem: s.ordem,
                 tempo_previsto: s.tempo_previsto,
                 user_id: userId,
                 ciclo_id: id,
             }));
+<<<<<<< HEAD
             await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
         }
     }
 
+=======
+             await supabase.from('sessoes_ciclo').insert(sessoesToInsert as any);
+        }
+    }
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data: updatedCiclo, error: fetchError } = await supabase
         .from('ciclos')
         .select('*, sessoes_ciclo(*)')
@@ -2892,7 +3527,11 @@ export const updateCicloApi = async (id: string, updates: Partial<Omit<Ciclo, 'i
         .single();
 
     if (fetchError) throw fetchError;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return {
         ...updatedCiclo,
         sessoes: (updatedCiclo.sessoes_ciclo || []).sort((a: any, b: any) => a.ordem - b.ordem)
@@ -2927,15 +3566,19 @@ const mapFlashcardToDb = (flashcardData: Partial<Flashcard>) => {
 
 // Note: Flashcards are linked to topics, not study plans directly.
 export const getFlashcards = async (topicId: string): Promise<Flashcard[]> => {
+<<<<<<< HEAD
     // Validar que topicId não seja vazio para evitar erro de UUID inválido
     if (!topicId || topicId.trim() === '') {
         console.warn('getFlashcards chamado com topicId vazio, retornando array vazio');
         return [];
     }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { data, error } = await supabase.from('flashcards').select('*').eq('topico_id', topicId);
     if (error) throw error;
     return (data as any[]).map(mapDbToFlashcard);
 };
+<<<<<<< HEAD
 
 export const getFlashcardsMetadata = async (topicIds: string[]): Promise<Partial<Flashcard>[]> => {
     if (!topicIds || topicIds.length === 0) return [];
@@ -2984,13 +3627,23 @@ export const createFlashcards = async (topicId: string, { flashcards }: { flashc
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+=======
+export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
+    const userId = await getUserId();
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const flashcardsToInsert = flashcards.map(fc => ({
         ...fc,
         topico_id: topicId,
         user_id: userId,
+<<<<<<< HEAD
         interval: 0, // 0 indica que o flashcard nunca foi estudado
         ease_factor: 2.5,
         due_date: tomorrow.toISOString(), // Disponível para estudo a partir de amanhã
+=======
+        interval: 1,
+        ease_factor: 2.5,
+        due_date: new Date().toISOString(),
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }));
     // FIX: Cast data to any to bypass 'never' type issue.
     const { data, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
@@ -3008,6 +3661,7 @@ export const deleteFlashcard = async (id: string) => {
     if (error) throw error;
 };
 
+<<<<<<< HEAD
 /**
  * Deleta todos os flashcards de um tópico
  */
@@ -3074,6 +3728,8 @@ export const deleteStudySession = async (userId: string, deckId: string) => {
 };
 
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 // --- FRIENDS SERVICES (Social) ---
 export const getFriends = async (userId: string): Promise<User[]> => {
@@ -3093,7 +3749,11 @@ export const getFriends = async (userId: string): Promise<User[]> => {
         .from('profiles')
         .select('user_id, name, email')
         .in('user_id', friendIds);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (friendsError) throw friendsError;
     const friendsData = (friendsProfileData || []) as any[];
 
@@ -3119,12 +3779,20 @@ export const getFriendRequests = async (userId: string): Promise<FriendRequest[]
 
     const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
+<<<<<<< HEAD
         .select('user_id, name')
+=======
+        .select('user_id, name, xp_total')
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         .in('user_id', requesterIds);
 
     if (profilesError) throw profilesError;
     const profiles = (profilesData || []) as any[];
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const profilesMap = new Map(profiles.map(p => [p.user_id, p]));
 
     return requests.map(req => {
@@ -3133,6 +3801,10 @@ export const getFriendRequests = async (userId: string): Promise<FriendRequest[]
             friendship_id: req.id,
             requester_id: req.user_id_1,
             requester_name: profile?.name || 'Usuário desconhecido',
+<<<<<<< HEAD
+=======
+            requester_level: profile ? calculateLevel(profile.xp_total) : 1,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         };
     });
 };
@@ -3145,12 +3817,20 @@ export const searchUsers = async (query: string, currentUserId: string): Promise
         .replace(/[%_\\]/g, '') // Remover caracteres especiais do SQL LIKE
         .replace(/[<>]/g, '') // Remover caracteres que podem causar problemas
         .trim();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Validação rigorosa
     if (!sanitizedQuery || sanitizedQuery.length < 2) {
         return [];
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Validar que não é apenas espaços ou caracteres especiais
     // Permitir letras, números, espaços, @, ponto e hífen (para emails e nomes)
     if (!/^[\w\s@.-]+$/.test(sanitizedQuery)) {
@@ -3168,7 +3848,11 @@ export const searchUsers = async (query: string, currentUserId: string): Promise
             console.error('Error fetching friendships:', relError);
             throw relError;
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const relationships = (relData || []) as any[];
 
         const existingRelationshipIds = new Set(
@@ -3183,12 +3867,20 @@ export const searchUsers = async (query: string, currentUserId: string): Promise
             .select('user_id, name, email')
             .or(`name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%`)
             .limit(50); // Buscar mais para depois filtrar
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (usersError) {
             console.error('Error searching users:', usersError);
             throw usersError;
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const users = (usersData || []) as any[];
 
         // Filtrar usuários que já são amigos ou o próprio usuário
@@ -3268,7 +3960,11 @@ export const sendFriendRequest = async (requesterId: string, receiverId: string)
             user_id_2: receiverId,
             status: 'pending',
         } as any);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (insertError) {
         // Se o erro for 409 (Conflict), provavelmente houve uma race condition
         // ou existe uma constraint unique que não foi capturada na verificação
@@ -3299,6 +3995,7 @@ export const declineFriendRequest = async (friendshipId: string) => {
     if (error) throw error;
 };
 
+<<<<<<< HEAD
 
 export const countFlashcardsCreatedThisMonth = async (userId: string): Promise<number> => {
     const now = new Date();
@@ -3339,3 +4036,28 @@ export const countFlashcardsCreatedThisMonth = async (userId: string): Promise<n
         return 0;
     }
 };
+=======
+export const getFriendsRanking = async (userId: string): Promise<WeeklyRankingData> => {
+    const { data: friendshipsData, error: friendshipsError } = await supabase
+        .from('friendships')
+        .select('user_id_1, user_id_2')
+        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+        .eq('status', 'accepted');
+
+    if (friendshipsError) throw friendshipsError;
+    const friendships = (friendshipsData || []) as any[];
+    
+    const userAndFriendIds = new Set([userId]);
+    friendships.forEach(f => {
+        userAndFriendIds.add(f.user_id_1 === userId ? f.user_id_2 : f.user_id_1);
+    });
+    const idsArray = Array.from(userAndFriendIds);
+
+    if (idsArray.length <= 1) return { ranking: [], currentUserRank: null };
+    
+    const rankingData = await _getRankingForUserIds(idsArray, userId);
+    
+    // Friends ranking should not be sliced
+    return { ...rankingData, ranking: rankingData.ranking };
+};
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

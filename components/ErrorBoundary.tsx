@@ -25,12 +25,17 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error para console em desenvolvimento
     if (import.meta.env.DEV) {
+<<<<<<< HEAD
       try {
         console.error('🚨 Error Boundary capturou um erro:', error?.message || String(error));
         console.error('Error Info:', errorInfo?.componentStack || 'N/A');
       } catch (e) {
         // Silenciosamente falha se não conseguir logar
       }
+=======
+      console.error('🚨 Error Boundary capturou um erro:', error);
+      console.error('Error Info:', errorInfo);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }
 
     // Chamar callback personalizado se fornecido
@@ -62,11 +67,19 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
+<<<<<<< HEAD
           <div className="max-w-md w-full bg-[#0a0f1e] border-2 border-[#1e293b] p-8 rounded-2xl text-center space-y-6 shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
             <div className="flex justify-center">
               <AlertTriangleIcon className="w-16 h-16 text-red-500" />
             </div>
 
+=======
+          <div className="max-w-md w-full glass-card p-8 rounded-2xl text-center space-y-6">
+            <div className="flex justify-center">
+              <AlertTriangleIcon className="w-16 h-16 text-red-500" />
+            </div>
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             <div>
               <h2 className="text-2xl font-bold text-foreground mb-2">
                 Ops! Algo deu errado

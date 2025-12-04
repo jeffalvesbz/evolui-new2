@@ -96,7 +96,11 @@ const EditalManagementModal: React.FC = () => {
                     <XIcon className="w-5 h-5" />
                 </button>
             </div>
+<<<<<<< HEAD
             <div className="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
+=======
+            <div className="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 {editais.map(edital => (
                     <div key={edital.id} className="bg-muted/50 p-3 rounded-lg flex items-center justify-between">
                         <div>
@@ -121,7 +125,11 @@ const EditalManagementModal: React.FC = () => {
             </div>
             <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
                 <button onClick={handleStartCreate} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2" data-tutorial="novo-edital-button">
+<<<<<<< HEAD
                     <PlusIcon className="w-5 h-5"/> Novo Edital
+=======
+                    <PlusIcon className="w-4 h-4"/> Novo Edital
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 </button>
             </div>
         </>
@@ -135,7 +143,11 @@ const EditalManagementModal: React.FC = () => {
                     <XIcon className="w-5 h-5" />
                 </button>
             </div>
+<<<<<<< HEAD
             <div className="p-6 space-y-4 overflow-x-hidden">
+=======
+            <div className="p-6 space-y-4">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Nome do Edital *</label>
                     <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
@@ -171,7 +183,11 @@ const EditalManagementModal: React.FC = () => {
     );
 
     return (
+<<<<<<< HEAD
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
+=======
+         <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 {mode === 'list' ? renderList() : renderForm()}
             </div>

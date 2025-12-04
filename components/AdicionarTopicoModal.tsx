@@ -5,7 +5,10 @@ import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { toast } from './Sonner';
 import { XIcon, CheckIcon, ZapIcon, UploadIcon } from './icons';
 import { Disciplina, Topico } from '../types';
+<<<<<<< HEAD
 import { sortTopicosPorNumero } from '../utils/sortTopicos';
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 interface FormData {
   titulo: string;
@@ -72,6 +75,7 @@ const AdicionarTopicoModal: React.FC = () => {
         const titulos = batchTopics.split('\n').map(t => t.trim()).filter(Boolean);
         if(titulos.length === 0) return;
 
+<<<<<<< HEAD
         // Cria objetos temporários para ordenação
         const topicosTemp = titulos.map(titulo => ({
             titulo: titulo.trim(),
@@ -87,6 +91,18 @@ const AdicionarTopicoModal: React.FC = () => {
         // Adiciona os tópicos na ordem correta
         for (const topicoData of topicosOrdenados) {
             await addTopico(disciplina.id, topicoData);
+=======
+        // Adiciona os tópicos sequencialmente para preservar a ordem de inserção
+        for (const titulo of titulos) {
+            const novoTopicoData: Omit<Topico, 'id'> = {
+                titulo: titulo.trim(),
+                concluido: false,
+                nivelDificuldade: 'desconhecido',
+                ultimaRevisao: null,
+                proximaRevisao: null,
+            };
+            await addTopico(disciplina.id, novoTopicoData);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
         
         toast.success(`${titulos.length} tópicos adicionados em lote!`);
@@ -106,7 +122,11 @@ const AdicionarTopicoModal: React.FC = () => {
     if (!isAddTopicModalOpen || !disciplina) return null;
 
     return (
+<<<<<<< HEAD
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeAddTopicModal}>
+=======
+        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeAddTopicModal}>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-border flex items-start justify-between">
                     <div>
@@ -116,7 +136,11 @@ const AdicionarTopicoModal: React.FC = () => {
                     <button onClick={closeAddTopicModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
                 </div>
 
+<<<<<<< HEAD
                 <div className="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
+=======
+                <div className="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     <div className="flex justify-between items-center mb-4">
                         <label className="flex items-center gap-2 cursor-pointer text-sm font-medium">
                             <input type="checkbox" checked={isModoContinuo} onChange={(e) => setIsModoContinuo(e.target.checked)} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary"/>

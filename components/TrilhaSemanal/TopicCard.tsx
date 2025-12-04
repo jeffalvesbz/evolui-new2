@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckIcon, PlayIcon, XIcon } from '../icons';
 import { useEstudosStore } from '../../stores/useEstudosStore';
@@ -322,3 +323,6 @@ const TopicCard: React.FC<TopicCardProps> = ({
 };
 
 export default TopicCard;
+=======
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

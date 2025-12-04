@@ -15,13 +15,21 @@ export interface RevisoesProcessadas {
   programadasFuturas: Revisao[]
   atrasadas: Revisao[]
   concluidas: Revisao[]
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   // Métricas
   totalPendentes: number
   totalProgramadas: number
   totalAtrasadas: number
   totalConcluidas: number
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   // Estatísticas
   estatisticas: {
     porOrigem: Record<string, number>
@@ -29,13 +37,21 @@ export interface RevisoesProcessadas {
     porStatus: Record<string, number>
     taxaConclusao: number
   }
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   // Funções
   concluirRevisao: (id: string, resultado: 'acertou' | 'errou' | 'adiou', novaDificuldade?: 'facil' | 'medio' | 'dificil') => Promise<void>
   reagendarRevisao: (id: string, dias: number) => Promise<void>
   removeRevisao: (id: string) => Promise<void>
   atualizarStatusAtrasadas: () => Promise<void>
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   // Estado
   loading: boolean
   error: string | null
@@ -80,6 +96,7 @@ export const useRevisoes = (): RevisoesProcessadas => {
     );
 
     // Filtrar revisões por status e data
+<<<<<<< HEAD
     const pendentesHoje = revisoesProcessadas.filter(revisao =>
       isSameDay(new Date(revisao.data_prevista), hoje) && revisao.status === 'pendente'
     )
@@ -110,6 +127,35 @@ export const useRevisoes = (): RevisoesProcessadas => {
 
 
     const concluidas = revisoesProcessadas.filter(revisao =>
+=======
+    const pendentesHoje = revisoesProcessadas.filter(revisao => 
+      isSameDay(new Date(revisao.data_prevista), hoje) && revisao.status === 'pendente'
+    )
+
+    const programadas = revisoesProcessadas.filter(revisao => 
+      isAfter(startOfDay(new Date(revisao.data_prevista)), hoje) && revisao.status === 'pendente'
+    )
+    
+    // Novas categorias de programadas
+    const programadasAmanha = programadas.filter(r => isSameDay(new Date(r.data_prevista), amanha));
+    const programadasProximaSemana = programadas.filter(r => {
+        const data = startOfDay(new Date(r.data_prevista));
+        // isAfter(data, amanha) -> to exclude tomorrow which is already categorized
+        // isBefore(data, proximos7dias) -> up to day 7
+        return isAfter(data, amanha) && isBefore(data, proximos7dias);
+    });
+    const programadasFuturas = programadas.filter(r => {
+        const data = startOfDay(new Date(r.data_prevista));
+        // Not before 8 days from today, meaning day 8 and onwards
+        return !isBefore(data, proximos7dias);
+    });
+
+
+    const atrasadas = revisoesProcessadas.filter(revisao => revisao.status === 'atrasada');
+
+
+    const concluidas = revisoesProcessadas.filter(revisao => 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       revisao.status === 'concluida'
     )
 
@@ -141,7 +187,11 @@ export const useRevisoes = (): RevisoesProcessadas => {
     }, {} as Record<string, number>)
 
     // Taxa de conclusão
+<<<<<<< HEAD
     const taxaConclusao = revisoesProcessadas.length > 0
+=======
+    const taxaConclusao = revisoesProcessadas.length > 0 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       ? Math.round((totalConcluidas / revisoesProcessadas.length) * 100)
       : 0
 
@@ -169,7 +219,11 @@ export const useRevisoes = (): RevisoesProcessadas => {
 
   // Função wrapper para concluir revisão
   const concluirRevisao = async (
+<<<<<<< HEAD
     id: string,
+=======
+    id: string, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     resultado: 'acertou' | 'errou' | 'adiou',
     novaDificuldade?: 'facil' | 'medio' | 'dificil'
   ) => {
@@ -199,10 +253,17 @@ export const useRevisoesPorPeriodo = (periodo: 'hoje' | 'semana' | 'mes') => {
   const revisoesFiltradas = useMemo(() => {
     const agora = new Date();
     const hoje = startOfDay(agora);
+<<<<<<< HEAD
 
     return revisoes.filter(revisao => {
       const dataPrevista = new Date(revisao.data_prevista);
 
+=======
+    
+    return revisoes.filter(revisao => {
+      const dataPrevista = new Date(revisao.data_prevista);
+      
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       switch (periodo) {
         case 'hoje':
           return isSameDay(dataPrevista, hoje);
@@ -210,8 +271,13 @@ export const useRevisoesPorPeriodo = (periodo: 'hoje' | 'semana' | 'mes') => {
           const umaSemanaAtras = subDays(hoje, 7);
           return isAfter(dataPrevista, umaSemanaAtras) && isBefore(dataPrevista, addDays(hoje, 1));
         case 'mes':
+<<<<<<< HEAD
           const umMesAtras = subDays(hoje, 30);
           return isAfter(dataPrevista, umMesAtras) && isBefore(dataPrevista, addDays(hoje, 1));
+=======
+            const umMesAtras = subDays(hoje, 30);
+            return isAfter(dataPrevista, umMesAtras) && isBefore(dataPrevista, addDays(hoje, 1));
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         default:
           return true
       }

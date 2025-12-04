@@ -2,10 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { Disciplina, Topico, NivelDificuldade } from '../types';
 import { BookOpenIcon, PlusIcon, XIcon, Trash2Icon, SaveIcon } from './icons';
+<<<<<<< HEAD
 import { toast } from './Sonner';
 import { EditIcon } from './icons';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { useEditalStore } from '../stores/useEditalStore';
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 export type PainelMode = 'default' | 'creating' | 'editing';
 
@@ -49,6 +52,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
   const { fields, append, remove } = useFieldArray({ control, name: 'topicos' });
   const topicos = watch('topicos');
 
+<<<<<<< HEAD
   const { planType, canCreateEdital, getMaxEditais } = useSubscriptionStore();
   const { editais } = useEditalStore();
 
@@ -56,6 +60,8 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
   const editaisCriados = editais.length;
   const podeCriarEdital = canCreateEdital();
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   useEffect(() => {
     if (mode === 'editing' && disciplinaSelecionada) {
       reset(disciplinaSelecionada);
@@ -65,7 +71,11 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
       reset();
     }
   }, [mode, disciplinaSelecionada, reset]);
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   const calculatedProgress = useMemo(() => {
     if (topicos.length === 0) return 0;
     const completed = topicos.filter(t => t.concluido).length;
@@ -85,6 +95,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
   };
 
   const renderDefaultView = () => (
+<<<<<<< HEAD
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="text-center mb-6">
         <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-muted/50 mb-4">
@@ -114,6 +125,22 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
         <PlusIcon className="w-5 h-5" />
         {podeCriarEdital ? 'Adicionar Disciplina' : `Limite Atingido (${planType.toUpperCase()})`}
       </button>
+=======
+    <div className="bg-card rounded-xl border border-border p-6 text-center">
+        <div className="mx-auto w-24 h-24 flex items-center justify-center rounded-full bg-muted/50 mb-4">
+            <span className="text-4xl font-bold text-primary">{averageProgress.toFixed(0)}%</span>
+        </div>
+        <h3 className="text-xl font-bold text-foreground">Progresso Médio</h3>
+        <p className="text-muted-foreground mb-6">Este é o seu avanço geral no edital. Continue focado!</p>
+        <button
+            onClick={onStartCreate}
+            className="w-full h-11 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            data-tutorial="adicionar-disciplina-button"
+        >
+            <PlusIcon className="w-5 h-5" />
+            Adicionar Disciplina
+        </button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     </div>
   );
 
@@ -130,6 +157,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
       <div className="p-6 space-y-4 max-h-[calc(100vh-350px)] overflow-y-auto">
         <div>
           <label htmlFor="nome" className="block text-sm font-medium text-muted-foreground mb-1">Nome da Disciplina</label>
+<<<<<<< HEAD
           <input
             {...register('nome', { required: true })}
             id="nome"
@@ -150,12 +178,19 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
               onChange(e);
             }}
           />
+=======
+          <input {...register('nome', { required: true })} id="nome" className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
         <div>
           <label htmlFor="anotacoes" className="block text-sm font-medium text-muted-foreground mb-1">Anotações</label>
           <textarea {...register('anotacoes')} id="anotacoes" rows={3} className="w-full bg-muted/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
         </div>
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         <h4 className="text-lg font-semibold pt-4 border-t border-border">Tópicos</h4>
         <div className="space-y-3">
           {fields.map((field, index) => (
@@ -166,6 +201,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
+<<<<<<< HEAD
                   <Controller
                     name={`topicos.${index}.concluido`}
                     control={control}
@@ -180,6 +216,22 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
                     )}
                   />
                   <label className="text-xs text-muted-foreground">Concluído</label>
+=======
+                    <Controller
+                        name={`topicos.${index}.concluido`}
+                        control={control}
+                        render={({ field: { onChange, value, ref } }) => (
+                            <input
+                                type="checkbox"
+                                ref={ref}
+                                checked={!!value}
+                                onChange={(e) => onChange(e.target.checked)}
+                                className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary"
+                            />
+                        )}
+                    />
+                    <label className="text-xs text-muted-foreground">Concluído</label>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 </div>
                 <Controller
                   name={`topicos.${index}.nivelDificuldade`}
@@ -202,7 +254,11 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
       <div className="p-6 border-t border-border flex flex-col sm:flex-row gap-2">
         <button type="button" onClick={onCancel} className="flex-1 h-10 px-4 flex items-center justify-center rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
         <button type="submit" className="flex-1 h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+<<<<<<< HEAD
           <SaveIcon className="w-4 h-4" /> Salvar
+=======
+            <SaveIcon className="w-4 h-4" /> Salvar
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </button>
       </div>
     </form>

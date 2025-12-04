@@ -199,6 +199,10 @@ const FriendRequests: React.FC = () => {
                     <Avatar name={req.requester_name} size="sm" />
                     <div className="flex-1">
                          <p className="text-sm font-bold text-foreground truncate">{req.requester_name}</p>
+<<<<<<< HEAD
+=======
+                         <p className="text-xs text-muted-foreground">Nível {req.requester_level}</p>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     </div>
                     <button onClick={() => handleDecline(req.friendship_id)} className="p-2 text-muted-foreground hover:text-red-500"><UserXIcon className="w-5 h-5"/></button>
                     <button onClick={() => handleAccept(req.friendship_id)} className="p-2 text-muted-foreground hover:text-green-500"><UserCheckIcon className="w-5 h-5"/></button>
@@ -208,4 +212,8 @@ const FriendRequests: React.FC = () => {
     );
 };
 
+<<<<<<< HEAD
 export default FriendsManagement;
+=======
+export default FriendsManagement;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

@@ -5,7 +5,11 @@ import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 
 const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
+<<<<<<< HEAD
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
+=======
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/[0.999] backdrop-blur-md p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {children}
         </div>
@@ -180,6 +184,7 @@ const Simulados = () => {
                 <h2 className="text-lg font-semibold text-foreground">{editingSimulation ? 'Editar' : 'Registrar'} Simulado</h2>
                 <p className="text-xs text-muted-foreground">Preencha os resultados para acompanhar seu desempenho.</p>
               </div>
+<<<<<<< HEAD
               <button type="button" onClick={() => setIsCreateOpen(false)} className="p-1 rounded-full hover:bg-muted text-foreground"><XIcon className="w-5 h-5" /></button>
             </header>
             <div className="grid gap-4 md:grid-cols-2">
@@ -198,6 +203,26 @@ const Simulados = () => {
               <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea></label>
             </div>
             <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors">Cancelar</button><button type="submit" className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-colors"><SaveIcon className="w-4 h-4" /> Salvar</button></div>
+=======
+              <button type="button" onClick={() => setIsCreateOpen(false)} className="p-1 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
+            </header>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Nome</span><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" required /></label>
+              
+              <label className="flex items-center gap-2 text-sm md:col-span-2 text-muted-foreground">
+                  <input type="checkbox" checked={form.isCebraspe} onChange={e => setForm(p => ({ ...p, isCebraspe: e.target.checked }))} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" />
+                  Estilo Cebraspe (uma errada anula uma certa)
+              </label>
+              
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Acertos</span><input type="number" min="0" value={form.correct} onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" /></label>
+              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-muted-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground" required /></label>
+              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-muted-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-muted/50 p-2 text-foreground"></textarea></label>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="submit" className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2"><SaveIcon className="w-4 h-4" /> Salvar</button></div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           </form>
         </Modal>
       )}

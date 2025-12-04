@@ -47,8 +47,13 @@ const FirstStepsChecklist: React.FC<FirstStepsChecklistProps> = ({ setActiveView
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
+<<<<<<< HEAD
       <Card className="border-primary/30 overflow-hidden bg-gradient-to-br from-primary/10 via-background/0 to-background/0">
         <CardHeader>
+=======
+      <Card className="glass-card border-primary/20 shadow-lg shadow-primary/10">
+        <CardHeader className="bg-gradient-to-br from-primary/10 via-background/0 to-background/0">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
             <SparklesIcon className="h-4 w-4" />
             Primeiros Passos
@@ -66,10 +71,18 @@ const FirstStepsChecklist: React.FC<FirstStepsChecklistProps> = ({ setActiveView
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
+<<<<<<< HEAD
                 className={`flex items-center justify-between p-3 rounded-lg border transition-all ${step.completed
                     ? 'bg-primary/10 border-primary/30'
                     : 'bg-background/30 border-border hover:border-primary/50'
                   }`}
+=======
+                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                  step.completed
+                    ? 'bg-primary/10 border-primary/30'
+                    : 'bg-background/30 border-border hover:border-primary/50'
+                }`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               >
                 <div className="flex items-center gap-3 flex-1">
                   {step.completed ? (
@@ -78,8 +91,14 @@ const FirstStepsChecklist: React.FC<FirstStepsChecklistProps> = ({ setActiveView
                     <CircleDashedIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                   )}
                   <span
+<<<<<<< HEAD
                     className={`text-sm font-medium ${step.completed ? 'text-foreground line-through' : 'text-foreground'
                       }`}
+=======
+                    className={`text-sm font-medium ${
+                      step.completed ? 'text-foreground line-through' : 'text-foreground'
+                    }`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                   >
                     {step.label}
                   </span>

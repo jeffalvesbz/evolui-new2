@@ -139,6 +139,7 @@ export interface Database {
           progresso?: number
         }
       }
+<<<<<<< HEAD
       editais_default: {
         Row: {
           id: string
@@ -261,6 +262,8 @@ export interface Database {
           }
         ]
       }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       flashcards: {
         Row: {
           id: string
@@ -332,8 +335,11 @@ export interface Database {
           best_streak_days: number
           created_at: string
           has_seen_onboarding?: boolean
+<<<<<<< HEAD
           active_edital_id?: string | null
           is_admin?: boolean
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
         Insert: {
           user_id: string
@@ -344,8 +350,11 @@ export interface Database {
           best_streak_days?: number
           created_at?: string
           has_seen_onboarding?: boolean
+<<<<<<< HEAD
           active_edital_id?: string | null
           is_admin?: boolean
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
         Update: {
           user_id?: string
@@ -356,8 +365,11 @@ export interface Database {
           best_streak_days?: number
           created_at?: string
           has_seen_onboarding?: boolean
+<<<<<<< HEAD
           active_edital_id?: string | null
           is_admin?: boolean
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
       }
       redacoes_corrigidas: {
@@ -570,6 +582,7 @@ export interface Database {
           created_at?: string
         }
       }
+<<<<<<< HEAD
       topicos_default: {
         Row: {
           id: string
@@ -601,6 +614,8 @@ export interface Database {
           }
         ]
       }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       topicos: {
         Row: {
           id: string
@@ -684,6 +699,7 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
+<<<<<<< HEAD
       clone_edital_default: {
         Args: {
           edital_default_id: string
@@ -691,6 +707,9 @@ export interface Database {
         }
         Returns: string
       }
+=======
+      [_ in never]: never
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }
     Enums: {
       [_ in never]: never

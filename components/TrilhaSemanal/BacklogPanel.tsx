@@ -2,7 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { SearchIcon } from '../icons';
 import { DraggableTopic, getDisciplineColor } from './types';
 import DisciplineGroup from './DisciplineGroup';
+<<<<<<< HEAD
 import { sortTopicosPorNumero } from '../../utils/sortTopicos';
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 interface BacklogPanelProps {
   topics: DraggableTopic[];
@@ -59,7 +62,11 @@ const BacklogPanel: React.FC<BacklogPanelProps> = ({
         return {
           disciplinaId,
           disciplinaNome: disciplina?.nome || disciplineTopics[0]?.disciplinaNome || 'Sem disciplina',
+<<<<<<< HEAD
           topics: sortTopicosPorNumero(disciplineTopics),
+=======
+          topics: disciplineTopics,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           color: getDisciplineColor(disciplinaId, allDisciplinas),
         };
       })

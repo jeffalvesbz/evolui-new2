@@ -6,6 +6,10 @@ import {
     FootprintsIcon,
     PlayIcon,
     TargetIcon,
+<<<<<<< HEAD
+=======
+    FlameIcon,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     PlusCircleIcon,
     BookCopyIcon,
     LayersIcon,
@@ -17,6 +21,7 @@ import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useDailyGoalStore } from '../stores/useDailyGoalStore';
 import { useModalStore } from '../stores/useModalStore';
+<<<<<<< HEAD
 import { startOfDay, isSameDay } from 'date-fns';
 import { toast } from './Sonner';
 import { Progress } from '../lib/dashboardMocks';
@@ -34,6 +39,26 @@ const formatStudyDuration = (minutes: number) => {
     if (hours <= 0) return `${remaining} min`;
     if (remaining === 0) return `${hours}h`;
     return `${hours}h ${remaining}min`;
+=======
+import { useGamificationStore } from '../stores/useGamificationStore';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
+import { startOfDay, isSameDay } from 'date-fns';
+import { toast } from './Sonner';
+import { Progress } from '../lib/dashboardMocks';
+import type { SessaoCiclo } from '../types';
+
+interface QuickActionsSidebarProps {
+  setActiveView: (view: string) => void;
+}
+
+const formatStudyDuration = (minutes: number) => {
+  const totalMinutes = Math.max(0, Math.round(minutes ?? 0));
+  const hours = Math.floor(totalMinutes / 60);
+  const remaining = totalMinutes % 60;
+  if (hours <= 0) return `${remaining} min`;
+  if (remaining === 0) return `${hours}h`;
+  return `${hours}h ${remaining}min`;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 };
 
 const QuickActionCard: React.FC<{ children: React.ReactNode, title: string, icon: React.ReactNode }> = ({ children, title, icon }) => (
@@ -62,14 +87,22 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
             const sessoesOrdenadas = [...cicloAtivo.sessoes].sort((a, b) => a.ordem - b.ordem);
             // FIX: Add explicit type to 'proximaSessaoCiclo' to resolve 'unknown' type error.
             let proximaSessaoCiclo: SessaoCiclo | undefined;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             if (!ultimaSessaoConcluidaId) {
                 proximaSessaoCiclo = sessoesOrdenadas[0];
             } else {
                 const ultimoIndice = sessoesOrdenadas.findIndex(s => s.id === ultimaSessaoConcluidaId);
                 proximaSessaoCiclo = sessoesOrdenadas[(ultimoIndice + 1) % sessoesOrdenadas.length];
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             if (proximaSessaoCiclo) {
                 const disciplina = disciplinasMap.get(proximaSessaoCiclo.disciplina_id);
                 if (disciplina) {
@@ -87,7 +120,11 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
                 }
             }
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // 2. Prioridade: Revisões do Dia
         const hoje = startOfDay(new Date());
         const pendentesHoje = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
@@ -109,16 +146,24 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
         const primeiroTopicoNaoConcluido = topicosDoDiaIds
             .map(id => findTopicById(id))
             .find(info => info && !info.topico.concluido);
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (primeiroTopicoNaoConcluido) {
             const { topico, disciplina } = primeiroTopicoNaoConcluido;
             return {
                 icon: <FootprintsIcon className="w-5 h-5 text-primary" />,
                 title: 'Foco da Trilha',
                 description: <>Sua trilha sugere estudar <strong>{topico.titulo}</strong>.</>,
+<<<<<<< HEAD
                 onAction: () => iniciarSessao({ id: topico.id, nome: topico.titulo, disciplinaId: disciplina.id }, 'cronometro', {
                     origemTrilha: true
                 }),
+=======
+                onAction: () => iniciarSessao({ id: topico.id, nome: topico.titulo, disciplinaId: disciplina.id }),
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 buttonText: 'Iniciar Tópico',
                 buttonIcon: <PlayIcon className="w-4 h-4" />,
             };
@@ -153,6 +198,7 @@ const ProximoPasso: React.FC<{ setActiveView: (view: string) => void }> = ({ set
 const ResumoDia: React.FC = () => {
     const sessoes = useEstudosStore(state => state.sessoes);
     const goalMinutes = useDailyGoalStore(state => state.goalMinutes);
+<<<<<<< HEAD
 
     const tempoTotalHoje = useMemo(() => {
         const hojeISO = getLocalDateISO();
@@ -161,6 +207,17 @@ const ResumoDia: React.FC = () => {
     }, [sessoes]);
 
     const metaPercentual = goalMinutes > 0 ? Math.round((tempoTotalHoje / goalMinutes) * 100) : 0; // Permite valores acima de 100%
+=======
+    const stats = useGamificationStore(state => state.stats);
+
+    const tempoTotalHoje = useMemo(() => {
+        const hojeISO = new Date().toISOString().split('T')[0];
+        const sessoesDeHoje = sessoes.filter(s => s.data_estudo === hojeISO);
+        return Math.round(sessoesDeHoje.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60);
+    }, [sessoes]);
+    
+    const metaPercentual = goalMinutes > 0 ? Math.min(100, Math.round((tempoTotalHoje / goalMinutes) * 100)) : 0;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     return (
         <div className="space-y-4">
@@ -175,6 +232,13 @@ const ResumoDia: React.FC = () => {
                 <span className="font-semibold text-muted-foreground">Tempo Hoje</span>
                 <span className="font-bold text-foreground">{formatStudyDuration(tempoTotalHoje)}</span>
             </div>
+<<<<<<< HEAD
+=======
+             <div className="flex justify-between items-center text-sm p-3 bg-muted/30 rounded-lg">
+                <span className="font-semibold text-muted-foreground">Streak Atual</span>
+                <span className="font-bold text-foreground flex items-center gap-1.5"><FlameIcon className="w-4 h-4 text-orange-500"/> {stats?.current_streak_days ?? 0} dias</span>
+            </div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
     );
 };
@@ -203,6 +267,7 @@ const AdicionarRapido: React.FC = () => {
 
 
 const QuickActionsSidebar: React.FC<QuickActionsSidebarProps> = ({ setActiveView }) => {
+<<<<<<< HEAD
     return (
         <aside className="w-72 bg-card/40 backdrop-blur-xl border-l border-white/10 flex-shrink-0 hidden lg:flex flex-col">
             <div className="flex items-center space-x-3 p-5 h-[73px] border-b border-white/10 flex-shrink-0">
@@ -224,3 +289,26 @@ const QuickActionsSidebar: React.FC<QuickActionsSidebarProps> = ({ setActiveView
 };
 
 export default QuickActionsSidebar;
+=======
+  return (
+    <aside className="w-72 bg-card/40 backdrop-blur-xl border-l border-white/10 flex-shrink-0 hidden lg:flex flex-col">
+        <div className="flex items-center space-x-3 p-5 h-[73px] border-b border-white/10 flex-shrink-0">
+            <h2 className="text-base font-bold text-foreground tracking-wider">Ações Rápidas</h2>
+        </div>
+        <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
+            <QuickActionCard title="Próximo Passo Inteligente" icon={<SparklesIcon className="w-5 h-5 text-primary" />}>
+                <ProximoPasso setActiveView={setActiveView} />
+            </QuickActionCard>
+            <QuickActionCard title="Resumo do Dia" icon={<TargetIcon className="w-5 h-5 text-primary" />}>
+                <ResumoDia />
+            </QuickActionCard>
+             <QuickActionCard title="Adicionar Rápido" icon={<PlusCircleIcon className="w-5 h-5 text-primary" />}>
+                <AdicionarRapido />
+            </QuickActionCard>
+        </div>
+    </aside>
+  );
+};
+
+export default QuickActionsSidebar;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

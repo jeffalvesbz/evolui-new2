@@ -1,8 +1,15 @@
 import { useMemo } from 'react';
+<<<<<<< HEAD
 import { useHistoricoStoreWithSubscriptions } from '../stores/useHistoricoStore';
 
 export const useUnifiedStreak = () => {
     const { historico } = useHistoricoStoreWithSubscriptions();
+=======
+import { useHistoricoStore } from '../stores/useHistoricoStore';
+
+export const useUnifiedStreak = () => {
+    const historico = useHistoricoStore((state) => state.historico);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     return useMemo(() => {
         if (!historico || historico.length === 0) {

@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+<<<<<<< HEAD
 import {
   CalendarDaysIcon,
   ClockIcon,
   CheckCircle2Icon,
   AlertCircleIcon,
+=======
+import { 
+  CalendarDaysIcon, 
+  ClockIcon, 
+  CheckCircle2Icon, 
+  AlertCircleIcon, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   TrendingUpIcon,
   FilterIcon,
   RefreshCwIcon,
@@ -103,7 +111,11 @@ const RevisoesPage: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const MetricCard: React.FC<{ title: string, value: number, icon: React.ElementType, color: string, subtitle?: string }> = ({ title, value, icon: Icon, color, subtitle }) => (
+=======
+  const MetricCard: React.FC<{title: string, value: number, icon: React.ElementType, color: string, subtitle?: string}> = ({ title, value, icon: Icon, color, subtitle }) => (
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -122,6 +134,7 @@ const RevisoesPage: React.FC = () => {
     </motion.div>
   );
 
+<<<<<<< HEAD
   const FilterButton: React.FC<{ label: string, isActive: boolean, onClick: () => void }> = ({ label, isActive, onClick }) => (
     <button
       onClick={onClick}
@@ -129,6 +142,14 @@ const RevisoesPage: React.FC = () => {
         ? 'bg-primary text-primary-foreground'
         : 'bg-muted text-muted-foreground hover:bg-muted/80'
         }`}
+=======
+  const FilterButton: React.FC<{label: string, isActive: boolean, onClick: () => void}> = ({ label, isActive, onClick }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+        isActive ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+      }`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     >
       {label}
     </button>
@@ -136,11 +157,19 @@ const RevisoesPage: React.FC = () => {
 
   if (!editalAtivo?.id) {
     return (
+<<<<<<< HEAD
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
           <CalendarDaysIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">Nenhum Edital Selecionado</h2>
           <p className="text-sm text-muted-foreground">Selecione um edital para visualizar e gerenciar suas revisões.</p>
+=======
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <CalendarDaysIcon className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Nenhum Edital Selecionado</h2>
+          <p className="text-muted-foreground">Selecione um edital para visualizar e gerenciar suas revisões.</p>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
       </div>
     );
@@ -148,16 +177,24 @@ const RevisoesPage: React.FC = () => {
 
   if (loading && (!revisoes || revisoes.length === 0)) {
     return (
+<<<<<<< HEAD
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
           <RefreshCwIcon className="w-6 h-6 text-primary animate-spin mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Carregando revisões...</p>
+=======
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <RefreshCwIcon className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando revisões...</p>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
       </div>
     );
   }
 
   return (
+<<<<<<< HEAD
     <div data-tutorial="revisoes-content" className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
       <header className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div>
@@ -167,10 +204,22 @@ const RevisoesPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button onClick={() => setMostrarEstatisticas(!mostrarEstatisticas)} className="h-9 px-3 flex items-center gap-2 rounded-lg bg-card border border-border text-sm text-muted-foreground hover:bg-muted" title="Estatísticas"><BarChart3Icon className="w-4 h-4" /></button>
           <button onClick={handleRefresh} disabled={loading} className="h-9 px-3 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50" title="Atualizar"><RefreshCwIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></button>
+=======
+    <div data-tutorial="revisoes-content" className="max-w-7xl mx-auto space-y-6">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-1">Sistema de Revisões</h1>
+          <p className="text-muted-foreground">Gerencie suas revisões de estudos teóricos e manuais.</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <button onClick={() => setMostrarEstatisticas(!mostrarEstatisticas)} className="h-9 px-3 flex items-center gap-2 rounded-lg bg-card border border-border text-sm text-muted-foreground hover:bg-muted"><BarChart3Icon className="w-4 h-4" /> Estatísticas</button>
+            <button onClick={handleRefresh} disabled={loading} className="h-9 px-3 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50"><RefreshCwIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Atualizar</button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<<<<<<< HEAD
         <MetricCard
           title="Pendentes Hoje"
           value={pendentesHoje.length}
@@ -196,10 +245,17 @@ const RevisoesPage: React.FC = () => {
           color="bg-green-500"
           subtitle={`Taxa: ${estatisticas.taxaConclusao}%`}
         />
+=======
+          <MetricCard title="Pendentes Hoje" value={pendentesHoje.length} icon={ClockIcon} color="bg-primary" />
+          <MetricCard title="Programadas" value={programadas.length} icon={CalendarDaysIcon} color="bg-secondary" />
+          <MetricCard title="Atrasadas" value={atrasadas.length} icon={AlertCircleIcon} color="bg-red-500" />
+          <MetricCard title="Concluídas" value={concluidas.length} icon={CheckCircle2Icon} color="bg-green-500" subtitle={`Taxa: ${estatisticas.taxaConclusao}%`} />
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       </div>
 
       <AnimatePresence>
         {mostrarEstatisticas && (
+<<<<<<< HEAD
           <motion.section
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -218,11 +274,27 @@ const RevisoesPage: React.FC = () => {
                   <div className="space-y-2 text-sm">{Object.entries(estatisticas.porDificuldade).map(([k, v]: [string, number]) => <div key={k} className="flex justify-between items-center"><span className="capitalize text-foreground">{k}</span><span className="font-mono text-muted-foreground">{v}</span></div>)}</div>
                 </div>
               </div>
+=======
+          <motion.section initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="rounded-xl border border-border bg-card p-6 mb-6">
+                <h3 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2"><TrendingUpIcon className="w-5 h-5" /> Estatísticas Detalhadas</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Por Origem</h4>
+                        <div className="space-y-2 text-sm">{Object.entries(estatisticas.porOrigem).map(([k, v]: [string, number]) => <div key={k} className="flex justify-between items-center"><span className="capitalize text-foreground">{k}</span><span className="font-mono text-muted-foreground">{v}</span></div>)}</div>
+                    </div>
+                    <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3">Por Dificuldade</h4>
+                        <div className="space-y-2 text-sm">{Object.entries(estatisticas.porDificuldade).map(([k, v]: [string, number]) => <div key={k} className="flex justify-between items-center"><span className="capitalize text-foreground">{k}</span><span className="font-mono text-muted-foreground">{v}</span></div>)}</div>
+                    </div>
+                </div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             </div>
           </motion.section>
         )}
       </AnimatePresence>
 
+<<<<<<< HEAD
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -243,6 +315,14 @@ const RevisoesPage: React.FC = () => {
           )}
         </div>
 
+=======
+      <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <div className="flex items-center gap-4">
+          <FilterIcon className="w-5 h-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">Filtros e Busca</h3>
+        </div>
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         {/* Campo de busca */}
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -255,6 +335,7 @@ const RevisoesPage: React.FC = () => {
           />
         </div>
 
+<<<<<<< HEAD
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</label>
@@ -321,6 +402,24 @@ const RevisoesPage: React.FC = () => {
       )}
 
       {/* Pendentes Hoje - Second Priority (always expanded) */}
+=======
+        <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-semibold w-20">Status:</span>
+                <FilterButton label="Todas" isActive={filtroStatus === 'todas'} onClick={() => setFiltroStatus('todas')} />
+                <FilterButton label="Pendentes" isActive={filtroStatus === 'pendentes'} onClick={() => setFiltroStatus('pendentes')} />
+                <FilterButton label="Atrasadas" isActive={filtroStatus === 'atrasadas'} onClick={() => setFiltroStatus('atrasadas')} />
+                <FilterButton label="Concluídas" isActive={filtroStatus === 'concluidas'} onClick={() => setFiltroStatus('concluidas')} />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-semibold w-20">Dificuldade:</span>
+                <FilterButton label="Todas" isActive={filtroDificuldade === 'todas'} onClick={() => setFiltroDificuldade('todas')} />
+                <FilterButton label="Fácil" isActive={filtroDificuldade === 'fácil'} onClick={() => setFiltroDificuldade('fácil')} />
+                <FilterButton label="Médio" isActive={filtroDificuldade === 'médio'} onClick={() => setFiltroDificuldade('médio')} />
+                <FilterButton label="Difícil" isActive={filtroDificuldade === 'difícil'} onClick={() => setFiltroDificuldade('difícil')} />
+            </div>
+        </div>
+      </div>
+      
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       <section className="space-y-4">
         <h3 className="text-xl font-semibold text-foreground">📅 Revisões de Hoje ({pendentesHoje.length})</h3>
         {pendentesHoje.length > 0 ? (
@@ -329,15 +428,24 @@ const RevisoesPage: React.FC = () => {
           </AnimatePresence>
         ) : (
           <div className="text-center py-12 rounded-xl border-2 border-dashed border-border bg-card">
+<<<<<<< HEAD
             <TargetIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <p className="text-muted-foreground text-lg">Nenhuma revisão pendente para hoje 🎉</p>
+=======
+              <TargetIcon className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">Nenhuma revisão pendente para hoje 🎉</p>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           </div>
         )}
       </section>
 
       <div className="mt-8 space-y-6">
         {programadasAmanha.length > 0 && (
+<<<<<<< HEAD
           <details className="group">
+=======
+          <details className="group" open>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             <summary className="cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-2 text-lg font-medium">🗓️ Amanhã ({programadasAmanha.length})</summary>
             <div className="mt-4 space-y-4">
               <AnimatePresence>
@@ -368,6 +476,17 @@ const RevisoesPage: React.FC = () => {
         )}
 
         <details className="group">
+<<<<<<< HEAD
+=======
+          <summary className="cursor-pointer text-red-400 hover:text-red-300 transition-colors flex items-center gap-2 text-lg font-medium">🚨 Ver revisões atrasadas ({atrasadas.length})</summary>
+          <div className="mt-4 space-y-4">
+            <AnimatePresence>
+              {atrasadas.filter(r => revisoesFiltradas.includes(r)).map(r => <RevisaoCard key={r.id} revisao={r} onConcluir={concluirRevisao} onReagendar={reagendarRevisao} onRemover={removeRevisao} />)}
+            </AnimatePresence>
+          </div>
+        </details>
+        <details className="group">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           <summary className="cursor-pointer text-primary hover:text-primary/80 transition-colors flex items-center gap-2 text-lg font-medium">✅ Ver revisões concluídas ({concluidas.length})</summary>
           <div className="mt-4 space-y-4">
             <AnimatePresence>

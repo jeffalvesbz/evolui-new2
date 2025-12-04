@@ -4,6 +4,11 @@ import { CadernoErro, RevisaoErro } from '../types';
 import { getErros, createErro, updateErroApi, deleteErro } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
 import { toast } from '../components/Sonner';
+<<<<<<< HEAD
+=======
+import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 interface CadernoErrosStore {
   erros: CadernoErro[];
@@ -40,6 +45,11 @@ export const useCadernoErrosStore = create<CadernoErrosStore>((set, get) => ({
       const novoErro = await createErro(studyPlanId, erroData);
       set(state => ({ erros: [...state.erros, novoErro] }));
       
+<<<<<<< HEAD
+=======
+      checkAndAwardBadges();
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       return novoErro;
     } catch (error) {
       console.error("Failed to add erro:", error);
@@ -54,6 +64,11 @@ export const useCadernoErrosStore = create<CadernoErrosStore>((set, get) => ({
       set(state => ({
         erros: state.erros.map(e => (e.id === id ? erroAtualizado : e)),
       }));
+<<<<<<< HEAD
+=======
+       
+      checkAndAwardBadges();
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     } catch (error) {
       console.error("Failed to update erro:", error);
       toast.error("Falha ao atualizar erro.");

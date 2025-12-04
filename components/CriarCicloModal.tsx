@@ -49,7 +49,11 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
             setValue('materias', [...selectedMaterias, { id: disciplina.id, nome: disciplina.nome, tempoMinutos: 180 }]);
         }
     };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleAddCustomMateria = async () => {
         if (customMateria.trim() && !selectedMaterias.some(m => m.nome.toLowerCase() === customMateria.trim().toLowerCase())) {
             try {
@@ -71,7 +75,11 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
         <div className="space-y-6">
             <div>
                 <label htmlFor="nomeCiclo" className="block text-sm font-medium text-muted-foreground mb-1">Nome do Ciclo *</label>
+<<<<<<< HEAD
                 <input {...register('nomeCiclo', { required: 'O nome do ciclo é obrigatório.' })} id="nomeCiclo" placeholder="Ex: Ciclo de Estudos para Concurso X" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+=======
+                <input {...register('nomeCiclo', { required: 'O nome do ciclo é obrigatório.' })} id="nomeCiclo" placeholder="Ex: Ciclo de Estudos para Concurso X" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 {errors.nomeCiclo && <p className="text-xs text-red-500 mt-1">{errors.nomeCiclo.message as string}</p>}
             </div>
 
@@ -82,11 +90,19 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                     {selectedMaterias.map(materia => (
                         <span key={materia.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold">
                             {materia.nome}
+<<<<<<< HEAD
                             <button type="button" onClick={() => handleRemoveMateria(materia.id)} className="p-0.5 rounded-full hover:bg-muted/50"><XIcon className="w-3.5 h-3.5" /></button>
                         </span>
                     ))}
                 </div>
                 {errors.materias && <p className="text-xs text-red-500 mt-1">{errors.materias.message as string}</p>}
+=======
+                            <button type="button" onClick={() => handleRemoveMateria(materia.id)} className="p-0.5 rounded-full hover:bg-muted/50"><XIcon className="w-3.5 h-3.5"/></button>
+                        </span>
+                    ))}
+                </div>
+                 {errors.materias && <p className="text-xs text-red-500 mt-1">{errors.materias.message as string}</p>}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             </div>
 
             <div className="space-y-4">
@@ -94,7 +110,11 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Suas Disciplinas</h4>
                     <div className="flex flex-wrap gap-2">
                         {disciplinas.filter(d => !selectedMateriaIds.has(d.id)).map(d => (
+<<<<<<< HEAD
                             <button type="button" key={d.id} onClick={() => handleSelectMateria(d)} className="px-3 py-1.5 rounded-full border border-border text-sm hover:bg-muted">{d.nome}</button>
+=======
+                           <button type="button" key={d.id} onClick={() => handleSelectMateria(d)} className="px-3 py-1.5 rounded-full border border-border text-sm hover:bg-muted">{d.nome}</button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         ))}
                     </div>
                 </div>
@@ -103,7 +123,11 @@ const Etapa1: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                     <div className="flex gap-2">
                         <input value={customMateria} onChange={e => setCustomMateria(e.target.value)} placeholder="Digite o nome da matéria" className="flex-1 bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                         <button type="button" onClick={handleAddCustomMateria} className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30">
+<<<<<<< HEAD
                             <PlusIcon className="w-4 h-4" /> Adicionar
+=======
+                            <PlusIcon className="w-4 h-4"/> Adicionar
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </button>
                     </div>
                 </div>
@@ -128,6 +152,7 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                     {fields.map((field, index) => (
                         <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/30">
+<<<<<<< HEAD
                             <span className="font-semibold text-foreground flex-1">{watchedMaterias[index]?.nome}</span>
                             <Controller
                                 control={control}
@@ -137,11 +162,26 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                                 )}
                             />
                             <span className="text-sm text-muted-foreground">minutos</span>
+=======
+                             <span className="font-semibold text-foreground flex-1">{watchedMaterias[index]?.nome}</span>
+                             <Controller
+                                control={control}
+                                name={`materias.${index}.tempoMinutos`}
+                                render={({ field: { onChange, value } }) => (
+                                    <input type="number" value={value} onChange={e => onChange(Number(e.target.value))} min="0" className="w-24 bg-input border border-border rounded-md px-3 py-1.5 text-sm text-foreground"/>
+                                )}
+                             />
+                             <span className="text-sm text-muted-foreground">minutos</span>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </div>
                     ))}
                 </div>
             </div>
+<<<<<<< HEAD
             <div className="flex flex-col items-center">
+=======
+             <div className="flex flex-col items-center">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 <h3 className="text-lg font-bold">Distribuição do Tempo</h3>
                 <p className="text-sm text-muted-foreground mb-2">Total: <span className="font-bold text-primary">{formatMinutesToHours(totalTempoCicloMinutos)}</span></p>
                 {pieData.length > 0 ? (
@@ -150,7 +190,11 @@ const Etapa2: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                             <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5}>
                                 {pieData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                             </Pie>
+<<<<<<< HEAD
                             <Tooltip
+=======
+                             <Tooltip
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 contentStyle={{
                                     backgroundColor: 'rgba(30, 41, 59, 0.7)',
                                     backdropFilter: 'blur(10px)',
@@ -174,12 +218,15 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
     const { fields, move, remove } = useFieldArray({ control, name: 'sessoesGeradas' });
     const sessoesGeradas: Omit<SessaoCiclo, 'id' | 'ordem'>[] = watch('sessoesGeradas');
 
+<<<<<<< HEAD
     // Move useMemo outside of the map function to comply with React's Rules of Hooks
     const disciplinasMap: Map<string, string> = useMemo(
         () => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])),
         []
     );
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleAddSessao = () => {
         // This function is not implemented in the original code, but we can assume it's for manual additions.
         // For now, let's keep it simple. It might be that the user has to go back to change times.
@@ -187,10 +234,19 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
 
     return (
         <div className="space-y-4">
+<<<<<<< HEAD
             <h3 className="text-lg font-bold">Revise e Organize seu Ciclo</h3>
             <p className="text-sm text-muted-foreground">Arraste para reordenar, ajuste os tempos ou remova sessões. O ciclo irá rotacionar nesta ordem.</p>
             <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
                 {fields.map((field, index) => {
+=======
+             <h3 className="text-lg font-bold">Revise e Organize seu Ciclo</h3>
+            <p className="text-sm text-muted-foreground">Arraste para reordenar, ajuste os tempos ou remova sessões. O ciclo irá rotacionar nesta ordem.</p>
+            <div className="space-y-2 max-h-[45vh] overflow-y-auto pr-2">
+                {fields.map((field, index) => {
+                    // FIX: Changed type to Map<string, string> to align with Map constructor usage
+                    const disciplinasMap: Map<string, string> = useMemo(() => new Map(useDisciplinasStore.getState().disciplinas.map(d => [d.id, d.nome])), []);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     return (
                         <div key={field.id} className="flex items-center gap-3 p-2 rounded-lg bg-black/20 border border-border">
                             <span className="font-bold text-muted-foreground w-6">{index + 1}.</span>
@@ -199,6 +255,7 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                                 control={control}
                                 name={`sessoesGeradas.${index}.tempo_previsto`}
                                 render={({ field: { onChange, value } }) => (
+<<<<<<< HEAD
                                     <input type="number" value={value / 60} onChange={e => onChange(Number(e.target.value) * 60)} min="1" className="w-20 bg-input border border-border rounded-md px-2 py-1 text-sm text-foreground" />
                                 )}
                             />
@@ -208,6 +265,17 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
                                 <button type="button" onClick={() => move(index, index + 1)} disabled={index === fields.length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3" /></button>
                             </div>
                             <button type="button" onClick={() => remove(index)} className="p-1.5 rounded-md hover:bg-background"><Trash2Icon className="w-4 h-4 text-red-500" /></button>
+=======
+                                     <input type="number" value={value / 60} onChange={e => onChange(Number(e.target.value) * 60)} min="1" className="w-20 bg-input border border-border rounded-md px-2 py-1 text-sm text-foreground"/>
+                                )}
+                             />
+                             <span className="text-sm text-muted-foreground">min</span>
+                             <div className="flex flex-col">
+                                <button type="button" onClick={() => move(index, index - 1)} disabled={index === 0} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowUpIcon className="w-3 h-3"/></button>
+                                <button type="button" onClick={() => move(index, index + 1)} disabled={index === fields.length - 1} className="p-1 rounded-md hover:bg-background disabled:opacity-30"><ArrowDownIcon className="w-3 h-3"/></button>
+                            </div>
+                             <button type="button" onClick={() => remove(index)} className="p-1.5 rounded-md hover:bg-background"><Trash2Icon className="w-4 h-4 text-red-500"/></button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </div>
                     )
                 })}
@@ -221,7 +289,11 @@ const Etapa3: React.FC<{ formMethods: any }> = ({ formMethods }) => {
 const CriarCicloModal: React.FC = () => {
     const { isCriarCicloModalOpen, closeCriarCicloModal } = useModalStore();
     const { addCiclo, setCicloAtivoId } = useCiclosStore();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const [etapa, setEtapa] = useState(1);
     const formMethods = useForm<FormData>({
         defaultValues: {
@@ -238,14 +310,20 @@ const CriarCicloModal: React.FC = () => {
         if (etapa === 1) {
             isValid = await trigger(['nomeCiclo', 'materias']);
             if (watch('materias').length === 0) {
+<<<<<<< HEAD
                 toast.error('Selecione pelo menos uma matéria.');
                 isValid = false;
+=======
+                 toast.error('Selecione pelo menos uma matéria.');
+                 isValid = false;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             }
         } else if (etapa === 2) {
             isValid = true;
             // Gerar sessões para a etapa 3
             const materias: MateriaCiclo[] = watch('materias');
             const tempoSessaoMinutos = watch('tempoSessao') / 60;
+<<<<<<< HEAD
 
             // Criar um mapa de sessões por matéria
             const sessoesPorMateria = new Map<string, Omit<SessaoCiclo, 'id' | 'ordem'>[]>();
@@ -300,13 +378,33 @@ const CriarCicloModal: React.FC = () => {
             }
 
             setValue('sessoesGeradas', sessoesDistribuidas);
+=======
+            const sessoes: Omit<SessaoCiclo, 'id' | 'ordem'>[] = [];
+            
+            materias.forEach(materia => {
+                const numSessoes = Math.floor(materia.tempoMinutos / tempoSessaoMinutos);
+                const resto = materia.tempoMinutos % tempoSessaoMinutos;
+                
+                for(let i=0; i < numSessoes; i++) {
+                    sessoes.push({ disciplina_id: materia.id, tempo_previsto: tempoSessaoMinutos * 60 });
+                }
+                if (resto > 0) {
+                    sessoes.push({ disciplina_id: materia.id, tempo_previsto: resto * 60 });
+                }
+            });
+            setValue('sessoesGeradas', sessoes.sort(() => Math.random() - 0.5)); // Shuffle
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
 
         if (isValid) {
             setEtapa(etapa + 1);
         }
     };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const onSubmit = async (data: FormData) => {
         const novoCiclo: Omit<Ciclo, 'id' | 'studyPlanId'> = {
             nome: data.nomeCiclo,
@@ -335,6 +433,7 @@ const CriarCicloModal: React.FC = () => {
     ];
 
     return (
+<<<<<<< HEAD
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarCicloModal}>
             <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b border-border flex items-center justify-between">
@@ -343,13 +442,27 @@ const CriarCicloModal: React.FC = () => {
                 </header>
 
                 <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
+=======
+        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarCicloModal}>
+            <div className="bg-card/90 backdrop-blur-xl rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <header className="p-4 border-b border-border flex items-center justify-between">
+                    <h2 className="text-lg font-bold">Criar Novo Ciclo de Estudos</h2>
+                    <button type="button" onClick={closeCriarCicloModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5"/></button>
+                </header>
+
+                <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     {/* Stepper */}
                     <div className="flex items-center justify-center mb-4 sm:mb-6">
                         {etapas.map((item, index) => (
                             <React.Fragment key={index}>
                                 <div className="flex flex-col items-center">
                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${etapa > index + 1 ? 'bg-secondary border-secondary text-black' : etapa === index + 1 ? 'border-primary text-primary scale-110' : 'border-border text-muted-foreground'}`}>
+<<<<<<< HEAD
                                         {etapa > index + 1 ? <CheckCircle2Icon className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}
+=======
+                                        {etapa > index + 1 ? <CheckCircle2Icon className="w-5 h-5" /> : <item.icon className="w-5 h-5"/>}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                     </div>
                                     <span className={`mt-2 text-xs font-bold ${etapa === index + 1 ? 'text-primary' : 'text-muted-foreground'}`}>{item.title}</span>
                                 </div>
@@ -367,6 +480,7 @@ const CriarCicloModal: React.FC = () => {
 
                 <footer className="p-4 bg-muted/30 border-t border-border flex justify-between items-center">
                     <button type="button" onClick={() => etapa > 1 && setEtapa(etapa - 1)} disabled={etapa === 1} className="h-10 px-4 flex items-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50">
+<<<<<<< HEAD
                         <ChevronLeftIcon className="w-4 h-4" /> Voltar
                     </button>
                     {etapa < 3 ? (
@@ -376,6 +490,17 @@ const CriarCicloModal: React.FC = () => {
                     ) : (
                         <button type="button" onClick={handleSubmit(onSubmit)} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold hover:bg-secondary/90">
                             <CheckCircle2Icon className="w-4 h-4" /> Concluir e Salvar Ciclo
+=======
+                        <ChevronLeftIcon className="w-4 h-4"/> Voltar
+                    </button>
+                    {etapa < 3 ? (
+                        <button type="button" onClick={handleNext} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+                            Próximo <ChevronRightIcon className="w-4 h-4"/>
+                        </button>
+                    ) : (
+                        <button type="button" onClick={handleSubmit(onSubmit)} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold hover:bg-secondary/90">
+                            <CheckCircle2Icon className="w-4 h-4"/> Concluir e Salvar Ciclo
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </button>
                     )}
                 </footer>

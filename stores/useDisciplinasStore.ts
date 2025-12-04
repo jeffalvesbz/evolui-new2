@@ -3,6 +3,11 @@ import { Disciplina, Topico } from '../types';
 import { getDisciplinas, createDisciplina, updateDisciplinaApi, deleteDisciplina, updateTopicoApi, createTopico, deleteTopico } from '../services/geminiService';
 import { toast } from '../components/Sonner';
 import { useCiclosStore } from './useCiclosStore';
+<<<<<<< HEAD
+=======
+import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 import { useEditalStore } from './useEditalStore';
 import { useFlashcardsStore } from './useFlashcardStore';
 
@@ -131,6 +136,14 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
             )
         }));
 
+<<<<<<< HEAD
+=======
+        // check for badge on completion
+        if (updates.concluido) {
+            checkAndAwardBadges();
+        }
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     } catch (error) {
         console.error("Failed to update topico:", error);
         toast.error("Falha ao atualizar o tópico.");
@@ -205,4 +218,8 @@ export const useDisciplinasStore = create<DisciplinasState>((set, get) => ({
     const totalProgress = disciplinas.reduce((acc, d) => acc + d.progresso, 0);
     return totalProgress / disciplinas.length;
   },
+<<<<<<< HEAD
 }));
+=======
+}));
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

@@ -16,7 +16,11 @@ import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { SectionHeader } from '../lib/dashboardMocks';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
+<<<<<<< HEAD
 import { startOfDay, isSameDay, isBefore } from 'date-fns';
+=======
+import { startOfDay, isSameDay } from 'date-fns';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 import { toast } from './Sonner';
 import type { SessaoCiclo } from '../types';
 
@@ -34,7 +38,11 @@ const ActionCard: React.FC<ActionCardProps> = ({ icon, title, description, butto
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3 }}
+<<<<<<< HEAD
     className="bg-card border border-border p-5 rounded-xl flex flex-col justify-between hover:border-primary/50 transition-all duration-300 shadow-lg"
+=======
+    className="glass-card p-5 rounded-xl flex flex-col justify-between hover:border-primary/50 transition-colors"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   >
     <div>
       <div className="flex items-center gap-3 mb-2">
@@ -71,6 +79,7 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     if (!cicloAtivo || cicloAtivo.sessoes.length === 0) return null;
 
     const sessoesDoCiclo = sessoes.filter(sessao => {
+<<<<<<< HEAD
       const topicInfo = findTopicById(sessao.topico_id);
       return cicloAtivo.sessoes.some(s => s.disciplina_id === topicInfo?.disciplina.id);
     }).sort((a, b) => new Date(b.data_estudo).getTime() - new Date(a.data_estudo).getTime());
@@ -88,6 +97,25 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
 
     if (!proximaSessaoCiclo) return null;
 
+=======
+        const topicInfo = findTopicById(sessao.topico_id);
+        return cicloAtivo.sessoes.some(s => s.disciplina_id === topicInfo?.disciplina.id);
+    }).sort((a,b) => new Date(b.data_estudo).getTime() - new Date(a.data_estudo).getTime());
+    
+    // FIX: Explicitly type `proximaSessaoCiclo` to avoid `unknown` type errors.
+    let proximaSessaoCiclo: SessaoCiclo | undefined;
+    if(sessoesDoCiclo.length > 0) {
+        const ultimaSessaoEstudada = sessoesDoCiclo[0];
+        const ultimoTopico = findTopicById(ultimaSessaoEstudada.topico_id);
+        const ultimoIndice = cicloAtivo.sessoes.findIndex(s => s.disciplina_id === ultimoTopico?.disciplina.id);
+        proximaSessaoCiclo = cicloAtivo.sessoes[(ultimoIndice + 1) % cicloAtivo.sessoes.length];
+    } else {
+        proximaSessaoCiclo = cicloAtivo.sessoes[0];
+    }
+    
+    if(!proximaSessaoCiclo) return null;
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const disciplina = disciplinasMap.get(proximaSessaoCiclo.disciplina_id);
     if (!disciplina) return null;
 
@@ -104,6 +132,7 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     };
   }, [getCicloAtivo, sessoes, findTopicById, disciplinasMap, iniciarSessao]);
 
+<<<<<<< HEAD
   // 2. Ação de Revisões (prioriza atrasadas)
   const revisoesAction = useMemo(() => {
     const hoje = startOfDay(new Date());
@@ -138,6 +167,11 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     }
 
     // Se não há atrasadas, verificar revisões de hoje
+=======
+  // 2. Ação de Revisões
+  const revisoesAction = useMemo(() => {
+    const hoje = startOfDay(new Date());
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const pendentesHoje = revisoes.filter(r => r.status === 'pendente' && isSameDay(new Date(r.data_prevista), hoje));
     if (pendentesHoje.length === 0) return null;
 
@@ -157,7 +191,11 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
     const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
     const diaAtual = dias[new Date().getDay()] as keyof typeof trilha;
     const topicosDoDiaIds = trilha[diaAtual] || [];
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const primeiroTopicoNaoConcluido = topicosDoDiaIds
       .map(id => findTopicById(id))
       .find(info => info && !info.topico.concluido);
@@ -173,13 +211,18 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
       description: <>Sua trilha sugere estudar <strong>{topico.titulo}</strong>. Mantenha o planejamento.</>,
       buttonText: 'Iniciar Tópico',
       onAction: () => {
+<<<<<<< HEAD
         iniciarSessao({ id: topico.id, nome: topico.titulo, disciplinaId: disciplina.id }, 'cronometro', {
           origemTrilha: true
         });
+=======
+        iniciarSessao({ id: topico.id, nome: topico.titulo, disciplinaId: disciplina.id });
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       },
     };
   }, [trilha, findTopicById, iniciarSessao]);
 
+<<<<<<< HEAD
   // const errosAction = useMemo(() => {
   //   const errosPendentes = erros.filter(e => !e.resolvido);
   //   if (errosPendentes.length === 0) return null;
@@ -196,6 +239,25 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
   // }, [erros, setActiveView]);
 
   const actions = [cicloAction, revisoesAction, trilhaAction].filter((a): a is NonNullable<typeof a> => a !== null);
+=======
+  // 4. Ação do Caderno de Erros
+  const errosAction = useMemo(() => {
+    const errosPendentes = erros.filter(e => !e.resolvido);
+    if (errosPendentes.length === 0) return null;
+
+    return {
+      id: 'erros',
+      icon: <BookCopyIcon className="w-5 h-5 text-primary" />,
+      title: 'Caderno de Erros',
+      description: <>Você tem <strong>{errosPendentes.length} erros</strong> não resolvidos. Revise-os para fortalecer seus pontos fracos.</>,
+      buttonText: 'Revisar Erros',
+      buttonIcon: <ArrowRightIcon className="w-4 h-4" />,
+      onAction: () => setActiveView('erros'),
+    };
+  }, [erros, setActiveView]);
+
+  const actions = [cicloAction, revisoesAction, trilhaAction, errosAction].filter((a): a is NonNullable<typeof a> => a !== null);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
   return (
     <section className="space-y-4">
@@ -210,7 +272,11 @@ const AcoesRecomendadas: React.FC<AcoesRecomendadasProps> = ({ setActiveView }) 
           ))}
         </div>
       ) : (
+<<<<<<< HEAD
         <div className="bg-card border border-border rounded-xl p-8 text-center shadow-lg">
+=======
+        <div className="glass-card rounded-xl p-8 text-center">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           <SparklesIcon className="w-12 h-12 text-secondary mx-auto mb-4" />
           <h3 className="font-bold text-lg text-foreground">Tudo em dia!</h3>
           <p className="text-muted-foreground mt-1">Você está em dia com suas tarefas planejadas. Que tal um estudo livre ou adicionar um novo tópico?</p>

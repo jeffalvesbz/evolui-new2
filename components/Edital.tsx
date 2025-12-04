@@ -40,6 +40,7 @@ const Edital = () => {
   }, [disciplinas]);
 
   // FIX: Reworked logic to create disciplina first, then add topics to fix type error and ensure UI updates correctly.
+<<<<<<< HEAD
   // Função para formatar texto em Title Case (primeira letra de cada palavra maiúscula)
   const formatarTitleCase = (texto: string): string => {
     if (!texto) return '';
@@ -57,11 +58,17 @@ const Edital = () => {
       .join(' ');
   };
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   const handleCreateDisciplina = async (payload: PainelDisciplinaPayload) => {
     try {
       // Step 1: Create the disciplina with an empty topics array.
       const disciplina = await addDisciplina({
+<<<<<<< HEAD
         nome: formatarTitleCase(payload.nome),
+=======
+        nome: payload.nome,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         anotacoes: payload.anotacoes,
         topicos: [],
       });

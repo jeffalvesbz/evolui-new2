@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCiclosStore } from '../stores/useCiclosStore';
@@ -28,6 +29,35 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { getLocalDateISO } from '../utils/dateUtils';
+=======
+
+import React, { useState, useMemo, useCallback } from 'react';
+import { useCiclosStore } from '../stores/useCiclosStore';
+import { useDisciplinasStore } from '../stores/useDisciplinasStore';
+import { useEstudosStore } from '../stores/useEstudosStore';
+import { RepeatIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon, ClockIcon, PlusCircleIcon, ArrowUpIcon, ArrowDownIcon, PlayIcon, StarIcon, CheckIcon, CheckCircle2Icon, GripVerticalIcon } from './icons';
+import { toast } from './Sonner';
+import { useModalStore } from '../stores/useModalStore';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Ciclo, SessaoCiclo } from '../types';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 // Helper to format time
 const formatTime = (seconds: number) => {
@@ -39,6 +69,7 @@ const formatTime = (seconds: number) => {
 
 const COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7', '#EC4899', '#6366F1', '#F59E0B'];
 
+<<<<<<< HEAD
 // Tooltip customizado para o gráfico de distribuição de tempo
 const CustomPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -77,6 +108,8 @@ const CustomPieTooltip = ({ active, payload }: any) => {
     );
 };
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 // Componente de item sortable
 const SortableSessaoItemComponent: React.FC<{
     sessao: SessaoCiclo;
@@ -86,14 +119,21 @@ const SortableSessaoItemComponent: React.FC<{
     disciplinaNome: string;
     tempoDecorrido?: number;
     isConcluido: boolean;
+<<<<<<< HEAD
     isParcial?: boolean;
     tempoFaltante?: number;
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     isSaving?: boolean;
     onIniciar: () => void;
     onConcluir: () => void;
     onRemove: () => void;
     onUpdateTempo: (delta: number) => void;
+<<<<<<< HEAD
 }> = ({ sessao, index, isNext, isActive, disciplinaNome, tempoDecorrido, isConcluido, isParcial = false, tempoFaltante, isSaving = false, onIniciar, onConcluir, onRemove, onUpdateTempo }) => {
+=======
+}> = ({ sessao, index, isNext, isActive, disciplinaNome, tempoDecorrido, isConcluido, isSaving = false, onIniciar, onConcluir, onRemove, onUpdateTempo }) => {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const {
         attributes,
         listeners,
@@ -113,6 +153,7 @@ const SortableSessaoItemComponent: React.FC<{
         <div
             ref={setNodeRef}
             style={style}
+<<<<<<< HEAD
             className={`p-4 flex items-center justify-between group transition-all duration-300 ${isConcluido
                 ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500'
                 : isParcial
@@ -121,11 +162,21 @@ const SortableSessaoItemComponent: React.FC<{
                         ? 'bg-primary/10 border-l-4 border-primary'
                         : ''
                 } ${isActive ? 'ring-2 ring-primary/50' : ''}`}
+=======
+            className={`p-4 flex items-center justify-between group transition-all duration-300 ${
+                isConcluido 
+                    ? 'bg-gray-100/50 dark:bg-gray-800/50 border-l-4 border-gray-400' 
+                    : isNext 
+                        ? 'bg-primary/10 border-l-4 border-primary' 
+                        : ''
+            } ${isActive ? 'ring-2 ring-primary/50' : ''}`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         >
             <div className="flex items-center gap-4 flex-1">
                 <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
                     <GripVerticalIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
+<<<<<<< HEAD
                 <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${isConcluido
                     ? 'bg-green-500 dark:bg-green-600 text-white'
                     : isParcial
@@ -171,6 +222,31 @@ const SortableSessaoItemComponent: React.FC<{
                             )}
                         </AnimatePresence>
                         {isActive && !isConcluido && !isParcial && (
+=======
+                <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full transition-all duration-300 ${
+                    isConcluido 
+                        ? 'bg-gray-400 dark:bg-gray-600 text-white' 
+                        : 'bg-muted/50 text-muted-foreground'
+                }`}>
+                    {isConcluido ? <CheckCircle2Icon className="w-4 h-4" /> : index + 1}
+                </span>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <p className={`font-semibold transition-all duration-300 ${
+                            isConcluido 
+                                ? 'text-gray-500 dark:text-gray-400 line-through' 
+                                : 'text-foreground'
+                        }`}>
+                            {disciplinaNome}
+                        </p>
+                        {isConcluido && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                                <CheckCircle2Icon className="w-3 h-3" />
+                                Concluída
+                            </span>
+                        )}
+                        {isActive && !isConcluido && (
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-1">
                                 <ClockIcon className="w-3 h-3" />
                                 Em andamento
@@ -179,17 +255,48 @@ const SortableSessaoItemComponent: React.FC<{
                     </div>
                     <div className="flex items-center gap-3 mt-1">
                         <p className="text-sm text-muted-foreground flex items-center gap-1">
+<<<<<<< HEAD
                             <ClockIcon className="w-3 h-3" /> {formatTime(sessao.tempo_previsto)}
+=======
+                            <ClockIcon className="w-3 h-3"/> {formatTime(sessao.tempo_previsto)}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </p>
                         {tempoDecorrido !== undefined && tempoDecorrido > 0 && (
                             <p className="text-xs text-primary font-medium">
                                 {formatTime(tempoDecorrido)} decorridos
                             </p>
                         )}
+<<<<<<< HEAD
+=======
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => onUpdateTempo(-5 * 60)}
+                                className="text-xs px-1.5 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground"
+                                title="Reduzir 5 min"
+                            >
+                                -5
+                            </button>
+                            <button
+                                onClick={() => onUpdateTempo(5 * 60)}
+                                className="text-xs px-1.5 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground"
+                                title="Aumentar 5 min"
+                            >
+                                +5
+                            </button>
+                            <button
+                                onClick={() => onUpdateTempo(10 * 60)}
+                                className="text-xs px-1.5 py-0.5 rounded border border-border hover:bg-muted text-muted-foreground"
+                                title="Aumentar 10 min"
+                            >
+                                +10
+                            </button>
+                        </div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     </div>
                 </div>
             </div>
             <div className="flex items-center gap-2">
+<<<<<<< HEAD
                 {!isConcluido && (
                     <button
                         onClick={onIniciar}
@@ -228,14 +335,55 @@ const SortableSessaoItemComponent: React.FC<{
                                 <CheckCircle2Icon className="w-3 h-3" /> Concluir
                             </>
                         )}
+=======
+                {isNext ? (
+                    <>
+                        <button
+                            onClick={onIniciar}
+                            className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-primary text-black text-xs font-bold shadow-sm hover:opacity-90"
+                        >
+                            <PlayIcon className="w-3 h-3"/> Iniciar
+                        </button>
+                        {isActive && (
+                            <button
+                                onClick={onConcluir}
+                                disabled={isSaving}
+                                className="h-8 px-3 flex items-center gap-1.5 rounded-lg bg-secondary text-black text-xs font-bold shadow-sm hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                        Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2Icon className="w-3 h-3"/> Concluir
+                                    </>
+                                )}
+                            </button>
+                        )}
+                    </>
+                ) : (
+                    <button
+                        onClick={onIniciar}
+                        className="h-8 w-8 flex items-center justify-center rounded-lg bg-muted/50 text-muted-foreground text-xs font-bold shadow-sm hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <PlayIcon className="w-3 h-3"/>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     </button>
                 )}
                 <button
                     onClick={onRemove}
+<<<<<<< HEAD
                     aria-label={`Remover sessão de ${disciplinaNome}`}
                     className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <Trash2Icon className="w-4 h-4" />
+=======
+                    className="p-2 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <Trash2Icon className="w-4 h-4"/>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 </button>
             </div>
         </div>
@@ -251,8 +399,11 @@ const SortableSessaoItem = React.memo(SortableSessaoItemComponent, (prevProps, n
         prevProps.isNext === nextProps.isNext &&
         prevProps.isActive === nextProps.isActive &&
         prevProps.isConcluido === nextProps.isConcluido &&
+<<<<<<< HEAD
         prevProps.isParcial === nextProps.isParcial &&
         prevProps.tempoFaltante === nextProps.tempoFaltante &&
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         prevProps.tempoDecorrido === nextProps.tempoDecorrido &&
         prevProps.disciplinaNome === nextProps.disciplinaNome &&
         prevProps.isSaving === nextProps.isSaving
@@ -274,6 +425,7 @@ const CicloDeEstudos: React.FC = () => {
         setUltimaSessaoConcluida,
     } = useCiclosStore();
     const { disciplinas } = useDisciplinasStore();
+<<<<<<< HEAD
     const { iniciarSessao, sessaoAtual, sessoes, salvarSessao, descartarSessao, encerrarSessaoParaSalvar } = useEstudosStore();
     const openCriarCicloModal = useModalStore(state => state.openCriarCicloModal);
     const { planType, canCreateCiclo, getMaxCiclos } = useSubscriptionStore();
@@ -282,12 +434,18 @@ const CicloDeEstudos: React.FC = () => {
     const ciclosCriados = ciclos.length;
     const podeCriarCiclo = canCreateCiclo(ciclosCriados);
 
+=======
+    const { iniciarSessao, sessaoAtual, sessoes, salvarSessao, descartarSessao } = useEstudosStore();
+    const openCriarCicloModal = useModalStore(state => state.openCriarCicloModal);
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const [isEditingCiclo, setIsEditingCiclo] = useState(false);
     const [editedCicloName, setEditedCicloName] = useState('');
     const [isAddingSessao, setIsAddingSessao] = useState(false);
     const [novaSessaoData, setNovaSessaoData] = useState({ disciplinaId: '', tempoMinutos: '60' });
     const [isTrocarSessaoModalOpen, setIsTrocarSessaoModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+<<<<<<< HEAD
     const [buscaDisciplina, setBuscaDisciplina] = useState('');
     const [mostrarConcluidas, setMostrarConcluidas] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -295,6 +453,8 @@ const CicloDeEstudos: React.FC = () => {
     // Refs para scroll automático
     const sessaoRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const proximaSessaoRef = useRef<HTMLDivElement | null>(null);
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -318,6 +478,7 @@ const CicloDeEstudos: React.FC = () => {
     }, [cicloAtivo]);
 
     // Criar sessoesDoCiclo base que filtra todas as sessões do ciclo
+<<<<<<< HEAD
     // Verifica tanto topico_id começando com 'ciclo-' quanto comentários com CICLO_SESSAO_ID
     const sessoesDoCiclo = useMemo(() => {
         if (sessoesIdsDoCiclo.size === 0) return [];
@@ -337,15 +498,28 @@ const CicloDeEstudos: React.FC = () => {
             }
             return false;
         });
+=======
+    const sessoesDoCiclo = useMemo(() => {
+        if (sessoesIdsDoCiclo.size === 0) return [];
+        return sessoes.filter(s => 
+            s.topico_id.startsWith('ciclo-') && 
+            sessoesIdsDoCiclo.has(s.topico_id.replace('ciclo-', ''))
+        );
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }, [sessoes, sessoesIdsDoCiclo]);
 
     // Calcular sessões do ciclo concluídas hoje (derivado de sessoesDoCiclo)
     const sessoesHojeDoCiclo = useMemo(() => {
+<<<<<<< HEAD
         const hojeISO = getLocalDateISO();
+=======
+        const hojeISO = new Date().toISOString().split('T')[0];
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         return sessoesDoCiclo.filter(s => s.data_estudo === hojeISO);
     }, [sessoesDoCiclo]);
 
     // Criar Set com IDs de sessões concluídas (qualquer data)
+<<<<<<< HEAD
     // Verifica tanto topico_id quanto comentários
     const sessoesConcluidasIds = useMemo(() => {
         const ids = new Set<string>();
@@ -365,6 +539,13 @@ const CicloDeEstudos: React.FC = () => {
             if (sessaoCicloId) {
                 ids.add(sessaoCicloId);
             }
+=======
+    const sessoesConcluidasIds = useMemo(() => {
+        const ids = new Set<string>();
+        sessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            ids.add(sessaoCicloId);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         });
         return ids;
     }, [sessoesDoCiclo]);
@@ -378,6 +559,7 @@ const CicloDeEstudos: React.FC = () => {
         return [...(cicloAtivo.sessoes || [])].sort((a, b) => a.ordem - b.ordem);
     }, [cicloAtivo]);
 
+<<<<<<< HEAD
     // Filtrar sessões por busca e mostrar/ocultar concluídas
     const sessoesFiltradas = useMemo(() => {
         let filtradas = sessoesOrdenadas;
@@ -406,10 +588,20 @@ const CicloDeEstudos: React.FC = () => {
             tempoConcluidoCiclo: 0,
             dadosGrafico: [],
             proximaSessao: null,
+=======
+    // Calcular progresso do ciclo (tempo concluído vs total)
+    const { totalTempoCiclo, tempoConcluidoCiclo, dadosGrafico, proximaSessao, progressoPercentual, legendaDisciplinas, cicloConcluido, totalSessoes, sessoesConcluidasCount } = useMemo(() => {
+        if (!cicloAtivo || sessoesOrdenadas.length === 0) return { 
+            totalTempoCiclo: 0, 
+            tempoConcluidoCiclo: 0, 
+            dadosGrafico: [], 
+            proximaSessao: null, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             progressoPercentual: 0,
             legendaDisciplinas: [],
             cicloConcluido: false,
             totalSessoes: 0,
+<<<<<<< HEAD
             sessoesConcluidasCount: 0,
             tempoPorSessaoCiclo: new Map<string, number>()
         };
@@ -481,13 +673,43 @@ const CicloDeEstudos: React.FC = () => {
             }
         });
 
+=======
+            sessoesConcluidasCount: 0
+        };
+        
+        const tempoTotal = sessoesOrdenadas.reduce((acc: number, s) => acc + Number(s.tempo_previsto || 0), 0);
+        
+        // Calcular tempo concluído considerando TODAS as sessões do ciclo estudadas (não apenas hoje)
+        // Agrupar por sessão do ciclo e pegar o maior tempo estudado de cada uma
+        const tempoPorSessaoCiclo = new Map<string, number>();
+        todasSessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            const tempoAtual = tempoPorSessaoCiclo.get(sessaoCicloId) || 0;
+            // Considerar o maior tempo estudado para cada sessão do ciclo
+            if (s.tempo_estudado > tempoAtual) {
+                tempoPorSessaoCiclo.set(sessaoCicloId, s.tempo_estudado);
+            }
+        });
+        
+        // Identificar quais sessões estão concluídas (há uma sessão de estudo correspondente)
+        const sessoesConcluidas = new Set<string>();
+        todasSessoesDoCiclo.forEach(s => {
+            const sessaoCicloId = s.topico_id.replace('ciclo-', '');
+            sessoesConcluidas.add(sessaoCicloId);
+        });
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Somar o tempo de cada sessão do ciclo (limitado ao tempo previsto)
         const tempoConcluido = sessoesOrdenadas.reduce((acc, sessao) => {
             const tempoEstudado = tempoPorSessaoCiclo.get(sessao.id) || 0;
             // Limitar ao tempo previsto para não ultrapassar 100%
             return acc + Math.min(tempoEstudado, sessao.tempo_previsto);
         }, 0);
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Criar mapeamento estável de disciplina para cor (ordenado por nome para consistência)
         const disciplinasUnicas = Array.from(new Set(sessoesOrdenadas.map(s => s.disciplina_id)))
             .sort((a, b) => {
@@ -496,17 +718,29 @@ const CicloDeEstudos: React.FC = () => {
                 return nomeA.localeCompare(nomeB);
             });
         const disciplinaCorMap = new Map<string, string>();
+<<<<<<< HEAD
         disciplinasUnicas.forEach((disciplinaId: string, index: number) => {
+=======
+        disciplinasUnicas.forEach((disciplinaId, index) => {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             disciplinaCorMap.set(disciplinaId, COLORS[index % COLORS.length]);
         });
 
         // Calcular progresso por disciplina
         const progressoPorDisciplina = new Map<string, number>();
+<<<<<<< HEAD
         disciplinasUnicas.forEach((disciplinaId: string) => {
             const sessoesDaDisciplina = sessoesOrdenadas.filter(s => s.disciplina_id === disciplinaId);
             const sessoesConcluidasDaDisciplina = sessoesDaDisciplina.filter(s => sessoesConcluidas.has(s.id));
             const progresso = sessoesDaDisciplina.length > 0
                 ? sessoesConcluidasDaDisciplina.length / sessoesDaDisciplina.length
+=======
+        disciplinasUnicas.forEach(disciplinaId => {
+            const sessoesDaDisciplina = sessoesOrdenadas.filter(s => s.disciplina_id === disciplinaId);
+            const sessoesConcluidasDaDisciplina = sessoesDaDisciplina.filter(s => sessoesConcluidas.has(s.id));
+            const progresso = sessoesDaDisciplina.length > 0 
+                ? sessoesConcluidasDaDisciplina.length / sessoesDaDisciplina.length 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 : 0;
             progressoPorDisciplina.set(disciplinaId, progresso);
         });
@@ -518,6 +752,7 @@ const CicloDeEstudos: React.FC = () => {
             const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
             const isConcluida = sessoesConcluidas.has(sessao.id);
             const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
+<<<<<<< HEAD
 
             // Verificar se o tempo estudado atingiu o tempo previsto
             const tempoEstudadoSessao = tempoPorSessaoCiclo.get(sessao.id) || 0;
@@ -540,6 +775,20 @@ const CicloDeEstudos: React.FC = () => {
                 corFinal = '#FB923C'; // Laranja suave (orange-400) para sessão parcialmente concluída
             }
 
+=======
+            
+            // Determinar cor final:
+            // - Verde (#22C55E) se disciplina 100% concluída
+            // - Cinza (#9CA3AF) se sessão concluída mas disciplina não 100%
+            // - Cor base se não concluída
+            let corFinal = corBase;
+            if (progressoDisciplina >= 1.0) {
+                corFinal = '#22C55E'; // Verde para disciplina 100% concluída
+            } else if (isConcluida) {
+                corFinal = '#9CA3AF'; // Cinza para sessão concluída
+            }
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             return {
                 id: sessao.id,
                 disciplinaId: disciplinaId,
@@ -547,6 +796,7 @@ const CicloDeEstudos: React.FC = () => {
                 value: Math.round(Number(sessao.tempo_previsto || 0) / 60),
                 color: corFinal,
                 corBase: corBase, // Guardar cor base para legenda
+<<<<<<< HEAD
                 isConcluida: sessaoEstaConcluida,
                 progressoDisciplina: progressoDisciplina
             };
@@ -561,6 +811,22 @@ const CicloDeEstudos: React.FC = () => {
             // Cor da legenda: sempre usa a cor base (não verde)
             const corLegenda = corBase;
 
+=======
+                isConcluida: isConcluida,
+                progressoDisciplina: progressoDisciplina
+            };
+        });
+        
+        // Criar legenda única por disciplina (sem repetição)
+        const legendaDisciplinas = disciplinasUnicas.map(disciplinaId => {
+            const nomeDisciplina = disciplinasMap.get(disciplinaId) || 'Desconhecida';
+            const corBase = disciplinaCorMap.get(disciplinaId) || COLORS[0];
+            const progressoDisciplina = progressoPorDisciplina.get(disciplinaId) || 0;
+            
+            // Cor da legenda: verde se 100% concluída, senão cor base
+            const corLegenda = progressoDisciplina >= 1.0 ? '#22C55E' : corBase;
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             return {
                 disciplinaId,
                 name: nomeDisciplina,
@@ -568,7 +834,11 @@ const CicloDeEstudos: React.FC = () => {
                 progresso: progressoDisciplina
             };
         });
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Lógica para encontrar a próxima sessão
         let proxima: SessaoCiclo | null = null;
         if (sessoesOrdenadas.length > 0) {
@@ -582,7 +852,11 @@ const CicloDeEstudos: React.FC = () => {
 
         // Calcular progresso: considerar 100% quando tempo concluído >= tempo total
         const progresso = tempoTotal > 0 ? Math.min(100, Math.round((tempoConcluido / tempoTotal) * 100)) : 0;
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Garantir que seja exatamente 100% quando concluído (com margem de erro de 1%)
         const progressoFinal = progresso >= 99 ? 100 : progresso;
 
@@ -596,17 +870,29 @@ const CicloDeEstudos: React.FC = () => {
             ? (sessoesConcluidasCount / totalSessoes) * 100
             : 0;
 
+<<<<<<< HEAD
         return {
             totalTempoCiclo: tempoTotal,
             tempoConcluidoCiclo: tempoConcluido,
             dadosGrafico,
             proximaSessao: proxima,
+=======
+        return { 
+            totalTempoCiclo: tempoTotal, 
+            tempoConcluidoCiclo: tempoConcluido, 
+            dadosGrafico, 
+            proximaSessao: proxima, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             progressoPercentual: Math.round(progressoPorSessoes),
             legendaDisciplinas,
             cicloConcluido,
             totalSessoes,
+<<<<<<< HEAD
             sessoesConcluidasCount,
             tempoPorSessaoCiclo
+=======
+            sessoesConcluidasCount
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         };
     }, [cicloAtivo, disciplinasMap, ultimaSessaoConcluidaId, todasSessoesDoCiclo, sessoesOrdenadas]);
 
@@ -617,6 +903,7 @@ const CicloDeEstudos: React.FC = () => {
         return sessaoAtual.topico.id === sessaoCicloId ? sessaoAtual : null;
     }, [sessaoAtual, proximaSessao]);
 
+<<<<<<< HEAD
     // Scroll automático quando ultimaSessaoConcluidaId muda
     useEffect(() => {
         if (ultimaSessaoConcluidaId && proximaSessao) {
@@ -649,6 +936,8 @@ const CicloDeEstudos: React.FC = () => {
         }
     }, [isSaveModalOpen, sessaoAtual, ultimaSessaoConcluidaId, proximaSessao]);
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleUpdateCicloName = useCallback(() => {
         if (cicloAtivo && editedCicloName.trim() && editedCicloName.trim() !== cicloAtivo.nome) {
             updateCiclo(cicloAtivo.id, { nome: editedCicloName.trim() });
@@ -656,14 +945,22 @@ const CicloDeEstudos: React.FC = () => {
         }
         setIsEditingCiclo(false);
     }, [cicloAtivo, editedCicloName, updateCiclo]);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleRemoveCiclo = useCallback(() => {
         if (cicloAtivo && window.confirm(`Tem certeza que deseja remover o ciclo "${cicloAtivo.nome}"?`)) {
             removeCiclo(cicloAtivo.id);
             toast.success("Ciclo removido.");
         }
     }, [cicloAtivo, removeCiclo]);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleAddSessao = useCallback(async () => {
         if (cicloAtivo && novaSessaoData.disciplinaId && parseInt(novaSessaoData.tempoMinutos) > 0) {
             try {
@@ -679,7 +976,11 @@ const CicloDeEstudos: React.FC = () => {
             toast.error("Selecione uma disciplina e defina um tempo válido.");
         }
     }, [cicloAtivo, novaSessaoData, addSessaoAoCiclo]);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleIniciarEstudoCiclo = useCallback((sessao: SessaoCiclo) => {
         const disciplina = disciplinas.find(d => d.id === sessao.disciplina_id);
         if (disciplina && cicloAtivo) {
@@ -692,6 +993,7 @@ const CicloDeEstudos: React.FC = () => {
         }
     }, [disciplinas, cicloAtivo, iniciarSessao]);
 
+<<<<<<< HEAD
     const handleConcluirSessao = useCallback(() => {
         if (!cicloAtivo || !proximaSessao || !sessaoAtivaParaCiclo || isSaving) return;
 
@@ -702,6 +1004,42 @@ const CicloDeEstudos: React.FC = () => {
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
 
+=======
+    const handleConcluirSessao = useCallback(async () => {
+        if (!cicloAtivo || !proximaSessao || !sessaoAtivaParaCiclo || isSaving) return;
+        
+        const disciplina = disciplinas.find(d => d.id === proximaSessao.disciplina_id);
+        if (!disciplina) return;
+
+        setIsSaving(true);
+        try {
+            // Salvar a sessão de estudo no banco de dados
+            // A função salvarSessao já marca a sessão como concluída no ciclo automaticamente
+            await salvarSessao({
+                topico_id: sessaoAtivaParaCiclo.topico.id,
+                comentarios: `Sessão do ciclo: ${cicloAtivo.nome}`,
+            });
+
+            toast.success("Sessão concluída! Avançando para a próxima.");
+            
+            // Sugerir revisão/flashcards
+            setTimeout(() => {
+                toast(`💡 Dica: Que tal revisar ${disciplina.nome} com flashcards?`, {
+                    duration: 5000,
+                });
+            }, 1000);
+        } catch (error) {
+            console.error("Erro ao salvar sessão:", error);
+            toast.error("Erro ao salvar sessão. Tente novamente.");
+        } finally {
+            setIsSaving(false);
+        }
+    }, [cicloAtivo, proximaSessao, sessaoAtivaParaCiclo, disciplinas, salvarSessao, isSaving]);
+
+    const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+        const { active, over } = event;
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (!cicloAtivo || !over || active.id === over.id) return;
 
         const oldIndex = sessoesOrdenadas.findIndex(s => s.id === active.id);
@@ -710,8 +1048,13 @@ const CicloDeEstudos: React.FC = () => {
         if (oldIndex === -1 || newIndex === -1) return;
 
         const sessoesReordenadas = arrayMove(sessoesOrdenadas, oldIndex, newIndex);
+<<<<<<< HEAD
         const sessoesComOrdem = sessoesReordenadas.map((s: SessaoCiclo, i: number) => ({ ...s, ordem: i }));
 
+=======
+        const sessoesComOrdem = sessoesReordenadas.map((s, i) => ({ ...s, ordem: i }));
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         try {
             await updateCiclo(cicloAtivo.id, { sessoes: sessoesComOrdem });
             toast.success("Sessões reordenadas.");
@@ -725,12 +1068,21 @@ const CicloDeEstudos: React.FC = () => {
         if (!cicloAtivo) return;
         const sessao = cicloAtivo.sessoes?.find(s => s.id === sessaoId);
         if (!sessao) return;
+<<<<<<< HEAD
 
         const novoTempo = Math.max(60, sessao.tempo_previsto + delta); // Mínimo de 1 minuto
         const sessoesAtualizadas = cicloAtivo.sessoes?.map(s =>
             s.id === sessaoId ? { ...s, tempo_previsto: novoTempo } : s
         );
 
+=======
+        
+        const novoTempo = Math.max(60, sessao.tempo_previsto + delta); // Mínimo de 1 minuto
+        const sessoesAtualizadas = cicloAtivo.sessoes?.map(s => 
+            s.id === sessaoId ? { ...s, tempo_previsto: novoTempo } : s
+        );
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         try {
             await updateCiclo(cicloAtivo.id, { sessoes: sessoesAtualizadas });
             toast.success(`Tempo atualizado para ${formatTime(novoTempo)}`);
@@ -746,11 +1098,19 @@ const CicloDeEstudos: React.FC = () => {
 
     const handleSelecionarSessao = useCallback((sessaoSelecionada: SessaoCiclo) => {
         if (!cicloAtivo) return;
+<<<<<<< HEAD
 
         // Atualizar a última sessão concluída para a sessão anterior à selecionada
         // Isso faz com que a sessão selecionada se torne a nova "próxima sessão"
         const indiceSelecionado = sessoesOrdenadas.findIndex(s => s.id === sessaoSelecionada.id);
 
+=======
+        
+        // Atualizar a última sessão concluída para a sessão anterior à selecionada
+        // Isso faz com que a sessão selecionada se torne a nova "próxima sessão"
+        const indiceSelecionado = sessoesOrdenadas.findIndex(s => s.id === sessaoSelecionada.id);
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (indiceSelecionado > 0) {
             // Se não é a primeira, marca a anterior como concluída
             const sessaoAnterior = sessoesOrdenadas[indiceSelecionado - 1];
@@ -759,12 +1119,17 @@ const CicloDeEstudos: React.FC = () => {
             // Se é a primeira, limpa o estado (volta ao início do ciclo)
             setUltimaSessaoConcluida(cicloAtivo.id, sessoesOrdenadas[sessoesOrdenadas.length - 1].id);
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         handleIniciarEstudoCiclo(sessaoSelecionada);
         setIsTrocarSessaoModalOpen(false);
         toast.success(`Iniciando estudos de ${disciplinasMap.get(sessaoSelecionada.disciplina_id)}!`);
     }, [cicloAtivo, sessoesOrdenadas, setUltimaSessaoConcluida, handleIniciarEstudoCiclo, disciplinasMap]);
 
+<<<<<<< HEAD
     // Função para setar ref de sessão
     const setSessaoRef = useCallback((sessaoId: string, element: HTMLDivElement | null) => {
         if (element) {
@@ -844,6 +1209,25 @@ const CicloDeEstudos: React.FC = () => {
             {cicloAtivo && proximaSessao && (
                 <div className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-4 shadow-lg">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
+=======
+    return (
+        <div data-tutorial="ciclos-content" className="max-w-7xl mx-auto space-y-6">
+            <header className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3"><RepeatIcon className="w-8 h-8"/> Ciclos de Estudos</h1>
+                    <p className="text-muted-foreground mt-1">Organize suas disciplinas em um ciclo rotativo para garantir um estudo equilibrado.</p>
+                </div>
+                <button onClick={openCriarCicloModal} className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <PlusCircleIcon className="w-4 h-4" />
+                    Criar Novo Ciclo
+                </button>
+            </header>
+
+            {/* CTA Fixo da Próxima Sessão */}
+            {cicloAtivo && proximaSessao && (
+                <div className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-4 shadow-lg">
+                    <div className="flex items-center justify-between">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-xs font-bold text-primary uppercase">Próxima Sessão</span>
@@ -861,12 +1245,20 @@ const CicloDeEstudos: React.FC = () => {
                                 Tempo previsto: {formatTime(proximaSessao.tempo_previsto)}
                             </p>
                         </div>
+<<<<<<< HEAD
                         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
                             {!sessaoAtivaParaCiclo ? (
                                 <button
                                     onClick={() => handleIniciarEstudoCiclo(proximaSessao)}
                                     aria-label={`Iniciar sessão de ${disciplinasMap.get(proximaSessao.disciplina_id)}`}
                                     className="h-12 px-6 flex items-center justify-center gap-2 rounded-lg bg-primary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity w-full sm:w-auto"
+=======
+                        <div className="flex items-center gap-2">
+                            {!sessaoAtivaParaCiclo ? (
+                                <button
+                                    onClick={() => handleIniciarEstudoCiclo(proximaSessao)}
+                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-primary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 >
                                     <PlayIcon className="w-4 h-4" />
                                     Iniciar Agora
@@ -875,8 +1267,12 @@ const CicloDeEstudos: React.FC = () => {
                                 <button
                                     onClick={handleConcluirSessao}
                                     disabled={isSaving}
+<<<<<<< HEAD
                                     aria-label={`Concluir sessão de ${disciplinasMap.get(proximaSessao.disciplina_id)}`}
                                     className="h-12 px-6 flex items-center justify-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+=======
+                                    className="h-12 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 >
                                     {isSaving ? (
                                         <>
@@ -893,8 +1289,12 @@ const CicloDeEstudos: React.FC = () => {
                             )}
                             <button
                                 onClick={handleTrocarSessao}
+<<<<<<< HEAD
                                 aria-label="Trocar sessão de estudo"
                                 className="h-12 px-4 flex items-center justify-center gap-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors w-full sm:w-auto"
+=======
+                                className="h-12 px-4 flex items-center gap-2 rounded-lg border border-border bg-background text-foreground text-sm font-medium hover:bg-muted transition-colors"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                             >
                                 Trocar Sessão
                             </button>
@@ -903,6 +1303,7 @@ const CicloDeEstudos: React.FC = () => {
                 </div>
             )}
 
+<<<<<<< HEAD
             {cicloAtivo ? (
                 <div className="flex flex-col gap-6">
                     {/* Conteúdo Principal */}
@@ -1215,6 +1616,249 @@ const CicloDeEstudos: React.FC = () => {
                                 </div>
                             )}
                         </div>
+=======
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+                <label htmlFor="ciclo-select" className="text-sm font-medium text-muted-foreground mb-1 block">Ciclo Ativo</label>
+                <select
+                    id="ciclo-select"
+                    value={cicloAtivoId || ''}
+                    onChange={(e) => setCicloAtivoId(e.target.value)}
+                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary"
+                >
+                    {ciclos.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+            </div>
+
+            {cicloAtivo ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 bg-card rounded-xl border border-border shadow-sm">
+                        <header className="p-4 border-b border-border flex items-center justify-between">
+                            {isEditingCiclo ? (
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        value={editedCicloName}
+                                        onChange={(e) => setEditedCicloName(e.target.value)}
+                                        className="bg-input border border-border rounded-md px-3 py-1.5 text-lg font-bold text-foreground"
+                                        autoFocus
+                                        onBlur={handleUpdateCicloName}
+                                        onKeyDown={e => e.key === 'Enter' && handleUpdateCicloName()}
+                                    />
+                                    <button onClick={handleUpdateCicloName} className="p-2 rounded-md hover:bg-muted"><SaveIcon className="w-4 h-4 text-primary"/></button>
+                                </div>
+                            ) : (
+                                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                    {cicloAtivo.nome}
+                                    <button onClick={() => { setIsEditingCiclo(true); setEditedCicloName(cicloAtivo.nome); }} className="p-1.5 text-muted-foreground hover:text-primary"><EditIcon className="w-4 h-4"/></button>
+                                </h2>
+                            )}
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <p className="font-bold text-foreground">{formatTime(totalTempoCiclo)}</p>
+                                    <p className="text-xs text-muted-foreground">Tempo total</p>
+                                </div>
+                                <button onClick={handleRemoveCiclo} className="p-2 text-muted-foreground hover:text-red-500"><Trash2Icon className="w-4 h-4"/></button>
+                            </div>
+                        </header>
+
+                        {/* Barra de Progresso e Badge */}
+                        <div className="p-4 border-b border-border bg-muted/20">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    <span className={`text-sm font-medium transition-all duration-300 flex items-center ${
+                                        cicloConcluido 
+                                            ? 'text-green-500' 
+                                            : 'text-muted-foreground'
+                                    }`}>
+                                        Progresso do Ciclo
+                                        {cicloConcluido && <CheckCircle2Icon className="w-4 h-4 ml-2 text-green-500" />}
+                                    </span>
+                                    {cicloConcluido ? (
+                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-green-500/20 text-green-600 dark:text-green-400 flex items-center gap-1 transition-all duration-300">
+                                            <CheckCircle2Icon className="w-3 h-3" />
+                                            Ciclo Concluído
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs px-2 py-1 rounded-full font-bold bg-primary/20 text-primary transition-all duration-300">
+                                            {sessoesHojeDoCiclo.length} sessão{sessoesHojeDoCiclo.length !== 1 ? 'ões' : ''} hoje
+                                        </span>
+                                    )}
+                                </div>
+                                <span className={`text-sm font-bold transition-all duration-300 ${
+                                    cicloConcluido 
+                                        ? 'text-green-500' 
+                                        : 'text-foreground'
+                                }`}>
+                                    {progressoPercentual}%
+                                </span>
+                            </div>
+                            {/* Barra de Progresso Moderna */}
+                            <div className="w-full bg-muted/30 rounded-full h-3 mt-3 overflow-hidden">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-700 ${
+                                        progressoPercentual === 100
+                                            ? 'bg-green-500'
+                                            : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500'
+                                    }`}
+                                    style={{ width: `${progressoPercentual}%` }}
+                                />
+                            </div>
+                            <p className="text-xs mt-1 text-gray-400 dark:text-gray-500 text-right">
+                                {progressoPercentual.toFixed(0)}%
+                            </p>
+                            <div className={`flex justify-between text-xs mt-2 transition-all duration-300 ${
+                                cicloConcluido 
+                                    ? 'text-green-600 dark:text-green-400' 
+                                    : 'text-muted-foreground'
+                            }`}>
+                                <span>
+                                    {sessoesConcluidasCount} de {totalSessoes} sessão{totalSessoes !== 1 ? 'ões' : ''} concluída{totalSessoes !== 1 ? 's' : ''}
+                                </span>
+                                <span>{formatTime(totalTempoCiclo)} total</span>
+                            </div>
+                        </div>
+
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={sessoesOrdenadas.map(s => s.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="divide-y divide-border">
+                                    {sessoesOrdenadas.map((sessao, index) => {
+                                        const isNext = sessao.id === proximaSessao?.id;
+                                        const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
+                                        const tempoDecorrido = isActive ? sessaoAtivaParaCiclo.elapsedSeconds : undefined;
+                                        
+                                        // Verificar se a sessão foi concluída (qualquer data, não apenas hoje)
+                                        const isConcluido = sessoesConcluidasIds.has(sessao.id);
+                                        
+                                        return (
+                                            <SortableSessaoItem
+                                                key={sessao.id}
+                                                sessao={sessao}
+                                                index={index}
+                                                isNext={isNext}
+                                                isActive={isActive}
+                                                disciplinaNome={disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida'}
+                                                tempoDecorrido={tempoDecorrido}
+                                                isConcluido={isConcluido}
+                                                isSaving={isSaving && isActive}
+                                                onIniciar={() => handleIniciarEstudoCiclo(sessao)}
+                                                onConcluir={handleConcluirSessao}
+                                                onRemove={() => removeSessaoDoCiclo(cicloAtivo.id, sessao.id)}
+                                                onUpdateTempo={(delta) => handleUpdateTempo(sessao.id, delta)}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </SortableContext>
+                        </DndContext>
+                            
+                        {isAddingSessao && (
+                            <div className="p-4 bg-muted/20 flex items-end gap-3 border-t border-border">
+                                <div className="flex-1">
+                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Disciplina</label>
+                                    <select
+                                        value={novaSessaoData.disciplinaId}
+                                        onChange={e => setNovaSessaoData({...novaSessaoData, disciplinaId: e.target.value})}
+                                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                                    </select>
+                                </div>
+                                <div className="w-32">
+                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Tempo (min)</label>
+                                    <input
+                                        type="number"
+                                        value={novaSessaoData.tempoMinutos}
+                                        onChange={e => setNovaSessaoData({...novaSessaoData, tempoMinutos: e.target.value})}
+                                        className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm"
+                                    />
+                                </div>
+                                <button onClick={handleAddSessao} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground font-medium text-sm">Adicionar</button>
+                                <button onClick={() => setIsAddingSessao(false)} className="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:bg-muted"><XIcon className="w-4 h-4 mx-auto"/></button>
+                            </div>
+                        )}
+                        {!isAddingSessao && (
+                            <div className="p-4 border-t border-border">
+                                <button onClick={() => setIsAddingSessao(true)} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-primary font-medium text-sm hover:bg-primary/10">
+                                    <PlusIcon className="w-4 h-4"/> Adicionar Sessão de Estudo
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <div className={`bg-card rounded-xl border border-border shadow-sm p-4 space-y-4 ${progressoPercentual === 100 ? 'opacity-90' : ''}`}>
+                        <h3 className={`font-bold text-center ${progressoPercentual === 100 ? 'text-gray-500 line-through' : 'text-foreground'}`}>Distribuição do Tempo</h3>
+                        {dadosGrafico.length > 0 ? (
+                            <>
+                                <ResponsiveContainer width="100%" height={250}>
+                                    <PieChart>
+                                        <Pie 
+                                            data={dadosGrafico} 
+                                            dataKey="value" 
+                                            nameKey="name" 
+                                            cx="50%" 
+                                            cy="50%" 
+                                            innerRadius={60} 
+                                            outerRadius={80} 
+                                            fill="#8884d8" 
+                                            paddingAngle={5}
+                                        >
+                                            {dadosGrafico.map((entry) => (
+                                                <Cell 
+                                                    key={`cell-${entry.id}`} 
+                                                    fill={entry.color}
+                                                    style={{ transition: 'fill 0.3s ease' }}
+                                                />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            contentStyle={{ 
+                                                backgroundColor: 'var(--color-background)', 
+                                                border: '1px solid var(--color-border)'
+                                            }} 
+                                            formatter={(value: number) => `${value} min`}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                {/* Legenda customizada - apenas disciplinas únicas */}
+                                {legendaDisciplinas.length > 0 && (
+                                    <div className="flex flex-wrap gap-3 justify-center pt-2">
+                                        {legendaDisciplinas.map((item) => (
+                                            <div 
+                                                key={item.disciplinaId} 
+                                                className="flex items-center gap-2 text-xs"
+                                            >
+                                                <div 
+                                                    className="w-3 h-3 rounded-full flex-shrink-0"
+                                                    style={{ backgroundColor: item.color }}
+                                                />
+                                                <span className="text-muted-foreground">
+                                                    {item.name}
+                                                    {item.progresso >= 1.0 && (
+                                                        <span className="ml-1 text-green-500">✓</span>
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div className="h-[300px] flex items-center justify-center text-muted-foreground text-sm">Adicione sessões para ver o gráfico.</div>
+                        )}
+                        {proximaSessao && (
+                             <div className="p-4 rounded-lg bg-primary/10 border border-primary/20 text-center">
+                                <p className="text-xs font-bold text-primary mb-1">PRÓXIMA SESSÃO</p>
+                                <p className="font-semibold text-lg text-foreground">{disciplinasMap.get(proximaSessao.disciplina_id)}</p>
+                                <p className="text-sm text-muted-foreground">{formatTime(proximaSessao.tempo_previsto)}</p>
+                            </div>
+                        )}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     </div>
                 </div>
             ) : (
@@ -1222,11 +1866,15 @@ const CicloDeEstudos: React.FC = () => {
                     <RepeatIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
                     <h3 className="text-xl font-semibold text-foreground">Nenhum ciclo de estudos criado</h3>
                     <p className="text-muted-foreground mt-2 mb-6">Comece a organizar seus estudos de forma mais eficiente.</p>
+<<<<<<< HEAD
                     <button
                         onClick={openCriarCicloModal}
                         aria-label="Criar meu primeiro ciclo de estudos"
                         className="h-11 px-6 flex items-center mx-auto gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
+=======
+                    <button onClick={openCriarCicloModal} className="h-11 px-6 flex items-center mx-auto gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         <PlusCircleIcon className="w-5 h-5" />
                         Criar meu primeiro ciclo
                     </button>
@@ -1235,11 +1883,19 @@ const CicloDeEstudos: React.FC = () => {
 
             {/* Modal de Trocar Sessão */}
             {isTrocarSessaoModalOpen && cicloAtivo && (
+<<<<<<< HEAD
                 <div
                     className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
                     onClick={() => setIsTrocarSessaoModalOpen(false)}
                 >
                     <div
+=======
+                <div 
+                    className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-4"
+                    onClick={() => setIsTrocarSessaoModalOpen(false)}
+                >
+                    <div 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl"
                         onClick={e => e.stopPropagation()}
                     >
@@ -1248,9 +1904,14 @@ const CicloDeEstudos: React.FC = () => {
                                 <RepeatIcon className="w-6 h-6 text-primary" />
                                 <h2 className="text-lg font-bold">Trocar Sessão de Estudo</h2>
                             </div>
+<<<<<<< HEAD
                             <button
                                 onClick={() => setIsTrocarSessaoModalOpen(false)}
                                 aria-label="Fechar modal de trocar sessão"
+=======
+                            <button 
+                                onClick={() => setIsTrocarSessaoModalOpen(false)}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 className="p-1.5 rounded-full hover:bg-muted"
                             >
                                 <XIcon className="w-5 h-5" />
@@ -1261,18 +1922,27 @@ const CicloDeEstudos: React.FC = () => {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Selecione qual disciplina deseja estudar agora:
                             </p>
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                             <div className="space-y-2">
                                 {sessoesOrdenadas.map((sessao, index) => {
                                     const disciplinaNome = disciplinasMap.get(sessao.disciplina_id) || 'Desconhecida';
                                     const isProxima = sessao.id === proximaSessao?.id;
                                     const isActive = sessaoAtivaParaCiclo?.topico.id === `ciclo-${sessao.id}`;
+<<<<<<< HEAD
 
+=======
+                                    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                     return (
                                         <button
                                             key={sessao.id}
                                             onClick={() => handleSelecionarSessao(sessao)}
                                             disabled={isActive}
+<<<<<<< HEAD
                                             aria-label={`Selecionar sessão de ${disciplinaNome}`}
                                             className={`w-full p-4 rounded-lg border transition-all text-left ${isActive
                                                 ? 'bg-muted/50 border-muted cursor-not-allowed opacity-60'
@@ -1287,6 +1957,23 @@ const CicloDeEstudos: React.FC = () => {
                                                         ? 'bg-primary text-black'
                                                         : 'bg-muted/50 text-muted-foreground'
                                                         }`}>
+=======
+                                            className={`w-full p-4 rounded-lg border transition-all text-left ${
+                                                isActive
+                                                    ? 'bg-muted/50 border-muted cursor-not-allowed opacity-60'
+                                                    : isProxima
+                                                    ? 'bg-primary/10 border-primary hover:bg-primary/20'
+                                                    : 'bg-background border-border hover:bg-muted/50 hover:border-primary/50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full ${
+                                                        isProxima 
+                                                            ? 'bg-primary text-black' 
+                                                            : 'bg-muted/50 text-muted-foreground'
+                                                    }`}>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                                         {index + 1}
                                                     </span>
                                                     <div>

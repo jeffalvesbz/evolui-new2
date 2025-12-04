@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Topico } from '../../types';
 
 export type DraggableTopic = Topico & {
@@ -49,3 +50,6 @@ export const getDisciplineColor = (disciplinaId: string, disciplinas?: { id: str
   const hue = (disciplinaId.charCodeAt(0) * 137.5) % 360;
   return `hsl(${hue}, 70%, 60%)`;
 };
+=======
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CadernoErro, Flashcard } from '../types';
 
+<<<<<<< HEAD
 type EditalModalMode = 'list' | 'create';
 
 interface ModalStore {
@@ -14,6 +15,12 @@ interface ModalStore {
   isRegisterEditalModalOpen: boolean;
   openRegisterEditalModal: () => void;
   closeRegisterEditalModal: () => void;
+=======
+interface ModalStore {
+  isEditalModalOpen: boolean;
+  openEditalModal: () => void;
+  closeEditalModal: () => void;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   
   isAddTopicModalOpen: boolean;
   addTopicTargetDisciplinaId: string | null;
@@ -39,6 +46,7 @@ interface ModalStore {
   flashcardToEdit: Flashcard | null;
   openCriarFlashcardModal: (flashcard?: Flashcard) => void;
   closeCriarFlashcardModal: () => void;
+<<<<<<< HEAD
 
   isAgendarRevisoesModalOpen: boolean;
   agendarRevisoesData: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string } | null;
@@ -49,12 +57,15 @@ interface ModalStore {
   confirmarAgendarRevisoesData: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string } | null;
   openConfirmarAgendarRevisoesModal: (data: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string }) => void;
   closeConfirmarAgendarRevisoesModal: () => void;
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   
   closeAllModals: () => void;
 }
 
 export const useModalStore = create<ModalStore>((set) => ({
   isEditalModalOpen: false,
+<<<<<<< HEAD
   editalModalInitialMode: 'list',
   openEditalModal: (mode = 'list') => set({ isEditalModalOpen: true, editalModalInitialMode: mode }),
   closeEditalModal: () => set({ isEditalModalOpen: false, editalModalInitialMode: 'list' }),
@@ -64,6 +75,10 @@ export const useModalStore = create<ModalStore>((set) => ({
   isRegisterEditalModalOpen: false,
   openRegisterEditalModal: () => set({ isRegisterEditalModalOpen: true }),
   closeRegisterEditalModal: () => set({ isRegisterEditalModalOpen: false }),
+=======
+  openEditalModal: () => set({ isEditalModalOpen: true }),
+  closeEditalModal: () => set({ isEditalModalOpen: false }),
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   
   isAddTopicModalOpen: false,
   addTopicTargetDisciplinaId: null,
@@ -89,6 +104,7 @@ export const useModalStore = create<ModalStore>((set) => ({
   flashcardToEdit: null,
   openCriarFlashcardModal: (flashcard = null) => set({ isCriarFlashcardModalOpen: true, flashcardToEdit: flashcard }),
   closeCriarFlashcardModal: () => set({ isCriarFlashcardModalOpen: false, flashcardToEdit: null }),
+<<<<<<< HEAD
 
   isAgendarRevisoesModalOpen: false,
   agendarRevisoesData: null,
@@ -105,6 +121,11 @@ export const useModalStore = create<ModalStore>((set) => ({
     editalModalInitialMode: 'list',
     isDefaultEditalModalOpen: false,
     isRegisterEditalModalOpen: false,
+=======
+  
+  closeAllModals: () => set({
+    isEditalModalOpen: false,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     isAddTopicModalOpen: false,
     addTopicTargetDisciplinaId: null,
     shouldOpenInBatchMode: false,
@@ -114,9 +135,12 @@ export const useModalStore = create<ModalStore>((set) => ({
     isGeradorPlanoModalOpen: false,
     isCriarFlashcardModalOpen: false,
     flashcardToEdit: null,
+<<<<<<< HEAD
     isAgendarRevisoesModalOpen: false,
     agendarRevisoesData: null,
     isConfirmarAgendarRevisoesModalOpen: false,
     confirmarAgendarRevisoesData: null,
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   }),
 }));

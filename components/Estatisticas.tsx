@@ -1,24 +1,37 @@
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 import React, { useMemo } from 'react';
 import {
     BarChart3Icon,
     TrendingUpIcon,
     BookOpenCheckIcon,
+<<<<<<< HEAD
+=======
+    AlertTriangleIcon,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     ClockIcon,
     TrophyIcon,
     FlameIcon,
     LayersIcon,
     BookCopyIcon,
     FileTextIcon,
+<<<<<<< HEAD
     CheckCircle2Icon,
     TargetIcon,
     CalendarDaysIcon,
     AlertTriangleIcon,
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 } from './icons';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
 import { useCadernoErrosStore } from '../stores/useCadernoErrosStore';
 import { useStudyStore } from '../stores/useStudyStore';
+<<<<<<< HEAD
 import { useEditalStore } from '../stores/useEditalStore';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import PremiumFeatureWrapper from './PremiumFeatureWrapper';
@@ -29,6 +42,13 @@ import { subDays, format } from 'date-fns';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { PeakHoursChart } from './PeakHoursChart';
 import { TopicPerformance } from './TopicPerformance';
+=======
+import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
+import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+// FIX: Changed date-fns imports to named imports to resolve module export errors.
+import { subDays, format } from 'date-fns';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 const formatStudyDuration = (minutes: number) => {
     const totalMinutes = Math.max(0, Math.round(minutes ?? 0));
@@ -53,6 +73,7 @@ const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: stri
 
 const Estatisticas: React.FC = () => {
     // --- Data Hooks ---
+<<<<<<< HEAD
     const { editalAtivo } = useEditalStore();
     const todasSessoes = useEstudosStore(state => state.sessoes);
     const { getAverageProgress, findTopicById, disciplinas } = useDisciplinasStore();
@@ -75,14 +96,28 @@ const Estatisticas: React.FC = () => {
     const simulados = editalAtivo?.id
         ? todosSimulados.filter(s => s.studyPlanId === editalAtivo.id)
         : [];
+=======
+    const sessoes = useEstudosStore(state => state.sessoes);
+    const { getAverageProgress, findTopicById } = useDisciplinasStore();
+    const revisoes = useRevisoesStore(state => state.revisoes);
+    const erros = useCadernoErrosStore(state => state.erros);
+    const simulados = useStudyStore(state => state.simulations);
+    const { streak } = useUnifiedStreak();
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     // --- Memoized Calculations ---
 
     const generalStats = useMemo(() => {
         const totalMinutosEstudo = sessoes.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
+<<<<<<< HEAD
         const totalMinutosSimulado = simulados.reduce((acc, s) => acc + s.duration_minutes, 0);
         const totalMinutos = totalMinutosEstudo + totalMinutosSimulado;
 
+=======
+        const totalMinutosSimulado = simulados.reduce((acc, s) => acc + s.durationMinutes, 0);
+        const totalMinutos = totalMinutosEstudo + totalMinutosSimulado;
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const totalSessoes = sessoes.length;
         const totalAtividades = totalSessoes + simulados.length;
         const mediaSessao = totalAtividades > 0 ? totalMinutos / totalAtividades : 0;
@@ -95,12 +130,20 @@ const Estatisticas: React.FC = () => {
             totalSessoes: totalAtividades,
         };
     }, [sessoes, simulados, getAverageProgress]);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const performanceStats = useMemo(() => {
         const totalRevisoes = revisoes.length;
         const revisoesConcluidas = revisoes.filter(r => r.status === 'concluida').length;
         const taxaRevisao = totalRevisoes > 0 ? Math.round((revisoesConcluidas / totalRevisoes) * 100) : 0;
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const totalErros = erros.length;
         const errosResolvidos = erros.filter(e => e.resolvido).length;
         const taxaResolucaoErros = totalErros > 0 ? Math.round((errosResolvidos / totalErros) * 100) : 0;
@@ -109,6 +152,7 @@ const Estatisticas: React.FC = () => {
         const totalQuestoesSimulados = simulados.reduce((acc, s) => acc + s.correct + s.wrong + (s.blank || 0), 0);
         const mediaAcertosSimulados = totalQuestoesSimulados > 0 ? Math.round((totalAcertosSimulados / totalQuestoesSimulados) * 100) : 0;
 
+<<<<<<< HEAD
         // Estatísticas de Questões (Sessões + Simulados)
         const sessoesComQuestoes = sessoes.filter(s => {
             const certas = s.questoes_certas || 0;
@@ -194,16 +238,23 @@ const Estatisticas: React.FC = () => {
         // Converter para array e ordenar por total de questões
         const detalhamentoDisciplinas = Object.values(statsPorDisciplina).sort((a, b) => b.total - a.total);
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         return {
             taxaRevisao: `${taxaRevisao}%`,
             taxaResolucaoErros: `${taxaResolucaoErros}%`,
             mediaAcertosSimulados: `${mediaAcertosSimulados}%`,
+<<<<<<< HEAD
             totalQuestoesResolvidas: totalQuestoesGeral,
             taxaAcertoGeral: `${taxaAcertoGeral}%`,
             saldoLiquidoTotal: saldoLiquidoTotal,
             detalhamentoDisciplinas,
         };
     }, [revisoes, erros, simulados, sessoes, disciplinas]);
+=======
+        };
+    }, [revisoes, erros, simulados]);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     const studyTimeDistribution = useMemo(() => {
         const tempoPorDisciplina: Record<string, number> = {};
@@ -213,8 +264,13 @@ const Estatisticas: React.FC = () => {
             const tempoMinutos = sessao.tempo_estudado / 60;
             tempoPorDisciplina[nomeDisciplina] = (tempoPorDisciplina[nomeDisciplina] || 0) + tempoMinutos;
         });
+<<<<<<< HEAD
 
         const tempoSimulados = simulados.reduce((acc, s) => acc + s.duration_minutes, 0);
+=======
+        
+        const tempoSimulados = simulados.reduce((acc, s) => acc + s.durationMinutes, 0);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (tempoSimulados > 0) {
             tempoPorDisciplina['Simulados'] = tempoSimulados;
         }
@@ -233,7 +289,11 @@ const Estatisticas: React.FC = () => {
             const tempoEstudoMinutos = Math.round(sessoesDoDia.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60);
 
             const simuladosDoDia = simulados.filter(s => new Date(s.date).toDateString() === diaStr);
+<<<<<<< HEAD
             const tempoSimuladoMinutos = simuladosDoDia.reduce((acc, s) => acc + s.duration_minutes, 0);
+=======
+            const tempoSimuladoMinutos = simuladosDoDia.reduce((acc, s) => acc + s.durationMinutes, 0);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
             return {
                 name: format(dia, 'dd/MM'),
@@ -264,6 +324,7 @@ const Estatisticas: React.FC = () => {
                 <p className="text-muted-foreground mt-1">Analise seu desempenho e otimize sua rotina de estudos.</p>
             </header>
 
+<<<<<<< HEAD
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                     <TargetIcon className="w-5 h-5 text-primary" />
@@ -504,6 +565,92 @@ const Estatisticas: React.FC = () => {
                     </div>
                 </section>
             )}
+=======
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <MetricCard icon={ClockIcon} title="Tempo Total de Atividades" value={generalStats.totalHorasEstudo} color="text-primary" />
+                <MetricCard icon={TrophyIcon} title="Progresso do Edital" value={generalStats.progressoEdital} color="text-secondary" />
+                <MetricCard icon={FlameIcon} title="Streak de Estudos" value={`${streak} dias`} color="text-orange-500" />
+                <MetricCard icon={BookCopyIcon} title="Total de Atividades" value={generalStats.totalSessoes} color="text-purple-500" />
+            </section>
+            
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChart3Icon className="w-5 h-5 text-primary"/> Desempenho Diário (Últimos 30 dias)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={dailyPerformanceLast30Days}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}m`} />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
+                                    contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }}
+                                />
+                                <Bar dataKey="Tempo (min)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary"/> Foco por Disciplina</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {studyTimeDistribution.length > 0 ? (
+                             <ResponsiveContainer width="100%" height={300}>
+                                <PieChart>
+                                    <Pie data={studyTimeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
+                                        {studyTimeDistribution.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} formatter={(value: number) => `${formatStudyDuration(value)}`} />
+                                    <Legend iconSize={10} wrapperStyle={{fontSize: '0.8rem', paddingTop: '10px'}}/>
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                             <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
+                                Nenhum estudo registrado para exibir o foco por disciplina.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </section>
+            
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="border-border shadow-md lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><TrendingUpIcon className="w-5 h-5 text-primary"/> Desempenho em Simulados</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       {simulationTrend.length > 1 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={simulationTrend}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} />
+                                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} unit="%" domain={[0, 100]} />
+                                    <Tooltip contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)' }} />
+                                    <Legend wrapperStyle={{fontSize: '0.8rem'}}/>
+                                    <Line type="monotone" dataKey="Acertos (%)" stroke="var(--color-secondary)" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
+                                {simulados.length > 0 ? "Registre mais simulados para ver a tendência." : "Nenhum simulado registrado."}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                <div className="space-y-6">
+                    <MetricCard icon={BookOpenCheckIcon} title="Taxa de Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
+                    <MetricCard icon={AlertTriangleIcon} title="Resolução de Erros" value={performanceStats.taxaResolucaoErros} color="text-yellow-500" />
+                    <MetricCard icon={FileTextIcon} title="Média em Simulados" value={performanceStats.mediaAcertosSimulados} color="text-green-500" />
+                </div>
+            </section>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
     );
 };

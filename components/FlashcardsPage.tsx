@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
 import { useFlashcardStudyStore, StudySession } from '../stores/useFlashcardStudyStore';
+<<<<<<< HEAD
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { Flashcard as FlashcardType, Disciplina, FlashcardStats } from '../types';
 import {
@@ -18,12 +19,29 @@ import {
     EditIcon,
     Trash2Icon,
     XIcon,
+=======
+import { Flashcard as FlashcardType, Disciplina } from '../types';
+import {
+  LayersIcon,
+  ChevronLeftIcon,
+  CheckCircle2Icon,
+  EyeIcon,
+  LayoutGridIcon,
+  BookOpenCheckIcon,
+  PlusCircleIcon,
+  HistoryIcon,
+  EllipsisIcon,
+  EditIcon,
+  Trash2Icon,
+  XIcon,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 } from './icons';
 import { toast } from './Sonner';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
 import { startOfDay } from 'date-fns';
 import { useModalStore } from '../stores/useModalStore';
 import { calculateNextReview } from '../services/srsService';
+<<<<<<< HEAD
 import { getFlashcardStats, saveFlashcardReview } from '../services/flashcardStatsService';
 import { FlashcardStatsCard } from './FlashcardStatsCard';
 {/* Busca e Filtros Removed as per user request */ }
@@ -31,23 +49,39 @@ import { FlashcardStatsCard } from './FlashcardStatsCard';
 import { supabase } from '../services/supabaseClient';
 import { ImportExportModal } from './ImportExportModal';
 import { TrophyIcon, DownloadIcon } from './icons';
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 // --- Helper & Sub-components ---
 
 const PurpleBackground = () => (
     <div style={{
+<<<<<<< HEAD
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
         backgroundImage: 'linear-gradient(180deg, #4c1d95, #020617 40%)',
         zIndex: -2
+=======
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundImage: 'linear-gradient(180deg, #4c1d95, #020617 40%)',
+      zIndex: -2
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }} />
 );
 
 const FlippableCard: React.FC<{
+<<<<<<< HEAD
     flashcard: { pergunta: string; resposta: string };
     isFlipped: boolean;
     onFlip: () => void;
     className?: string;
+=======
+  flashcard: { pergunta: string; resposta: string };
+  isFlipped: boolean;
+  onFlip: () => void;
+  className?: string;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 }> = ({ flashcard, isFlipped, onFlip, className = '' }) => {
     return (
         <div className={`w-full h-full perspective-1000 ${className}`} onClick={onFlip}>
@@ -57,6 +91,7 @@ const FlippableCard: React.FC<{
                 transition={{ duration: 0.4, ease: 'easeInOut' }}
             >
                 {/* Front */}
+<<<<<<< HEAD
                 <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-4 sm:p-6 cursor-pointer shadow-2xl text-foreground border border-border overflow-y-auto">
                     <p className="text-xs sm:text-sm text-muted-foreground mb-2">Pergunta</p>
                     <p className="text-center text-base sm:text-xl font-semibold break-words px-2">{flashcard.pergunta}</p>
@@ -65,6 +100,16 @@ const FlippableCard: React.FC<{
                 <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-4 sm:p-6 cursor-pointer rotate-y-180 shadow-2xl text-foreground border border-border overflow-y-auto">
                     <p className="text-xs sm:text-sm text-primary mb-2 font-bold">Resposta</p>
                     <p className="text-center text-sm sm:text-base font-medium break-words px-2">{flashcard.resposta}</p>
+=======
+                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer shadow-2xl text-foreground border border-border">
+                    <p className="text-sm text-muted-foreground mb-2">Pergunta</p>
+                    <p className="text-center text-xl font-semibold">{flashcard.pergunta}</p>
+                </div>
+                {/* Back */}
+                <div className="absolute w-full h-full backface-hidden bg-card rounded-xl flex flex-col justify-center items-center p-6 cursor-pointer rotate-y-180 shadow-2xl text-foreground border border-border">
+                    <p className="text-sm text-primary mb-2 font-bold">Resposta</p>
+                    <p className="text-center font-medium">{flashcard.resposta}</p>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 </div>
             </motion.div>
         </div>
@@ -72,6 +117,7 @@ const FlippableCard: React.FC<{
 };
 
 const DeckCard: React.FC<{
+<<<<<<< HEAD
     title: string;
     cardCount?: number;
     dueCount?: number;
@@ -161,10 +207,48 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
 
     useEffect(() => {
         if (allTopicIds.length > 0) {
+=======
+  title: string;
+  cardCount: number;
+  dueCount?: number;
+  icon: React.ReactNode;
+  onSelect: () => void;
+  color: string;
+}> = ({ title, cardCount, dueCount, icon, onSelect, color }) => (
+    <div
+        onClick={onSelect}
+        className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-all hover:scale-105"
+    >
+        <div>
+            <div className={`p-2 rounded-lg bg-white/10 w-min mb-3 ${color}`}>{icon}</div>
+            <h3 className="font-bold text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground">{cardCount} cards</p>
+        </div>
+        {dueCount !== undefined && dueCount > 0 && (
+            <div className="mt-2 text-xs font-bold text-secondary">
+                {dueCount} para revisar
+            </div>
+        )}
+    </div>
+);
+
+// --- Main Views ---
+
+const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => void }> = ({ onSelectDeck }) => {
+    const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const { flashcards, getDueFlashcards, fetchFlashcardsForTopics, loading } = useFlashcardsStore();
+    const { openCriarFlashcardModal } = useModalStore();
+    
+    const allTopicIds = useMemo(() => disciplinas.flatMap(d => d.topicos.map(t => t.id)), [disciplinas]);
+
+    useEffect(() => {
+        if(allTopicIds.length > 0) {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             fetchFlashcardsForTopics(allTopicIds);
         }
     }, [allTopicIds, fetchFlashcardsForTopics]);
 
+<<<<<<< HEAD
     // Carregar estatísticas
     useEffect(() => {
         const loadStats = async () => {
@@ -220,6 +304,8 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
         loadReviewedFlashcards();
     }, [flashcards]); // Recarregar quando flashcards mudarem
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const getFlashcardsByDisciplina = useCallback((disciplinaId: string) => {
         const disciplina = disciplinas.find(d => d.id === disciplinaId);
         if (!disciplina) return [];
@@ -227,6 +313,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
         return flashcards.filter(fc => topicIds.has(fc.topico_id));
     }, [disciplinas, flashcards]);
 
+<<<<<<< HEAD
     // Filtrar flashcards vencidos que foram estudados pelo menos uma vez
     const dueFlashcards = useMemo(() => {
         const allDue = getDueFlashcards();
@@ -283,11 +370,16 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
     };
 
     // Check loading state AFTER all hooks have been called
+=======
+    const dueFlashcards = useMemo(() => getDueFlashcards(), [flashcards, getDueFlashcards]);
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     if (loading && flashcards.length === 0) {
         return <div className="text-center py-20 text-muted-foreground">Carregando seus flashcards...</div>
     }
 
     return (
+<<<<<<< HEAD
         <div className="space-y-6 sm:space-y-8 px-4 sm:px-0">
             <header className="flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div>
@@ -334,6 +426,22 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <DeckCard
+=======
+        <div className="space-y-8">
+            <header className="flex justify-between items-start">
+                <div>
+                    <h1 className="text-3xl font-bold text-foreground">Flashcards</h1>
+                    <p className="text-muted-foreground mt-1">Escolha um deck para estudar ou revise os cards vencidos.</p>
+                </div>
+                <button onClick={() => openCriarFlashcardModal()} className="h-10 px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                    <PlusCircleIcon className="w-4 h-4" />
+                    Criar Flashcard
+                </button>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <DeckCard
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     title="Revisão do Dia"
                     cardCount={dueFlashcards.length}
                     dueCount={dueFlashcards.length}
@@ -341,7 +449,11 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                     color="text-secondary"
                     onSelect={() => {
                         if (dueFlashcards.length > 0) {
+<<<<<<< HEAD
                             handleDeckSelection({ deck: dueFlashcards, name: 'Revisão', isReviewSession: true, totalCards: dueFlashcards.length });
+=======
+                             onSelectDeck({ deck: dueFlashcards, name: 'Revisão', isReviewSession: true });
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         } else {
                             toast("Nenhum card para revisar hoje! 🎉");
                         }
@@ -349,6 +461,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                 />
             </div>
 
+<<<<<<< HEAD
             {/* Modal Import/Export */}
             {showImportExport && <ImportExportModal onClose={() => setShowImportExport(false)} />}
 
@@ -368,17 +481,33 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
 
                         return (
                             <DeckCard
+=======
+            <div>
+                <h2 className="text-xl font-bold text-foreground mb-4">Decks por Matéria</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {disciplinas.map((disciplina) => {
+                        const cardsInDeck = getFlashcardsByDisciplina(disciplina.id);
+                        const dueInDeck = cardsInDeck.filter(c => new Date(c.dueDate) <= startOfDay(new Date()));
+                        return (
+                             <DeckCard
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 key={disciplina.id}
                                 title={disciplina.nome}
                                 cardCount={cardsInDeck.length}
                                 dueCount={dueInDeck.length}
                                 icon={<LayoutGridIcon className="w-6 h-6" />}
                                 color="text-primary"
+<<<<<<< HEAD
                                 showDeleteButton={true}
                                 onDeleteAll={handleDeleteAllForDisciplina}
                                 onSelect={() => {
                                     if (cardsInDeck.length > 0) {
                                         handleDeckSelection({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false, totalCards: cardsInDeck.length });
+=======
+                                onSelect={() => {
+                                    if (cardsInDeck.length > 0) {
+                                        onSelectDeck({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false });
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                     } else {
                                         toast(`Nenhum flashcard encontrado para ${disciplina.nome}.`);
                                     }
@@ -387,26 +516,39 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                         )
                     })}
                 </div>
+<<<<<<< HEAD
                 {disciplinas.length === 0 && (
+=======
+                 {disciplinas.length === 0 && (
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     <div className="text-center py-12 text-muted-foreground">
                         <p>Nenhuma disciplina encontrada.</p>
                         <p className="text-sm">Adicione disciplinas e tópicos na aba 'Edital' para começar.</p>
                     </div>
                 )}
             </div>
+<<<<<<< HEAD
 
             {/* Heatmap Removed as per user request */}
 
             {/* Busca e Filtros */}
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         </div>
     );
 };
 
 const StudySummary: React.FC = () => {
     const { session, answers, sessionStartTime, exitSession } = useFlashcardStudyStore();
+<<<<<<< HEAD
 
     const stats = useMemo(() => {
         const total = session?.totalCards || 0;
+=======
+    
+    const stats = useMemo(() => {
+        const total = session?.deck.length || 0;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const answeredCount = Object.keys(answers).length;
         const errei = Object.values(answers).filter(a => a === 'errei').length;
         const dificil = Object.values(answers).filter(a => a === 'dificil').length;
@@ -433,7 +575,11 @@ const StudySummary: React.FC = () => {
             <CheckCircle2Icon className="w-16 h-16 text-secondary mb-4" />
             <h2 className="text-2xl font-bold">Sessão Concluída!</h2>
             <p className="text-muted-foreground mt-2">Você revisou {stats.answeredCount} de {stats.total} cards em {stats.duration}.</p>
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             <div className="w-full my-8 p-4 bg-card/60 rounded-xl border border-border space-y-3">
                 <div className="flex justify-between items-center text-sm"><span className="text-red-400 font-bold">Errei</span><span>{stats.errei}</span></div>
                 <div className="flex justify-between items-center text-sm"><span className="text-orange-400 font-bold">Difícil</span><span>{stats.dificil}</span></div>
@@ -449,6 +595,7 @@ const StudySummary: React.FC = () => {
 };
 
 const StudyView: React.FC = () => {
+<<<<<<< HEAD
     const { session, currentIndex, isFlipped, flipCard, answerCard, exitSession, removeCurrentCardFromSession, saveProgress } = useFlashcardStudyStore();
     const { updateFlashcard, removeFlashcard, undo, canUndo } = useFlashcardsStore();
     const { openCriarFlashcardModal } = useModalStore();
@@ -462,6 +609,18 @@ const StudyView: React.FC = () => {
 
         setIsSaving(true);
 
+=======
+    const { session, currentIndex, isFlipped, flipCard, answerCard, exitSession, removeCurrentCardFromSession } = useFlashcardStudyStore();
+    const { updateFlashcard, removeFlashcard } = useFlashcardsStore();
+    const { openCriarFlashcardModal } = useModalStore();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleAnswer = useCallback(async (difficulty: 'errei' | 'dificil' | 'bom' | 'facil') => {
+        if (!session) return;
+        const currentCard = session.deck[currentIndex];
+        if (!currentCard) return;
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         let quality: 0 | 1 | 2 | 3 | 4 | 5;
         switch (difficulty) {
             case 'errei': quality = 1; break;
@@ -471,6 +630,7 @@ const StudyView: React.FC = () => {
         }
 
         const updates = calculateNextReview(currentCard, quality);
+<<<<<<< HEAD
 
         // Verificar se é erro de rede
         const isNetworkError = (error: any) => {
@@ -519,6 +679,16 @@ const StudyView: React.FC = () => {
             setIsSaving(false);
         }
     }, [session, currentIndex, updateFlashcard, answerCard, isSaving]);
+=======
+        
+        try {
+            await updateFlashcard(currentCard.id, updates);
+            answerCard(difficulty);
+        } catch (error) {
+            toast.error("Não foi possível salvar seu progresso. Tente novamente.");
+        }
+    }, [session, currentIndex, updateFlashcard, answerCard]);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -555,6 +725,7 @@ const StudyView: React.FC = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [flipCard, handleAnswer]);
 
+<<<<<<< HEAD
     // Atalho Ctrl+Z para undo
     useEffect(() => {
         const handleUndo = (e: KeyboardEvent) => {
@@ -609,6 +780,12 @@ const StudyView: React.FC = () => {
     const answeredCount = totalCards - session.deck.length;
     const currentCardNumber = answeredCount + 1;
     const progress = (answeredCount / totalCards) * 100;
+=======
+    if (!session) return null;
+    
+    const currentCard = session.deck[currentIndex];
+    const progress = (currentIndex / session.deck.length) * 100;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     const handleDelete = async () => {
         setIsMenuOpen(false);
@@ -631,6 +808,7 @@ const StudyView: React.FC = () => {
         if (!currentCard) return;
         openCriarFlashcardModal(currentCard);
     };
+<<<<<<< HEAD
 
     if (!currentCard) {
         return <StudySummary />;
@@ -649,6 +827,25 @@ const StudyView: React.FC = () => {
                     <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setIsMenuOpen(false); } }} tabIndex={-1}>
                         <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-1.5 sm:p-2 rounded-full hover:bg-white/10">
                             <EllipsisIcon className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+=======
+    
+    if (!currentCard) {
+        return <StudySummary />;
+    }
+    
+    return (
+        <div className="flex flex-col items-center max-w-2xl mx-auto">
+            <header className="w-full flex items-center justify-between mb-4">
+                <button onClick={exitSession} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+                    <ChevronLeftIcon className="w-5 h-5" />
+                    {session.name}
+                </button>
+                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-muted-foreground">{currentIndex + 1}/{session.deck.length}</span>
+                    <div className="relative" onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) { setIsMenuOpen(false); } }} tabIndex={-1}>
+                        <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full hover:bg-white/10">
+                            <EllipsisIcon className="w-5 h-5 text-muted-foreground" />
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </button>
                         {isMenuOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-card rounded-md shadow-lg z-20 border border-border">
@@ -664,6 +861,7 @@ const StudyView: React.FC = () => {
                 </div>
             </header>
 
+<<<<<<< HEAD
             <div className="w-full bg-muted/30 rounded-full h-2 mb-4 sm:mb-6">
                 <motion.div className="h-full bg-secondary rounded-full" animate={{ width: `${progress}%` }} />
             </div>
@@ -673,20 +871,38 @@ const StudyView: React.FC = () => {
             </div>
 
             <div className="mt-4 sm:mt-8 w-full flex justify-center items-center min-h-[80px] sm:min-h-[100px] pb-4">
+=======
+            <div className="w-full bg-muted/30 rounded-full h-2 mb-6">
+                <motion.div className="h-full bg-secondary rounded-full" animate={{ width: `${progress}%` }} />
+            </div>
+
+            <div className="relative w-full h-64 flex items-center justify-center">
+                 <FlippableCard flashcard={currentCard} isFlipped={isFlipped} onFlip={flipCard} className="z-10"/>
+            </div>
+            
+            <div className="mt-8 w-full flex justify-center items-center h-20">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 <AnimatePresence mode="wait">
                     {!isFlipped ? (
                         <motion.button
                             key="show"
                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                             onClick={flipCard}
+<<<<<<< HEAD
                             className="h-12 sm:h-14 px-6 sm:px-8 flex items-center gap-2 rounded-full bg-violet-200 text-violet-800 font-bold text-sm sm:text-base"
                         >
                             <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" /> Mostrar Resposta
+=======
+                            className="h-14 px-8 flex items-center gap-2 rounded-full bg-violet-200 text-violet-800 font-bold"
+                        >
+                            <EyeIcon className="w-5 h-5"/> Mostrar Resposta
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </motion.button>
                     ) : (
                         <motion.div
                             key="answers"
                             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+<<<<<<< HEAD
                             className="w-full grid grid-cols-2 sm:flex sm:flex-wrap justify-center gap-2 sm:gap-2 px-2"
                         >
                             <button
@@ -717,6 +933,14 @@ const StudyView: React.FC = () => {
                             >
                                 Fácil (4)
                             </button>
+=======
+                            className="flex flex-wrap justify-center gap-2"
+                        >
+                            <button onClick={() => handleAnswer('errei')} className="h-12 w-28 rounded-full bg-red-200 text-red-800 font-bold">Errei (1)</button>
+                            <button onClick={() => handleAnswer('dificil')} className="h-12 w-28 rounded-full bg-orange-200 text-orange-800 font-bold">Difícil (2)</button>
+                            <button onClick={() => handleAnswer('bom')} className="h-12 w-28 rounded-full bg-blue-200 text-blue-800 font-bold">Bom (3)</button>
+                            <button onClick={() => handleAnswer('facil')} className="h-12 w-28 rounded-full bg-green-200 text-green-800 font-bold">Fácil (4)</button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -727,15 +951,19 @@ const StudyView: React.FC = () => {
 
 const FlashcardsPage: React.FC = () => {
     const { session, startSession } = useFlashcardStudyStore();
+<<<<<<< HEAD
     const { flashcards } = useFlashcardsStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const [viewMode, setViewMode] = useState<'decks' | 'saved-quizzes'>('decks');
     const [showImportExport, setShowImportExport] = useState(false);
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     return (
         <div data-tutorial="flashcards-content" className="w-full">
             <PurpleBackground />
             <AnimatePresence mode="wait">
+<<<<<<< HEAD
                 {session ? (
                     <motion.div
                         key="study-session"
@@ -763,6 +991,24 @@ const FlashcardsPage: React.FC = () => {
 
             <style>{`.perspective-1000 { perspective: 1000px; } .transform-style-3d { transform-style: preserve-3d; } .rotate-y-180 { transform: rotateY(180deg); } .backface-hidden { backface-visibility: hidden; }`}</style>
         </div >
+=======
+                <motion.div
+                    key={session ? 'study' : 'decks'}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.25 }}
+                >
+                    {session ? (
+                        <StudyView />
+                    ) : (
+                        <DeckSelectionView onSelectDeck={startSession} />
+                    )}
+                </motion.div>
+            </AnimatePresence>
+             <style>{`.perspective-1000 { perspective: 1000px; } .transform-style-3d { transform-style: preserve-3d; } .rotate-y-180 { transform: rotateY(180deg); } .backface-hidden { backface-visibility: hidden; }`}</style>
+        </div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     );
 };
 

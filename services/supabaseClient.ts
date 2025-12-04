@@ -10,10 +10,17 @@ const isProduction = import.meta.env.PROD;
 
 // Validação rigorosa das variáveis de ambiente
 if (!supabaseUrl || !supabaseAnonKey) {
+<<<<<<< HEAD
   const errorMessage =
     'CRÍTICO: Variáveis de ambiente do Supabase não configuradas! ' +
     'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.';
 
+=======
+  const errorMessage = 
+    'CRÍTICO: Variáveis de ambiente do Supabase não configuradas! ' +
+    'Configure VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.';
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   if (isProduction) {
     // Em produção, lançar erro para evitar execução com credenciais inválidas
     throw new Error(errorMessage);
@@ -21,8 +28,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
     // Em desenvolvimento, apenas avisar (mas ainda assim não funcionará)
     console.error('⚠️', errorMessage);
     console.error('💡 Crie um arquivo .env.local com as variáveis necessárias');
+<<<<<<< HEAD
     console.error('💡 URL atual:', supabaseUrl || 'NÃO CONFIGURADA');
     console.error('💡 Key configurada:', supabaseAnonKey ? 'SIM' : 'NÃO');
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   }
 }
 
@@ -35,6 +45,7 @@ if (supabaseAnonKey && supabaseAnonKey.length < 100) {
   console.warn('⚠️ VITE_SUPABASE_ANON_KEY parece estar incompleta ou inválida');
 }
 
+<<<<<<< HEAD
 // Cria o cliente Supabase com configurações otimizadas
 export const supabase = createClient<Database>(
   supabaseUrl || '',
@@ -58,4 +69,10 @@ export const supabase = createClient<Database>(
       }
     }
   }
+=======
+// Cria o cliente Supabase
+export const supabase = createClient<Database>(
+  supabaseUrl || '', 
+  supabaseAnonKey || ''
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 );

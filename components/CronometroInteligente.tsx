@@ -7,7 +7,11 @@ import { ClockIcon, PauseIcon, PlayIcon, StopCircleIcon, XIcon, ExpandIcon, Mini
 const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
     const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+<<<<<<< HEAD
     const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+=======
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     return `${hours}:${minutes}:${seconds}`;
 };
 
@@ -33,7 +37,11 @@ const playNotificationSound = (audioContext: AudioContext | null) => {
 
 const PomodoroSettings: React.FC = () => {
     const { pomodoroSettings, updatePomodoroSettings } = useEstudosStore();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const handleUpdate = (key: keyof typeof pomodoroSettings, value: string) => {
         const minutes = parseInt(value, 10);
         if (!isNaN(minutes) && minutes > 0) {
@@ -46,6 +54,7 @@ const PomodoroSettings: React.FC = () => {
             <h4 className="font-bold text-sm text-foreground">Configurações Pomodoro</h4>
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Foco (min)</label>
+<<<<<<< HEAD
                 <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <div className="flex items-center justify-between">
@@ -55,6 +64,17 @@ const PomodoroSettings: React.FC = () => {
             <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Pausa Longa (min)</label>
                 <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-card border border-border rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
+=======
+                <input type="number" value={pomodoroSettings.work / 60} onChange={e => handleUpdate('work', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+            </div>
+            <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">Pausa Curta (min)</label>
+                <input type="number" value={pomodoroSettings.shortBreak / 60} onChange={e => handleUpdate('shortBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+            </div>
+            <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">Pausa Longa (min)</label>
+                <input type="number" value={pomodoroSettings.longBreak / 60} onChange={e => handleUpdate('longBreak', e.target.value)} className="w-16 bg-muted/50 border border-border rounded-md px-2 py-1 text-xs text-foreground"/>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             </div>
         </div>
     );
@@ -64,7 +84,11 @@ const CronometroInteligente: React.FC = () => {
     const { sessaoAtual, pausarSessao, retomarSessao, encerrarSessaoParaSalvar, alternarModoTimer, descartarSessao, pomodoroSettings, skipBreak } = useEstudosStore();
     const { isTimerMinimized, toggleTimerMinimized, isSaveModalOpen } = useUiStore();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Sound effect handling
     const audioContextRef = useRef<AudioContext | null>(null);
     const lastStageRef = useRef(sessaoAtual?.pomodoroStage);
@@ -82,13 +106,20 @@ const CronometroInteligente: React.FC = () => {
             const cycleChanged = sessaoAtual.pomodoroCycle !== lastCycleRef.current;
 
             if (stageChanged || cycleChanged) {
+<<<<<<< HEAD
                 playNotificationSound(audioContextRef.current);
                 lastStageRef.current = sessaoAtual.pomodoroStage;
                 lastCycleRef.current = sessaoAtual.pomodoroCycle;
+=======
+                 playNotificationSound(audioContextRef.current);
+                 lastStageRef.current = sessaoAtual.pomodoroStage;
+                 lastCycleRef.current = sessaoAtual.pomodoroCycle;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             }
         }
     }, [sessaoAtual?.pomodoroStage, sessaoAtual?.pomodoroCycle, sessaoAtual?.mode]);
 
+<<<<<<< HEAD
     // Sync timer when app becomes visible (fixes background throttling issues on mobile)
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -106,6 +137,8 @@ const CronometroInteligente: React.FC = () => {
         };
     }, []);
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     const { displayTime, progress, pomodoroStatusText } = useMemo(() => {
         if (!sessaoAtual) return { displayTime: '00:00:00', progress: 0, pomodoroStatusText: '' };
 
@@ -122,9 +155,15 @@ const CronometroInteligente: React.FC = () => {
         const remaining = stageDuration - sessaoAtual.elapsedSeconds;
         const display = formatTime(remaining > 0 ? remaining : 0);
         const prog = stageDuration > 0 ? (sessaoAtual.elapsedSeconds / stageDuration) * 100 : 0;
+<<<<<<< HEAD
 
         let statusText = '';
         switch (sessaoAtual.pomodoroStage) {
+=======
+        
+        let statusText = '';
+        switch(sessaoAtual.pomodoroStage) {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             case 'work': statusText = `FOCO #${sessaoAtual.pomodoroCycle + 1}`; break;
             case 'short_break': statusText = 'PAUSA CURTA'; break;
             case 'long_break': statusText = 'PAUSA LONGA'; break;
@@ -174,19 +213,28 @@ const CronometroInteligente: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+<<<<<<< HEAD
                 className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
+=======
+                className={`fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[90] flex items-center justify-center p-4 ${isSaveModalOpen ? 'opacity-30 pointer-events-none' : ''}`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             >
                 <motion.div
                     initial={{ scale: 0.95, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.95, y: 20, opacity: 0 }}
                     transition={{ duration: 0.2 }}
+<<<<<<< HEAD
                     className="bg-card rounded-2xl border border-white/10 shadow-2xl w-full max-w-2xl text-center relative"
                 >
                     <button onClick={toggleTimerMinimized} className="absolute top-3 left-3 p-2 rounded-full hover:bg-muted transition-colors z-10" title="Minimizar painel">
                         <MinimizeIcon className="w-5 h-5 text-muted-foreground" />
                     </button>
 
+=======
+                    className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-2xl text-center relative"
+                >
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     <button onClick={() => descartarSessao()} className="absolute top-3 right-3 p-2 rounded-full hover:bg-muted transition-colors z-10">
                         <XIcon className="w-5 h-5 text-muted-foreground" />
                     </button>
@@ -196,7 +244,11 @@ const CronometroInteligente: React.FC = () => {
                             <ClockIcon className="w-4 h-4 text-primary" />
                             CRONÔMETRO INTELIGENTE
                         </div>
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                         <div className="bg-muted/30 p-1 rounded-lg inline-flex gap-1 mb-6">
                             <button onClick={sessaoAtual.mode !== 'cronometro' ? alternarModoTimer : undefined} className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${sessaoAtual.mode === 'cronometro' ? 'bg-background shadow' : 'text-muted-foreground'}`}>
                                 Cronômetro
@@ -207,7 +259,11 @@ const CronometroInteligente: React.FC = () => {
                         </div>
 
                         {sessaoAtual.mode === 'pomodoro' && (
+<<<<<<< HEAD
                             <div className="w-full bg-muted/50 rounded-full h-2 mb-4">
+=======
+                             <div className="w-full bg-muted/50 rounded-full h-2 mb-4">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                 <div className={`h-2 rounded-full transition-all ${sessaoAtual.pomodoroStage === 'work' ? 'bg-primary' : 'bg-secondary'}`} style={{ width: `${progress}%` }}></div>
                             </div>
                         )}
@@ -220,6 +276,7 @@ const CronometroInteligente: React.FC = () => {
                             {sessaoAtual.mode === 'pomodoro' ? 'Mantenha o foco. O tempo está passando.' : 'Comece, pause ou encerre quando quiser. As informações detalhadas ficam para depois.'}
                         </p>
                     </div>
+<<<<<<< HEAD
 
                     <div className="bg-muted/30 p-6 rounded-b-2xl flex flex-col sm:flex-row items-center justify-center gap-4 relative">
                         {sessaoAtual.mode === 'pomodoro' && (
@@ -243,12 +300,44 @@ const CronometroInteligente: React.FC = () => {
                             {sessaoAtual.status === 'running' ? 'PAUSAR' : 'RETOMAR'}
                         </button>
                         <button
+=======
+                    
+                    <div className="bg-muted/30 p-6 rounded-b-2xl flex flex-col sm:flex-row items-center justify-center gap-4 relative">
+                       {sessaoAtual.mode === 'pomodoro' && (
+                            <div className="absolute top-4 left-4">
+                                <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="p-2 rounded-full text-muted-foreground hover:bg-background">
+                                    <SettingsIcon className="w-5 h-5"/>
+                                </button>
+                                {isSettingsOpen && <PomodoroSettings/>}
+                            </div>
+                       )}
+
+                        {sessaoAtual.mode === 'pomodoro' && sessaoAtual.pomodoroStage !== 'work' && (
+                             <button onClick={skipBreak} className="h-12 w-32 rounded-lg font-semibold text-sm transition-colors border border-border text-foreground hover:bg-muted">
+                                PULAR
+                            </button>
+                        )}
+                        <button 
+                            onClick={sessaoAtual.status === 'running' ? pausarSessao : retomarSessao}
+                            className={`h-12 w-48 rounded-lg font-semibold text-lg transition-colors ${sessaoAtual.status === 'running' ? 'bg-muted text-foreground hover:bg-muted/80' : 'bg-secondary text-black hover:bg-secondary/90'}`}
+                        >
+                           {sessaoAtual.status === 'running' ? 'PAUSAR' : 'RETOMAR'}
+                        </button>
+                         <button 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                             onClick={encerrarSessaoParaSalvar}
                             className="h-12 w-48 rounded-lg bg-red-500/80 text-white font-semibold text-lg hover:bg-red-500 transition-colors"
                         >
                             ENCERRAR E SALVAR
                         </button>
                     </div>
+<<<<<<< HEAD
+=======
+
+                    <button onClick={toggleTimerMinimized} className="absolute bottom-3 left-3 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        Minimizar painel
+                    </button>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 </motion.div>
             </motion.div>
         </AnimatePresence>

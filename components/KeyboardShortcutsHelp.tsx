@@ -14,6 +14,21 @@ interface Shortcut {
 }
 
 const shortcuts: Shortcut[] = [
+<<<<<<< HEAD
+=======
+  // Navegação
+  { keys: ['1'], description: 'Ir para Dashboard', category: 'Navegação' },
+  { keys: ['2'], description: 'Ir para Planejamento', category: 'Navegação' },
+  { keys: ['Shift', '2'], description: 'Ir para Planejamento 2.0', category: 'Navegação' },
+  { keys: ['3'], description: 'Ir para Ciclos de Estudos', category: 'Navegação' },
+  { keys: ['4'], description: 'Ir para Edital', category: 'Navegação' },
+  { keys: ['5'], description: 'Ir para Estatísticas', category: 'Navegação' },
+  { keys: ['6'], description: 'Ir para Jornada do Herói', category: 'Navegação' },
+  { keys: ['7'], description: 'Ir para Flashcards', category: 'Navegação' },
+  { keys: ['8'], description: 'Ir para Revisões', category: 'Navegação' },
+  { keys: ['9'], description: 'Ir para Caderno de Erros', category: 'Navegação' },
+  
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   // Ações
   { keys: ['Ctrl', 'K'], description: 'Abrir Command Palette', category: 'Ações' },
   { keys: ['Ctrl', 'B'], description: 'Alternar Sidebar', category: 'Ações' },
@@ -56,7 +71,11 @@ const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ open, onO
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
+<<<<<<< HEAD
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+=======
+            className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-50"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -64,8 +83,13 @@ const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ open, onO
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl z-50"
           >
+<<<<<<< HEAD
             <div className="bg-card border border-border rounded-lg shadow-2xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+=======
+            <div className="bg-card border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 <h2 className="text-xl font-bold text-foreground">Atalhos de Teclado</h2>
                 <button
                   onClick={() => onOpenChange(false)}
@@ -92,7 +116,11 @@ const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({ open, onO
                           <div className="flex items-center gap-1">
                             {shortcut.keys.map((key, keyIndex) => (
                               <React.Fragment key={keyIndex}>
+<<<<<<< HEAD
                                 <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 rounded border border-border">
+=======
+                                <kbd className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 rounded border border-white/10">
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                                   {key}
                                 </kbd>
                                 {keyIndex < shortcut.keys.length - 1 && (

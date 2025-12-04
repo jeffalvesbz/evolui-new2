@@ -1,0 +1,312 @@
+
+import { create } from 'zustand';
+import { GamificationStats, XpLogEvent, Badge, XpLogEntry } from '../types';
+import { getGamificationStats, logXpEvent as logXpEventApi, getBadges, getXpLog, updateGamificationStats, getWeeklyRanking } from '../services/geminiService';
+import { useAuthStore } from './useAuthStore';
+import { toast } from '../components/Sonner';
+import { checkAndAwardBadges } from '../services/badgeService';
+import { useHistoricoStore } from './useHistoricoStore';
+import { useEditalStore } from './useEditalStore';
+import { calculateStreakFromHistory } from '../utils/calculateStreak';
+
+export type WeeklyRankingData = {
+    ranking: { user_id: string; name: string; level: number; weekly_xp: number }[];
+    currentUserRank: { user_id: string; name: string; level: number; weekly_xp: number; rank: number } | null;
+}
+
+interface GamificationState {
+  stats: GamificationStats | null;
+  badges: Badge[];
+  xpLog: XpLogEntry[];
+  weeklyRanking: WeeklyRankingData | null;
+  newlyUnlockedBadgesQueue: Badge[];
+  loading: boolean;
+  
+  // Actions
+  fetchGamificationStats: (userId: string) => Promise<void>;
+  fetchBadges: () => Promise<void>;
+  fetchXpLog: (userId: string) => Promise<void>;
+  fetchWeeklyRanking: (userId: string) => Promise<void>;
+  logXpEvent: (event: XpLogEvent, meta: Record<string, any>, context: any) => Promise<void>;
+  updateStreak: () => Promise<void>;
+  unlockBadges: (newlyUnlocked: Badge[]) => void;
+  processNextBadgeInQueue: () => void;
+  
+  // Derived state/selectors can be added here if needed
+  unlockedBadges: () => Badge[];
+  xpForNextLevel: () => number;
+  xpForCurrentLevel: () => number;
+}
+
+// Fórmula de cálculo de nível, conforme a documentação
+const calculateLevel = (xp: number): number => {
+    if (xp <= 0) return 1;
+    return Math.floor(Math.pow(xp / 100, 0.6)) + 1;
+};
+
+const getXpForLevel = (level: number): number => {
+    if (level <= 1) return 0;
+    // Invertendo a fórmula: xp = 100 * (level - 1)^(1/0.6)
+    return Math.ceil(100 * Math.pow(level - 1, 1 / 0.6));
+};
+
+const getEventMessage = (event: XpLogEvent): string => {
+    switch (event) {
+        case 'cronometro_finalizado':
+            return 'por concluir um estudo';
+        case 'revisao_concluida':
+            return 'por concluir uma revisão';
+        case 'trilha_topico_concluido':
+            return 'por concluir um tópico da trilha';
+        case 'estudo_extra':
+            return 'por um estudo extra';
+        case 'revisao_atrasada':
+            return 'por colocar uma revisão em dia';
+        case 'meta_semanal_completa':
+            return 'por completar sua meta semanal';
+        case 'conquista_desbloqueada':
+            return 'por uma nova conquista';
+        default:
+            return 'pela sua dedicação';
+    }
+};
+
+export const useGamificationStore = create<GamificationState>((set, get) => ({
+    stats: null,
+    badges: [],
+    xpLog: [],
+    weeklyRanking: null,
+    newlyUnlockedBadgesQueue: [],
+    loading: false,
+
+    fetchGamificationStats: async (userId: string) => {
+        set({ loading: true });
+        try {
+            const stats = await getGamificationStats(userId);
+            if (stats) {
+                // Recalcula o nível com base no XP total para garantir consistência
+                stats.level = calculateLevel(stats.xp_total);
+                const previousStats = get().stats;
+                set({ stats });
+                
+                // Se havia badges na fila esperando stats, processá-las agora
+                const queue = get().newlyUnlockedBadgesQueue;
+                if (queue.length > 0 && !previousStats) {
+                    console.log("Processando badges da fila agora que stats está disponível:", queue.map(b => b.name));
+                    // Processar badges da fila que estavam esperando stats
+                    const { unlockBadges } = get();
+                    // Remover da fila temporária e processar novamente com stats disponível
+                    set(state => ({ newlyUnlockedBadgesQueue: [] }));
+                    unlockBadges(queue);
+                }
+                
+                // Verificar conquistas após carregar stats (aguardar um pouco para garantir que os dados estão atualizados)
+                setTimeout(() => {
+                  checkAndAwardBadges();
+                }, 100);
+            }
+        } catch (error) {
+            console.error("Failed to fetch gamification stats:", error);
+            toast.error("Não foi possível carregar seus dados de progresso.");
+        } finally {
+            set({ loading: false });
+        }
+    },
+
+    fetchBadges: async () => {
+        try {
+            const badges = await getBadges();
+            set({ badges });
+        } catch (error) {
+            console.error("Failed to fetch badges:", error);
+            toast.error("Não foi possível carregar as conquistas.");
+        }
+    },
+    
+    fetchXpLog: async (userId: string) => {
+        try {
+            const xpLog = await getXpLog(userId);
+            set({ xpLog });
+        } catch (error) {
+            console.error("Failed to fetch XP log:", error);
+        }
+    },
+
+    fetchWeeklyRanking: async (userId: string) => {
+        try {
+            const rankingData = await getWeeklyRanking(userId);
+            set({ weeklyRanking: rankingData });
+        } catch (error) {
+            console.error("Failed to fetch weekly ranking:", error);
+            toast.error("Não foi possível carregar o ranking semanal.");
+        }
+    },
+
+    logXpEvent: async (event, meta = {}, context: any) => {
+        const userId = useAuthStore.getState().user?.id;
+        if (!userId) {
+            console.error("User not authenticated, cannot log XP event.");
+            return;
+        }
+
+        let amount = 10; // Default XP
+        if (event === 'cronometro_finalizado' && context.durationMinutes) {
+            amount = Math.max(10, Math.floor(context.durationMinutes / 10)); // 1 XP por 10 min, min 10
+        }
+        if (event === 'revisao_dificil') amount = 15;
+        if (event === 'revisao_atrasada') amount = 5;
+
+        toast.success(`+${amount} XP ${getEventMessage(event)}!`);
+
+        try {
+            
+            // FIX: Removed extra arguments 'tipo_evento' and 'multiplicador' to align with the corrected API function signature.
+            await logXpEventApi(userId, event, amount, meta);
+            
+            await get().fetchGamificationStats(userId);
+            await get().fetchXpLog(userId);
+
+            // Verificar conquistas após atualizar stats e xpLog (aguardar um pouco para garantir que os dados estão atualizados)
+            setTimeout(() => {
+              checkAndAwardBadges();
+            }, 100);
+            
+        } catch (error) {
+            console.error("Failed to log XP event:", error);
+            toast.error("Erro ao registrar seu progresso de XP.");
+        }
+    },
+    
+    updateStreak: async () => {
+        const { user } = useAuthStore.getState();
+        const { editalAtivo } = useEditalStore.getState();
+        const { stats } = get();
+
+        if (!user?.id || !editalAtivo?.id) return;
+        
+        // This recalculates history based on other stores, which is fine since it's not a circular store dependency
+        await useHistoricoStore.getState().fetchHistorico(editalAtivo.id);
+        const historico = useHistoricoStore.getState().historico;
+
+        const { streak } = calculateStreakFromHistory(historico);
+
+        if (stats && (stats.current_streak_days !== streak || (streak > (stats.best_streak_days || 0)))) {
+            const updates: Partial<GamificationStats> = { current_streak_days: streak };
+            if (streak > (stats.best_streak_days || 0)) {
+                updates.best_streak_days = streak;
+            }
+            try {
+                await updateGamificationStats(user.id, updates);
+                await get().fetchGamificationStats(user.id); // Refresh stats from DB
+                // Verificar conquistas após atualizar streak (aguardar um pouco para garantir que os dados estão atualizados)
+                setTimeout(() => {
+                  checkAndAwardBadges();
+                }, 100);
+            } catch (error) {
+                console.error("Failed to update streak:", error);
+            }
+        }
+    },
+
+    unlockBadges: (newlyUnlocked: Badge[]) => {
+        const userId = useAuthStore.getState().user?.id;
+        const { stats, fetchXpLog, fetchGamificationStats } = get();
+        
+        if (newlyUnlocked.length === 0) {
+            console.warn("unlockBadges called with empty array");
+            return;
+        }
+        
+        if (!userId) {
+            console.warn("unlockBadges called but user not authenticated");
+            return;
+        }
+
+        // 1. Adiciona as conquistas à fila de notificações da UI PRIMEIRO (antes de qualquer verificação de stats)
+        set(state => ({ 
+            newlyUnlockedBadgesQueue: [...state.newlyUnlockedBadgesQueue, ...newlyUnlocked]
+        }));
+        
+        console.log("Badges adicionadas à fila:", newlyUnlocked.map(b => b.name));
+
+        // Se não há stats ainda, apenas adiciona à fila e retorna (stats serão atualizados depois)
+        if (!stats) {
+            console.warn("Stats não disponíveis ainda, badges adicionadas à fila para notificação posterior");
+            return;
+        }
+        
+        // 2. Atualiza o estado local de forma otimista para feedback imediato na UI
+        const newBadgeIds = newlyUnlocked.map(b => b.id);
+        const totalXpFromBadges = newlyUnlocked.reduce((acc, b) => acc + (b.xp || 0), 0);
+        
+        const oldLevel = stats.level;
+        
+        const updatedStats = {
+            ...stats,
+            unlockedBadgeIds: [...new Set([...stats.unlockedBadgeIds, ...newBadgeIds])],
+            xp_total: stats.xp_total + totalXpFromBadges,
+        };
+        updatedStats.level = calculateLevel(updatedStats.xp_total);
+        
+        set({ stats: updatedStats });
+        
+        if (updatedStats.level > oldLevel) {
+            toast.success(`🚀 Você subiu para o Nível ${updatedStats.level}!`);
+        }
+
+        // 3. Persiste a lista de conquistas atualizada e registra os eventos de XP no backend
+        updateGamificationStats(userId, { 
+          unlockedBadgeIds: updatedStats.unlockedBadgeIds
+        }).then(() => {
+            // Após salvar a lista de conquistas, registra o XP de cada uma
+            const logPromises = newlyUnlocked.map(badge => {
+                if (badge.xp && badge.xp > 0) {
+                    toast.success(`+${badge.xp} XP pela conquista "${badge.name}"!`);
+                     // ✅ Corrigido: Removidos os argumentos `tipo_evento` e `multiplicador`.
+                    return logXpEventApi(
+                        userId,
+                        'conquista_desbloqueada', 
+                        badge.xp, 
+                        { badgeId: badge.id, badgeName: badge.name }
+                    );
+                }
+                return Promise.resolve(null);
+            });
+
+            // Após todos os logs, atualiza o feed de atividades
+            Promise.all(logPromises).then(() => {
+                fetchXpLog(userId);
+            });
+
+        }).catch(err => {
+          console.error("Failed to save unlocked badges:", err);
+          toast.error("Erro ao salvar suas novas conquistas.");
+          // Em caso de falha, resgata o estado do servidor para reverter a mudança otimista
+          fetchGamificationStats(userId);
+        });
+    },
+
+    processNextBadgeInQueue: () => {
+        set(state => ({
+            newlyUnlockedBadgesQueue: state.newlyUnlockedBadgesQueue.slice(1)
+        }));
+    },
+
+    unlockedBadges: () => {
+        const { stats, badges } = get();
+        // Adicionado um null check para `stats` para evitar erros de runtime.
+        if (!stats?.unlockedBadgeIds || !badges) return [];
+        const unlockedIds = new Set(stats.unlockedBadgeIds);
+        return badges.filter(b => unlockedIds.has(b.id));
+    },
+
+    xpForNextLevel: () => {
+        const level = get().stats?.level || 1;
+        return getXpForLevel(level + 1);
+    },
+    
+    xpForCurrentLevel: () => {
+        const level = get().stats?.level || 1;
+        return getXpForLevel(level);
+    },
+}));

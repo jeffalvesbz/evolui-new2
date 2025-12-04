@@ -9,6 +9,11 @@ export interface StudyPlan {
   orgao?: string;
 }
 
+<<<<<<< HEAD
+=======
+export type NivelDificuldade = 'fácil' | 'médio' | 'difícil' | 'desconhecido';
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 export interface Topico {
   id: string;
   titulo: string;
@@ -34,11 +39,14 @@ export interface SessaoEstudo {
   data_estudo: string;
   comentarios?: string;
   studyPlanId: string;
+<<<<<<< HEAD
   questoes_certas?: number;
   questoes_erradas?: number;
   banca?: string;
   is_cebraspe?: boolean;
   created_at?: string;
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 }
 
 export interface SessaoCiclo {
@@ -61,12 +69,18 @@ export interface Revisao {
   disciplinaId: string;
   conteudo: string;
   data_prevista: string;
+<<<<<<< HEAD
   status: RevisaoStatus;
   origem: OrigemRevisao;
+=======
+  status: 'pendente' | 'concluida' | 'atrasada';
+  origem: 'flashcard' | 'erro' | 'manual' | 'teorica';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   dificuldade: NivelDificuldade;
   studyPlanId: string;
 }
 
+<<<<<<< HEAD
 // Tipos para enums do banco de dados
 export type EstiloFlashcard = 'direto' | 'explicativo' | 'completar';
 export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
@@ -77,6 +91,8 @@ export type NivelDificuldade = 'fácil' | 'médio' | 'difícil' | 'desconhecido'
 export type OrigemRevisao = 'flashcard' | 'erro' | 'manual' | 'teorica';
 export type PeriodoRanking = 'diario' | 'semanal' | 'mensal';
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 export interface Flashcard {
   id: string;
   topico_id: string;
@@ -86,6 +102,7 @@ export interface Flashcard {
   interval: number; // in days
   easeFactor: number; // multiplier
   dueDate: string; // ISO string date
+<<<<<<< HEAD
   estilo?: EstiloFlashcard;
   tags?: string[]; // Tags para categorização e busca
   _contentLoaded?: boolean; // Flag para indicar se o conteúdo completo foi carregado
@@ -168,6 +185,11 @@ export interface Quiz {
 
 
 
+=======
+  estilo?: 'direto' | 'explicativo' | 'completar';
+}
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 export interface RevisaoErro {
   data: string;
   status: 'pendente' | 'revisado';
@@ -267,6 +289,7 @@ export interface DisciplinaParaIA {
   topicos: { id: string; titulo: string }[];
 }
 
+<<<<<<< HEAD
 // Tipos para o sistema de Amigos (usando o tipo definido acima)
 export interface Friendship {
   id: string;
@@ -295,3 +318,64 @@ export interface Simulation {
   is_cebraspe?: boolean; // Campo do banco em snake_case
 }
 
+=======
+// Tipos para Gamificação
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Should match an icon component name
+  xp: number;
+  is_secret?: boolean;
+}
+
+export interface GamificationStats {
+  user_id: string;
+  xp_total: number;
+  level: number;
+  current_streak_days: number;
+  best_streak_days: number;
+  unlockedBadgeIds: string[];
+}
+
+export type XpLogEvent = 
+  'cronometro_finalizado' |
+  'estudo_manual' |
+  'revisao_concluida' | 
+  'revisao_atrasada' |
+  'revisao_dificil' |
+  'trilha_topico_concluido' | 
+  'estudo_extra' |
+  'meta_semanal_completa' |
+  'missao_diaria_completa' |
+  'conquista_desbloqueada';
+
+export interface XpLogEntry {
+  id: string;
+  user_id: string;
+  event: XpLogEvent;
+  amount: number;
+  meta_json: Record<string, any>;
+  created_at: string;
+  tipo_evento?: 'ativo' | 'manual';
+  multiplicador?: number;
+}
+
+// Tipos para o sistema de Amigos
+export type FriendshipStatus = 'pending' | 'accepted' | 'declined' | 'blocked';
+
+export interface Friendship {
+    id: string;
+    user_id_1: string; // requester
+    user_id_2: string; // receiver
+    status: FriendshipStatus;
+    created_at: string;
+}
+
+export interface FriendRequest {
+    friendship_id: string;
+    requester_id: string;
+    requester_name: string;
+    requester_level: number;
+}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

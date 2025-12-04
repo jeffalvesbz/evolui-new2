@@ -23,6 +23,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         .eq('user_id', userId)
         .single();
 
+<<<<<<< HEAD
       // Se o perfil não existe (PGRST116 = no rows returned), cria ele
       if (error && error.code === 'PGRST116') {
         const { data: user } = await supabase.auth.getUser();
@@ -55,6 +56,9 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       }
 
       if (error && error.code !== 'PGRST116') {
+=======
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         console.error('Erro ao verificar status do onboarding:', error);
         // Fallback para localStorage
         const localStatus = localStorage.getItem(`onboarding_seen_${userId}`);
@@ -74,9 +78,15 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
     } catch (error) {
       console.error('Erro ao verificar status do onboarding:', error);
       // Fallback para localStorage
+<<<<<<< HEAD
       const currentUserId = (await supabase.auth.getUser()).data.user?.id;
       if (currentUserId) {
         const localStatus = localStorage.getItem(`onboarding_seen_${currentUserId}`);
+=======
+      const userId = (await supabase.auth.getUser()).data.user?.id;
+      if (userId) {
+        const localStatus = localStorage.getItem(`onboarding_seen_${userId}`);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         set({ hasSeenOnboarding: localStatus === 'true', isLoading: false });
       } else {
         set({ hasSeenOnboarding: false, isLoading: false });
@@ -86,12 +96,17 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
 
   markOnboardingAsSeen: async (userId: string) => {
     try {
+<<<<<<< HEAD
       // Tenta atualizar o perfil no Supabase
+=======
+      // Tenta salvar no Supabase primeiro
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ has_seen_onboarding: true })
         .eq('user_id', userId);
 
+<<<<<<< HEAD
       // Se não conseguir atualizar (perfil não existe), cria o perfil
       if (updateError) {
         const { data: user } = await supabase.auth.getUser();
@@ -114,6 +129,12 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         } else {
           console.warn('Não foi possível atualizar no Supabase, usando localStorage:', updateError);
         }
+=======
+      if (updateError) {
+        // Se não conseguir atualizar (pode ser que o perfil não exista ainda ou o campo não exista)
+        // Apenas salva no localStorage - o perfil será criado/atualizado em outro lugar do sistema
+        console.warn('Não foi possível atualizar no Supabase, usando localStorage:', updateError);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       }
 
       // Sempre salva no localStorage como backup

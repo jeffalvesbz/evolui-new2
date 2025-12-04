@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
+<<<<<<< HEAD
 // Interceptar console.error para evitar erros de conversão de objetos
 const originalConsoleError = console.error;
 console.error = (...args: any[]) => {
@@ -32,6 +33,8 @@ console.error = (...args: any[]) => {
   }
 };
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");

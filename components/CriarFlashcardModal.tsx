@@ -4,8 +4,12 @@ import { useModalStore } from '../stores/useModalStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
 import { toast } from './Sonner';
+<<<<<<< HEAD
 import { LayersIcon, XIcon, SaveIcon, SparklesIcon } from './icons';
 import { FlashcardGenerator } from './FlashcardGenerator';
+=======
+import { LayersIcon, XIcon, SaveIcon } from './icons';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 interface FormData {
   disciplinaId: string;
@@ -20,7 +24,10 @@ const CriarFlashcardModal: React.FC = () => {
   const { addFlashcard, updateFlashcard } = useFlashcardsStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addAnother, setAddAnother] = useState(true);
+<<<<<<< HEAD
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormData>();
   const selectedDisciplinaId = watch('disciplinaId');
@@ -94,6 +101,7 @@ const CriarFlashcardModal: React.FC = () => {
   if (!isCriarFlashcardModalOpen) return null;
 
   return (
+<<<<<<< HEAD
     <>
       <style>{`
         /* Limitar altura do dropdown de select para evitar que ultrapasse a tela */
@@ -253,6 +261,63 @@ const CriarFlashcardModal: React.FC = () => {
         </div>
       </div >
     </>
+=======
+    <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarFlashcardModal}>
+      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <header className="p-4 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LayersIcon className="w-6 h-6 text-primary" />
+              <h2 className="text-lg font-bold">{isEditMode ? 'Editar Flashcard' : 'Criar Flashcard'}</h2>
+            </div>
+            <button type="button" onClick={closeCriarFlashcardModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
+          </header>
+
+          <main className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
+                    <select {...register('disciplinaId', { required: true })} disabled={isEditMode} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="">Selecione...</option>
+                        {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                    </select>
+                </div>
+                 <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
+                    <select {...register('topicoId', { required: true })} disabled={isEditMode} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="">Selecione...</option>
+                        {topicosFiltrados.map(t => <option key={t.id} value={t.id}>{t.titulo}</option>)}
+                    </select>
+                </div>
+            </div>
+             <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pergunta *</label>
+                <textarea {...register('pergunta', { required: true })} rows={3} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+            </div>
+             <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">Resposta *</label>
+                <textarea {...register('resposta', { required: true })} rows={4} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"/>
+            </div>
+          </main>
+
+          <footer className="p-4 bg-muted/30 border-t border-border flex justify-between items-center">
+             {!isEditMode ? (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" checked={addAnother} onChange={e => setAddAnother(e.target.checked)} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" />
+                    Adicionar outro
+                </label>
+             ) : <div />}
+            <div className="flex gap-2">
+                <button type="button" onClick={closeCriarFlashcardModal} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+                <button type="submit" disabled={isSubmitting} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50">
+                    <SaveIcon className="w-4 h-4" /> {isSubmitting ? 'Salvando...' : 'Salvar'}
+                </button>
+            </div>
+          </footer>
+        </form>
+      </div>
+    </div>
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   );
 };
 

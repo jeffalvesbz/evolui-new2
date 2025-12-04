@@ -1,13 +1,23 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+<<<<<<< HEAD
 import { SessaoEstudo } from '../types';
+=======
+import { SessaoEstudo, XpLogEvent } from '../types';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
 import { getSessoes, createSessao, updateSessaoApi, deleteSessao, saveTrilhasPorSemana, getTrilhasPorSemana } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
+<<<<<<< HEAD
 import { useCiclosStore } from './useCiclosStore';
 import { useHistoricoStore } from './useHistoricoStore';
+=======
+import { useGamificationStore } from './useGamificationStore';
+import { checkAndAwardBadges } from '../services/badgeService';
+import { useCiclosStore } from './useCiclosStore';
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
 export interface SessaoAtual {
   topico: {
@@ -22,6 +32,7 @@ export interface SessaoAtual {
   pomodoroStage: 'work' | 'short_break' | 'long_break';
   pomodoroCycle: number;
   isConclusaoRapida?: boolean;
+<<<<<<< HEAD
   cicloSessaoId?: string | null;
   origemTrilha?: boolean;
 }
@@ -29,6 +40,8 @@ export interface SessaoAtual {
 interface SessaoOptions {
   cicloSessaoId?: string | null;
   origemTrilha?: boolean;
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 }
 
 export type TrilhaSemanalData = {
@@ -43,10 +56,17 @@ export type TrilhaSemanalData = {
 };
 
 interface PomodoroSettings {
+<<<<<<< HEAD
   work: number; // in seconds
   shortBreak: number;
   longBreak: number;
   cyclesBeforeLongBreak: number;
+=======
+    work: number; // in seconds
+    shortBreak: number;
+    longBreak: number;
+    cyclesBeforeLongBreak: number;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 }
 
 interface EstudosStore {
@@ -58,6 +78,7 @@ interface EstudosStore {
   pomodoroSettings: PomodoroSettings;
   trilhaConclusao: Record<string, boolean>; // Chave: "weekKey-diaId-topicId", valor: true se concluído
   semanaAtualKey: string; // Chave da semana atual
+<<<<<<< HEAD
   lastTickTimestamp: number | null; // Timestamp do último tick para cálculo de delta
 
   fetchSessoes: (studyPlanId: string) => Promise<void>;
@@ -65,12 +86,24 @@ interface EstudosStore {
   // Ações do cronômetro
   iniciarSessao: (topico: { id: string, nome: string, disciplinaId?: string }, mode?: 'cronometro' | 'pomodoro', options?: SessaoOptions) => void;
   iniciarSessaoParaConclusaoRapida: (topico: { id: string, nome: string, disciplinaId?: string }, options?: SessaoOptions) => void;
+=======
+  
+  fetchSessoes: (studyPlanId: string) => Promise<void>;
+  
+  // Ações do cronômetro
+  iniciarSessao: (topico: { id: string, nome: string, disciplinaId?: string }, mode?: 'cronometro' | 'pomodoro') => void;
+  iniciarSessaoParaConclusaoRapida: (topico: { id: string, nome: string, disciplinaId?: string }) => void;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   iniciarSessaoInteligente: () => void;
   abrirModalEstudoManual: () => void;
   pausarSessao: () => void;
   retomarSessao: () => void;
   encerrarSessaoParaSalvar: () => void;
+<<<<<<< HEAD
   salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id' | 'studyPlanId'> & { topico_id: string, data_estudo?: string }, tempoEmSegundos?: number) => Promise<void>;
+=======
+  salvarSessao: (detalhes: Omit<SessaoEstudo, 'id' | 'tempo_estudado' | 'data_estudo' | 'topico_id' | 'studyPlanId'> & { topico_id: string }, tempoEmSegundos?: number) => Promise<void>;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   descartarSessao: () => void;
   alternarModoTimer: () => void;
   updatePomodoroSettings: (settings: Partial<PomodoroSettings>) => void;
@@ -90,7 +123,10 @@ interface EstudosStore {
   fetchTrilhas: (studyPlanId: string) => Promise<void>;
   loadTrilhaSemanal: (studyPlanId: string, weekKey?: string) => Promise<void>;
   saveTrilhasToDb: () => Promise<void>;
+<<<<<<< HEAD
   syncTimer: () => void;
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   _tick: () => void;
 }
 
@@ -113,6 +149,7 @@ export const useEstudosStore = create<EstudosStore>()(
         longBreak: 15 * 60,
         cyclesBeforeLongBreak: 4,
       },
+<<<<<<< HEAD
       lastTickTimestamp: null,
 
       // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
@@ -135,6 +172,26 @@ export const useEstudosStore = create<EstudosStore>()(
         } finally {
           set({ loading: false });
         }
+=======
+
+      // ✅ Corrigido: Parâmetro renomeado para `studyPlanId` para consistência com o serviço.
+      fetchSessoes: async (studyPlanId: string) => {
+          if (!studyPlanId || studyPlanId.trim() === '') {
+              console.warn('fetchSessoes chamado sem um studyPlanId válido.');
+              return;
+          }
+
+          set({ loading: true });
+          try {
+              const sessoes = await getSessoes(studyPlanId);
+              set({ sessoes });
+          } catch(error) {
+              console.error("Failed to fetch study sessions:", error);
+              toast.error("Não foi possível carregar as sessões de estudo.");
+          } finally {
+              set({ loading: false });
+          }
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       },
 
       _tick: () => {
@@ -142,6 +199,7 @@ export const useEstudosStore = create<EstudosStore>()(
           if (!state.sessaoAtual || state.sessaoAtual.status !== 'running') {
             return {};
           }
+<<<<<<< HEAD
 
           const now = Date.now();
           // Se não houver lastTickTimestamp (primeiro tick ou recuperação), usa o momento atual
@@ -183,13 +241,31 @@ export const useEstudosStore = create<EstudosStore>()(
 
               if (pomodoroStage === 'work') {
                 // Adiciona o tempo total do estágio, não apenas o delta
+=======
+      
+          const newElapsed = state.sessaoAtual.elapsedSeconds + 1;
+      
+          if (state.sessaoAtual.mode === 'pomodoro') {
+            const { pomodoroSettings, sessaoAtual } = state;
+            const currentStageDuration = pomodoroSettings[{'work': 'work', 'short_break': 'shortBreak', 'long_break': 'longBreak'}[sessaoAtual.pomodoroStage]];
+            
+            if (newElapsed >= currentStageDuration) {
+              // Stage finished
+              let { pomodoroStage, pomodoroCycle, workSecondsAccumulated } = sessaoAtual;
+              
+              if (pomodoroStage === 'work') {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 workSecondsAccumulated += currentStageDuration;
                 pomodoroCycle++;
                 pomodoroStage = pomodoroCycle % pomodoroSettings.cyclesBeforeLongBreak === 0 ? 'long_break' : 'short_break';
               } else { // It was a break
                 pomodoroStage = 'work';
               }
+<<<<<<< HEAD
 
+=======
+              
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               return {
                 sessaoAtual: {
                   ...sessaoAtual,
@@ -197,6 +273,7 @@ export const useEstudosStore = create<EstudosStore>()(
                   pomodoroStage,
                   pomodoroCycle,
                   workSecondsAccumulated,
+<<<<<<< HEAD
                 },
                 lastTickTimestamp: now
               };
@@ -214,6 +291,20 @@ export const useEstudosStore = create<EstudosStore>()(
       iniciarSessao: (topico, mode = 'cronometro', options) => {
         get().descartarSessao();
 
+=======
+                }
+              };
+            }
+          }
+          
+          return { sessaoAtual: { ...state.sessaoAtual, elapsedSeconds: newElapsed } };
+        });
+      },
+      
+      iniciarSessao: (topico, mode = 'cronometro') => {
+        get().descartarSessao();
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         const interval = window.setInterval(get()._tick, 1000);
         set({
           sessaoAtual: {
@@ -225,18 +316,29 @@ export const useEstudosStore = create<EstudosStore>()(
             pomodoroCycle: 0,
             workSecondsAccumulated: 0,
             isConclusaoRapida: false,
+<<<<<<< HEAD
             cicloSessaoId: options?.cicloSessaoId ?? null,
             origemTrilha: options?.origemTrilha ?? false,
           },
           timerInterval: interval,
           lastTickTimestamp: Date.now(),
+=======
+          },
+          timerInterval: interval,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         });
         useUiStore.getState().closeSaveModal();
       },
 
+<<<<<<< HEAD
       iniciarSessaoParaConclusaoRapida: (topico, options) => {
         get().descartarSessao(); // Garante que nenhuma outra sessão esteja ativa
 
+=======
+      iniciarSessaoParaConclusaoRapida: (topico) => {
+        get().descartarSessao(); // Garante que nenhuma outra sessão esteja ativa
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         set({
           sessaoAtual: {
             topico: topico,
@@ -247,6 +349,7 @@ export const useEstudosStore = create<EstudosStore>()(
             pomodoroCycle: 0,
             workSecondsAccumulated: 0,
             isConclusaoRapida: true, // Marca a sessão como conclusão rápida
+<<<<<<< HEAD
             cicloSessaoId: options?.cicloSessaoId ?? null,
             origemTrilha: options?.origemTrilha ?? false
           },
@@ -254,6 +357,12 @@ export const useEstudosStore = create<EstudosStore>()(
           lastTickTimestamp: null,
         });
 
+=======
+          },
+          timerInterval: null,
+        });
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Aciona imediatamente o modal de salvamento
         get().encerrarSessaoParaSalvar();
       },
@@ -261,10 +370,17 @@ export const useEstudosStore = create<EstudosStore>()(
       iniciarSessaoInteligente: () => {
         get().iniciarSessao({ id: `livre-${Date.now()}`, nome: 'Estudo Inteligente' });
       },
+<<<<<<< HEAD
 
       abrirModalEstudoManual: () => {
         get().descartarSessao(); // Garante que nenhuma outra sessão esteja ativa
 
+=======
+      
+      abrirModalEstudoManual: () => {
+        get().descartarSessao(); // Garante que nenhuma outra sessão esteja ativa
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         set({
           sessaoAtual: {
             topico: { id: `manual-${Date.now()}`, nome: 'Estudo Manual' },
@@ -277,9 +393,14 @@ export const useEstudosStore = create<EstudosStore>()(
             isConclusaoRapida: true, // Marca a sessão como manual
           },
           timerInterval: null,
+<<<<<<< HEAD
           lastTickTimestamp: null,
         });
 
+=======
+        });
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Aciona imediatamente o modal de salvamento
         get().encerrarSessaoParaSalvar();
       },
@@ -290,13 +411,18 @@ export const useEstudosStore = create<EstudosStore>()(
           if (state.sessaoAtual) {
             return {
               sessaoAtual: { ...state.sessaoAtual, status: 'paused' },
+<<<<<<< HEAD
               timerInterval: null,
               lastTickTimestamp: null
+=======
+              timerInterval: null
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             };
           }
           return {};
         });
       },
+<<<<<<< HEAD
 
       retomarSessao: () => {
         const { sessaoAtual, _tick } = get();
@@ -310,6 +436,20 @@ export const useEstudosStore = create<EstudosStore>()(
         }
       },
 
+=======
+      
+      retomarSessao: () => {
+          const { sessaoAtual, _tick } = get();
+          if (sessaoAtual?.status === 'paused') {
+              const interval = window.setInterval(_tick, 1000);
+              set({
+                  sessaoAtual: { ...sessaoAtual, status: 'running' },
+                  timerInterval: interval
+              });
+          }
+      },
+      
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       encerrarSessaoParaSalvar: () => {
         get().pausarSessao();
         useUiStore.getState().openSaveModal();
@@ -330,6 +470,7 @@ export const useEstudosStore = create<EstudosStore>()(
             tempoEstudado += sessaoAtual.elapsedSeconds;
           }
         }
+<<<<<<< HEAD
 
         if (tempoEstudado < 1) {
           descartarSessao();
@@ -411,18 +552,63 @@ export const useEstudosStore = create<EstudosStore>()(
           console.error("Erro ao salvar sessão:", error);
           throw error;
         }
+=======
+        
+        if (tempoEstudado < 1) {
+            descartarSessao();
+            useUiStore.getState().closeSaveModal();
+            return;
+        };
+
+        // Rastreamento de progresso do ciclo
+        if (sessaoAtual.topico.id.startsWith('ciclo-')) {
+            const cicloStore = useCiclosStore.getState();
+            const cicloAtivoId = cicloStore.cicloAtivoId;
+            const sessaoCicloId = sessaoAtual.topico.id.replace('ciclo-', '');
+            if (cicloAtivoId) {
+                cicloStore.setUltimaSessaoConcluida(cicloAtivoId, sessaoCicloId);
+            }
+        }
+        
+        await addSessao({
+          ...detalhes,
+          tempo_estudado: Math.round(tempoEstudado),
+          data_estudo: new Date().toISOString().split('T')[0],
+        });
+        
+        const eventType: XpLogEvent = (sessaoAtual.isConclusaoRapida || sessaoAtual.topico.id.startsWith('manual-')) ? 'estudo_manual' : 'cronometro_finalizado';
+        
+        await useGamificationStore.getState().logXpEvent(
+            eventType,
+            { // meta
+                topicoId: detalhes.topico_id,
+                tempoEstudadoSeg: Math.round(tempoEstudado),
+            },
+            { // context
+                durationMinutes: Math.round(tempoEstudado / 60)
+            }
+        );
+
+        descartarSessao();
+        useUiStore.getState().closeSaveModal();
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       },
 
       descartarSessao: () => {
         set(state => {
           if (state.timerInterval) clearInterval(state.timerInterval);
+<<<<<<< HEAD
           return { sessaoAtual: null, timerInterval: null, lastTickTimestamp: null };
+=======
+          return { sessaoAtual: null, timerInterval: null };
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         });
         useUiStore.getState().closeSaveModal();
       },
 
       alternarModoTimer: () => {
         set(state => {
+<<<<<<< HEAD
           if (state.sessaoAtual) {
             const newMode = state.sessaoAtual.mode === 'cronometro' ? 'pomodoro' : 'cronometro';
             // Reset timer when switching modes, keep it running
@@ -438,17 +624,38 @@ export const useEstudosStore = create<EstudosStore>()(
             }
           }
           return state;
+=======
+            if(state.sessaoAtual) {
+                const newMode = state.sessaoAtual.mode === 'cronometro' ? 'pomodoro' : 'cronometro';
+                // Reset timer when switching modes, keep it running
+                return {
+                    sessaoAtual: { ...state.sessaoAtual, 
+                        elapsedSeconds: 0, 
+                        mode: newMode,
+                        pomodoroStage: 'work',
+                        pomodoroCycle: 0,
+                        workSecondsAccumulated: 0,
+                    },
+                }
+            }
+            return state;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         });
       },
 
       updatePomodoroSettings: (settings) => {
         set(state => ({
+<<<<<<< HEAD
           pomodoroSettings: { ...state.pomodoroSettings, ...settings }
+=======
+            pomodoroSettings: { ...state.pomodoroSettings, ...settings }
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }));
       },
 
       skipBreak: () => {
         set(state => {
+<<<<<<< HEAD
           if (state.sessaoAtual && state.sessaoAtual.mode === 'pomodoro' && state.sessaoAtual.pomodoroStage !== 'work') {
             return {
               sessaoAtual: {
@@ -459,6 +666,18 @@ export const useEstudosStore = create<EstudosStore>()(
             }
           }
           return state;
+=======
+            if (state.sessaoAtual && state.sessaoAtual.mode === 'pomodoro' && state.sessaoAtual.pomodoroStage !== 'work') {
+                return {
+                    sessaoAtual: {
+                        ...state.sessaoAtual,
+                        elapsedSeconds: 0,
+                        pomodoroStage: 'work',
+                    }
+                }
+            }
+            return state;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         });
       },
 
@@ -467,6 +686,7 @@ export const useEstudosStore = create<EstudosStore>()(
         if (!studyPlanId) throw new Error("Nenhum plano de estudo ativo selecionado.");
 
         try {
+<<<<<<< HEAD
           const novaSessao = await createSessao(studyPlanId, sessao);
           set(state => {
             const atualizadas = [...state.sessoes, novaSessao];
@@ -481,10 +701,18 @@ export const useEstudosStore = create<EstudosStore>()(
           const errorMessage = error?.message || "Falha ao adicionar sessão de estudo.";
           toast.error(errorMessage);
           throw error;
+=======
+            const novaSessao = await createSessao(studyPlanId, sessao);
+            set(state => ({ sessoes: [...state.sessoes, novaSessao] }));
+        } catch (error) {
+            console.error("Failed to add session:", error);
+            toast.error("Falha ao adicionar sessão de estudo.");
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
       },
       updateSessao: async (id, updates) => {
         try {
+<<<<<<< HEAD
           const sessaoAtualizada = await updateSessaoApi(id, updates);
           set(state => {
             const atualizadas = state.sessoes.map(s => s.id === id ? sessaoAtualizada : s);
@@ -518,6 +746,27 @@ export const useEstudosStore = create<EstudosStore>()(
           console.error("Failed to delete session:", error);
           toast.error("Falha ao remover sessão de estudo.");
         }
+=======
+            const sessaoAtualizada = await updateSessaoApi(id, updates);
+            set(state => ({
+                sessoes: state.sessoes.map(s => s.id === id ? sessaoAtualizada : s),
+            }));
+        } catch (error) {
+            console.error("Failed to update session:", error);
+            toast.error("Falha ao atualizar sessão de estudo.");
+        }
+      },
+      removeSessao: async (id) => {
+          try {
+              await deleteSessao(id);
+              set(state => ({
+                  sessoes: state.sessoes.filter(s => s.id !== id),
+              }));
+          } catch (error) {
+              console.error("Failed to delete session:", error);
+              toast.error("Falha ao remover sessão de estudo.");
+          }
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       },
       moveTopicoNaTrilha: (topicoId, fromDia, toDia, fromIndex, toIndex) => {
         // Esta lógica permanece no frontend por enquanto, mas poderia ser movida para o backend
@@ -537,20 +786,34 @@ export const useEstudosStore = create<EstudosStore>()(
         const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
         const trilhaValidada: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
         for (const dia of dias) {
+<<<<<<< HEAD
           if (novaTrilha[dia] && Array.isArray(novaTrilha[dia])) {
             trilhaValidada[dia] = novaTrilha[dia];
           }
+=======
+            if (novaTrilha[dia] && Array.isArray(novaTrilha[dia])) {
+                trilhaValidada[dia] = novaTrilha[dia];
+            }
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         }
         set(state => {
           // Verificar se a trilha realmente mudou para evitar atualizações desnecessárias
           const trilhaAtualSerializada = JSON.stringify(state.trilha);
           const trilhaNovaSerializada = JSON.stringify(trilhaValidada);
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           if (trilhaAtualSerializada === trilhaNovaSerializada && state.semanaAtualKey) {
             // Se a trilha não mudou e já temos a semana atual, não precisa atualizar trilhasPorSemana
             return {};
           }
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           // Atualizar também a trilha da semana atual
           const weekKey = state.semanaAtualKey;
           const novasTrilhas = { ...state.trilhasPorSemana };
@@ -568,8 +831,13 @@ export const useEstudosStore = create<EstudosStore>()(
               }, 500);
             }
           }
+<<<<<<< HEAD
 
           return {
+=======
+          
+          return { 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             trilha: trilhaValidada,
             trilhasPorSemana: novasTrilhas
           };
@@ -581,7 +849,11 @@ export const useEstudosStore = create<EstudosStore>()(
           const trilhaAnterior = novasTrilhas[weekKey] || {};
           const trilhaAnteriorSerializada = JSON.stringify(trilhaAnterior);
           const trilhaNovaSerializada = JSON.stringify(trilha);
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           // Só atualiza se for diferente
           if (trilhaAnteriorSerializada !== trilhaNovaSerializada) {
             novasTrilhas[weekKey] = trilha;
@@ -594,7 +866,11 @@ export const useEstudosStore = create<EstudosStore>()(
               });
             }, 500);
           }
+<<<<<<< HEAD
 
+=======
+          
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           return { trilhasPorSemana: novasTrilhas };
         });
       },
@@ -632,7 +908,11 @@ export const useEstudosStore = create<EstudosStore>()(
       fetchTrilhas: async (studyPlanId: string) => {
         try {
           const { trilhasPorSemana, trilhaConclusao } = await getTrilhasPorSemana(studyPlanId);
+<<<<<<< HEAD
           set({
+=======
+          set({ 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             trilhasPorSemana: trilhasPorSemana || {},
             trilhaConclusao: trilhaConclusao || {}
           });
@@ -653,16 +933,27 @@ export const useEstudosStore = create<EstudosStore>()(
           console.warn("Não há plano de estudo ativo para salvar trilhas");
           return;
         }
+<<<<<<< HEAD
 
         const trilhasParaSalvar = state.trilhasPorSemana || {};
         const conclusaoParaSalvar = state.trilhaConclusao || {};
 
+=======
+        
+        const trilhasParaSalvar = state.trilhasPorSemana || {};
+        const conclusaoParaSalvar = state.trilhaConclusao || {};
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         console.log("Salvando trilhas no banco:", {
           studyPlanId,
           trilhasKeys: Object.keys(trilhasParaSalvar),
           conclusaoKeys: Object.keys(conclusaoParaSalvar).length
         });
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         try {
           await saveTrilhasPorSemana(
             studyPlanId,
@@ -681,6 +972,7 @@ export const useEstudosStore = create<EstudosStore>()(
           }
         }
       },
+<<<<<<< HEAD
       syncTimer: () => {
         const state = get();
         if (state.sessaoAtual?.status === 'running') {
@@ -697,17 +989,27 @@ export const useEstudosStore = create<EstudosStore>()(
           }
         }
       },
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     }),
     {
       name: 'evolui-estudos-store',
       storage: createJSONStorage(() => localStorage),
+<<<<<<< HEAD
       // Persistir sessaoAtual e lastTickTimestamp para sobreviver a reloads
+=======
+      // Persistir apenas trilhasPorSemana e trilhaConclusao no localStorage como fallback
+      // O banco de dados é a fonte principal
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       partialize: (state) => ({
         trilhasPorSemana: state.trilhasPorSemana,
         trilhaConclusao: state.trilhaConclusao,
         semanaAtualKey: state.semanaAtualKey,
+<<<<<<< HEAD
         sessaoAtual: state.sessaoAtual,
         lastTickTimestamp: state.lastTickTimestamp,
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       }),
     }
   )

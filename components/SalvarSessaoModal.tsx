@@ -5,6 +5,7 @@ import { useUiStore } from '../stores/useUiStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
+<<<<<<< HEAD
 import { BookOpenIcon, XIcon, ClockIcon, SaveIcon, SparklesIcon, PlusIcon } from './icons';
 import { startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -26,15 +27,40 @@ interface SalvarSessaoFormData {
     banca?: string;
     isCebraspe?: boolean;
     dataEstudo?: string;
+=======
+import { BookOpenIcon, XIcon, ClockIcon, SaveIcon, SparklesIcon } from './icons';
+import { startOfWeek, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface SalvarSessaoFormData {
+  categoria: 'Teoria' | 'Questões' | 'Revisão' | 'Simulado';
+  disciplinaId: string;
+  topico: string;
+  materialUtilizado: string;
+  paginaInicial: string;
+  paginaFinal: string;
+  comentarios: string;
+  gerarRevisoes: boolean;
+  teoriaFinalizada: boolean;
+  contabilizarPlanejamento: boolean;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 }
 
 const SalvarSessaoModal: React.FC = () => {
     const { isSaveModalOpen, closeSaveModal } = useUiStore();
+<<<<<<< HEAD
     const {
         sessaoAtual,
         salvarSessao,
         descartarSessao,
         getTrilhaSemana,
+=======
+    const { 
+        sessaoAtual, 
+        salvarSessao, 
+        descartarSessao, 
+        getTrilhaSemana, 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         toggleTopicoConcluidoNaTrilha,
         isTopicoConcluidoNaTrilha,
         semanaAtualKey,
@@ -44,6 +70,7 @@ const SalvarSessaoModal: React.FC = () => {
 
     const [editableHours, setEditableHours] = useState(0);
     const [editableMinutes, setEditableMinutes] = useState(0);
+<<<<<<< HEAD
     const [intervalosRevisao, setIntervalosRevisao] = useState<number[]>([1, 7, 30, 60]);
     const [novoIntervalo, setNovoIntervalo] = useState<string>('');
     const [mostrarInputNovoIntervalo, setMostrarInputNovoIntervalo] = useState(false);
@@ -65,11 +92,27 @@ const SalvarSessaoModal: React.FC = () => {
             banca: '',
             isCebraspe: false,
             dataEstudo: format(new Date(), 'yyyy-MM-dd'),
+=======
+    
+    const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<SalvarSessaoFormData>({
+        defaultValues: {
+          categoria: 'Teoria',
+          disciplinaId: '',
+          topico: '',
+          materialUtilizado: '',
+          paginaInicial: '',
+          paginaFinal: '',
+          comentarios: '',
+          gerarRevisoes: true,
+          teoriaFinalizada: false,
+          contabilizarPlanejamento: true,
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         },
     });
 
     const comentariosValue = watch('comentarios');
     const disciplinaIdSelecionada = watch('disciplinaId');
+<<<<<<< HEAD
     const topicoSelecionado = watch('topico');
     const categoriaSelecionada = watch('categoria');
     const isCebraspe = watch('isCebraspe');
@@ -80,18 +123,27 @@ const SalvarSessaoModal: React.FC = () => {
         if (!isCebraspe) return questoesCertas;
         return Math.max(0, questoesCertas - questoesErradas);
     }, [isCebraspe, questoesCertas, questoesErradas]);
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
     const topicosDaDisciplina = useMemo(() => {
         if (!disciplinaIdSelecionada) return [];
         const disciplina = disciplinas.find(d => d.id === disciplinaIdSelecionada);
+<<<<<<< HEAD
         const topicos = disciplina?.topicos || [];
         return sortTopicosPorNumero(topicos);
     }, [disciplinaIdSelecionada, disciplinas]);
 
+=======
+        return disciplina?.topicos || [];
+    }, [disciplinaIdSelecionada, disciplinas]);
+    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     useEffect(() => {
         if (isSaveModalOpen && sessaoAtual) {
             // Determinar valores iniciais para disciplina e tópico
             const disciplinaIdInicial = sessaoAtual.topico.disciplinaId || '';
+<<<<<<< HEAD
             const topicoInicial = (sessaoAtual.topico.disciplinaId && !sessaoAtual.topico.id.startsWith('manual-'))
                 ? sessaoAtual.topico.nome
                 : '';
@@ -122,6 +174,28 @@ const SalvarSessaoModal: React.FC = () => {
             setNovoIntervalo('');
             setMostrarInputNovoIntervalo(false);
 
+=======
+            const topicoInicial = (sessaoAtual.topico.disciplinaId && !sessaoAtual.topico.id.startsWith('manual-')) 
+                ? sessaoAtual.topico.nome 
+                : '';
+            
+            // Determinar se teoria finalizada deve estar marcada
+            const teoriaFinalizadaInicial = sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-');
+            
+            reset({
+              categoria: 'Teoria',
+              disciplinaId: disciplinaIdInicial,
+              topico: topicoInicial,
+              materialUtilizado: '',
+              paginaInicial: '',
+              paginaFinal: '',
+              comentarios: '',
+              gerarRevisoes: true,
+              teoriaFinalizada: teoriaFinalizadaInicial,
+              contabilizarPlanejamento: true,
+            });
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             let totalSeconds = 0;
             if (sessaoAtual.mode === 'cronometro') {
                 totalSeconds = sessaoAtual.elapsedSeconds;
@@ -131,7 +205,11 @@ const SalvarSessaoModal: React.FC = () => {
                     totalSeconds += sessaoAtual.elapsedSeconds;
                 }
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             setEditableHours(Math.floor(totalSeconds / 3600));
             setEditableMinutes(Math.floor((totalSeconds % 3600) / 60));
         }
@@ -142,10 +220,17 @@ const SalvarSessaoModal: React.FC = () => {
         if (isSaveModalOpen && sessaoAtual && disciplinaIdSelecionada && topicosDaDisciplina.length > 0) {
             const topicoAtual = watch('topico');
             const topicoEsperado = sessaoAtual.topico.nome;
+<<<<<<< HEAD
 
             // Se a disciplina está selecionada mas o tópico ainda não foi definido corretamente
             if (disciplinaIdSelecionada === sessaoAtual.topico.disciplinaId &&
                 topicoAtual !== topicoEsperado &&
+=======
+            
+            // Se a disciplina está selecionada mas o tópico ainda não foi definido corretamente
+            if (disciplinaIdSelecionada === sessaoAtual.topico.disciplinaId && 
+                topicoAtual !== topicoEsperado && 
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                 !sessaoAtual.topico.id.startsWith('manual-')) {
                 // Verificar se o tópico existe na lista de tópicos da disciplina
                 const topicoExiste = topicosDaDisciplina.some(t => t.titulo === topicoEsperado);
@@ -172,6 +257,7 @@ const SalvarSessaoModal: React.FC = () => {
             return;
         }
 
+<<<<<<< HEAD
         if (data.gerarRevisoes && intervalosRevisao.length === 0) {
             toast.error("Selecione pelo menos um intervalo de revisão ou desmarque a opção 'PROGRAMAR REVISÕES'.");
             return;
@@ -189,17 +275,33 @@ const SalvarSessaoModal: React.FC = () => {
             data_estudo: data.dataEstudo,
         }, tempoParaSalvar);
 
+=======
+        const tempoParaSalvar = (editableHours * 3600) + (editableMinutes * 60);
+
+        await salvarSessao({
+          topico_id: targetTopic.id,
+          comentarios: data.comentarios,
+        }, tempoParaSalvar);
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         if (data.teoriaFinalizada) {
             await updateTopico(disciplina.id, targetTopic.id, { concluido: true });
         }
 
+<<<<<<< HEAD
         if (data.gerarRevisoes && intervalosRevisao.length > 0) {
+=======
+        if (data.gerarRevisoes) {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             await scheduleAutoRevisoes({
                 disciplinaId: disciplina.id,
                 disciplinaNome: disciplina.nome,
                 topicoId: targetTopic.id,
                 topicoNome: targetTopic.titulo,
+<<<<<<< HEAD
                 intervals: intervalosRevisao,
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             });
         }
 
@@ -207,16 +309,27 @@ const SalvarSessaoModal: React.FC = () => {
         if (data.contabilizarPlanejamento) {
             // Obter a chave da semana atual
             const weekKeyAtual = semanaAtualKey || format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             // IDs de tópico a verificar (o selecionado no formulário e o original da sessão)
             const topicIdsToCheck = [targetTopic.id];
             if (sessaoAtual.topico.id && sessaoAtual.topico.id !== targetTopic.id && !sessaoAtual.topico.id.startsWith('manual-')) {
                 topicIdsToCheck.push(sessaoAtual.topico.id);
             }
+<<<<<<< HEAD
 
             const diasSemana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
             let encontrado = false;
 
+=======
+            
+            const diasSemana = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+            let encontrado = false;
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             // Função auxiliar para marcar como concluído (não faz toggle, apenas marca)
             const marcarComoConcluido = (weekKey: string, diaId: string, topicId: string) => {
                 const state = useEstudosStore.getState();
@@ -226,7 +339,11 @@ const SalvarSessaoModal: React.FC = () => {
                     const novasConclusoes = { ...state.trilhaConclusao };
                     novasConclusoes[key] = true;
                     useEstudosStore.setState({ trilhaConclusao: novasConclusoes });
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     // Salvar no banco de dados em segundo plano
                     const saveFunction = useEstudosStore.getState().saveTrilhasToDb;
                     setTimeout(() => {
@@ -234,11 +351,19 @@ const SalvarSessaoModal: React.FC = () => {
                             console.error("Erro ao salvar trilhas no banco:", err);
                         });
                     }, 500);
+<<<<<<< HEAD
 
                     // Estado atualizado com sucesso
                 }
             };
 
+=======
+                    
+                    // Estado atualizado com sucesso
+                }
+            };
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             // Primeiro, verificar na semana atual
             const trilhaAtual = getTrilhaSemana(weekKeyAtual);
             for (const diaId of diasSemana) {
@@ -252,7 +377,11 @@ const SalvarSessaoModal: React.FC = () => {
                 }
                 if (encontrado) break;
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
             // Se não encontrou na semana atual, buscar em todas as semanas
             if (!encontrado) {
                 for (const [weekKey, trilha] of Object.entries(trilhasPorSemana)) {
@@ -273,7 +402,11 @@ const SalvarSessaoModal: React.FC = () => {
         }
 
         toast.success("Estudo salvo com sucesso!");
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         // Fechar o modal após salvar
         closeSaveModal();
     };
@@ -281,6 +414,7 @@ const SalvarSessaoModal: React.FC = () => {
     if (!isSaveModalOpen || !sessaoAtual) return null;
 
     return (
+<<<<<<< HEAD
         <>
             <style>{`
                 /* Limitar altura do dropdown de select para evitar que ultrapasse a tela */
@@ -621,3 +755,117 @@ const SalvarSessaoModal: React.FC = () => {
 };
 
 export default SalvarSessaoModal;
+=======
+        <div className="fixed inset-0 bg-background/[0.999] backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                <header className="p-4 border-b border-border flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <BookOpenIcon className="w-6 h-6 text-primary" />
+                        <h2 className="text-lg font-bold">Salvar e Encerrar Estudo</h2>
+                    </div>
+                    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg">
+                        <ClockIcon className="w-4 h-4 text-muted-foreground" />
+                        <input
+                            type="number"
+                            aria-label="Horas"
+                            value={editableHours}
+                             onChange={(e) => {
+                                const hours = parseInt(e.target.value, 10);
+                                setEditableHours(isNaN(hours) || hours < 0 ? 0 : hours);
+                            }}
+                            className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                            min="0"
+                        />
+                        <span className="font-bold text-muted-foreground">:</span>
+                        <input
+                            type="number"
+                            aria-label="Minutos"
+                            value={String(editableMinutes).padStart(2, '0')}
+                            onFocus={e => e.target.select()}
+                             onChange={(e) => {
+                                const minutes = parseInt(e.target.value, 10);
+                                setEditableMinutes(isNaN(minutes) || minutes < 0 ? 0 : Math.min(minutes, 59));
+                            }}
+                           className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                            min="0" max="59"
+                        />
+                    </div>
+                </header>
+
+                <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+                    {sessaoAtual.isConclusaoRapida && (
+                        <div className="p-3 bg-primary/10 rounded-lg text-primary text-xs flex items-center gap-2">
+                            <SparklesIcon className="w-4 h-4 flex-shrink-0" />
+                            <span><b>Dica:</b> Ative o cronômetro em seu próximo estudo para ganhar mais XP e contar para seu streak!</span>
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Categoria *</label>
+                            <select {...register('categoria')} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
+                                <option>Teoria</option><option>Questões</option><option>Revisão</option><option>Simulado</option>
+                            </select>
+                        </div>
+                        <div>
+                           <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
+                            <select {...register('disciplinaId', { required: true })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
+                                <option value="">Selecione a disciplina</option>
+                                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                            </select>
+                            {errors.disciplinaId && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
+                            <select {...register('topico', { required: true })} disabled={!disciplinaIdSelecionada} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary disabled:opacity-50">
+                                <option value="">Selecione o tópico</option>
+                                {topicosDaDisciplina.map(t => <option key={t.id} value={t.titulo}>{t.titulo}</option>)}
+                            </select>
+                            {errors.topico && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
+                        </div>
+                         <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Material utilizado</label>
+                            <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                             <div>
+                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. inicial</label>
+                                <input {...register('paginaInicial')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                            </div>
+                             <div>
+                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. final</label>
+                                <input {...register('paginaFinal')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Comentários</label>
+                            <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
+                        </div>
+                    </div>
+                    <div className="space-y-3 pt-4 border-t border-border">
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('gerarRevisoes')} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" /> Gerar revisões automáticas (24h, 7d, 15d e 30d)</label>
+                        <label className="flex items-center gap-2 text-sm">
+                            <input 
+                                type="checkbox" 
+                                {...register('teoriaFinalizada')} 
+                                disabled={sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-')}
+                                className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary disabled:opacity-70" 
+                            /> 
+                            Teoria finalizada
+                        </label>
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('contabilizarPlanejamento')} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" /> Contabilizar no planejamento</label>
+                    </div>
+                </div>
+
+                <footer className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2">
+                    <button type="button" onClick={descartarSessao} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+                    <button type="submit" className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2">
+                        <SaveIcon className="w-4 h-4" /> Salvar estudo
+                    </button>
+                </footer>
+            </form>
+        </div>
+    );
+};
+
+export default SalvarSessaoModal;
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

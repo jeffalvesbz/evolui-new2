@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import { PlusIcon, ClipboardListIcon } from '../icons';
 import { DraggableTopic, DayInfo, DayStats } from './types';
@@ -153,3 +154,6 @@ const DayColumn: React.FC<DayColumnProps> = ({
 };
 
 export default DayColumn;
+=======
+
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a

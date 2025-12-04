@@ -91,6 +91,7 @@ const tutorialSteps: TutorialStep[] = [
     position: 'bottom',
     view: 'revisoes'
   },
+<<<<<<< HEAD
   // {
   //   id: 'erros',
   //   target: '[data-tutorial="erros-content"]',
@@ -99,6 +100,16 @@ const tutorialSteps: TutorialStep[] = [
   //   position: 'bottom',
   //   view: 'erros'
   // },
+=======
+  {
+    id: 'erros',
+    target: '[data-tutorial="erros-content"]',
+    title: 'Caderno de Erros',
+    description: 'Registre e analise os erros que cometeu em questões. O caderno de erros ajuda você a identificar padrões de erro e focar nos pontos que precisam de mais atenção.',
+    position: 'bottom',
+    view: 'erros'
+  },
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
   {
     id: 'simulados',
     target: '[data-tutorial="simulados-content"]',
@@ -124,6 +135,17 @@ const tutorialSteps: TutorialStep[] = [
     view: 'estatisticas'
   },
   {
+<<<<<<< HEAD
+=======
+    id: 'gamificacao',
+    target: '[data-tutorial="gamificacao-content"]',
+    title: 'Jornada do Herói',
+    description: 'Acompanhe sua gamificação! Ganhe XP, desbloqueie badges e mantenha sua sequência de dias estudados. A gamificação torna seus estudos mais motivadores e divertidos.',
+    position: 'bottom',
+    view: 'gamificacao'
+  },
+  {
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     id: 'corretor',
     target: '[data-tutorial="corretor-content"]',
     title: 'Corretor de Redação',
@@ -137,11 +159,16 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightPosition, setHighlightPosition] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isNavigating, setIsNavigating] = useState(false);
+<<<<<<< HEAD
   const [elementFound, setElementFound] = useState(true);
   const overlayRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const retryCountRef = useRef(0);
   const maxRetries = 8; // Reduzir tentativas para resposta mais rápida
+=======
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
 
   const step = tutorialSteps[currentStep];
   const isLastStep = currentStep === tutorialSteps.length - 1;
@@ -149,14 +176,18 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
   useEffect(() => {
     if (!isOpen || !step) return;
 
+<<<<<<< HEAD
     // Reset retry count quando mudar de step
     retryCountRef.current = 0;
     setElementFound(true);
 
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     // Navegar para a view necessária se especificada
     if (step.view && setActiveView) {
       setIsNavigating(true);
       setActiveView(step.view);
+<<<<<<< HEAD
       // Reduzir delay de navegação para resposta mais rápida
       setTimeout(() => {
         setIsNavigating(false);
@@ -223,12 +254,60 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
         setTimeout(() => findAndHighlightElement(attempt + 1), retryDelay);
       } else {
         // Se não conseguir encontrar após várias tentativas, usar posição central
+=======
+      // Aguardar navegação e renderização
+      setTimeout(() => {
+        setIsNavigating(false);
+      }, 300);
+    }
+
+    const updateHighlight = () => {
+      // Aguardar um pouco para garantir que a navegação e renderização terminaram
+      const element = document.querySelector(step.target);
+      if (element && element.isConnected) {
+        const rect = element.getBoundingClientRect();
+        // Verificar se o elemento está visível
+        const styles = window.getComputedStyle(element);
+        const isVisible = styles.display !== 'none' && 
+                         styles.visibility !== 'hidden' && 
+                         styles.opacity !== '0' &&
+                         rect.width > 0 && 
+                         rect.height > 0;
+        
+        if (isVisible) {
+          setHighlightPosition({
+            top: rect.top,
+            left: rect.left,
+            width: rect.width,
+            height: rect.height
+          });
+
+          // Scroll para o elemento se necessário (com comportamento diferente para mobile)
+          const isMobile = window.innerWidth < 768;
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: isMobile ? 'center' : 'center',
+            inline: 'center'
+          });
+        } else {
+          // Se o elemento não estiver visível, usar posição central
+          setHighlightPosition({
+            top: window.innerHeight / 2,
+            left: window.innerWidth / 2,
+            width: 0,
+            height: 0
+          });
+        }
+      } else {
+        // Se o elemento não for encontrado, usar posição central
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
         setHighlightPosition({
           top: window.innerHeight / 2,
           left: window.innerWidth / 2,
           width: 0,
           height: 0
         });
+<<<<<<< HEAD
         setElementFound(false);
       }
     };
@@ -268,6 +347,21 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
       clearTimeout(scrollTimeout);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
+=======
+      }
+    };
+
+    // Aguardar mais tempo se estiver navegando
+    const delay = isNavigating ? 600 : 300;
+    const timeout = setTimeout(updateHighlight, delay);
+    window.addEventListener('resize', updateHighlight);
+    window.addEventListener('scroll', updateHighlight);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('resize', updateHighlight);
+      window.removeEventListener('scroll', updateHighlight);
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
     };
   }, [isOpen, currentStep, step, isNavigating, setActiveView]);
 
@@ -275,22 +369,28 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
     if (isLastStep) {
       onComplete();
     } else {
+<<<<<<< HEAD
       // Pré-navegar para a próxima view se necessário para acelerar
       const nextStep = tutorialSteps[currentStep + 1];
       if (nextStep?.view && setActiveView && nextStep.view !== step?.view) {
         setActiveView(nextStep.view);
       }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       setCurrentStep(prev => prev + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
+<<<<<<< HEAD
       // Pré-navegar para a view anterior se necessário
       const prevStep = tutorialSteps[currentStep - 1];
       if (prevStep?.view && setActiveView && prevStep.view !== step?.view) {
         setActiveView(prevStep.view);
       }
+=======
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
       setCurrentStep(prev => prev - 1);
     }
   };
@@ -471,7 +571,11 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
           >
             {/* Overlay superior */}
             <div
+<<<<<<< HEAD
               className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
+=======
+              className="absolute bg-black/70 backdrop-blur-sm"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               style={{
                 top: 0,
                 left: 0,
@@ -481,7 +585,11 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay esquerdo */}
             <div
+<<<<<<< HEAD
               className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
+=======
+              className="absolute bg-black/70 backdrop-blur-sm"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               style={{
                 top: `${Math.max(0, highlightPosition.top)}px`,
                 left: 0,
@@ -491,7 +599,11 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay direito */}
             <div
+<<<<<<< HEAD
               className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
+=======
+              className="absolute bg-black/70 backdrop-blur-sm"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               style={{
                 top: `${Math.max(0, highlightPosition.top)}px`,
                 left: `${highlightPosition.left + highlightPosition.width}px`,
@@ -501,7 +613,11 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
             {/* Overlay inferior */}
             <div
+<<<<<<< HEAD
               className="absolute bg-black/50 backdrop-blur-[2px] pointer-events-auto"
+=======
+              className="absolute bg-black/70 backdrop-blur-sm"
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
               style={{
                 top: `${Math.max(0, highlightPosition.top + highlightPosition.height)}px`,
                 left: 0,
@@ -511,6 +627,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             />
           </motion.div>
 
+<<<<<<< HEAD
           {/* Área clicável no elemento destacado - permite interação */}
           {highlightPosition.width > 0 && highlightPosition.height > 0 && (
             <>
@@ -539,6 +656,23 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
                 }}
               />
             </>
+=======
+          {/* Highlight do elemento */}
+          {highlightPosition.width > 0 && highlightPosition.height > 0 && (
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="fixed z-[9999] border-2 md:border-4 border-primary rounded-lg shadow-2xl shadow-primary/50 pointer-events-none"
+              style={{
+                top: `${Math.max(0, highlightPosition.top)}px`,
+                left: `${Math.max(0, highlightPosition.left)}px`,
+                width: `${Math.max(0, highlightPosition.width)}px`,
+                height: `${Math.max(0, highlightPosition.height)}px`,
+                boxShadow: '0 0 0 2px rgba(255, 215, 0, 0.5), 0 0 15px rgba(255, 215, 0, 0.3)'
+              }}
+            />
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           )}
 
           {/* Tooltip com informações */}
@@ -547,9 +681,14 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
+<<<<<<< HEAD
             className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-4 md:p-6 mx-auto pointer-events-auto"
             style={getTooltipStyle()}
             onClick={(e) => e.stopPropagation()}
+=======
+            className="fixed z-[10000] bg-card border-2 border-primary rounded-xl shadow-2xl p-4 md:p-6 mx-auto"
+            style={getTooltipStyle()}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
           >
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="flex-1 pr-2">
@@ -574,8 +713,14 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, 
                   {tutorialSteps.map((_, index) => (
                     <div
                       key={index}
+<<<<<<< HEAD
                       className={`h-1.5 rounded-full transition-all flex-shrink-0 ${index === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-muted'
                         }`}
+=======
+                      className={`h-1.5 rounded-full transition-all flex-shrink-0 ${
+                        index === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-muted'
+                      }`}
+>>>>>>> 35548216873afd5c7d5fd970e1e81f60d7a6705a
                     />
                   ))}
                 </div>
