@@ -1,0 +1,7 @@
+#separator:tab
+#html:false
+Qual é o conceito de Controle da Administração Pública segundo a doutrina?	É o conjunto de mecanismos jurídicos e administrativos pelos quais órgãos estatais e a sociedade fiscalizam e corrigem a atuação administrativa, garantindo sua conformidade com a lei e os princípios.
+O controle da Administração Pública aparece como princípio fundamental da atividade administrativa em qual diploma legal, ao lado de planejamento e coordenação?	No Decreto-Lei n. 200/1967.
+Quais são as duas ações centrais que compõem o conceito de controle da Administração Pública?	Fiscalizar (verificar o que está sendo feito) e corrigir (anular, revogar, determinar providências).
+Qual é uma das finalidades do controle da Administração Pública em relação ao patrimônio público?	Proteger o interesse público e o patrimônio público, coibindo desperdícios, fraudes e corrupção.
+Segundo o critério do órgão controlador, como se classifica o controle exercido dentro da própria Administração, baseado na autotutela?	Controle administrativo.

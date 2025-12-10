@@ -1,0 +1,7 @@
+{
+  "name": "Eleva: Planejador de Estudos",
+  "description": "Um planejador de estudos inteligente para te ajudar a se preparar para o ENEM, vestibulares e concursos. Gerencie matérias, acompanhe sessões de estudo, agende revisões e gere flashcards com IA.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
