@@ -266,12 +266,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                         {hasSelection ? (
                             <>
                                 <button
+                                    type="button"
                                     onClick={removeSelectedCards}
                                     className="px-3 py-1.5 text-sm font-medium text-red-600 border border-red-600/30 rounded-md hover:bg-red-600/10 transition-colors flex items-center gap-2"
                                 >
                                     <XIcon className="w-4 h-4" /> Excluir Selecionados
                                 </button>
                                 <button
+                                    type="button"
                                     onClick={deselectAllCards}
                                     className="px-3 py-1.5 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
                                 >
@@ -280,16 +282,18 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                             </>
                         ) : (
                             <button
+                                type="button"
                                 onClick={selectAllCards}
                                 className="px-3 py-1.5 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
                             >
                                 Selecionar Todos
                             </button>
                         )}
-                        <button onClick={() => setStep('input')} className="px-3 py-1.5 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors">
+                        <button type="button" onClick={() => setStep('input')} className="px-3 py-1.5 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors">
                             Voltar
                         </button>
                         <button
+                            type="button"
                             onClick={handleSaveAll}
                             className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
                         >
@@ -576,10 +580,11 @@ Exemplos de uso:
                 )}
             </div>
             <div className="pt-4 flex gap-3">
-                <button onClick={onCancel} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
+                <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
                     Cancelar
                 </button>
                 <button
+                    type="button"
                     onClick={handleGenerate}
                     disabled={generating || (mode === 'topic' && !selectedTopicoId && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50))}
                     className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
