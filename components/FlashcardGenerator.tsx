@@ -284,16 +284,23 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                 </div>
 
                 {/* Seleção de disciplina e tópico na preview */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 border border-border rounded-lg">
+                <div className={`grid grid-cols-2 gap-4 p-4 border rounded-lg ${!selectedDisciplinaId || !selectedTopicoId ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-muted/30 border-border'}`}>
+                    {(!selectedDisciplinaId || !selectedTopicoId) && (
+                        <div className="col-span-2 text-sm text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2 mb-2">
+                            ⚠️ Selecione a disciplina e o tópico antes de salvar os flashcards
+                        </div>
+                    )}
                     <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Disciplina *</label>
+                        <label className={`block text-xs mb-1 ${!selectedDisciplinaId ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}`}>
+                            Disciplina * {!selectedDisciplinaId && '(obrigatório)'}
+                        </label>
                         <select
                             value={selectedDisciplinaId}
                             onChange={e => {
                                 setSelectedDisciplinaId(e.target.value);
                                 setSelectedTopicoId(''); // Limpa tópico ao mudar disciplina
                             }}
-                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none ${!selectedDisciplinaId ? 'border-yellow-500' : 'border-border'}`}
                         >
                             <option value="">Selecione...</option>
                             {disciplinas.map(d => (
@@ -302,12 +309,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Tópico *</label>
+                        <label className={`block text-xs mb-1 ${selectedDisciplinaId && !selectedTopicoId ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}`}>
+                            Tópico * {selectedDisciplinaId && !selectedTopicoId && '(obrigatório)'}
+                        </label>
                         <select
                             value={selectedTopicoId}
                             onChange={e => setSelectedTopicoId(e.target.value)}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
-                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed ${selectedDisciplinaId && !selectedTopicoId ? 'border-yellow-500' : 'border-border'}`}
                         >
                             <option value="">Selecione...</option>
                             {topicosFiltrados.map(t => (
