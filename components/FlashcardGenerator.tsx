@@ -314,7 +314,10 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                         </label>
                         <select
                             value={selectedTopicoId}
-                            onChange={e => setSelectedTopicoId(e.target.value)}
+                            onChange={e => {
+                                console.log('[FlashcardGenerator] Tópico selecionado:', e.target.value);
+                                setSelectedTopicoId(e.target.value);
+                            }}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
                             className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed ${selectedDisciplinaId && !selectedTopicoId ? 'border-yellow-500' : 'border-border'}`}
                         >
