@@ -172,6 +172,10 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
   },
 
   addFlashcards: async (newFlashcards, topicoId) => {
+    console.log('[useFlashcardsStore.addFlashcards] Chamado com:');
+    console.log('[useFlashcardsStore.addFlashcards] topicoId:', topicoId);
+    console.log('[useFlashcardsStore.addFlashcards] newFlashcards.length:', newFlashcards.length);
+
     // Nota: O limite de flashcards é verificado e incrementado na geração com IA (generateFlashcards)
     // Aqui apenas salvamos os flashcards sem verificar limite novamente
     try {
@@ -179,7 +183,9 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
       set(state => ({
         flashcards: [...state.flashcards, ...createdFlashcards],
       }));
+      console.log('[useFlashcardsStore.addFlashcards] ✅ Salvo com sucesso');
     } catch (e) {
+      console.error('[useFlashcardsStore.addFlashcards] ❌ Erro:', e);
       toast.error("Falha ao salvar flashcards.");
       throw e;
     }
