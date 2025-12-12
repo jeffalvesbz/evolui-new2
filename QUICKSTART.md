@@ -1,4 +1,4 @@
-# 🚀 Guia de Início Rápido - Evolui App
+# 🚀 Guia de Início Rápido - Eleva App
 
 Este guia ajudará você a fazer o deploy do seu app em **5 minutos**.
 
@@ -6,23 +6,25 @@ Este guia ajudará você a fazer o deploy do seu app em **5 minutos**.
 
 ### Vercel (Recomendado)
 
-1. **Acesse:** https://vercel.com
+1. **Acesse:** <https://vercel.com>
 2. **Clique em:** "Add New..." → "Project"
 3. **Importe:** Seu repositório Git
 4. **Configure variáveis de ambiente:**
+
    ```
    VITE_GEMINI_API_KEY=sua_chave_gemini
    GEMINI_API_KEY=sua_chave_gemini
    VITE_SUPABASE_URL=sua_url_supabase
    VITE_SUPABASE_ANON_KEY=sua_chave_supabase
    ```
+
 5. **Clique em:** "Deploy"
 6. **Aguarde:** 1-2 minutos
 7. **Pronto!** ✅
 
 ### Netlify
 
-1. **Acesse:** https://netlify.com
+1. **Acesse:** <https://netlify.com>
 2. **Clique em:** "Add new site" → "Import an existing project"
 3. **Conecte:** Seu provedor Git
 4. **Selecione:** Seu repositório
@@ -36,14 +38,14 @@ Este guia ajudará você a fazer o deploy do seu app em **5 minutos**.
 
 ### 1. Gemini API Key (2 minutos)
 
-1. Acesse: https://aistudio.google.com/app/apikey
+1. Acesse: <https://aistudio.google.com/app/apikey>
 2. Faça login com Google
 3. Clique em "Create API Key"
 4. **Copie a chave** (começa com `AI...`)
 
 ### 2. Supabase (5 minutos)
 
-1. Acesse: https://supabase.com
+1. Acesse: <https://supabase.com>
 2. Clique em "Start your project"
 3. Crie um novo projeto
 4. Aguarde a criação (2-3 min)
@@ -88,15 +90,19 @@ Antes de fazer deploy, certifique-se:
 ## 🐛 Problemas Comuns
 
 ### "Página em branco após deploy"
+
 → Verifique se as variáveis de ambiente estão configuradas corretamente
 
 ### "Erro ao conectar com Supabase"
+
 → Verifique se executou o script SQL (`supabase_rls_policies.sql`)
 
 ### "IA não responde"
+
 → Verifique se a API Key do Gemini está correta e tem créditos disponíveis
 
 ### "Build falhou"
+
 → Execute `npm install` e `npm run build` localmente para verificar erros
 
 ---
@@ -132,4 +138,3 @@ Se você tem todas as credenciais, pode fazer o deploy agora mesmo!
 ---
 
 **Precisa de ajuda?** Consulte o [DEPLOY.md](./DEPLOY.md) para instruções detalhadas.
-

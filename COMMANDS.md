@@ -1,10 +1,11 @@
-# 🛠️ Comandos Úteis - Evolui App
+# 🛠️ Comandos Úteis - Eleva App
 
 Referência rápida de todos os comandos úteis para desenvolvimento e deploy.
 
 ## 📦 NPM Scripts
 
 ### Desenvolvimento
+
 ```bash
 # Instalar dependências
 npm install
@@ -28,12 +29,14 @@ npm run serve
 ## 🚀 Deploy - Vercel
 
 ### Via Dashboard
-1. Acesse https://vercel.com
+
+1. Acesse <https://vercel.com>
 2. Import project → Selecione repositório
 3. Configure environment variables
 4. Deploy
 
 ### Via CLI
+
 ```bash
 # Instalar Vercel CLI
 npm i -g vercel
@@ -66,12 +69,14 @@ vercel remove
 ## 🌐 Deploy - Netlify
 
 ### Via Dashboard
-1. Acesse https://netlify.com
+
+1. Acesse <https://netlify.com>
 2. Add new site → Import project
 3. Configure environment variables
 4. Deploy
 
 ### Via CLI
+
 ```bash
 # Instalar Netlify CLI
 npm install -g netlify-cli
@@ -107,6 +112,7 @@ netlify open
 ## 🗄️ Supabase
 
 ### Setup Inicial
+
 ```bash
 # Instalar Supabase CLI (opcional)
 npm install -g supabase
@@ -125,6 +131,7 @@ supabase db push
 ```
 
 ### Comandos SQL (via Dashboard)
+
 ```sql
 -- Executar o script de setup
 -- Cole o conteúdo de supabase_rls_policies.sql no SQL Editor
@@ -143,6 +150,7 @@ WHERE schemaname = 'public';
 ## 🔑 Git & GitHub
 
 ### Comandos Básicos
+
 ```bash
 # Verificar status
 git status
@@ -170,6 +178,7 @@ git log --oneline
 ## 🧪 Testes & Debug
 
 ### Desenvolvimento Local
+
 ```bash
 # Limpar cache do npm
 npm cache clean --force
@@ -190,6 +199,7 @@ npx vite preview --port 3000
 ```
 
 ### Verificar Build
+
 ```bash
 # Tamanho do build
 du -sh dist
@@ -204,6 +214,7 @@ tree dist
 ## 📊 Análise & Performance
 
 ### Lighthouse (Chrome DevTools)
+
 ```bash
 # Instalar Lighthouse CLI
 npm install -g lighthouse
@@ -219,6 +230,7 @@ lighthouse https://seu-site.vercel.app \
 ```
 
 ### Bundle Analysis
+
 ```bash
 # Instalar analisador
 npm install -D rollup-plugin-visualizer
@@ -236,6 +248,7 @@ npm run build
 ## 🔍 Monitoramento
 
 ### Vercel
+
 ```bash
 # Ver deployments
 vercel ls
@@ -251,6 +264,7 @@ vercel domains ls
 ```
 
 ### Netlify
+
 ```bash
 # Ver sites
 netlify sites:list
@@ -268,6 +282,7 @@ netlify logs
 ## 🌍 Variáveis de Ambiente
 
 ### Criar arquivo .env local
+
 ```bash
 # Copiar template
 cp .env.example .env
@@ -281,6 +296,7 @@ vim .env
 ```
 
 ### Validar variáveis
+
 ```bash
 # Ver variáveis disponíveis
 cat .env
@@ -292,6 +308,7 @@ cat .env
 ## 🐛 Troubleshooting
 
 ### Limpar tudo e recomeçar
+
 ```bash
 # Limpar node_modules
 rm -rf node_modules
@@ -310,6 +327,7 @@ npm run dev
 ```
 
 ### Verificar portas em uso
+
 ```bash
 # Mac/Linux
 lsof -i :5173
@@ -320,6 +338,7 @@ netstat -ano | findstr :5173
 ```
 
 ### Kill processo em porta específica
+
 ```bash
 # Mac/Linux
 kill -9 $(lsof -t -i:5173)
@@ -331,6 +350,7 @@ taskkill /PID [PID] /F
 ## 📚 Documentação Rápida
 
 ### Ver documentação
+
 ```bash
 # README
 cat README.md
@@ -351,6 +371,7 @@ cat COMMANDS.md
 ## 🔐 Segurança
 
 ### Verificar secrets expostos
+
 ```bash
 # Buscar por possíveis secrets no código
 grep -r "API_KEY" . --exclude-dir=node_modules
@@ -365,6 +386,7 @@ git ls-files | grep .env
 ## 📱 Mobile Testing
 
 ### Testar em dispositivos móveis
+
 ```bash
 # Rodar com acesso externo
 npm run dev -- --host
@@ -376,6 +398,7 @@ npm run dev -- --host
 ## 🎨 Produtividade
 
 ### Aliases úteis (adicione ao .bashrc ou .zshrc)
+
 ```bash
 alias dev="npm run dev"
 alias build="npm run build"
@@ -426,4 +449,3 @@ netlify build:stop
 ---
 
 **Salve este arquivo para referência futura! 📌**
-

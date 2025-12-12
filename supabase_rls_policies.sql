@@ -1,6 +1,6 @@
 -- ============================================
 -- POLÍTICAS RLS (Row Level Security) PARA SUPABASE
--- Evolui: Planejador de Estudos
+-- Eleva: Planejador de Estudos
 -- ============================================
 -- Execute este script no SQL Editor do Supabase Dashboard
 -- Este script remove políticas existentes antes de criar novas

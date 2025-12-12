@@ -1,6 +1,6 @@
 -- ============================================
 -- SCHEMA COMPLETO DO BANCO DE DADOS
--- Evolui: Planejador de Estudos
+-- Eleva: Planejador de Estudos
 -- ============================================
 -- Este script cria todo o banco de dados do zero
 -- Execute no SQL Editor do Supabase Dashboard

@@ -1,4 +1,4 @@
-# 🔒 Relatório de Auditoria de Segurança - Evolui App
+# 🔒 Relatório de Auditoria de Segurança - Eleva App
 
 **Data:** $(date +%Y-%m-%d)  
 **Versão Analisada:** 1.0.0  
@@ -9,6 +9,7 @@
 ## 📊 Resumo Executivo
 
 ### ✅ Pontos Positivos
+
 1. **RLS (Row Level Security) configurado** - Todas as tabelas têm políticas de segurança
 2. **Headers de segurança configurados** - X-Frame-Options, X-XSS-Protection, etc.
 3. **Credenciais protegidas no .gitignore** - Arquivos .env não são versionados
@@ -24,6 +25,7 @@
 ### Problema 1: Credenciais Hardcoded no Código Fonte
 
 **Localização:**
+
 - `services/supabaseClient.ts` (linhas 6-8)
 - `CREDENCIAIS_SUPABASE.md`
 - `VERCEL_ENV_VARIABLES.txt`
@@ -32,6 +34,7 @@
 As credenciais do Supabase (URL e Anon Key) estão hardcoded no código como fallback. Embora a Anon Key seja pública por design, isso é uma má prática e pode expor informações sensíveis se o código for compartilhado.
 
 **Código Problemático:**
+
 ```typescript
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://ilzbcfamqkfcochldtxn.supabase.co";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 
@@ -39,11 +42,13 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ||
 ```
 
 **Risco:** ⚠️ MÉDIO
+
 - A Anon Key é pública por design do Supabase
 - RLS protege os dados mesmo com a key exposta
 - Porém, credenciais hardcoded facilitam ataques e são má prática
 
 **Recomendação:**
+
 1. **Remover credenciais hardcoded** do código
 2. **Forçar uso de variáveis de ambiente** em produção
 3. **Adicionar validação** que lança erro se variáveis não estiverem definidas em produção
@@ -55,22 +60,26 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ||
 ### Problema 2: Sanitização Insuficiente na Busca de Usuários
 
 **Localização:**
+
 - `services/geminiService.ts` (linha 1272-1326) - função `searchUsers`
 
 **Descrição:**
 A função `searchUsers` usa interpolação direta de string na query do Supabase. Embora o Supabase tenha proteções contra SQL injection, a sanitização é mínima (apenas `trim()`).
 
 **Código Problemático:**
+
 ```typescript
 .or(`name.ilike.%${sanitizedQuery}%,email.ilike.%${sanitizedQuery}%`)
 ```
 
 **Risco:** ⚠️ BAIXO-MÉDIO
+
 - O Supabase usa PostgREST que previne SQL injection
 - Mas caracteres especiais podem causar problemas
 - Não há limite de tamanho na query
 
 **Recomendação:**
+
 1. **Validar e sanitizar melhor** a query de busca
 2. **Limitar tamanho** da query (ex: máximo 100 caracteres)
 3. **Escapar caracteres especiais** se necessário
@@ -83,21 +92,25 @@ A função `searchUsers` usa interpolação direta de string na query do Supabas
 ### Problema 3: Console.log com Informações Sensíveis
 
 **Localização:**
+
 - Múltiplos arquivos (31 arquivos encontrados com `console.log/error`)
 
 **Descrição:**
 O código contém muitos `console.log` e `console.error` que podem expor informações sensíveis no console do navegador, incluindo:
+
 - Erros de autenticação
 - Dados de usuário
 - IDs de sessão
 - Erros de API
 
 **Risco:** ⚠️ MÉDIO
+
 - Informações podem ser vistas no DevTools
 - Pode ajudar atacantes a entender a estrutura do app
 - Erros podem vazar dados de usuários
 
 **Recomendação:**
+
 1. **Remover console.log** em produção (usar build tool)
 2. **Implementar logging estruturado** apenas em desenvolvimento
 3. **Não logar dados sensíveis** (emails, IDs, tokens)
@@ -110,23 +123,27 @@ O código contém muitos `console.log` e `console.error` que podem expor informa
 ### Problema 4: Validação de Formulários Incompleta
 
 **Localização:**
+
 - `components/CorretorRedacao.tsx` (linha 299)
 - `components/Simulados.tsx`
 - `components/CadernoErros.tsx`
 
 **Descrição:**
 Alguns formulários têm validação básica (ex: mínimo 50 caracteres), mas falta:
+
 - Validação de tipo de dados
 - Limite máximo de caracteres
 - Sanitização de HTML/scripts
 - Validação de formato de email
 
 **Risco:** ⚠️ MÉDIO
+
 - Dados malformados podem causar erros
 - Possível XSS se dados não sanitizados forem renderizados
 - Possível DoS com inputs muito grandes
 
 **Recomendação:**
+
 1. **Adicionar validação robusta** usando biblioteca (ex: Zod, Yup)
 2. **Limitar tamanho máximo** de inputs
 3. **Sanitizar HTML** antes de salvar
@@ -139,20 +156,24 @@ Alguns formulários têm validação básica (ex: mínimo 50 caracteres), mas fa
 ### Problema 5: Sem Proteção contra Abuso de API
 
 **Localização:**
+
 - `services/geminiService.ts` - todas as chamadas de API
 
 **Descrição:**
 Não há proteção contra:
+
 - Muitas requisições em curto período
 - Abuso de APIs externas (Gemini)
 - Brute force em login
 
 **Risco:** ⚠️ BAIXO-MÉDIO
+
 - Pode gerar custos elevados com APIs
 - Pode causar DoS
 - Possível brute force em login
 
 **Recomendação:**
+
 1. **Implementar rate limiting** no frontend (throttling)
 2. **Usar rate limiting do Supabase** (configurar no dashboard)
 3. **Adicionar captcha** em formulários sensíveis
@@ -165,16 +186,19 @@ Não há proteção contra:
 ### Problema 6: CSP Não Configurado
 
 **Localização:**
+
 - `netlify.toml` e `vercel.json`
 
 **Descrição:**
 Os arquivos de configuração têm headers de segurança, mas falta o **Content Security Policy (CSP)** que previne XSS e injeção de código.
 
 **Risco:** ⚠️ BAIXO
+
 - Sem proteção adicional contra XSS
 - Permite carregar recursos de qualquer origem
 
 **Recomendação:**
+
 1. **Adicionar CSP header** nos arquivos de configuração
 2. **Permitir apenas origens confiáveis**
 3. **Bloquear inline scripts** quando possível
@@ -303,7 +327,3 @@ Com essas correções, o aplicativo estará muito mais seguro e alinhado com as 
 
 **Relatório gerado por:** Auditoria de Segurança Automatizada  
 **Próxima revisão recomendada:** Após implementação das correções críticas
-
-
-
-

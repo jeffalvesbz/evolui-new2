@@ -1,4 +1,4 @@
-# 🚀 Guia de Deploy - Evolui App
+# 🚀 Guia de Deploy - Eleva App
 
 Este guia contém instruções detalhadas para fazer deploy da aplicação no **Vercel** ou **Netlify**.
 
@@ -14,22 +14,24 @@ Este guia contém instruções detalhadas para fazer deploy da aplicação no **
 
 Antes de fazer o deploy, você precisa configurar as seguintes variáveis de ambiente:
 
-### Variáveis Necessárias:
+### Variáveis Necessárias
 
 1. **VITE_GEMINI_API_KEY** - Sua chave de API do Google Gemini
 2. **GEMINI_API_KEY** - Mesma chave do Gemini (para compatibilidade)
 3. **VITE_SUPABASE_URL** - URL do seu projeto Supabase
 4. **VITE_SUPABASE_ANON_KEY** - Chave anônima do Supabase
 
-### Como obter as credenciais:
+### Como obter as credenciais
 
-#### Google Gemini API Key:
+#### Google Gemini API Key
+
 1. Acesse [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Faça login com sua conta Google
 3. Clique em "Create API Key"
 4. Copie a chave gerada
 
-#### Supabase Credentials:
+#### Supabase Credentials
+
 1. Acesse seu projeto no [Supabase](https://supabase.com)
 2. Vá em Settings > API
 3. Copie a "Project URL" (VITE_SUPABASE_URL)
@@ -52,6 +54,7 @@ Antes de fazer o deploy, você precisa configurar as seguintes variáveis de amb
 
 3. **Configure as Variáveis de Ambiente**
    - Na seção "Environment Variables", adicione:
+
      ```
      VITE_GEMINI_API_KEY=sua_chave_aqui
      GEMINI_API_KEY=sua_chave_aqui
@@ -82,7 +85,7 @@ vercel
 vercel --prod
 ```
 
-### Configurar Variáveis de Ambiente no Vercel (via CLI):
+### Configurar Variáveis de Ambiente no Vercel (via CLI)
 
 ```bash
 vercel env add VITE_GEMINI_API_KEY
@@ -114,6 +117,7 @@ vercel env add VITE_SUPABASE_ANON_KEY
 4. **Configure as Variáveis de Ambiente**
    - Vá em "Site settings" > "Environment variables"
    - Adicione as seguintes variáveis:
+
      ```
      VITE_GEMINI_API_KEY=sua_chave_aqui
      GEMINI_API_KEY=sua_chave_aqui
@@ -144,7 +148,7 @@ netlify init
 netlify deploy --prod
 ```
 
-### Configurar Variáveis de Ambiente no Netlify (via CLI):
+### Configurar Variáveis de Ambiente no Netlify (via CLI)
 
 ```bash
 netlify env:set VITE_GEMINI_API_KEY "sua_chave_aqui"
@@ -163,6 +167,7 @@ Ambas as plataformas suportam deploy automático:
 - **Netlify**: Deploy automático a cada push na branch principal
 
 Para configurar:
+
 1. Conecte seu repositório Git à plataforma
 2. Configure as variáveis de ambiente
 3. Cada commit na branch principal acionará um novo deploy automaticamente
@@ -194,19 +199,23 @@ npm run preview
 ## 🐛 Troubleshooting
 
 ### Erro: "VITE_ variables not found"
+
 - Certifique-se de que todas as variáveis começam com `VITE_`
 - Variáveis de ambiente devem ser configuradas na plataforma de deploy
 
 ### Erro de build: "Module not found"
+
 - Execute `npm install` para garantir que todas as dependências estão instaladas
 - Verifique se o arquivo `package.json` está correto
 
 ### Página em branco após deploy
+
 - Verifique o console do navegador para erros
 - Certifique-se de que as variáveis de ambiente estão configuradas corretamente
 - Verifique se as credenciais do Supabase estão corretas
 
 ### Erro: "Failed to fetch"
+
 - Verifique suas credenciais do Supabase
 - Certifique-se de que as políticas RLS do Supabase estão configuradas corretamente
 
@@ -238,6 +247,7 @@ npm run preview
 ## 🆘 Suporte
 
 Se encontrar problemas:
+
 - Vercel: [Documentação](https://vercel.com/docs)
 - Netlify: [Documentação](https://docs.netlify.com)
 - Supabase: [Documentação](https://supabase.com/docs)
@@ -245,4 +255,3 @@ Se encontrar problemas:
 ---
 
 **Desenvolvido com ❤️ para ajudar nos seus estudos!**
-

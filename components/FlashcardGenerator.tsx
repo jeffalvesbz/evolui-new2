@@ -116,6 +116,11 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
     };
 
     const handleSaveAll = async () => {
+        console.log('[FlashcardGenerator] handleSaveAll chamado');
+        console.log('[FlashcardGenerator] selectedDisciplinaId:', selectedDisciplinaId);
+        console.log('[FlashcardGenerator] selectedTopicoId:', selectedTopicoId);
+        console.log('[FlashcardGenerator] generatedCards.length:', generatedCards.length);
+
         try {
             // Se houver cards selecionados, salvar apenas eles; senão, salvar todos
             const cardsToSave = selectedCardIndices.size > 0
@@ -131,17 +136,20 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
 
             // Validação de disciplina e tópico (ambos obrigatórios para salvar)
             if (!selectedDisciplinaId) {
+                console.warn('[FlashcardGenerator] selectedDisciplinaId está vazio!');
                 toast.error('Por favor, selecione uma disciplina antes de salvar.');
                 setStep('input');
                 return;
             }
 
             if (!selectedTopicoId) {
+                console.warn('[FlashcardGenerator] selectedTopicoId está vazio!');
                 toast.error('Por favor, selecione um tópico antes de salvar.');
                 setStep('input');
                 return;
             }
 
+            console.log('[FlashcardGenerator] Chamando addFlashcards com topicoId:', selectedTopicoId);
             await addFlashcards(validCards, selectedTopicoId);
 
             // Remover os cards salvos da lista

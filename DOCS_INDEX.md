@@ -1,4 +1,4 @@
-# 📚 Índice de Documentação - Evolui App
+# 📚 Índice de Documentação - Eleva App
 
 **Navegue facilmente por toda a documentação do projeto.**
 
@@ -7,11 +7,13 @@
 ## 🚀 Para Começar (Start Here)
 
 ### 1. [QUICKSTART.md](./QUICKSTART.md) ⚡
+
 **Tempo de leitura: 3 minutos**
 
 Guia ultra-rápido para fazer deploy em 5-10 minutos.
 
 **Você vai aprender:**
+
 - Como fazer deploy no Vercel/Netlify rapidamente
 - Onde obter as credenciais necessárias
 - Comandos essenciais
@@ -24,11 +26,13 @@ Guia ultra-rápido para fazer deploy em 5-10 minutos.
 ## 📖 Documentação Principal
 
 ### 2. [README.md](./README.md) 📘
+
 **Tempo de leitura: 5 minutos**
 
 Documentação principal do projeto.
 
 **Conteúdo:**
+
 - Funcionalidades do app
 - Como executar localmente
 - Build de produção
@@ -40,11 +44,13 @@ Documentação principal do projeto.
 ---
 
 ### 3. [DEPLOY_OVERVIEW.md](./DEPLOY_OVERVIEW.md) 🎯
+
 **Tempo de leitura: 5 minutos**
 
 Visão geral visual de todo o processo de deploy.
 
 **Conteúdo:**
+
 - Status do projeto (100% pronto)
 - Fluxo de deploy visual
 - Arquivos criados
@@ -58,11 +64,13 @@ Visão geral visual de todo o processo de deploy.
 ## 📝 Guias Detalhados
 
 ### 4. [DEPLOY.md](./DEPLOY.md) 📕
+
 **Tempo de leitura: 15 minutos**
 
 Guia completo e detalhado de deploy (~400 linhas).
 
 **Conteúdo:**
+
 - Pré-requisitos detalhados
 - Deploy no Vercel (Dashboard + CLI)
 - Deploy no Netlify (Dashboard + CLI)
@@ -77,11 +85,13 @@ Guia completo e detalhado de deploy (~400 linhas).
 ---
 
 ### 5. [DEPLOY_CHECKLIST.md](./DEPLOY_CHECKLIST.md) ✅
+
 **Tempo de leitura: 10 minutos**
 
 Checklist interativo para garantir que nada foi esquecido.
 
 **Seções:**
+
 - 📋 Pré-Deploy (15 itens)
 - 🚀 Durante o Deploy (10 itens)
 - ✨ Pós-Deploy (15 itens)
@@ -93,11 +103,13 @@ Checklist interativo para garantir que nada foi esquecido.
 ---
 
 ### 6. [SETUP_SUMMARY.md](./SETUP_SUMMARY.md) 📊
+
 **Tempo de leitura: 10 minutos**
 
 Resumo técnico de todas as configurações realizadas.
 
 **Conteúdo:**
+
 - Arquivos criados/modificados
 - Configurações principais
 - Estrutura de arquivos adicionada
@@ -112,11 +124,13 @@ Resumo técnico de todas as configurações realizadas.
 ## 🛠️ Referências Técnicas
 
 ### 7. [COMMANDS.md](./COMMANDS.md) 🔧
+
 **Referência rápida**
 
 Todos os comandos úteis em um único lugar.
 
 **Seções:**
+
 - NPM Scripts
 - Deploy Vercel (CLI)
 - Deploy Netlify (CLI)
@@ -136,9 +150,11 @@ Todos os comandos úteis em um único lugar.
 ## ⚙️ Arquivos de Configuração
 
 ### 8. [vercel.json](./vercel.json)
+
 Configuração do Vercel
 
 **Conteúdo:**
+
 - Build command
 - Output directory
 - Rewrites para SPA
@@ -147,9 +163,11 @@ Configuração do Vercel
 ---
 
 ### 9. [netlify.toml](./netlify.toml)
+
 Configuração do Netlify
 
 **Conteúdo:**
+
 - Build settings
 - Redirects
 - Headers de segurança
@@ -158,9 +176,11 @@ Configuração do Netlify
 ---
 
 ### 10. [.env.example](./.env.example)
+
 Template de variáveis de ambiente (desenvolvimento)
 
 **Variáveis:**
+
 - VITE_GEMINI_API_KEY
 - GEMINI_API_KEY
 - VITE_SUPABASE_URL
@@ -200,6 +220,7 @@ Eu quero...
 ## 🎯 Rotas Recomendadas
 
 ### Para Desenvolvedores (Primeiro Deploy)
+
 ```
 1. DEPLOY_OVERVIEW.md  (5 min)  → Visão geral
 2. QUICKSTART.md       (3 min)  → Deploy rápido
@@ -208,6 +229,7 @@ Eu quero...
 ```
 
 ### Para DevOps / Configuração Avançada
+
 ```
 1. SETUP_SUMMARY.md    (10 min) → Mudanças técnicas
 2. DEPLOY.md           (15 min) → Guia completo
@@ -216,6 +238,7 @@ Eu quero...
 ```
 
 ### Para Revisão / Manutenção
+
 ```
 1. README.md           (5 min)  → Overview do projeto
 2. DEPLOY_OVERVIEW.md  (5 min)  → Status atual
@@ -288,14 +311,17 @@ cat DEPLOY_CHECKLIST.md
 ## 🔗 Links Externos Úteis
 
 ### Plataformas
+
 - [Vercel](https://vercel.com) - Deploy e hosting
 - [Netlify](https://netlify.com) - Deploy e hosting
 
 ### Serviços
+
 - [Supabase](https://supabase.com) - Backend as a Service
 - [Google AI Studio](https://aistudio.google.com) - Gemini API
 
 ### Documentação
+
 - [Vercel Docs](https://vercel.com/docs)
 - [Netlify Docs](https://docs.netlify.com)
 - [Supabase Docs](https://supabase.com/docs)
@@ -355,4 +381,3 @@ Encontrou algum problema na documentação?
 
 *Última atualização: Novembro 2025*
 *Desenvolvido com ❤️*
-

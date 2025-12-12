@@ -2975,15 +2975,22 @@ export const getFlashcardsContent = async (flashcardIds: string[]): Promise<Flas
     return (data as any[]).map(mapDbToFlashcard);
 };
 export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
+    console.log('[createFlashcards] Iniciando criação de flashcards...');
+    console.log('[createFlashcards] topicId:', topicId);
+    console.log('[createFlashcards] quantidade:', flashcards.length);
+
     // Validar topicId para evitar erro de UUID inválido
     if (!topicId || topicId.trim() === '') {
+        console.error('[createFlashcards] ERRO: topicId vazio!');
         throw new Error('Tópico não selecionado. Por favor, selecione um tópico antes de salvar os flashcards.');
     }
 
     const userId = await getUserId();
+    console.log('[createFlashcards] userId:', userId);
 
     // Validar userId para evitar erro de UUID inválido
     if (!userId || userId.trim() === '') {
+        console.error('[createFlashcards] ERRO: userId vazio!');
         throw new Error('Usuário não identificado. Por favor, faça login novamente.');
     }
     // Flashcards recém-criados devem ter interval = 0 (não estudados ainda)
@@ -2991,17 +2998,32 @@ export const createFlashcards = async (topicId: string, { flashcards }: { flashc
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const flashcardsToInsert = flashcards.map(fc => ({
-        ...fc,
-        topico_id: topicId,
-        user_id: userId,
-        interval: 0, // 0 indica que o flashcard nunca foi estudado
-        ease_factor: 2.5,
-        due_date: tomorrow.toISOString(), // Disponível para estudo a partir de amanhã
-    }));
+    // IMPORTANTE: Remover campo 'tags' pois não existe na tabela do banco de dados
+    // O campo tags é usado apenas no frontend/aplicação, não no banco
+    const flashcardsToInsert = flashcards.map(fc => {
+        // Desestruturar para remover tags e outros campos que não existem no DB
+        const { tags, _contentLoaded, ...dbFields } = fc as any;
+        return {
+            ...dbFields,
+            topico_id: topicId,
+            user_id: userId,
+            interval: 0, // 0 indica que o flashcard nunca foi estudado
+            ease_factor: 2.5,
+            due_date: tomorrow.toISOString(), // Disponível para estudo a partir de amanhã
+        };
+    });
+
+    console.log('[createFlashcards] Inserindo no banco...', flashcardsToInsert.length, 'flashcards');
+
     // FIX: Cast data to any to bypass 'never' type issue.
     const { data, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
-    if (error) throw error;
+
+    if (error) {
+        console.error('[createFlashcards] ERRO do Supabase:', error);
+        throw error;
+    }
+
+    console.log('[createFlashcards] ✅ Sucesso! Criados:', data?.length, 'flashcards');
     return (data as any[]).map(mapDbToFlashcard);
 };
 export const updateFlashcardApi = async (id: string, updates: Partial<Flashcard>): Promise<Flashcard> => {

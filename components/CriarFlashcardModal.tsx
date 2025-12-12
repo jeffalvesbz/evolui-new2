@@ -61,6 +61,14 @@ const CriarFlashcardModal: React.FC = () => {
   }, [selectedDisciplinaId, setValue, isEditMode]);
 
   const onSubmit = async (data: FormData) => {
+    console.log('[CriarFlashcardModal] onSubmit chamado com data:', data);
+
+    // Validação explícita do tópico
+    if (!data.topicoId || data.topicoId.trim() === '') {
+      toast.error('Por favor, selecione um tópico antes de salvar o flashcard.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (isEditMode) {
@@ -71,6 +79,7 @@ const CriarFlashcardModal: React.FC = () => {
         toast.success('Flashcard atualizado com sucesso!');
         closeCriarFlashcardModal();
       } else {
+        console.log('[CriarFlashcardModal] Criando flashcard com topicoId:', data.topicoId);
         await addFlashcard({
           pergunta: data.pergunta,
           resposta: data.resposta,

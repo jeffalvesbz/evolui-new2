@@ -1,10 +1,10 @@
 # Configuração do Supabase - Políticas RLS
 
-Este documento explica como configurar as políticas de segurança (RLS) no Supabase para o projeto Evolui.
+Este documento explica como configurar as políticas de segurança (RLS) no Supabase para o projeto Eleva.
 
 ## 📋 Pré-requisitos
 
-1. Acesso ao Dashboard do Supabase: https://supabase.com/dashboard
+1. Acesso ao Dashboard do Supabase: <https://supabase.com/dashboard>
 2. Projeto Supabase criado e configurado
 3. URL e chave anon do projeto já configuradas no código
 
@@ -46,6 +46,7 @@ As políticas RLS garantem que:
 Se ainda receber erros 400 ou "permission denied":
 
 1. **Verifique se RLS está habilitado:**
+
    ```sql
    SELECT tablename, rowsecurity 
    FROM pg_tables 
@@ -53,6 +54,7 @@ Se ainda receber erros 400 ou "permission denied":
    ```
 
 2. **Verifique se as políticas foram criadas:**
+
    ```sql
    SELECT schemaname, tablename, policyname 
    FROM pg_policies 
@@ -99,8 +101,3 @@ Depois execute novamente o script `supabase_rls_policies.sql`.
 
 - [Documentação RLS do Supabase](https://supabase.com/docs/guides/auth/row-level-security)
 - [Guia de Políticas RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)
-
-
-
-
-

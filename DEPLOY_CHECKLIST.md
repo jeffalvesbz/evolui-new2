@@ -1,10 +1,11 @@
-# ✅ Checklist de Deploy - Evolui App
+# ✅ Checklist de Deploy - Eleva App
 
 Use este checklist para garantir que todos os passos foram seguidos antes do deploy.
 
 ## 📋 Pré-Deploy
 
 ### 1. Configuração Local
+
 - [ ] Node.js 18+ instalado
 - [ ] Dependências instaladas (`npm install`)
 - [ ] Projeto roda localmente sem erros (`npm run dev`)
@@ -12,6 +13,7 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 - [ ] Preview da build funciona (`npm run preview`)
 
 ### 2. Variáveis de Ambiente
+
 - [ ] Arquivo `.env.example` está atualizado
 - [ ] Todas as variáveis necessárias estão documentadas
 - [ ] `.env` não está no Git (verificar `.gitignore`)
@@ -19,12 +21,14 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 ### 3. Credenciais Obtidas
 
 #### Gemini API
+
 - [ ] Conta Google criada
-- [ ] API Key do Gemini obtida em https://aistudio.google.com/app/apikey
+- [ ] API Key do Gemini obtida em <https://aistudio.google.com/app/apikey>
 - [ ] API Key testada localmente
 - [ ] Limite de requisições verificado
 
 #### Supabase
+
 - [ ] Projeto Supabase criado
 - [ ] URL do projeto copiada
 - [ ] Anon Key copiada
@@ -34,6 +38,7 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 - [ ] Autenticação configurada
 
 ### 4. Código
+
 - [ ] Código commitado no Git
 - [ ] Branch principal (main/master) atualizada
 - [ ] Repositório está no GitHub/GitLab/Bitbucket
@@ -42,6 +47,7 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 ## 🚀 Durante o Deploy
 
 ### Vercel ou Netlify
+
 - [ ] Conta criada na plataforma escolhida
 - [ ] Repositório conectado
 - [ ] Framework detectado automaticamente (Vite)
@@ -50,6 +56,7 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 - [ ] Node version: 18
 
 ### Variáveis de Ambiente na Plataforma
+
 - [ ] `VITE_GEMINI_API_KEY` adicionada
 - [ ] `GEMINI_API_KEY` adicionada
 - [ ] `VITE_SUPABASE_URL` adicionada
@@ -59,12 +66,14 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 ## ✨ Pós-Deploy
 
 ### 1. Testes Básicos
+
 - [ ] Site carrega sem erros
 - [ ] Página de login aparece
 - [ ] Console do navegador sem erros críticos
 - [ ] Assets (CSS, JS, imagens) carregam corretamente
 
 ### 2. Funcionalidades Core
+
 - [ ] Login funciona
 - [ ] Cadastro funciona
 - [ ] Dashboard carrega
@@ -73,12 +82,14 @@ Use este checklist para garantir que todos os passos foram seguidos antes do dep
 - [ ] Tema claro/escuro funciona
 
 ### 3. Performance
+
 - [ ] Site carrega em menos de 3 segundos
 - [ ] Lighthouse score > 80
 - [ ] Sem memory leaks visíveis
 - [ ] Mobile funciona corretamente
 
 ### 4. Segurança
+
 - [ ] HTTPS habilitado
 - [ ] Variáveis de ambiente não expostas no código
 - [ ] RLS do Supabase funcionando
@@ -127,12 +138,12 @@ Se algo não funcionar:
 
 ## 📞 Contatos de Suporte
 
-- **Vercel:** https://vercel.com/support
-- **Netlify:** https://www.netlify.com/support
-- **Supabase:** https://supabase.com/docs
-- **Gemini API:** https://ai.google.dev/docs
+- **Vercel:** <https://vercel.com/support>
+- **Netlify:** <https://www.netlify.com/support>
+- **Supabase:** <https://supabase.com/docs>
+- **Gemini API:** <https://ai.google.dev/docs>
 
-## 🎉 Deploy Completo!
+## 🎉 Deploy Completo
 
 Quando todos os itens estiverem marcados:
 
@@ -145,10 +156,10 @@ Quando todos os itens estiverem marcados:
 ---
 
 **Próximos Passos:**
+
 1. Monitorar logs e erros nos primeiros dias
 2. Coletar feedback dos usuários
 3. Implementar melhorias contínuas
 4. Manter dependências atualizadas
 
 **Parabéns pelo deploy! 🚀**
-
