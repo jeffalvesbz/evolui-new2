@@ -63,7 +63,22 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
     const topicosFiltrados = useMemo(() => {
         if (!selectedDisciplinaId) return [];
         const disciplina = disciplinas.find(d => d.id === selectedDisciplinaId);
-        return disciplina?.topicos || [];
+        const topicos = disciplina?.topicos || [];
+
+        // Ordenar tópicos por número no início do título (ex: "1.", "2.", "10.")
+        return [...topicos].sort((a, b) => {
+            // Extrai o número do início do título
+            const numA = parseInt(a.titulo.match(/^(\d+)/)?.[1] || '0', 10);
+            const numB = parseInt(b.titulo.match(/^(\d+)/)?.[1] || '0', 10);
+
+            // Se ambos têm número, ordena por número
+            if (numA && numB) return numA - numB;
+            // Se apenas um tem número, quem tem número vem primeiro
+            if (numA) return -1;
+            if (numB) return 1;
+            // Se nenhum tem número, ordena alfabeticamente
+            return a.titulo.localeCompare(b.titulo, 'pt-BR');
+        });
     }, [selectedDisciplinaId, disciplinas]);
 
     const topicoSelecionado = useMemo(() => {
@@ -137,14 +152,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             // Validação de disciplina e tópico (ambos obrigatórios para salvar)
             if (!selectedDisciplinaId) {
                 console.warn('[FlashcardGenerator] selectedDisciplinaId está vazio!');
-                toast.error('Por favor, selecione uma disciplina antes de salvar.');
+                // Volta para a tela de input para selecionar disciplina
                 setStep('input');
                 return;
             }
 
             if (!selectedTopicoId) {
                 console.warn('[FlashcardGenerator] selectedTopicoId está vazio!');
-                toast.error('Por favor, selecione um tópico antes de salvar.');
+                // Volta para a tela de input para selecionar tópico
                 setStep('input');
                 return;
             }
@@ -319,11 +334,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                                 setSelectedTopicoId(e.target.value);
                             }}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
-                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed ${selectedDisciplinaId && !selectedTopicoId ? 'border-yellow-500' : 'border-border'}`}
+                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed max-w-full ${selectedDisciplinaId && !selectedTopicoId ? 'border-yellow-500' : 'border-border'}`}
+                            style={{ maxWidth: '100%' }}
                         >
                             <option value="">Selecione...</option>
                             {topicosFiltrados.map(t => (
-                                <option key={t.id} value={t.id}>{t.titulo}</option>
+                                <option key={t.id} value={t.id} title={t.titulo}>
+                                    {t.titulo.length > 60 ? `${t.titulo.substring(0, 60)}...` : t.titulo}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -445,11 +463,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                             value={selectedTopicoId}
                             onChange={e => setSelectedTopicoId(e.target.value)}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
-                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed max-w-full"
+                            style={{ maxWidth: '100%' }}
                         >
                             <option value="">Selecione...</option>
                             {topicosFiltrados.map(t => (
-                                <option key={t.id} value={t.id}>{t.titulo}</option>
+                                <option key={t.id} value={t.id} title={t.titulo}>
+                                    {t.titulo.length > 60 ? `${t.titulo.substring(0, 60)}...` : t.titulo}
+                                </option>
                             ))}
                         </select>
                     </div>

@@ -121,8 +121,8 @@ const QuizPage: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-white mb-2">Gerando seu Quiz com IA</h2>
-                                <p className="text-gray-400 max-w-md mx-auto mb-6">
+                                <h2 className="text-2xl font-bold text-foreground mb-2">Gerando seu Quiz com IA</h2>
+                                <p className="text-muted-foreground max-w-md mx-auto mb-6">
                                     Analisando seus materiais e criando questões personalizadas...
                                 </p>
                                 {generationProgress > 0 && (
