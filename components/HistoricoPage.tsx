@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react"
 import { useHistoricoStore, HistoricoItem } from "../stores/useHistoricoStore"
 import { useEditalStore } from "../stores/useEditalStore"
+import { useDisciplinasStore } from "../stores/useDisciplinasStore"
 import { HistoricoService } from "../services/support/HistoricoService"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card"
 import { Skeleton } from "./ui/Skeleton"
@@ -122,19 +123,54 @@ interface EditModalProps {
 
 const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSaving }) => {
   const comentariosLimpos = limparComentariosParaExibicao(registro.comentarios);
+  const { disciplinas } = useDisciplinasStore();
+
+  // Encontrar a disciplina e tópico atuais baseado nos nomes
+  const initialDisciplina = disciplinas.find(d => d.nome === registro.disciplina);
+  const initialTopico = initialDisciplina?.topicos.find(t => t.titulo === registro.topico);
+
   const [formData, setFormData] = useState({
     ...registro,
-    comentarios: comentariosLimpos
+    comentarios: comentariosLimpos,
+    disciplina_id: initialDisciplina?.id || '',
+    topico_id: initialTopico?.id || ''
   });
   const comentariosOriginais = registro.comentarios;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Tópicos filtrados baseado na disciplina selecionada
+  const topicosFiltrados = useMemo(() => {
+    const disc = disciplinas.find(d => d.id === formData.disciplina_id);
+    return disc?.topicos || [];
+  }, [disciplinas, formData.disciplina_id]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const isNumber = type === 'number';
-    setFormData(prev => ({
-      ...prev,
-      [name]: isNumber ? Number(value) : value
-    }));
+
+    if (name === 'disciplina_id') {
+      // Quando mudar disciplina, resetar tópico
+      const novaDisciplina = disciplinas.find(d => d.id === value);
+      setFormData(prev => ({
+        ...prev,
+        disciplina_id: value,
+        disciplina: novaDisciplina?.nome || '',
+        topico_id: '',
+        topico: ''
+      }));
+    } else if (name === 'topico_id') {
+      const disciplinaAtual = disciplinas.find(d => d.id === formData.disciplina_id);
+      const novoTopico = disciplinaAtual?.topicos.find(t => t.id === value);
+      setFormData(prev => ({
+        ...prev,
+        topico_id: value,
+        topico: novoTopico?.titulo || ''
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: isNumber ? Number(value) : value
+      }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -161,12 +197,35 @@ const EditModal: React.FC<EditModalProps> = ({ registro, onSave, onCancel, isSav
             {formData.type === 'estudo' && (
               <>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Disciplina:</p>
-                  <p className="text-foreground font-semibold">{formData.disciplina}</p>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Disciplina</label>
+                  <select
+                    name="disciplina_id"
+                    value={formData.disciplina_id}
+                    onChange={handleChange}
+                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">Selecione uma disciplina</option>
+                    {disciplinas.map(d => (
+                      <option key={d.id} value={d.id}>{d.nome}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Tópico:</p>
-                  <p className="text-foreground">{formData.topico}</p>
+                  <label className="text-sm font-medium text-foreground mb-2 block">Tópico</label>
+                  <select
+                    name="topico_id"
+                    value={formData.topico_id}
+                    onChange={handleChange}
+                    disabled={!formData.disciplina_id}
+                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Selecione um tópico</option>
+                    {topicosFiltrados.map(t => (
+                      <option key={t.id} value={t.id} title={t.titulo}>
+                        {t.titulo.length > 50 ? t.titulo.substring(0, 50) + '...' : t.titulo}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-2 block">Duração (minutos)</label>

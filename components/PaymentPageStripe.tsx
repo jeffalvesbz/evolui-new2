@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2Icon, ChevronDownIcon, TrophyIcon, StarIcon, LockIcon, ZapIcon, XIcon } from './icons';
+import { CheckCircle2Icon, ChevronDownIcon, TrophyIcon, StarIcon, LockIcon, ZapIcon, XIcon, CrownIcon, RefreshCwIcon, ArrowRightIcon, ShieldCheckIcon } from './icons';
 import { toast } from './Sonner';
 import { useNavigate } from 'react-router-dom';
-import { createCheckoutSession } from '../services/stripeService';
+import { createCheckoutSession, createPortalSession } from '../services/stripeService';
 import { supabase } from '../services/supabaseClient';
 import { plans, Plan } from '../src/config/plans';
+import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 
 type BillingPeriod = 'monthly' | 'yearly';
 
@@ -16,24 +17,28 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
     {
-        question: 'Como funciona o período de teste de 3 dias?',
-        answer: 'Você tem 3 dias completos para testar todos os recursos. É necessário informar um cartão, mas você não será cobrado durante o teste. Cancele antes do término sem nenhuma cobrança.'
+        question: 'Qual a política de reembolso?',
+        answer: 'De acordo com o Código de Defesa do Consumidor (Art. 49), você tem 7 dias para desistir da compra e receber reembolso integral, sem necessidade de justificativa. Basta entrar em contato conosco.'
     },
     {
         question: 'Preciso informar cartão de crédito?',
-        answer: 'Sim, para garantir a continuidade após o teste. Porém, você só será cobrado após os 3 dias se não cancelar.'
+        answer: 'Sim, para iniciar sua assinatura. Lembre-se: você tem 7 dias de garantia para solicitar reembolso caso não fique satisfeito.'
     },
     {
         question: 'Posso cancelar a qualquer momento?',
-        answer: 'Sim! Cancele através das configurações. O cancelamento é efetivado no final do período pago.'
+        answer: 'Sim! Cancele através das configurações ou do portal do cliente. O cancelamento é efetivado no final do período pago.'
     },
     {
         question: 'Qual a diferença entre Pro e Premium?',
-        answer: 'Pro tem limites (3 editais, 10 correções/mês). Premium oferece recursos ilimitados, OCR de redação manuscrita e suporte prioritário.'
+        answer: 'Pro tem limites (3 editais, 10 correções/mês, 30 questões IA/dia). Premium oferece recursos ilimitados, 100 questões IA/dia, OCR de redação manuscrita e suporte prioritário 24/7.'
     },
     {
         question: 'O desconto de 30% no plano anual é permanente?',
-        answer: 'Sim! O desconto é aplicado automaticamente no plano anual.'
+        answer: 'Sim! O desconto é aplicado automaticamente no plano anual e se mantém em todas as renovações.'
+    },
+    {
+        question: 'Como funciona a garantia de 7 dias?',
+        answer: 'Se por qualquer motivo você não ficar satisfeito nos primeiros 7 dias, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.'
     }
 ];
 
@@ -41,6 +46,7 @@ const comparisonData = [
     { feature: 'Editais e Planos', free: '1', pro: '3', premium: '∞' },
     { feature: 'Ciclos de Estudos', free: '1', pro: '3', premium: '∞' },
     { feature: 'Correções IA/mês', free: '0', pro: '10', premium: '∞' },
+    { feature: 'Questões IA/dia', free: '0', pro: '30', premium: '100' },
     { feature: 'Flashcards/mês', free: '50', pro: '500', premium: '2000' },
     { feature: 'OCR Redação', free: '✗', pro: '✗', premium: '✓' },
     { feature: 'Suporte Prioritário', free: '✗', pro: '✗', premium: '✓' },
@@ -50,7 +56,24 @@ const PaymentPageStripe: React.FC = () => {
     const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('yearly');
     const [startingTrial, setStartingTrial] = useState<string | null>(null);
     const [openFAQIndex, setOpenFAQIndex] = useState<number | null>(null);
+    const [openingPortal, setOpeningPortal] = useState(false);
     const navigate = useNavigate();
+
+    const {
+        planType,
+        hasActiveSubscription,
+        isTrialActive,
+        fetchSubscription,
+        subscriptionEndsAt
+    } = useSubscriptionStore();
+
+    useEffect(() => {
+        fetchSubscription();
+    }, [fetchSubscription]);
+
+    const currentPlanIsActive = hasActiveSubscription() || isTrialActive();
+    const isPro = planType === 'pro' && currentPlanIsActive;
+    const isPremium = planType === 'premium' && currentPlanIsActive;
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -79,17 +102,143 @@ const PaymentPageStripe: React.FC = () => {
         }
     };
 
+    const handleOpenPortal = async () => {
+        setOpeningPortal(true);
+        try {
+            await createPortalSession();
+        } catch (error: any) {
+            console.error('Erro:', error);
+            toast.error('Erro ao abrir portal de gerenciamento');
+            setOpeningPortal(false);
+        }
+    };
+
+    const getButtonState = (planName: string): { disabled: boolean; text: string; variant: 'current' | 'upgrade' | 'downgrade' | 'available' } => {
+        const targetPlan = planName.toLowerCase() as 'pro' | 'premium';
+
+        if (!currentPlanIsActive) {
+            return { disabled: false, text: 'Começar Agora', variant: 'available' };
+        }
+
+        if (planType === targetPlan) {
+            return { disabled: true, text: '✓ Plano Atual', variant: 'current' };
+        }
+
+        if (planType === 'premium' && targetPlan === 'pro') {
+            return { disabled: true, text: 'Downgrade não disponível', variant: 'downgrade' };
+        }
+
+        if (planType === 'pro' && targetPlan === 'premium') {
+            return { disabled: false, text: 'Fazer Upgrade', variant: 'upgrade' };
+        }
+
+        return { disabled: false, text: 'Começar Agora', variant: 'available' };
+    };
+
+    const renderSubscriptionAlert = () => {
+        if (!currentPlanIsActive) return null;
+
+        const trialText = isTrialActive() ? ' (Período de teste)' : '';
+        const planLabel = planType === 'premium' ? 'Premium' : 'Pro';
+
+        if (isPremium) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-4xl mx-auto mb-8"
+                >
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 border-2 border-amber-500/30 p-6 backdrop-blur-sm">
+                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-orange-500/5 animate-pulse" />
+                        <div className="relative flex flex-col sm:flex-row items-center gap-4">
+                            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/30">
+                                <CrownIcon className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <h3 className="text-xl font-bold text-foreground flex items-center justify-center sm:justify-start gap-2">
+                                    🎉 Você já tem o {planLabel}{trialText}!
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Você está aproveitando todos os recursos premium. Obrigado por fazer parte!
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleOpenPortal}
+                                disabled={openingPortal}
+                                className="px-5 py-2.5 rounded-xl border-2 border-amber-500/50 text-amber-600 dark:text-amber-400 font-semibold hover:bg-amber-500/10 transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {openingPortal ? (
+                                    <RefreshCwIcon className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <ZapIcon className="w-4 h-4" />
+                                )}
+                                Gerenciar Assinatura
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        }
+
+        if (isPro) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="max-w-4xl mx-auto mb-8"
+                >
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border-2 border-primary/30 p-6 backdrop-blur-sm">
+                        <div className="relative flex flex-col sm:flex-row items-center gap-4">
+                            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/30">
+                                <StarIcon className="w-7 h-7 text-white" />
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <h3 className="text-xl font-bold text-foreground">
+                                    Você é {planLabel}{trialText}
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Desbloqueie recursos ilimitados fazendo upgrade para o <span className="text-primary font-semibold">Premium</span>!
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => document.querySelector('[data-plan="Premium"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-primary/30"
+                                >
+                                    <ArrowRightIcon className="w-4 h-4" />
+                                    Upgrade para Premium
+                                </button>
+                                <button
+                                    onClick={handleOpenPortal}
+                                    disabled={openingPortal}
+                                    className="px-4 py-2.5 rounded-xl border-2 border-border hover:bg-muted/50 transition-all disabled:opacity-50"
+                                >
+                                    {openingPortal ? <RefreshCwIcon className="w-4 h-4 animate-spin" /> : 'Gerenciar'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 space-y-16">
+            {/* Alert for existing subscribers */}
+            {renderSubscriptionAlert()}
+
             {/* Header */}
             <div className="text-center space-y-4">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30 rounded-full text-primary text-sm font-bold shadow-lg"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/30 rounded-full text-emerald-600 dark:text-emerald-400 text-sm font-bold shadow-lg"
                 >
-                    <TrophyIcon className="w-4 h-4" />
-                    <span>3 Dias Grátis</span>
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    <span>Garantia de 7 Dias - Código de Defesa do Consumidor</span>
                 </motion.div>
 
                 <motion.h1
@@ -107,7 +256,7 @@ const PaymentPageStripe: React.FC = () => {
                     transition={{ delay: 0.2 }}
                     className="text-lg text-muted-foreground max-w-2xl mx-auto"
                 >
-                    Teste grátis por 3 dias • Cancele quando quiser
+                    Satisfação garantida ou seu dinheiro de volta em até 7 dias
                 </motion.p>
 
                 {/* Badges */}
@@ -122,12 +271,12 @@ const PaymentPageStripe: React.FC = () => {
                         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Pagamento 100% Seguro</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 rounded-full">
-                        <StarIcon className="w-4 h-4 text-blue-500" />
-                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">+10.000 Estudantes</span>
+                        <ShieldCheckIcon className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">7 Dias de Garantia</span>
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
                         <TrophyIcon className="w-4 h-4 text-purple-500" />
-                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">Garantia de Satisfação</span>
+                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">+10.000 Estudantes</span>
                     </div>
                 </motion.div>
 
@@ -164,6 +313,7 @@ const PaymentPageStripe: React.FC = () => {
                     const price = billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice / 12;
                     const savings = billingPeriod === 'yearly' ? (plan.monthlyPrice * 12 - plan.yearlyPrice) : 0;
                     const totalYearly = billingPeriod === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice * 12;
+                    const buttonState = getButtonState(plan.name);
 
                     return (
                         <motion.div
@@ -172,12 +322,19 @@ const PaymentPageStripe: React.FC = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.35 + index * 0.1 }}
-                            className={`relative rounded-2xl border-2 p-6 ${plan.color} ${plan.isPremium ? 'ring-2 ring-primary/60 shadow-2xl shadow-primary/20 scale-105' : 'shadow-lg'
-                                } hover:shadow-xl transition-all`}
+                            className={`relative rounded-2xl border-2 p-6 backdrop-blur-sm ${plan.color} ${plan.isPremium ? 'ring-2 ring-primary/60 shadow-2xl shadow-primary/20 md:scale-105' : 'shadow-lg'
+                                } hover:shadow-xl transition-all duration-300 ${buttonState.variant === 'current' ? 'ring-2 ring-emerald-500/50' : ''}`}
                         >
                             {plan.tag && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-secondary text-white font-bold px-4 py-1 rounded-full text-xs shadow-lg">
                                     {plan.tag}
+                                </div>
+                            )}
+
+                            {buttonState.variant === 'current' && (
+                                <div className="absolute -top-3 right-4 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold px-3 py-1 rounded-full text-xs shadow-lg flex items-center gap-1">
+                                    <CheckCircle2Icon className="w-3 h-3" />
+                                    Ativo
                                 </div>
                             )}
 
@@ -212,16 +369,22 @@ const PaymentPageStripe: React.FC = () => {
                                 <div className="space-y-2">
                                     <button
                                         onClick={() => handleStartTrial(plan.name)}
-                                        disabled={startingTrial !== null}
-                                        className={`w-full py-4 rounded-xl font-bold text-base transition-all transform hover:scale-105 disabled:opacity-50 ${plan.ctaStyle === 'solid'
-                                            ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg'
-                                            : 'border-2 border-primary text-primary hover:bg-primary/10'
+                                        disabled={startingTrial !== null || buttonState.disabled}
+                                        className={`w-full py-4 rounded-xl font-bold text-base transition-all transform disabled:opacity-50 disabled:cursor-not-allowed ${buttonState.variant === 'current'
+                                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500/50 cursor-not-allowed'
+                                                : buttonState.variant === 'upgrade'
+                                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 hover:scale-105'
+                                                    : buttonState.variant === 'downgrade'
+                                                        ? 'bg-muted text-muted-foreground border-2 border-border cursor-not-allowed'
+                                                        : plan.ctaStyle === 'solid'
+                                                            ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:scale-105'
+                                                            : 'border-2 border-primary text-primary hover:bg-primary/10 hover:scale-105'
                                             }`}
                                     >
-                                        {startingTrial === plan.name ? 'Processando...' : plan.cta}
+                                        {startingTrial === plan.name ? 'Processando...' : buttonState.text}
                                     </button>
                                     <p className="text-xs text-center text-muted-foreground">
-                                        🔒 Seguro • 3 dias grátis • Cancele quando quiser
+                                        🔒 Seguro • ✅ Garantia 7 dias • ⚡ Ativação instantânea
                                     </p>
                                 </div>
                             </div>
@@ -230,7 +393,7 @@ const PaymentPageStripe: React.FC = () => {
                 })}
             </div>
 
-            {/* Tabela Comparativa */}
+            {/* Comparativo */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -238,14 +401,18 @@ const PaymentPageStripe: React.FC = () => {
                 className="max-w-4xl mx-auto"
             >
                 <h3 className="text-2xl font-bold text-center mb-6">Compare os Planos</h3>
-                <div className="overflow-x-auto rounded-xl border border-border">
+                <div className="overflow-x-auto rounded-xl border border-border backdrop-blur-sm">
                     <table className="w-full">
                         <thead className="bg-muted/30">
                             <tr>
                                 <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Recurso</th>
                                 <th className="px-4 py-3 text-center text-sm font-semibold text-muted-foreground">FREE</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold text-primary">PRO</th>
-                                <th className="px-4 py-3 text-center text-sm font-semibold text-primary">PREMIUM</th>
+                                <th className={`px-4 py-3 text-center text-sm font-semibold ${isPro ? 'text-emerald-500' : 'text-primary'}`}>
+                                    PRO {isPro && '✓'}
+                                </th>
+                                <th className={`px-4 py-3 text-center text-sm font-semibold ${isPremium ? 'text-emerald-500' : 'text-primary'}`}>
+                                    PREMIUM {isPremium && '✓'}
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -253,8 +420,8 @@ const PaymentPageStripe: React.FC = () => {
                                 <tr key={idx} className="hover:bg-muted/20 transition-colors">
                                     <td className="px-4 py-3 text-sm text-foreground">{row.feature}</td>
                                     <td className="px-4 py-3 text-center text-sm text-muted-foreground">{row.free}</td>
-                                    <td className="px-4 py-3 text-center text-sm font-semibold text-foreground">{row.pro}</td>
-                                    <td className="px-4 py-3 text-center text-sm font-bold text-primary">{row.premium}</td>
+                                    <td className={`px-4 py-3 text-center text-sm font-semibold ${isPro ? 'text-emerald-500' : 'text-foreground'}`}>{row.pro}</td>
+                                    <td className={`px-4 py-3 text-center text-sm font-bold ${isPremium ? 'text-emerald-500' : 'text-primary'}`}>{row.premium}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -274,19 +441,26 @@ const PaymentPageStripe: React.FC = () => {
                 </h3>
                 <div className="grid md:grid-cols-3 gap-4">
                     {[
-                        { text: "A correção de redação IA é incrível! Me ajudou muito.", author: "Maria S." },
-                        { text: "O sistema de ciclos mudou minha forma de estudar.", author: "João P." },
-                        { text: "Vale cada centavo! Recursos essenciais.", author: "Ana L." }
+                        { text: "A correção de redação IA é incrível! Me ajudou muito a melhorar.", author: "Maria S.", role: "Concurseira - TRF" },
+                        { text: "O sistema de ciclos mudou completamente minha forma de estudar.", author: "João P.", role: "Aprovado - PRF" },
+                        { text: "Vale cada centavo! Recursos essenciais para quem estuda sério.", author: "Ana L.", role: "Estudante - PF" }
                     ].map((review, idx) => (
-                        <div key={idx} className="p-4 rounded-xl bg-muted/20 border border-border">
+                        <motion.div
+                            key={idx}
+                            className="p-4 rounded-xl bg-muted/20 border border-border backdrop-blur-sm hover:bg-muted/30 transition-colors"
+                            whileHover={{ scale: 1.02 }}
+                        >
                             <div className="flex gap-1 mb-2">
                                 {[...Array(5)].map((_, i) => (
                                     <StarIcon key={i} className="w-4 h-4 text-primary fill-primary" />
                                 ))}
                             </div>
                             <p className="text-sm text-foreground/90 mb-2 italic">"{review.text}"</p>
-                            <p className="text-xs text-muted-foreground font-semibold">— {review.author}</p>
-                        </div>
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">— {review.author}</p>
+                                <p className="text-xs text-muted-foreground">{review.role}</p>
+                            </div>
+                        </motion.div>
                     ))}
                 </div>
             </motion.div>
@@ -303,7 +477,7 @@ const PaymentPageStripe: React.FC = () => {
                     {faqData.map((faq, index) => {
                         const isOpen = openFAQIndex === index;
                         return (
-                            <div key={index} className="rounded-xl border border-border bg-muted/10 overflow-hidden">
+                            <div key={index} className="rounded-xl border border-border bg-muted/10 overflow-hidden backdrop-blur-sm">
                                 <button
                                     onClick={() => setOpenFAQIndex(isOpen ? null : index)}
                                     className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-muted/20 transition-colors"
@@ -334,44 +508,50 @@ const PaymentPageStripe: React.FC = () => {
             </motion.div>
 
             {/* CTA Final */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="max-w-3xl mx-auto text-center p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/30"
-            >
-                <h3 className="text-3xl font-bold mb-3">
-                    Pronto para <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">transformar seus estudos</span>?
-                </h3>
-                <p className="text-muted-foreground mb-6">Comece agora e veja a diferença em 3 dias</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button
-                        onClick={() => document.querySelector('[data-plan="Premium"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                        className="px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 shadow-lg transform hover:scale-105 transition-all"
-                    >
-                        Começar Premium
-                    </button>
-                    <button
-                        onClick={() => document.querySelector('[data-plan="Pro"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                        className="px-8 py-4 border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/10 transform hover:scale-105 transition-all"
-                    >
-                        Ver Plano Pro
-                    </button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-4">
-                    🔒 Seguro • ✅ Cancele quando quiser • ⚡ Ativação instantânea
-                </p>
-            </motion.div>
+            {!isPremium && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="max-w-3xl mx-auto text-center p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/30 backdrop-blur-sm"
+                >
+                    <h3 className="text-3xl font-bold mb-3">
+                        Pronto para <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">transformar seus estudos</span>?
+                    </h3>
+                    <p className="text-muted-foreground mb-6">Comece agora e veja a diferença. Garantia de 7 dias ou seu dinheiro de volta!</p>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button
+                            onClick={() => document.querySelector('[data-plan="Premium"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                            className="px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl hover:opacity-90 shadow-lg transform hover:scale-105 transition-all"
+                        >
+                            Começar Premium
+                        </button>
+                        {!isPro && (
+                            <button
+                                onClick={() => document.querySelector('[data-plan="Pro"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                className="px-8 py-4 border-2 border-primary text-primary font-bold rounded-xl hover:bg-primary/10 transform hover:scale-105 transition-all"
+                            >
+                                Ver Plano Pro
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-4">
+                        🔒 Pagamento Seguro • ✅ Garantia de 7 Dias CDC • ⚡ Ativação Instantânea
+                    </p>
+                </motion.div>
+            )}
 
             {/* Sticky CTA Mobile */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-lg border-t border-border z-50">
-                <button
-                    onClick={() => document.querySelector('[data-plan="Premium"]')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg"
-                >
-                    Começar Teste Grátis
-                </button>
-            </div>
+            {!isPremium && (
+                <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-lg border-t border-border z-50">
+                    <button
+                        onClick={() => document.querySelector('[data-plan="Premium"]')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg"
+                    >
+                        {isPro ? 'Upgrade para Premium' : 'Começar Agora'}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

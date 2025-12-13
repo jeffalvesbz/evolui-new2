@@ -856,14 +856,21 @@ OBRIGATÓRIO PARA ENEM: Retorne EXATAMENTE 5 competências do Enem na "avaliacao
             };
         }
         // Se a IA calculou, usar os valores retornados
+        // Normalizar o peso para garantir que esteja no formato decimal (0-1)
+        let pesoNormalizado = item.peso ?? 0;
+        if (pesoNormalizado > 1) {
+            // Se o peso veio como percentual (ex: 70 ao invés de 0.70), normalizar
+            pesoNormalizado = pesoNormalizado / 100;
+        }
         return {
             criterio: item.criterio || '',
             pontuacao: item.pontuacao ?? 0,
             maximo: item.maximo ?? 0,
-            peso: item.peso ?? 0,
+            peso: pesoNormalizado,
             feedback: item.feedback || ''
         };
     }) || [];
+
 
     // Validação e recálculo específico para Cebraspe
     if ((bancaNormalizada === 'Cebraspe' || banca === 'CESPE') && criteriosEntrada.length === 0) {

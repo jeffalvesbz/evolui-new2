@@ -24,7 +24,123 @@ const blobToBase64 = (blob: Blob): Promise<string> => {
     });
 };
 
+// --- Função de Diff Visual ---
+type DiffPart = {
+    type: 'equal' | 'removed' | 'added';
+    text: string;
+};
+
+/**
+ * Calcula a maior subsequência comum entre dois arrays de palavras
+ */
+const computeLCS = (words1: string[], words2: string[]): string[] => {
+    const m = words1.length;
+    const n = words2.length;
+    const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            if (words1[i - 1].toLowerCase() === words2[j - 1].toLowerCase()) {
+                dp[i][j] = dp[i - 1][j - 1] + 1;
+            } else {
+                dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+            }
+        }
+    }
+
+    // Reconstruir a LCS
+    const lcs: string[] = [];
+    let i = m, j = n;
+    while (i > 0 && j > 0) {
+        if (words1[i - 1].toLowerCase() === words2[j - 1].toLowerCase()) {
+            lcs.unshift(words1[i - 1]);
+            i--;
+            j--;
+        } else if (dp[i - 1][j] > dp[i][j - 1]) {
+            i--;
+        } else {
+            j--;
+        }
+    }
+    return lcs;
+};
+
+/**
+ * Compara texto original com texto corrigido e retorna partes com marcação de diff
+ */
+const computeWordDiff = (original: string, corrected: string): DiffPart[] => {
+    // Tokenizar mantendo pontuação
+    const tokenize = (text: string): string[] => {
+        return text.split(/(\s+)/).filter(t => t.length > 0);
+    };
+
+    const origWords = tokenize(original);
+    const corrWords = tokenize(corrected);
+
+    // Se textos são muito grandes, fazer diff simplificado por parágrafos
+    if (origWords.length > 500 || corrWords.length > 500) {
+        // Retornar apenas o texto corrigido sem diff detalhado
+        return [{ type: 'equal', text: corrected }];
+    }
+
+    const lcs = computeLCS(origWords, corrWords);
+    const result: DiffPart[] = [];
+
+    let origIdx = 0;
+    let corrIdx = 0;
+    let lcsIdx = 0;
+
+    while (origIdx < origWords.length || corrIdx < corrWords.length) {
+        // Coletar palavras removidas (no original mas não na LCS)
+        const removed: string[] = [];
+        while (origIdx < origWords.length &&
+            (lcsIdx >= lcs.length || origWords[origIdx].toLowerCase() !== lcs[lcsIdx].toLowerCase())) {
+            removed.push(origWords[origIdx]);
+            origIdx++;
+        }
+
+        // Coletar palavras adicionadas (no corrigido mas não na LCS)
+        const added: string[] = [];
+        while (corrIdx < corrWords.length &&
+            (lcsIdx >= lcs.length || corrWords[corrIdx].toLowerCase() !== lcs[lcsIdx].toLowerCase())) {
+            added.push(corrWords[corrIdx]);
+            corrIdx++;
+        }
+
+        // Adicionar partes removidas
+        if (removed.length > 0) {
+            result.push({ type: 'removed', text: removed.join('') });
+        }
+
+        // Adicionar partes adicionadas
+        if (added.length > 0) {
+            result.push({ type: 'added', text: added.join('') });
+        }
+
+        // Adicionar palavra comum
+        if (lcsIdx < lcs.length && origIdx < origWords.length && corrIdx < corrWords.length) {
+            result.push({ type: 'equal', text: corrWords[corrIdx] });
+            origIdx++;
+            corrIdx++;
+            lcsIdx++;
+        }
+    }
+
+    // Consolidar partes adjacentes do mesmo tipo
+    const consolidated: DiffPart[] = [];
+    for (const part of result) {
+        if (consolidated.length > 0 && consolidated[consolidated.length - 1].type === part.type) {
+            consolidated[consolidated.length - 1].text += part.text;
+        } else {
+            consolidated.push({ ...part });
+        }
+    }
+
+    return consolidated;
+};
+
 // --- Sub-components ---
+
 
 const ErrorTooltip: React.FC<{ erro: CorrecaoErroDetalhado }> = ({ erro }) => {
     // Determinar gravidade baseada no tipo de erro
@@ -162,8 +278,7 @@ const renderRedacaoComErros = (texto: string, erros: CorrecaoErroDetalhado[]) =>
     );
 };
 
-
-const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; }> = ({ correcao, tema }) => (
+const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; textoOriginal?: string; }> = ({ correcao, tema, textoOriginal }) => (
     <div className="space-y-6">
         {tema && (
             <div>
@@ -173,12 +288,26 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
         )}
 
         {correcao.avaliacaoGeral && (
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
-                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-5 border border-primary/20">
+                <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                     <span className="text-2xl">📊</span>
                     Avaliação Geral
                 </h3>
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{correcao.avaliacaoGeral}</p>
+                <div className="text-sm text-foreground leading-relaxed space-y-3">
+                    {correcao.avaliacaoGeral.split('\n').map((paragrafo, idx) => {
+                        const trimmed = paragrafo.trim();
+                        if (!trimmed) return null;
+                        if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+                            return (
+                                <div key={idx} className="flex items-start gap-2 pl-2">
+                                    <span className="text-primary mt-0.5">•</span>
+                                    <span>{trimmed.replace(/^[-•*]\s*/, '')}</span>
+                                </div>
+                            );
+                        }
+                        return <p key={idx} className="text-justify">{paragrafo}</p>;
+                    })}
+                </div>
             </div>
         )}
 
@@ -197,28 +326,53 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
                     };
 
                     return (
-                        <div key={i} className={`p-4 rounded-lg border-2 ${getColorClass(percentual)} transition-all hover:shadow-lg`}>
-                            <div className="flex justify-between items-start mb-3">
+                        <div key={i} className={`p-5 rounded-lg border-2 ${getColorClass(percentual)} transition-all hover:shadow-lg`}>
+                            <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-sm text-foreground mb-1">{item.criterio}</h4>
-                                    {item.peso && (
-                                        <span className="text-xs text-muted-foreground">Peso: {(item.peso * 100).toFixed(0)}%</span>
+                                    <h4 className="font-semibold text-base text-foreground mb-1">{item.criterio}</h4>
+                                    {item.peso && item.peso > 0 && (
+                                        <span className="text-xs text-muted-foreground">
+                                            Peso: {item.peso > 1 ? item.peso.toFixed(0) : (item.peso * 100).toFixed(0)}%
+                                        </span>
                                     )}
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    <span className={`font-bold text-lg ${getColorClass(percentual).split(' ')[0]}`}>
+                                    <span className={`font-bold text-xl ${getColorClass(percentual).split(' ')[0]}`}>
                                         {item.pontuacao.toFixed(1)} / {item.maximo.toFixed(1)}
                                     </span>
-                                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                                    <div className="w-28 h-2.5 bg-muted rounded-full overflow-hidden">
                                         <div
                                             className={`h-full transition-all ${getColorClass(percentual).split(' ')[0]}`}
                                             style={{ width: `${Math.min(percentual, 100)}%` }}
                                         />
                                     </div>
-                                    <span className="text-xs text-muted-foreground">{percentual.toFixed(0)}%</span>
+                                    <span className="text-xs font-medium text-muted-foreground">{percentual.toFixed(0)}%</span>
                                 </div>
                             </div>
-                            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{item.feedback}</p>
+                            <div className="text-sm text-foreground leading-relaxed space-y-2">
+                                {item.feedback.split('\n').map((paragrafo, idx) => {
+                                    const trimmed = paragrafo.trim();
+                                    if (!trimmed) return null;
+                                    if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+                                        return (
+                                            <div key={idx} className="flex items-start gap-2 pl-2">
+                                                <span className="text-primary/70 mt-0.5">▸</span>
+                                                <span>{trimmed.replace(/^[-•*]\s*/, '')}</span>
+                                            </div>
+                                        );
+                                    }
+                                    // Detecta linhas numeradas tipo "1." ou "1)" e formata
+                                    if (/^\d+[\.\)]/.test(trimmed)) {
+                                        return (
+                                            <div key={idx} className="flex items-start gap-2 pl-2">
+                                                <span className="text-primary/70 font-medium">{trimmed.match(/^\d+[\.\)]/)?.[0]}</span>
+                                                <span>{trimmed.replace(/^\d+[\.\)]\s*/, '')}</span>
+                                            </div>
+                                        );
+                                    }
+                                    return <p key={idx} className="text-justify">{paragrafo}</p>;
+                                })}
+                            </div>
                         </div>
                     );
                 })}
@@ -227,16 +381,79 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
 
         {correcao.textoCorrigido && (
             <div>
-                <h3 className="text-lg font-bold text-foreground mb-2">📝 Texto Corrigido</h3>
+                <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+                    📝 Texto Corrigido
+                    {textoOriginal && (
+                        <span className="text-xs font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                            com alterações destacadas
+                        </span>
+                    )}
+                </h3>
                 <div className="p-4 bg-muted/30 rounded-lg border border-border max-h-[400px] overflow-y-auto">
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.textoCorrigido}</p>
+                    {textoOriginal ? (
+                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                            {computeWordDiff(textoOriginal, correcao.textoCorrigido).map((part, index) => {
+                                if (part.type === 'removed') {
+                                    return (
+                                        <span
+                                            key={index}
+                                            className="bg-red-500/20 text-red-600 dark:text-red-400 line-through decoration-red-500"
+                                            title="Texto removido"
+                                        >
+                                            {part.text}
+                                        </span>
+                                    );
+                                }
+                                if (part.type === 'added') {
+                                    return (
+                                        <span
+                                            key={index}
+                                            className="bg-green-500/20 text-green-700 dark:text-green-400 font-medium"
+                                            title="Texto adicionado/corrigido"
+                                        >
+                                            {part.text}
+                                        </span>
+                                    );
+                                }
+                                return <span key={index}>{part.text}</span>;
+                            })}
+                        </p>
+                    ) : (
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.textoCorrigido}</p>
+                    )}
                 </div>
+                {textoOriginal && (
+                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                            <span className="w-3 h-3 bg-red-500/20 border border-red-500/30 rounded inline-block"></span>
+                            Removido
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <span className="w-3 h-3 bg-green-500/20 border border-green-500/30 rounded inline-block"></span>
+                            Adicionado/Corrigido
+                        </span>
+                    </div>
+                )}
             </div>
         )}
 
-        <div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Comentários Gerais</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{correcao.comentariosGerais}</p>
+        <div className="bg-muted/30 rounded-lg p-5 border border-border">
+            <h3 className="text-lg font-bold text-foreground mb-3">📝 Comentários Gerais</h3>
+            <div className="text-sm text-foreground leading-relaxed space-y-2">
+                {correcao.comentariosGerais.split('\n').map((paragrafo, idx) => {
+                    const trimmed = paragrafo.trim();
+                    if (!trimmed) return null;
+                    if (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*')) {
+                        return (
+                            <div key={idx} className="flex items-start gap-2 pl-2">
+                                <span className="text-primary/70 mt-0.5">▸</span>
+                                <span>{trimmed.replace(/^[-•*]\s*/, '')}</span>
+                            </div>
+                        );
+                    }
+                    return <p key={idx} className="text-justify">{paragrafo}</p>;
+                })}
+            </div>
         </div>
 
         {correcao.sinteseFinal && (
@@ -307,18 +524,45 @@ const HistoricoProgresso: React.FC = () => {
     const [selectedCorrecao, setSelectedCorrecao] = useState<RedacaoCorrigida | null>(null);
     const [bancaFiltro, setBancaFiltro] = useState<string>('todas');
     const [mostrarComparacao, setMostrarComparacao] = useState(false);
+    const [ordenacao, setOrdenacao] = useState<'data-recente' | 'data-antiga' | 'maior-nota' | 'menor-nota'>('data-recente');
 
     const bancasDisponiveis = useMemo(() => {
         const bancas = new Set(historico.map(h => h.banca));
         return ['todas', ...Array.from(bancas)];
     }, [historico]);
 
-    // Helper para filtrar histórico por banca
+    // Helper para filtrar e ordenar histórico por banca
     const historicoFiltrado = useMemo(() => {
-        return bancaFiltro === 'todas'
-            ? historico
+        let resultado = bancaFiltro === 'todas'
+            ? [...historico]
             : historico.filter(h => h.banca === bancaFiltro);
-    }, [historico, bancaFiltro]);
+
+        // Aplicar ordenação
+        switch (ordenacao) {
+            case 'data-recente':
+                resultado.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+                break;
+            case 'data-antiga':
+                resultado.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+                break;
+            case 'maior-nota':
+                resultado.sort((a, b) => {
+                    const percentualA = (a.correcao.notaFinal / a.correcao.notaMaxima) * 100;
+                    const percentualB = (b.correcao.notaFinal / b.correcao.notaMaxima) * 100;
+                    return percentualB - percentualA;
+                });
+                break;
+            case 'menor-nota':
+                resultado.sort((a, b) => {
+                    const percentualA = (a.correcao.notaFinal / a.correcao.notaMaxima) * 100;
+                    const percentualB = (b.correcao.notaFinal / b.correcao.notaMaxima) * 100;
+                    return percentualA - percentualB;
+                });
+                break;
+        }
+
+        return resultado;
+    }, [historico, bancaFiltro, ordenacao]);
 
     const evolutionData = useMemo(() => historicoFiltrado
         .map(h => ({
@@ -704,8 +948,19 @@ const HistoricoProgresso: React.FC = () => {
                         </div>
                     </div>
                     {historicoFiltrado.length > 0 && (
-                        <div className="text-sm text-muted-foreground">
-                            Ordenado por data (mais recente primeiro)
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="ordenacao" className="text-sm text-muted-foreground whitespace-nowrap">Ordenar por:</label>
+                            <select
+                                id="ordenacao"
+                                value={ordenacao}
+                                onChange={(e) => setOrdenacao(e.target.value as 'data-recente' | 'data-antiga' | 'maior-nota' | 'menor-nota')}
+                                className="bg-card border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:ring-primary focus:border-primary cursor-pointer"
+                            >
+                                <option value="data-recente">Data (mais recente primeiro)</option>
+                                <option value="data-antiga">Data (mais antiga primeiro)</option>
+                                <option value="maior-nota">Maior nota primeiro</option>
+                                <option value="menor-nota">Menor nota primeiro</option>
+                            </select>
                         </div>
                     )}
                 </div>
@@ -840,7 +1095,7 @@ const HistoricoProgresso: React.FC = () => {
                                     {/* Detalhes Expandidos */}
                                     {isSelected && (
                                         <div className="p-5 bg-card/50 border-t-2 border-primary/20">
-                                            <AvaliacaoDetalhada correcao={redacao.correcao} tema={redacao.tema} />
+                                            <AvaliacaoDetalhada correcao={redacao.correcao} tema={redacao.tema} textoOriginal={redacao.texto} />
                                         </div>
                                     )}
                                 </div>

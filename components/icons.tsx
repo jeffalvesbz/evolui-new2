@@ -543,3 +543,18 @@ export const BrainIcon: React.FC<IconProps> = ({ className }) => (
         <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
     </svg>
 );
+
+export const CrownIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M11.37 2.33a1 1 0 0 1 1.26 0l2.11 1.68a1 1 0 0 0 1.05.13l2.47-1.02a1 1 0 0 1 1.32.75l.53 2.56a1 1 0 0 0 .67.75l2.56.53a1 1 0 0 1 .75 1.32l-1.02 2.47a1 1 0 0 0 .13 1.05l1.68 2.11a1 1 0 0 1-.22 1.4l-2.11 1.68a1 1 0 0 0-.37.97l.53 2.56a1 1 0 0 1-.75.75l-2.56.53a1 1 0 0 0-.75.67l-.53 2.56a1 1 0 0 1-1.32.75l-2.47-1.02a1 1 0 0 0-1.05.13l-2.11 1.68a1 1 0 0 1-1.26 0l-2.11-1.68a1 1 0 0 0-1.05-.13l-2.47 1.02a1 1 0 0 1-1.32-.75l-.53-2.56a1 1 0 0 0-.67-.75l-2.56-.53a1 1 0 0 1-.75-1.32l1.02-2.47a1 1 0 0 0-.13-1.05L2.33 12.63a1 1 0 0 1 .22-1.4l2.11-1.68a1 1 0 0 0 .37-.97l-.53-2.56a1 1 0 0 1 .75-.75l2.56-.53a1 1 0 0 0 .75-.67l.53-2.56a1 1 0 0 1 1.32-.75l2.47 1.02a1 1 0 0 0 1.05-.13z" />
+        <path d="m12 8-3 5h6l-3-5z" />
+        <path d="M12 13v5" />
+    </svg>
+);
+
+export const ShieldCheckIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+        <path d="m9 12 2 2 4-4" />
+    </svg>
+);
