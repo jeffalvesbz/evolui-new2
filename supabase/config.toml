@@ -1,0 +1,11 @@
+# Supabase Edge Functions Configuration
+
+[functions.stripe-webhook]
+# Desabilita verificação JWT para permitir que o Stripe envie webhooks
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.create-portal-session]
+verify_jwt = false

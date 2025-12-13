@@ -17,12 +17,20 @@ serve(async (req) => {
     const signature = req.headers.get('stripe-signature')!
     const body = await req.text()
 
+    // Debug logs
+    console.log('=== WEBHOOK DEBUG ===')
+    console.log('Webhook secret loaded:', webhookSecret ? `${webhookSecret.substring(0, 10)}...` : 'NOT FOUND')
+    console.log('Signature header:', signature ? 'Present' : 'Missing')
+    console.log('Body length:', body.length)
+
     let event: Stripe.Event
 
     try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+        // Usar constructEventAsync em vez de constructEvent para Deno/Edge Functions
+        event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
     } catch (err) {
         console.error('Webhook signature verification failed:', err.message)
+        console.error('Secret used:', webhookSecret ? `${webhookSecret.substring(0, 15)}...` : 'NONE')
         return new Response(JSON.stringify({ error: 'Webhook signature verification failed' }), {
             status: 400,
         })
@@ -88,67 +96,128 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-    const userId = subscription.metadata.user_id
-    const planType = subscription.metadata.plan_type as 'pro' | 'premium'
+    console.log('=== SUBSCRIPTION UPDATE ===')
+    console.log('Subscription ID:', subscription.id)
+    console.log('Customer ID:', subscription.customer)
+    console.log('Metadata:', JSON.stringify(subscription.metadata))
+    console.log('Status:', subscription.status)
+
+    let userId = subscription.metadata?.user_id
+    let planType = subscription.metadata?.plan_type as 'pro' | 'premium'
+
+    // Fallback: se não tiver user_id nos metadados, buscar pelo customer_id
+    if (!userId && subscription.customer) {
+        console.log('User ID not in metadata, trying to find by customer_id...')
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id, plan_type')
+            .eq('stripe_customer_id', subscription.customer as string)
+            .single()
+
+        if (profile) {
+            userId = profile.user_id
+            console.log('Found user by customer_id:', userId)
+        }
+    }
 
     if (!userId) {
-        console.error('No user ID found in subscription metadata')
+        console.error('No user ID found in subscription metadata or by customer lookup')
         return
     }
 
-    const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString()
-    const currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString()
-
-    // Atualizar ou criar registro de assinatura
-    const { data: existingSub } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .single()
-
-    if (existingSub) {
-        // Atualizar assinatura existente
-        await supabase
-            .from('subscriptions')
-            .update({
-                plan_type: planType,
-                status: subscription.status,
-                current_period_start: currentPeriodStart,
-                current_period_end: currentPeriodEnd,
-                cancel_at_period_end: subscription.cancel_at_period_end,
-                stripe_subscription_id: subscription.id,
-                stripe_customer_id: subscription.customer as string,
-            })
-            .eq('id', existingSub.id)
-    } else {
-        // Criar nova assinatura
-        await supabase
-            .from('subscriptions')
-            .insert({
-                user_id: userId,
-                plan_type: planType,
-                status: subscription.status,
-                current_period_start: currentPeriodStart,
-                current_period_end: currentPeriodEnd,
-                cancel_at_period_end: subscription.cancel_at_period_end,
-                stripe_subscription_id: subscription.id,
-                stripe_customer_id: subscription.customer as string,
-            })
+    // Se não tiver planType nos metadados, inferir do price
+    if (!planType) {
+        // Tentar inferir do nome do produto ou price
+        planType = 'pro' // Default para pro
+        console.log('Plan type not in metadata, defaulting to:', planType)
     }
 
-    // Atualizar perfil do usuário
-    await supabase
-        .from('profiles')
-        .update({
-            plan_type: planType,
-            subscription_status: subscription.status,
-            subscription_ends_at: currentPeriodEnd,
-            stripe_customer_id: subscription.customer as string,
-            stripe_subscription_id: subscription.id,
-        })
-        .eq('user_id', userId)
+    // Validar datas antes de converter
+    let currentPeriodEnd: string | null = null
+    let currentPeriodStart: string | null = null
 
-    console.log(`Subscription updated for user ${userId}: ${subscription.status}`)
+    if (subscription.current_period_end && !isNaN(subscription.current_period_end)) {
+        currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+    }
+    if (subscription.current_period_start && !isNaN(subscription.current_period_start)) {
+        currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString()
+    }
+
+    console.log('Period dates - Start:', currentPeriodStart, 'End:', currentPeriodEnd)
+
+    try {
+        // Atualizar ou criar registro de assinatura
+        console.log('Checking for existing subscription for user:', userId)
+        const { data: existingSub, error: selectError } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('user_id', userId)
+            .single()
+
+        if (selectError && selectError.code !== 'PGRST116') {
+            console.error('Error checking existing subscription:', selectError)
+        }
+
+        if (existingSub) {
+            console.log('Updating existing subscription:', existingSub.id)
+            const { error: updateError } = await supabase
+                .from('subscriptions')
+                .update({
+                    plan_type: planType,
+                    status: subscription.status,
+                    current_period_start: currentPeriodStart,
+                    current_period_end: currentPeriodEnd,
+                    cancel_at_period_end: subscription.cancel_at_period_end,
+                    stripe_subscription_id: subscription.id,
+                    stripe_customer_id: subscription.customer as string,
+                })
+                .eq('id', existingSub.id)
+
+            if (updateError) {
+                console.error('Error updating subscription:', updateError)
+            }
+        } else {
+            console.log('Creating new subscription for user:', userId)
+            const { error: insertError } = await supabase
+                .from('subscriptions')
+                .insert({
+                    user_id: userId,
+                    plan_type: planType,
+                    status: subscription.status,
+                    current_period_start: currentPeriodStart,
+                    current_period_end: currentPeriodEnd,
+                    cancel_at_period_end: subscription.cancel_at_period_end,
+                    stripe_subscription_id: subscription.id,
+                    stripe_customer_id: subscription.customer as string,
+                })
+
+            if (insertError) {
+                console.error('Error inserting subscription:', insertError)
+            }
+        }
+
+        // Atualizar perfil do usuário
+        console.log('Updating profile for user:', userId)
+        const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+                plan_type: planType,
+                subscription_status: subscription.status,
+                subscription_ends_at: currentPeriodEnd,
+                stripe_customer_id: subscription.customer as string,
+                stripe_subscription_id: subscription.id,
+            })
+            .eq('user_id', userId)
+
+        if (profileError) {
+            console.error('Error updating profile:', profileError)
+        }
+
+        console.log(`Subscription updated successfully for user ${userId}: ${subscription.status}`)
+    } catch (error) {
+        console.error('Unexpected error in handleSubscriptionUpdate:', error)
+        throw error
+    }
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
