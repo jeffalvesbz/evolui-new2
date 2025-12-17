@@ -92,9 +92,12 @@ const CriarFlashcardModal: React.FC = () => {
           closeCriarFlashcardModal();
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[CriarFlashcardModal] [DIAGNOSTIC] Erro:', error);
+      const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
+      // Alertar usuário para diagnóstico
+      window.alert(`[DIAGNÓSTICO] Erro ao criar flashcard MANUAL:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
       toast.error(`Não foi possível ${isEditMode ? 'atualizar' : 'criar'} o flashcard.`);
-      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
