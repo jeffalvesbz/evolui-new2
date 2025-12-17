@@ -4,7 +4,6 @@ import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as
 import { toast } from '../components/Sonner';
 // FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
-import { useSubscriptionStore } from './useSubscriptionStore';
 
 interface FlashcardStore {
   flashcards: Flashcard[];
@@ -367,7 +366,7 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
   generateFlashcards: async (prompt: string, type: 'topic' | 'text', options?: any) => {
     // Verificar se o usuário pode gerar flashcards com IA (apenas planos pagos)
-    const { hasActiveSubscription, isTrialActive, planType, canCreateFlashcard, incrementFlashcardCount } = useSubscriptionStore.getState();
+    const { hasActiveSubscription, isTrialActive, planType, canCreateFlashcard, incrementFlashcardCount } = await import('./useSubscriptionStore').then(m => m.useSubscriptionStore.getState());
     const isActive = hasActiveSubscription() || isTrialActive();
 
     // Plano gratuito não pode usar IA para gerar flashcards
