@@ -16,6 +16,7 @@ const getApiKey = () => {
         return process.env.GEMINI_API_KEY;
     }
     // Return empty string if not found (will cause error when trying to use AI features)
+    console.log('🔑 Status da API Key:', import.meta.env.VITE_GEMINI_API_KEY ? 'Configurada (Vite)' : (process.env?.GEMINI_API_KEY ? 'Configurada (Process)' : 'Ausente'));
     return '';
 };
 
@@ -1547,7 +1548,8 @@ export const gerarFlashcardsIA = async (
     dificuldade: string = 'médio'
 ): Promise<Partial<Flashcard>[]> => {
     if (!ai) {
-        throw new Error('API Key do Gemini não configurada. Configure VITE_GEMINI_API_KEY nas variáveis de ambiente.');
+        console.error('❌ Tentativa de gerar flashcards sem API Key configurada');
+        throw new Error('API Key do Gemini não detectada. Se você está no Vercel, verifique se a variável VITE_GEMINI_API_KEY foi adicionada nas configurações e se foi feito um REDEPLOY após a adição.');
     }
 
     if (!tema || tema.trim().length === 0) {
@@ -1579,8 +1581,7 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-                responseMimeType: 'application/json',
-                responseSchema: flashcardsSchema
+                responseMimeType: 'application/json'
             }
         });
 
@@ -1653,7 +1654,8 @@ export const gerarFlashcardsPorTexto = async (
     quantidade: number = 5
 ): Promise<Partial<Flashcard>[]> => {
     if (!ai) {
-        throw new Error('API Key do Gemini não configurada. Configure VITE_GEMINI_API_KEY nas variáveis de ambiente.');
+        console.error('❌ Tentativa de gerar flashcards por texto sem API Key configurada');
+        throw new Error('API Key do Gemini não detectada. Se você está no Vercel, verifique se a variável VITE_GEMINI_API_KEY foi adicionada nas configurações e se foi feito um REDEPLOY após a adição.');
     }
 
     if (!texto || texto.trim().length === 0) {
@@ -1704,8 +1706,7 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-                responseMimeType: 'application/json',
-                responseSchema: flashcardsSchema
+                responseMimeType: 'application/json'
             }
         });
 
