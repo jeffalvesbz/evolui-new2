@@ -4,6 +4,7 @@ import { getFlashcards, createFlashcards, updateFlashcardApi, deleteFlashcard as
 import { toast } from '../components/Sonner';
 // FIX: Changed date-fns import for startOfDay to use a named import, resolving module export error.
 import { startOfDay } from 'date-fns';
+import { useSubscriptionStore } from './useSubscriptionStore';
 
 interface FlashcardStore {
   flashcards: Flashcard[];
@@ -152,21 +153,38 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
   addFlashcard: async (newFlashcard, topicoId) => {
     // Verificar limite de flashcards
-    const { canCreateFlashcard, incrementFlashcardCount } = await import('./useSubscriptionStore').then(m => m.useSubscriptionStore.getState());
-
-    if (!canCreateFlashcard(1)) {
-      toast.error("Você atingiu o limite mensal de flashcards do seu plano.");
-      return;
-    }
-
     try {
+      console.log('[DEBUG] Importing useSubscriptionStore dynamically...');
+      const module = await import('./useSubscriptionStore');
+      console.log('[DEBUG] Module loaded:', module);
+      console.log('[DEBUG] Keys in module:', Object.keys(module));
+
+      if (!module.useSubscriptionStore) {
+        console.error('[DEBUG] useSubscriptionStore is undefined in module!');
+        // Fallback attempt: maybe it's default export?
+        // @ts-ignore
+        if (module.default) {
+          console.log('[DEBUG] Found default export:', module.default);
+        }
+        throw new Error('Critical: useSubscriptionStore could not be imported.');
+      }
+
+      const { canCreateFlashcard, incrementFlashcardCount } = module.useSubscriptionStore.getState();
+
+      if (!canCreateFlashcard(1)) {
+        toast.error("Você atingiu o limite mensal de flashcards do seu plano.");
+        return;
+      }
+
       const createdFlashcards = await createFlashcards(topicoId, { flashcards: [newFlashcard] });
       set(state => ({
         flashcards: [...state.flashcards, ...createdFlashcards],
       }));
       incrementFlashcardCount(1);
-    } catch (e) {
-      toast.error("Falha ao salvar flashcard.");
+    } catch (e: any) {
+      console.error('[addFlashcard] Error:', e);
+      const msg = e.message || 'Erro desconhecido';
+      window.alert(`Erro ao adicionar flashcard: ${msg}`);
       throw e;
     }
   },
@@ -366,7 +384,7 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
   generateFlashcards: async (prompt: string, type: 'topic' | 'text', options?: any) => {
     // Verificar se o usuário pode gerar flashcards com IA (apenas planos pagos)
-    const { hasActiveSubscription, isTrialActive, planType, canCreateFlashcard, incrementFlashcardCount } = await import('./useSubscriptionStore').then(m => m.useSubscriptionStore.getState());
+    const { hasActiveSubscription, isTrialActive, planType, canCreateFlashcard, incrementFlashcardCount } = useSubscriptionStore.getState();
     const isActive = hasActiveSubscription() || isTrialActive();
 
     // Plano gratuito não pode usar IA para gerar flashcards

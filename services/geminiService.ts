@@ -3341,42 +3341,4 @@ export const declineFriendRequest = async (friendshipId: string) => {
 };
 
 
-export const countFlashcardsCreatedThisMonth = async (userId: string): Promise<number> => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    startOfMonth.setHours(0, 0, 0, 0);
 
-    try {
-        // Fetch all flashcards created this month
-        const { data, error } = await supabase
-            .from('flashcards')
-            .select('tags')
-            .eq('user_id', userId)
-            .gte('created_at', startOfMonth.toISOString());
-
-        if (error) {
-            console.error('Erro ao contar flashcards:', error);
-            return 0;
-        }
-
-        if (!data) return 0;
-
-        // Filter in memory to ensure we catch the tag regardless of DB column type nuances
-        const aiFlashcards = data.filter((fc: any) => {
-            if (!fc.tags) return false;
-            if (Array.isArray(fc.tags)) {
-                return fc.tags.includes('Gerado por IA');
-            }
-            // Fallback for string storage (e.g. JSON string or simple text)
-            if (typeof fc.tags === 'string') {
-                return fc.tags.includes('Gerado por IA');
-            }
-            return false;
-        });
-
-        return aiFlashcards.length;
-    } catch (error) {
-        console.error('Erro inesperado ao contar flashcards:', error);
-        return 0;
-    }
-};

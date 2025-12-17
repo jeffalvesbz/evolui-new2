@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../services/supabaseClient';
-import { countFlashcardsCreatedThisMonth } from '../services/geminiService';
+import { countFlashcardsCreatedThisMonth } from '../services/statsService';
 import { countQuizQuestionsToday } from '../services/quizStatsService';
 
 type PlanType = 'free' | 'pro' | 'premium';
