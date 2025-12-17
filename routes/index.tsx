@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedAdminRoute } from '../components/ProtectedAdminRoute';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { DashboardSkeleton } from '../components/skeletons';
+import { LoginPage } from '../components/LoginPage';
+import { LandingPage } from '../components/LandingPage';
 
 // Mapeamento de rotas para views
 const routeToViewMap: Record<string, string> = {

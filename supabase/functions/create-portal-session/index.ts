@@ -59,8 +59,24 @@ serve(async (req) => {
         )
     } catch (error) {
         console.error('Error creating portal session:', error)
+
+        let errorMessage = 'Erro ao criar sessão do portal'
+        let errorCode = 'UNKNOWN_ERROR'
+
+        if (error.message === 'Customer ID not found') {
+            errorMessage = 'ID do cliente Stripe não encontrado. Entre em contato com o suporte.'
+            errorCode = 'CUSTOMER_ID_NOT_FOUND'
+        } else if (error.message === 'Unauthorized') {
+            errorMessage = 'Usuário não autorizado'
+            errorCode = 'UNAUTHORIZED'
+        }
+
         return new Response(
-            JSON.stringify({ error: error.message }),
+            JSON.stringify({
+                error: errorMessage,
+                code: errorCode,
+                details: error.message
+            }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 400,

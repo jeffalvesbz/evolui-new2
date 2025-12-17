@@ -110,8 +110,9 @@ export const createPortalSession = async (): Promise<void> => {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Erro ao criar sessão do portal');
+            const errorData = await response.json();
+            console.error('Erro detalhado do portal:', errorData);
+            throw new Error(errorData.error || errorData.message || 'Erro ao criar sessão do portal');
         }
 
         const { url } = await response.json();

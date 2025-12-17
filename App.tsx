@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginPage } from './components/LoginPage';
+import { LandingPage } from './components/LandingPage';
 import { ModalSkeleton } from './components/skeletons';
 import { getLocalDateISO } from './utils/dateUtils';
 
@@ -305,7 +306,7 @@ const App: React.FC = () => {
     if (isAuthenticated) {
       loadInitialData();
     } else {
-      // If not authenticated, stop loading to show AuthGate
+      // If not authenticated, stop loading to show LandingPage
       setIsAppLoading(false);
     }
   }, [isAuthenticated, fetchEditais]);
@@ -367,7 +368,7 @@ const App: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage />;
+    return <LandingPage />;
   }
 
   return (
