@@ -184,9 +184,10 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
         flashcards: [...state.flashcards, ...createdFlashcards],
       }));
       console.log('[useFlashcardsStore.addFlashcards] ✅ Salvo com sucesso');
-    } catch (e) {
-      console.error('[useFlashcardsStore.addFlashcards] ❌ Erro:', e);
-      toast.error("Falha ao salvar flashcards.");
+    } catch (e: any) {
+      console.error('[useFlashcardsStore.addFlashcards] [DIAGNOSTIC] ❌ Erro:', e);
+      const errorMsg = e.message || JSON.stringify(e);
+      toast.error(`Falha ao salvar flashcards: ${errorMsg}`, { duration: 10000 }); // Duração longa para leitura
       throw e;
     }
   },
@@ -401,10 +402,10 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
 
       return generatedCards;
     } catch (error: any) {
-      console.error("Erro ao gerar flashcards:", error);
-      // Mostra a mensagem de erro específica se disponível, senão usa uma genérica
-      const errorMessage = error?.message || "Falha ao gerar flashcards com IA.";
-      toast.error(errorMessage);
+      console.error("[useFlashcardsStore.generateFlashcards] [DIAGNOSTIC] Erro ao gerar flashcards:", error);
+      // Mostra a mensagem de erro específica e detalhada
+      const errorMessage = error?.message || JSON.stringify(error) || "Falha desconhecida ao gerar flashcards.";
+      toast.error(`Erro na IA: ${errorMessage}`, { duration: 10000 });
       throw error; // Re-lança o erro para que o componente possa tratá-lo se necessário
     } finally {
       set({ generating: false });

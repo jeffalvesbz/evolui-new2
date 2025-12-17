@@ -1627,22 +1627,25 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
         console.log(`✅ ${validFlashcards.length} flashcards gerados com sucesso`);
         return validFlashcards;
     } catch (error: any) {
-        console.error('Erro ao gerar flashcards por tópico:', error);
+        console.error('[gerarFlashcardsIA] [DIAGNOSTIC] Erro ao gerar flashcards:', error);
 
         const mensagemErro = error?.error?.message || error?.message || 'Erro desconhecido';
-        const codigoErro = error?.error?.code || error?.status || '';
+        const codigoErro = error?.error?.code || error?.status || 'Sem código';
+
+        console.error(`[gerarFlashcardsIA] [DIAGNOSTIC] Detalhes: Msg="${mensagemErro}", Code="${codigoErro}"`);
 
         if (mensagemErro.includes('quota') || mensagemErro.includes('rate limit') || codigoErro === 429) {
-            throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
+            throw new Error(`Limite de requisições excedido (Code: ${codigoErro}). Tente novamente em alguns minutos.`);
         }
         if (mensagemErro.includes('API key') || mensagemErro.includes('401') || mensagemErro.includes('403') || codigoErro === 401 || codigoErro === 403) {
-            throw new Error('API Key inválida ou expirada. Verifique VITE_GEMINI_API_KEY.');
+            throw new Error(`API Key inválida ou expirada (Code: ${codigoErro}). Verifique VITE_GEMINI_API_KEY.`);
         }
         if (mensagemErro.includes('model') || mensagemErro.includes('not found') || codigoErro === 404) {
-            throw new Error('Modelo não encontrado. Verifique se a API Key está correta.');
+            throw new Error(`Modelo IA não encontrado (Code: ${codigoErro}). Verifique se a API Key está correta.`);
         }
 
-        throw error instanceof Error ? error : new Error(`Falha ao gerar flashcards: ${mensagemErro}`);
+        // Throw with prefix for easier debugging
+        throw new Error(`[IA Error] ${mensagemErro} (Code: ${codigoErro})`);
     }
 };
 
@@ -3027,8 +3030,9 @@ export const createFlashcards = async (topicId: string, { flashcards }: { flashc
     const { data, error } = await supabase.from('flashcards').insert(flashcardsToInsert as any).select();
 
     if (error) {
-        console.error('[createFlashcards] ERRO do Supabase:', error);
-        throw error;
+        console.error('[createFlashcards] [DIAGNOSTIC] ERRO do Supabase:', JSON.stringify(error, null, 2));
+        const details = `Code: ${error.code}, Msg: ${error.message}, Details: ${error.details}, Hint: ${error.hint}`;
+        throw new Error(`Erro ao salvar flashcards no banco: ${details}`);
     }
 
     console.log('[createFlashcards] ✅ Sucesso! Criados:', data?.length, 'flashcards');

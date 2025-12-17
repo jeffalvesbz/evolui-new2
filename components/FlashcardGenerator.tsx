@@ -148,7 +148,8 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         } catch (error: any) {
             console.error('[FlashcardGenerator] Erro ao gerar flashcards:', error);
             // O store já lança toast, mas vamos garantir caso o error venha de outro lugar
-            if (!toast) alert('Erro ao gerar flashcards: ' + (error.message || 'Erro desconhecido'));
+            const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
+            window.alert(`[DIAGNÓSTICO] Erro ao gerar flashcards:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
         }
     };
 
@@ -209,9 +210,10 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                 clearGeneratorState();
                 onSave();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar flashcards:', error);
-            toast.error('Falha ao salvar flashcards.');
+            const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
+            window.alert(`[DIAGNÓSTICO] Erro ao salvar flashcards:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
         }
     };
 
