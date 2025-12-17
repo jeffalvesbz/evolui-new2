@@ -86,6 +86,9 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
     }, [selectedTopicoId, topicosFiltrados]);
 
     const handleGenerate = async () => {
+        console.log('[FlashcardGenerator] handleGenerate iniciado');
+        console.log('[FlashcardGenerator] Estado:', { mode, promptLength: prompt.length, quantity, difficulty });
+
         // Se tópico estiver selecionado e modo for 'topic', usa o nome do tópico como tema
         let temaParaGerar = prompt.trim();
 
@@ -94,12 +97,14 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                 // Se tópico está selecionado, usa o nome do tópico como tema
                 temaParaGerar = topicoSelecionado.titulo;
             } else if (!temaParaGerar) {
+                console.warn('[FlashcardGenerator] Nenhum tópico ou texto selecionado');
                 toast.error('Por favor, selecione um tópico ou descreva sobre o que você quer estudar.');
                 return;
             }
         } else {
             // Modo texto
             if (!temaParaGerar) {
+                console.warn('[FlashcardGenerator] Texto vazio');
                 toast.error('Por favor, cole o texto para gerar os flashcards.');
                 return;
             }
@@ -111,12 +116,15 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         }
 
         if (mode === 'text' && temaParaGerar.length < 50) {
+            console.warn('[FlashcardGenerator] Texto muito curto:', temaParaGerar.length);
             toast.error('O texto deve ter pelo menos 50 caracteres para gerar flashcards relevantes.');
             return;
         }
 
         try {
+            console.log('[FlashcardGenerator] Chamando generateFlashcards...');
             const cards = await generateFlashcards(temaParaGerar, mode, { quantidade: quantity, dificuldade: difficulty });
+            console.log('[FlashcardGenerator] Resultado:', cards);
             if (cards && cards.length > 0) {
                 setGeneratedCards(cards);
                 setStep('preview');
@@ -125,7 +133,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             }
         } catch (error: any) {
             // O erro já foi tratado no store com toast, apenas logamos aqui
-            console.error('Erro ao gerar flashcards:', error);
+            console.error('[FlashcardGenerator] Erro ao gerar flashcards:', error);
             // Não precisamos fazer nada aqui, o store já mostrou o erro ao usuário
         }
     };
@@ -585,7 +593,10 @@ Exemplos de uso:
                 </button>
                 <button
                     type="button"
-                    onClick={handleGenerate}
+                    onClick={() => {
+                        console.log('[FlashcardGenerator] Botão clicado. Disabled?', generating || (mode === 'topic' && !selectedTopicoId && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50)));
+                        handleGenerate();
+                    }}
                     disabled={generating || (mode === 'topic' && !selectedTopicoId && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50))}
                     className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
