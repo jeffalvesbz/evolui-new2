@@ -87,22 +87,36 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
 
     const handleGenerate = async () => {
         console.log('[FlashcardGenerator] handleGenerate iniciado');
-        console.log('[FlashcardGenerator] Estado:', { mode, promptLength: prompt.length, quantity, difficulty });
+        console.log('[FlashcardGenerator] Estado:', { mode, promptLength: prompt.length, quantity, difficulty, selectedDisciplinaId, selectedTopicoId });
 
-        // Se tópico estiver selecionado e modo for 'topic', usa o nome do tópico como tema
         let temaParaGerar = prompt.trim();
 
         if (mode === 'topic') {
-            if (selectedTopicoId && topicoSelecionado) {
-                // Se tópico está selecionado, usa o nome do tópico como tema
-                temaParaGerar = topicoSelecionado.titulo;
+            // Se houver tópico selecionado, validamos se ele existe na lista atual
+            if (selectedTopicoId) {
+                const topico = topicosFiltrados.find(t => t.id === selectedTopicoId);
+                if (topico) {
+                    // Combina o título do tópico com o prompt do usuário (se houver)
+                    temaParaGerar = topico.titulo;
+                    if (prompt.trim()) {
+                        temaParaGerar += `. Contexto adicional: ${prompt.trim()}`;
+                    }
+                } else {
+                    // Tópico selecionado mas não encontrado na lista (erro de estado)
+                    console.warn('[FlashcardGenerator] Tópico selecionado (ID: ' + selectedTopicoId + ') não encontrado na lista atual.');
+                    // Tenta usar apenas o prompt se houver, ou falha
+                    if (!temaParaGerar) {
+                        toast.error('Tópico selecionado inválido. Por favor, selecione o tópico novamente.');
+                        return;
+                    }
+                }
             } else if (!temaParaGerar) {
                 console.warn('[FlashcardGenerator] Nenhum tópico ou texto selecionado');
                 toast.error('Por favor, selecione um tópico ou descreva sobre o que você quer estudar.');
                 return;
             }
         } else {
-            // Modo texto
+            // Modo texto: precisa de texto
             if (!temaParaGerar) {
                 console.warn('[FlashcardGenerator] Texto vazio');
                 toast.error('Por favor, cole o texto para gerar os flashcards.');
@@ -122,7 +136,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         }
 
         try {
-            console.log('[FlashcardGenerator] Chamando generateFlashcards...');
+            console.log('[FlashcardGenerator] Chamando generateFlashcards com tema:', temaParaGerar);
             const cards = await generateFlashcards(temaParaGerar, mode, { quantidade: quantity, dificuldade: difficulty });
             console.log('[FlashcardGenerator] Resultado:', cards);
             if (cards && cards.length > 0) {
@@ -132,9 +146,9 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                 toast.error('Nenhum flashcard foi gerado. Tente novamente com um prompt diferente.');
             }
         } catch (error: any) {
-            // O erro já foi tratado no store com toast, apenas logamos aqui
             console.error('[FlashcardGenerator] Erro ao gerar flashcards:', error);
-            // Não precisamos fazer nada aqui, o store já mostrou o erro ao usuário
+            // O store já lança toast, mas vamos garantir caso o error venha de outro lugar
+            if (!toast) alert('Erro ao gerar flashcards: ' + (error.message || 'Erro desconhecido'));
         }
     };
 
