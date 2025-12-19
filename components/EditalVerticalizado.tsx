@@ -212,7 +212,8 @@ interface EditalVerticalizadoProps {
 }
 
 const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({ onEditDisciplina, onAddTopic, onAddTopicBatch, onDeleteDisciplina }) => {
-    const disciplinas = useDisciplinasStore((state) => state.disciplinas);
+    // Filtrar disciplinas que são apenas de decks
+    const disciplinas = useDisciplinasStore((state) => state.disciplinas).filter(d => !d.is_deck_only);
 
     if (disciplinas.length === 0) {
         return (

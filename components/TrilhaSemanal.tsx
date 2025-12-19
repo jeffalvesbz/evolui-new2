@@ -6,9 +6,20 @@ import { useEditalStore } from '../stores/useEditalStore';
 import { useRevisoesStore } from '../stores/useRevisoesStore';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { FootprintsIcon, CheckIcon, PlayIcon, PlusIcon, XIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
+import {
+    CalendarDaysIcon,
+    GripVerticalIcon,
+    Trash2Icon,
+    ClockIcon,
+    SparklesIcon,
+    ArrowRightIcon,
+    TargetIcon,
+    FlameIcon,
+    ArrowLeftIcon
+} from './icons';
 import { useModalStore } from '../stores/useModalStore';
 import { toast } from './Sonner';
-import { startOfWeek, endOfWeek, format, addWeeks, subWeeks, isSameWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format, addWeeks, subWeeks, isSameWeek, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DIAS_SEMANA, DraggableTopic } from './TrilhaSemanal/types';
 import DayColumn from './TrilhaSemanal/DayColumn';
@@ -37,9 +48,11 @@ const TrilhaSemanal: React.FC = () => {
         isTopicoConcluidoNaTrilha,
         setSemanaAtualKey,
         trilhaConclusao,
-        loadTrilhaSemanal
+        loadTrilhaSemanal,
+        gerarTrilhaComIA, // Added for AI Planning
+        loading: loadingEstudos // Added for AI Planning
     } = useEstudosStore();
-    const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    const disciplinasStore = useDisciplinasStore(state => state.disciplinas); // Renamed to avoid conflict
     const { editalAtivo } = useEditalStore();
     const { revisoes, fetchRevisoes } = useRevisoesStore();
     const { planType, canAccessPlanning, hasActiveSubscription, isTrialActive } = useSubscriptionStore();
@@ -68,6 +81,65 @@ const TrilhaSemanal: React.FC = () => {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [overId, setOverId] = useState<string | null>(null);
     const [dragOverDia, setDragOverDia] = useState<string | null>(null);
+
+    // AI Planning State
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+    const [aiStep, setAiStep] = useState(1);
+    const [aiConfig, setAiConfig] = useState({
+        horasPorDia: 4,
+        nivel: 'intermediario',
+        foco: 'equilibrado',
+        materiasSelecionadas: [] as string[]
+    });
+
+    const disciplinas = disciplinasStore || [];
+
+    // Initialize selected subjects ONLY when modal opens (not when user deselects)
+    useEffect(() => {
+        if (isAiModalOpen && disciplinas.length > 0 && aiConfig.materiasSelecionadas.length === 0) {
+            setAiConfig(prev => ({
+                ...prev,
+                materiasSelecionadas: disciplinas.map(d => d.id)
+            }));
+        }
+    }, [isAiModalOpen, disciplinas.length]); // Removido aiConfig.materiasSelecionadas.length!
+
+
+    const handleOpenAiPlanning = () => {
+        if (!canAccessPlanning()) {
+            toast.error("Funcionalidade exclusiva para assinantes Premium! 💎");
+            return;
+        }
+        setIsAiModalOpen(true);
+        setAiStep(1);
+    };
+
+    const handleGenerateAiParams = async () => {
+        if (aiConfig.materiasSelecionadas.length === 0) {
+            toast.error("Selecione pelo menos uma matéria.");
+            return;
+        }
+
+        await gerarTrilhaComIA({
+            horasPorDia: aiConfig.horasPorDia,
+            materias: aiConfig.materiasSelecionadas,
+            nivel: aiConfig.nivel,
+            foco: aiConfig.foco
+        });
+        setIsAiModalOpen(false);
+    };
+
+    const toggleMateriaSelection = (id: string) => {
+        setAiConfig(prev => {
+            const isSelected = prev.materiasSelecionadas.includes(id);
+            return {
+                ...prev,
+                materiasSelecionadas: isSelected
+                    ? prev.materiasSelecionadas.filter(m => m !== id)
+                    : [...prev.materiasSelecionadas, id]
+            };
+        });
+    };
 
     // Configurar sensores para drag & drop com menor distância de ativação
     const sensors = useSensors(
@@ -181,11 +253,11 @@ const TrilhaSemanal: React.FC = () => {
     const isSemanaAtual = isSameWeek(semanaAtual, new Date(), { weekStartsOn: 1 });
 
     const allTopics = useMemo(() => {
-        if (!disciplinas || disciplinas.length === 0) return [];
-        return disciplinas.flatMap(d =>
+        if (!disciplinasStore || disciplinasStore.length === 0) return [];
+        return disciplinasStore.flatMap(d =>
             (d.topicos || []).map(t => ({ ...t, disciplinaNome: d.nome, disciplinaId: d.id }))
         );
-    }, [disciplinas]);
+    }, [disciplinasStore]);
 
     const allTopicsMap = useMemo(() => new Map(allTopics.map(t => [t.id, t])), [allTopics]);
 
@@ -193,18 +265,49 @@ const TrilhaSemanal: React.FC = () => {
         const result: { [key: string]: DraggableTopic[] } = {};
         for (const dia of DIAS_SEMANA) {
             const topicos = (trilha[dia.id] || []).map((topicId, index) => {
-                const topico = allTopicsMap.get(topicId);
+                let topico: DraggableTopic | undefined;
+
+                // Tentar fazer parse se for string JSON (Item gerado por IA)
+                if (topicId.startsWith('{')) {
+                    try {
+                        const parsed = JSON.parse(topicId);
+                        // Tentar encontrar nome da disciplina
+                        const disc = disciplinasStore?.find(d => d.id === parsed.disciplinaId);
+
+                        topico = {
+                            ...parsed,
+                            disciplinaNome: disc?.nome || parsed.disciplinaId || 'Geral', // Fallback
+                            // Campos obrigatórios do DraggableTopic que podem faltar no JSON da IA
+                            concluido: false,
+                            nivelDificuldade: 'médio',
+                            ultimaRevisao: null,
+                            proximaRevisao: null,
+                            // Campos adicionais
+                            isAiGenerated: true
+                        } as DraggableTopic;
+                    } catch (e) {
+                        console.error("Failed to parse AI topic", e);
+                    }
+                }
+
+                // Se não for IA ou falhou o parse, tenta buscar no mapa padrão
+                if (!topico) {
+                    topico = allTopicsMap.get(topicId);
+                }
+
                 if (!topico) return null;
+
                 const instanceId = createInstanceId(dia.id, index);
-                const concluidoNaTrilha = isTopicoConcluidoNaTrilha(weekKey, dia.id, topicId);
-                return { ...topico, concluidoNaTrilha, instanceId, occurrenceIndex: index };
+                // Usar topico.id para verificar conclusão (funciona para IA e normal)
+                const concluidoNaTrilha = isTopicoConcluidoNaTrilha(weekKey, dia.id, topico.id);
+                return { ...topico, concluidoNaTrilha, instanceId, occurrenceIndex: index } as DraggableTopic;
             }).filter((t): t is DraggableTopic => !!t);
             const pendentes = topicos.filter(t => !t.concluidoNaTrilha);
             const concluidos = topicos.filter(t => t.concluidoNaTrilha);
             result[dia.id] = [...pendentes, ...concluidos];
         }
         return result;
-    }, [trilha, allTopicsMap, weekKey, isTopicoConcluidoNaTrilha, trilhaConclusao]);
+    }, [trilha, allTopicsMap, weekKey, isTopicoConcluidoNaTrilha, trilhaConclusao, disciplinasStore]);
 
     // Estatísticas gerais
     const estatisticas = useMemo(() => {
@@ -579,11 +682,19 @@ const TrilhaSemanal: React.FC = () => {
             <div data-tutorial="planejamento-content" className="flex flex-col h-full overflow-hidden bg-background">
                 <div className="flex flex-1 justify-center p-4 sm:p-6 lg:p-8 overflow-hidden">
                     <div className="flex w-full max-w-screen-2xl flex-col gap-6 h-full overflow-hidden">
-                        {/* Título */}
-                        <div className="px-2 flex-shrink-0">
-                            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-800 dark:text-white md:text-4xl">
+                        {/* Título e Botão IA */}
+                        <div className="px-2 flex-shrink-0 flex items-center justify-between gap-4">
+                            <h1 className="text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
                                 Trilha de Estudos Semanal
                             </h1>
+                            <button
+                                onClick={handleOpenAiPlanning}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold text-sm transition-all shadow-md hover:shadow-lg"
+                                title="Gerar planejamento semanal com IA"
+                            >
+                                <SparklesIcon className="w-4 h-4" />
+                                <span className="hidden sm:inline">Planejar com IA</span>
+                            </button>
                         </div>
 
                         {/* Navegação de semanas com tabs */}
@@ -615,48 +726,51 @@ const TrilhaSemanal: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Layout principal com painel de progresso e dias */}
-                        <main className="grid grid-cols-1 gap-6 lg:grid-cols-4 xl:grid-cols-5 flex-1 overflow-hidden min-h-0">
-                            {/* Painel de Progresso da Semana */}
-                            <div className="flex flex-col gap-6 lg:col-span-1 flex-shrink-0">
-                                <div className="flex flex-col gap-4 rounded-xl bg-module-bg-light dark:bg-module-bg-dark p-6 shadow-subtle dark:shadow-subtle-dark">
-                                    <h2 className="text-lg font-bold leading-tight tracking-tight text-text-dark dark:text-text-light">
+                        {/* Painel de Progresso da Semana (Horizontal no Topo) */}
+                        <div className="px-2 flex-shrink-0">
+                            <div className="flex flex-col md:flex-row items-center gap-6 rounded-xl bg-module-bg-light dark:bg-module-bg-dark p-6 shadow-subtle dark:shadow-subtle-dark">
+                                <div className="flex-shrink-0">
+                                    <h2 className="text-lg font-bold leading-tight tracking-tight text-text-dark dark:text-text-light mb-1">
                                         Progresso da Semana
                                     </h2>
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-baseline justify-between">
-                                            <p className="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
-                                                {estatisticas.concluidos} de {estatisticas.total} tópicos completos
-                                            </p>
-                                            <p className="text-lg font-bold text-text-dark dark:text-text-light">
-                                                {estatisticas.progresso}%
-                                            </p>
+                                    <p className="text-sm font-medium text-text-muted-light dark:text-text-muted-dark">
+                                        {estatisticas.concluidos} de {estatisticas.total} tópicos completos
+                                    </p>
+                                </div>
+
+                                <div className="flex-1 w-full flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex gap-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-slate-400"></div>
+                                                <span className="text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Total: {estatisticas.total}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-success"></div>
+                                                <span className="text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Concluídos: {estatisticas.concluidos}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-accent"></div>
+                                                <span className="text-xs font-semibold text-text-muted-light dark:text-text-muted-dark uppercase tracking-wider">Pendentes: {estatisticas.pendentes}</span>
+                                            </div>
                                         </div>
-                                        <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700">
-                                            <div
-                                                className="h-2 rounded-full bg-accent transition-all duration-500"
-                                                style={{ width: `${estatisticas.progresso}%` }}
-                                            />
-                                        </div>
+                                        <p className="text-xl font-black text-text-dark dark:text-text-light">
+                                            {estatisticas.progresso}%
+                                        </p>
                                     </div>
-                                    <div className="pt-4 border-t border-border-light dark:border-border-dark space-y-2">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-text-muted-light dark:text-text-muted-dark">Total:</span>
-                                            <span className="font-semibold text-text-dark dark:text-text-light">{estatisticas.total}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-text-muted-light dark:text-text-muted-dark">Concluídos:</span>
-                                            <span className="font-semibold text-success">{estatisticas.concluidos}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-text-muted-light dark:text-text-muted-dark">Pendentes:</span>
-                                            <span className="font-semibold text-accent">{estatisticas.pendentes}</span>
-                                        </div>
+                                    <div className="h-3 rounded-full bg-slate-200 dark:bg-slate-700/50 overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-accent transition-all duration-700 ease-out shadow-[0_0_10px_rgba(var(--accent-rgb),0.5)]"
+                                            style={{ width: `${estatisticas.progresso}%` }}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                            {/* Grid de dias da semana */}
-                            <div className="grid grid-cols-1 gap-6 @container md:grid-cols-2 lg:col-span-3 xl:col-span-4 flex-1 overflow-y-auto min-h-0">
+                        </div>
+
+                        {/* Grid de dias da semana (Largura Total - 2 Colunas) */}
+                        <main className="flex-1 overflow-y-auto min-h-0 px-2">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 min-h-full pb-8">
                                 <DndContext
                                     sensors={sensors}
                                     collisionDetection={rectIntersection}
@@ -664,13 +778,18 @@ const TrilhaSemanal: React.FC = () => {
                                     onDragOver={handleDragOver}
                                     onDragEnd={handleDragEnd}
                                 >
-                                    {DIAS_SEMANA.map(dia => {
+                                    {DIAS_SEMANA.map((dia, index) => {
                                         const stats = estatisticasPorDia[dia.id];
                                         const isDiaAtual = isSemanaAtual && normalizarDia(dia.nome) === diaAtualNormalizado;
+                                        // Calcular a data específica para este dia
+                                        // A semana começa na segunda (index 0)
+                                        const date = addDays(semanaAtual, index);
+
                                         return (
                                             <DayColumn
                                                 key={dia.id}
                                                 dia={dia}
+                                                date={date}
                                                 topics={topicsByDay[dia.id]}
                                                 stats={stats}
                                                 isDiaAtual={isDiaAtual}
@@ -688,6 +807,189 @@ const TrilhaSemanal: React.FC = () => {
                         </main>
                     </div>
                 </div>
+
+                {/* AI Planning Modal */}
+                {isAiModalOpen && (
+                    <div
+                        className="fixed inset-0 bg-background/95 backdrop-blur-md z-[100] flex items-center justify-center p-2 sm:p-4"
+                        onClick={() => setIsAiModalOpen(false)}
+                    >
+                        <div
+                            className="bg-card border-2 border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="p-3 sm:p-4 border-b border-border flex items-start sm:items-center justify-between gap-2 flex-shrink-0">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="p-2 bg-purple-500/10 rounded-lg flex-shrink-0">
+                                        <SparklesIcon className="w-5 h-5 text-purple-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-lg sm:text-xl font-bold truncate">Planejamento Inteligente</h2>
+                                        <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
+                                            {aiStep === 1 ? 'Passo 1 de 2: Preferências' : 'Passo 2 de 2: Matérias'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setIsAiModalOpen(false)}
+                                    className="p-1.5 sm:p-1 rounded hover:bg-muted transition-colors flex-shrink-0"
+                                    aria-label="Fechar modal"
+                                >
+                                    <XIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-6 max-h-[60vh] overflow-y-auto">
+                                {aiStep === 1 ? (
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium flex items-center gap-2">
+                                                <ClockIcon className="w-4 h-4 text-primary" />
+                                                Horas por dia
+                                            </label>
+                                            <div className="flex items-center gap-4">
+                                                <input
+                                                    type="range"
+                                                    min="1" max="12"
+                                                    value={aiConfig.horasPorDia}
+                                                    onChange={(e) => setAiConfig({ ...aiConfig, horasPorDia: parseInt(e.target.value) })}
+                                                    className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
+                                                />
+                                                <span className="w-12 text-center font-bold bg-muted px-2 py-1 rounded-md">
+                                                    {aiConfig.horasPorDia}h
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium flex items-center gap-2">
+                                                <TargetIcon className="w-4 h-4 text-primary" />
+                                                Nível de Conhecimento
+                                            </label>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {['iniciante', 'intermediario', 'avancado'].map((opt) => (
+                                                    <button
+                                                        key={opt}
+                                                        onClick={() => setAiConfig({ ...aiConfig, nivel: opt })}
+                                                        className={`px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all border ${aiConfig.nivel === opt
+                                                            ? 'bg-primary/10 border-primary text-primary'
+                                                            : 'bg-muted/50 border-transparent hover:bg-muted text-muted-foreground'
+                                                            }`}
+                                                    >
+                                                        {opt}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-sm font-medium flex items-center gap-2">
+                                                <FlameIcon className="w-4 h-4 text-primary" />
+                                                Foco da Semana
+                                            </label>
+                                            <select
+                                                value={aiConfig.foco}
+                                                onChange={(e) => setAiConfig({ ...aiConfig, foco: e.target.value })}
+                                                className="w-full px-3 py-2 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20"
+                                            >
+                                                <option value="equilibrado">⚖️ Equilibrado</option>
+                                                <option value="teoria">📘 Foco em Teoria (Avançar Conteúdo)</option>
+                                                <option value="questoes">📝 Foco em Questões (Prática)</option>
+                                                <option value="revisao">🔄 Foco em Revisão</option>
+                                                <option value="lei_seca">⚖️ Foco em Lei Seca</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm font-medium">Selecione as disciplinas:</span>
+                                            <button
+                                                onClick={() => {
+                                                    const todasSelecionadas = aiConfig.materiasSelecionadas.length === disciplinas.length;
+                                                    setAiConfig(prev => ({
+                                                        ...prev,
+                                                        materiasSelecionadas: todasSelecionadas ? [] : disciplinas.map(d => d.id)
+                                                    }));
+                                                }}
+                                                className="text-xs text-primary hover:underline font-semibold"
+                                            >
+                                                {aiConfig.materiasSelecionadas.length === disciplinas.length
+                                                    ? '✗ Desmarcar Todas'
+                                                    : '✓ Marcar Todas'}
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {disciplinas.map(d => (
+                                                <label key={d.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl cursor-pointer hover:bg-muted transition-colors border border-transparent hover:border-primary/20">
+                                                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${aiConfig.materiasSelecionadas.includes(d.id)
+                                                        ? 'bg-primary border-primary text-primary-foreground'
+                                                        : 'border-muted-foreground/30 bg-background'
+                                                        }`}>
+                                                        {aiConfig.materiasSelecionadas.includes(d.id) && <CheckIcon className="w-3 h-3" />}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="hidden"
+                                                        checked={aiConfig.materiasSelecionadas.includes(d.id)}
+                                                        onChange={() => toggleMateriaSelection(d.id)}
+                                                    />
+                                                    <span className="font-medium text-sm">{d.nome}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-6 border-t border-border bg-muted/30 flex justify-between items-center">
+                                {aiStep === 2 ? (
+                                    <button
+                                        onClick={() => setAiStep(1)}
+                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <ArrowLeftIcon className="w-4 h-4" />
+                                        Voltar
+                                    </button>
+                                ) : (
+                                    <div />
+                                )}
+
+                                {aiStep === 1 ? (
+                                    <button
+                                        onClick={() => setAiStep(2)}
+                                        className="px-6 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm shadow-md hover:bg-primary/90 transition-all flex items-center gap-2"
+                                    >
+                                        Próximo
+                                        <ArrowRightIcon className="w-4 h-4" />
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleGenerateAiParams}
+                                        disabled={loadingEstudos}
+                                        className="px-6 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {loadingEstudos ? (
+                                            <>
+                                                <SparklesIcon className="w-4 h-4 animate-spin" />
+                                                Gerando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <SparklesIcon className="w-4 h-4" />
+                                                Gerar Planejamento
+                                            </>
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
 
                 {/* Modal para adicionar tópicos - Responsivo */}
                 {modalAdicionarAberto && (

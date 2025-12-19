@@ -18,6 +18,14 @@ import {
     EditIcon,
     Trash2Icon,
     XIcon,
+    AlertTriangleIcon,
+    UploadIcon,
+    GiftIcon,
+    PlusIcon,
+    SparklesIcon,
+    LockIcon,
+    ChevronDownIcon,
+    LoaderIcon
 } from './icons';
 import { toast } from './Sonner';
 // FIX: Changed date-fns imports to named imports to resolve module export errors.
@@ -78,9 +86,10 @@ const DeckCard: React.FC<{
     icon: React.ReactNode;
     onSelect: () => void;
     onDeleteAll?: () => void;
+    onDelete?: () => void;
     color: string;
     showDeleteButton?: boolean;
-}> = ({ title, cardCount, dueCount, icon, onSelect, onDeleteAll, color, showDeleteButton = false }) => {
+}> = ({ title, cardCount, dueCount, icon, onSelect, onDeleteAll, onDelete, color, showDeleteButton = false }) => {
     const [showMenu, setShowMenu] = useState(false);
 
     const handleDeleteAll = (e: React.MouseEvent) => {
@@ -91,34 +100,53 @@ const DeckCard: React.FC<{
         setShowMenu(false);
     };
 
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm(`Tem certeza que deseja excluir a disciplina "${title}" e todos os seus flashcards?\n\nEsta ação não pode ser desfeita.`)) {
+            onDelete?.();
+        }
+        setShowMenu(false);
+    };
+
     return (
         <div
             onClick={onSelect}
-            className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-all hover:scale-105 relative"
+            className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-all hover:scale-105 relative group"
         >
             <div>
                 <div className="flex justify-between items-start mb-3">
                     <div className={`p-2 rounded-lg bg-white/10 w-min ${color}`}>{icon}</div>
-                    {showDeleteButton && cardCount !== undefined && cardCount > 0 && (
+                    {showDeleteButton && (
                         <div className="relative">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setShowMenu(!showMenu);
                                 }}
-                                className="p-1 hover:bg-white/10 rounded transition-colors"
+                                className={`p-1 hover:bg-white/10 rounded transition-all duration-200 ${showMenu ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                             >
                                 <EllipsisIcon className="w-5 h-5 text-muted-foreground" />
                             </button>
                             {showMenu && (
-                                <div className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-xl z-10 min-w-[180px]">
-                                    <button
-                                        onClick={handleDeleteAll}
-                                        className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500 hover:text-red-600 rounded-lg"
-                                    >
-                                        <Trash2Icon className="w-4 h-4" />
-                                        Excluir Todos
-                                    </button>
+                                <div className="absolute right-0 top-8 bg-card border border-border rounded-lg shadow-xl z-20 min-w-[200px] overflow-hidden">
+                                    {onDeleteAll && cardCount !== undefined && cardCount > 0 && (
+                                        <button
+                                            onClick={handleDeleteAll}
+                                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-muted flex items-center gap-2 text-foreground/80 hover:text-foreground border-b border-border/50"
+                                        >
+                                            <Trash2Icon className="w-4 h-4" />
+                                            Excluir Flashcards
+                                        </button>
+                                    )}
+                                    {onDelete && (
+                                        <button
+                                            onClick={handleDelete}
+                                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-500/10 flex items-center gap-2 text-red-500 hover:text-red-600"
+                                        >
+                                            <XIcon className="w-4 h-4" />
+                                            Excluir Disciplina
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -138,11 +166,441 @@ const DeckCard: React.FC<{
     );
 };
 
+// ... (DefaultDecksSection omitted as it is unchanged)
 
 // --- Main Views ---
 
-const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => void; onStartQuiz: () => void; onViewSavedQuizzes: () => void }> = ({ onSelectDeck, onStartQuiz, onViewSavedQuizzes }) => {
+
+
+
+
+// --- Default Decks Section ---
+interface DefaultDeck {
+    id: string;
+    nome: string;
+    descricao: string | null;
+    categoria: string | null;
+    count: number;
+}
+
+const DefaultDecksSection: React.FC<{
+    disciplinas: Disciplina[];
+    onImportSuccess: () => void;
+    isOpen: boolean;
+    onClose: () => void;
+}> = ({ disciplinas, onImportSuccess, isOpen, onClose }) => {
+    const [decks, setDecks] = useState<DefaultDeck[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [importingDeckId, setImportingDeckId] = useState<string | null>(null);
+    const [showImportModal, setShowImportModal] = useState<DefaultDeck | null>(null);
+    const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>('');
+    const [newDisciplinaName, setNewDisciplinaName] = useState<string>('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const { addFlashcards } = useFlashcardsStore();
+    const { addDisciplina, addTopico } = useDisciplinasStore();
+    const { planType } = useSubscriptionStore();
+    const isPro = planType === 'pro' || planType === 'premium';
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchDefaultDecks();
+        }
+    }, [isOpen]);
+
+    // Calcular decks filtrados
+    const filteredDecks = useMemo(() => {
+        if (!searchQuery.trim()) return decks;
+        const query = searchQuery.toLowerCase();
+        return decks.filter(deck =>
+            deck.nome.toLowerCase().includes(query) ||
+            (deck.categoria && deck.categoria.toLowerCase().includes(query))
+        );
+    }, [decks, searchQuery]);
+
+    const fetchDefaultDecks = async () => {
+        setLoading(true);
+        try {
+            const { data: decksData, error } = await (supabase
+                .from('flashcard_decks_default') as any)
+                .select('*')
+                .eq('visivel', true)
+                .order('nome');
+
+            if (error) throw error;
+
+            const decksWithCount = await Promise.all(
+                (decksData || []).map(async (deck: any) => {
+                    const { count } = await (supabase
+                        .from('flashcards_default') as any)
+                        .select('*', { count: 'exact', head: true })
+                        .eq('deck_id', deck.id);
+                    return { ...deck, count: count || 0 };
+                })
+            );
+
+            setDecks(decksWithCount);
+        } catch (error) {
+            console.error('Error fetching default decks:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleImport = async (deck: DefaultDeck, disciplinaId: string, newName?: string) => {
+        setImportingDeckId(deck.id);
+
+        try {
+            let targetDisciplinaId = disciplinaId;
+            let targetTopicoId: string | null = null;
+
+            if (disciplinaId === 'new' && newName) {
+                const newDisciplina = await addDisciplina({ nome: newName || deck.nome, topicos: [], is_deck_only: true } as any);
+                if (newDisciplina) {
+                    targetDisciplinaId = newDisciplina.id;
+                    if (newDisciplina.topicos && newDisciplina.topicos.length > 0) {
+                        targetTopicoId = newDisciplina.topicos[0].id;
+                    } else {
+                        const novoTopico = await addTopico(newDisciplina.id, {
+                            titulo: 'Geral',
+                            concluido: false,
+                            nivelDificuldade: 'desconhecido',
+                            ultimaRevisao: null,
+                            proximaRevisao: null
+                        });
+                        targetTopicoId = novoTopico.id;
+                    }
+                } else {
+                    throw new Error('Erro ao criar disciplina');
+                }
+            } else {
+                const disc = disciplinas.find(d => d.id === disciplinaId);
+                if (disc && disc.topicos.length > 0) {
+                    targetTopicoId = disc.topicos[0].id;
+                } else if (disc) {
+                    const novoTopico = await addTopico(disc.id, {
+                        titulo: 'Geral',
+                        concluido: false,
+                        nivelDificuldade: 'desconhecido',
+                        ultimaRevisao: null,
+                        proximaRevisao: null
+                    });
+                    targetTopicoId = novoTopico.id;
+                }
+            }
+
+            if (!targetTopicoId) {
+                toast.error('Disciplina não possui tópicos. Adicione um tópico primeiro.');
+                return;
+            }
+
+            const { data: flashcardsData, error } = await (supabase
+                .from('flashcards_default') as any)
+                .select('*')
+                .eq('deck_id', deck.id)
+                .order('ordem');
+
+            if (error) throw error;
+
+            if (!flashcardsData || flashcardsData.length === 0) {
+                toast.error('Deck não possui flashcards.');
+                return;
+            }
+
+            const cardsToAdd = flashcardsData.map((fc: any) => ({
+                pergunta: fc.pergunta,
+                resposta: fc.resposta,
+                tags: fc.tags || [],
+                is_default: true,
+            }));
+
+            await addFlashcards(cardsToAdd, targetTopicoId);
+
+            toast.success(`${cardsToAdd.length} flashcards importados!`);
+            setShowImportModal(null);
+            onImportSuccess();
+        } catch (error: any) {
+            console.error('Error importing deck:', error);
+            toast.error(`Erro ao importar: ${error.message}`);
+        } finally {
+            setImportingDeckId(null);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            {/* Matches CriarFlashcardModal style: bg-card, border-border, shadow-2xl */}
+            <div className="bg-card border border-border rounded-xl max-w-5xl w-full shadow-2xl h-[85vh] relative overflow-hidden">
+                <div className="absolute inset-0 overflow-y-auto">
+
+                    {/* Header */}
+                    <div className="p-6 border-b border-border flex flex-col sm:flex-row justify-between items-center gap-4 bg-card/50 backdrop-blur-md sticky top-0 z-10">
+                        <div className="flex-1 w-full sm:w-auto">
+                            <div className="flex items-center gap-3 mb-1">
+                                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                    <span className="p-1.5 bg-purple-600/10 rounded-lg text-purple-500">
+                                        <GiftIcon className="w-5 h-5" />
+                                    </span>
+                                    Decks Prontos
+                                </h2>
+                                {!isPro && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border uppercase tracking-wider">
+                                        Pro
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-muted-foreground text-sm">
+                                Conteúdos curados por especialistas.
+                            </p>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative w-full sm:w-64 md:w-80">
+                            {/* Ícone de busca absoluto dentro do input */}
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                {/* SVG de Lupa simples */}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Buscar decks..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full h-10 pl-9 pr-4 rounded-lg bg-muted/50 border border-border text-sm focus:bg-background focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all outline-none placeholder:text-muted-foreground/70"
+                            />
+                        </div>
+
+                        <button
+                            onClick={onClose}
+                            className="hidden sm:flex p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                        >
+                            <XIcon className="w-5 h-5" />
+                        </button>
+
+                        {/* Mobile close button positioned absolute if needed, or simply part of flex */}
+                        <button
+                            onClick={onClose}
+                            className="sm:hidden absolute top-4 right-4 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
+                        >
+                            <XIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 bg-background relative">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <p className="animate-pulse">Carregando biblioteca...</p>
+                            </div>
+                        ) : decks.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                                <TrophyIcon className="w-12 h-12 mb-4 opacity-20" />
+                                <p>Nenhum deck disponível no momento.</p>
+                            </div>
+                        ) : filteredDecks.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                                <div className="opacity-20 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8"></circle>
+                                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    </svg>
+                                </div>
+                                <p>Nenhum resultado para "{searchQuery}"</p>
+                            </div>
+                        ) : (
+                            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${!isPro ? 'opacity-30 pointer-events-none select-none filter blur-[1px]' : ''}`}>
+                                {filteredDecks.map((deck) => (
+                                    <div
+                                        key={deck.id}
+                                        className="group bg-card border border-border rounded-xl p-5 flex flex-col justify-between hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/5 transition-all duration-300 relative overflow-hidden"
+                                    >
+                                        {/* Top colored line indicator */}
+                                        <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                        <div className="mb-6">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                                                    {deck.count} cards
+                                                </span>
+
+                                            </div>
+
+                                            <h3 className="font-bold text-lg text-foreground mb-2 leading-tight group-hover:text-primary transition-colors">
+                                                {deck.nome}
+                                            </h3>
+
+                                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                                                {deck.descricao || 'Sem descrição.'}
+                                            </p>
+
+                                            {deck.categoria && (
+                                                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                                                    <LayersIcon className="w-3.5 h-3.5" />
+                                                    {deck.categoria}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Botão com cor roxa/primary consistente */}
+                                        <button
+                                            onClick={() => setShowImportModal(deck)}
+                                            disabled={importingDeckId === deck.id}
+                                            className="w-full py-2.5 bg-muted/50 border border-border/50 text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary rounded-lg transition-all font-medium text-sm flex items-center justify-center gap-2 group-hover:border-primary/30"
+                                        >
+                                            {importingDeckId === deck.id ? 'Importando...' : 'Importar Deck'}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Locked State Overlay */}
+                        {!isPro && !loading && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pb-20">
+                                <div className="bg-card border border-border p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center mx-4 relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
+
+                                    <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-5">
+                                        <LockIcon className="w-7 h-7 text-purple-600 dark:text-purple-400" />
+                                    </div>
+
+                                    <h3 className="text-xl font-bold text-foreground mb-2">Recurso Premium</h3>
+                                    <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+                                        Os Decks Prontos são exclusivos para assinantes Pro e Premium.
+                                    </p>
+
+                                    <a
+                                        href="/planos"
+                                        className="w-full py-2.5 px-6 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                                        onClick={(e) => { e.preventDefault(); toast("Redirecionando para planos..."); }}
+                                    >
+                                        <SparklesIcon className="w-4 h-4" />
+                                        Fazer Upgrade
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Modal de seleção de disciplina (aninhado) */}
+                {showImportModal && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200">
+                        <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl relative">
+                            <button
+                                onClick={() => {
+                                    setShowImportModal(null);
+                                    setSelectedDisciplinaId('');
+                                    setNewDisciplinaName('');
+                                }}
+                                className="absolute top-4 right-4 p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                            >
+                                <XIcon className="w-5 h-5" />
+                            </button>
+
+                            <div className="mb-6">
+                                <h3 className="text-lg font-bold text-foreground mb-1">
+                                    Importar "{showImportModal.nome}"
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Selecione onde salvar os {showImportModal.count} flashcards
+                                </p>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block">Destino</label>
+                                    <div className="relative">
+                                        <select
+                                            value={selectedDisciplinaId}
+                                            onChange={(e) => setSelectedDisciplinaId(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">Selecione uma disciplina...</option>
+                                            {disciplinas.map((d) => (
+                                                <option key={d.id} value={d.id}>{d.nome}</option>
+                                            ))}
+                                            <option value="new" className="font-bold border-t border-border text-primary">+ Criar nova disciplina</option>
+                                        </select>
+                                        <ChevronDownIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                {selectedDisciplinaId === 'new' && (
+                                    <div className="animate-in slide-in-from-top-2 duration-200">
+                                        <label className="text-xs font-semibold uppercase text-muted-foreground mb-2 block">Nome da Nova Disciplina</label>
+                                        <input
+                                            type="text"
+                                            value={newDisciplinaName}
+                                            onChange={(e) => setNewDisciplinaName(e.target.value)}
+                                            placeholder={`Ex: ${showImportModal.nome}`}
+                                            className="w-full px-4 py-2.5 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-muted-foreground/50"
+                                            autoFocus
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="bg-amber-100 border border-amber-200 rounded-lg p-3 flex gap-3 items-start">
+                                    <AlertTriangleIcon className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                                    <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                                        Estes flashcards possuem direitos autorais e <strong className="text-amber-950">não poderão ser exportados</strong>.
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button
+                                        onClick={() => {
+                                            setShowImportModal(null);
+                                            setSelectedDisciplinaId('');
+                                            setNewDisciplinaName('');
+                                        }}
+                                        className="flex-1 px-4 py-2.5 border border-border rounded-lg hover:bg-muted transition-colors font-medium text-sm text-foreground"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={() => handleImport(
+                                            showImportModal,
+                                            selectedDisciplinaId,
+                                            newDisciplinaName
+                                        )}
+                                        disabled={!selectedDisciplinaId || (selectedDisciplinaId === 'new' && !newDisciplinaName.trim()) || importingDeckId !== null}
+                                        className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                                    >
+                                        {importingDeckId ? (
+                                            <>
+                                                <LoaderIcon className="w-4 h-4 animate-spin" />
+                                                Importando...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Confirmar
+                                                <CheckCircle2Icon className="w-4 h-4" />
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// --- Main Views ---
+
+const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => void; onStartQuiz: () => void; onViewSavedQuizzes: () => void; onOpenDefaultDecks: () => void }> = ({ onSelectDeck, onStartQuiz, onViewSavedQuizzes, onOpenDefaultDecks }) => {
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
+    // FIX: Add removeDisciplina for handling deletions
+    const { removeDisciplina } = useDisciplinasStore();
     const { flashcards, getDueFlashcards, fetchFlashcardsForTopics, loading, getAllTags, searchFlashcards, filterByTags, deleteAllFlashcards, loadFlashcardsContent } = useFlashcardsStore();
     const { openCriarFlashcardModal } = useModalStore();
     const { planType, flashcardsCreatedThisMonth, getMaxFlashcardsPerMonth } = useSubscriptionStore();
@@ -310,22 +768,40 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                         }
                     </p>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-2">
                     <button
                         onClick={() => setShowImportExport(true)}
-                        className="h-10 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-muted text-foreground text-xs sm:text-sm font-medium hover:bg-muted/80 transition-colors flex-1 sm:flex-initial"
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                     >
-                        <DownloadIcon className="w-4 h-4" />
-                        <span className="hidden sm:inline">Import/Export</span>
-                        <span className="sm:hidden">I/E</span>
+                        <UploadIcon className="w-4 h-4" />
+                        Importar
                     </button>
                     <button
-                        onClick={() => openCriarFlashcardModal()}
-                        className="h-10 px-3 sm:px-4 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-medium hover:bg-primary/90 transition-colors flex-1 sm:flex-initial"
+                        onClick={onOpenDefaultDecks}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium shadow-lg shadow-purple-900/20"
                     >
-                        <PlusCircleIcon className="w-4 h-4" />
-                        Criar
+                        <GiftIcon className="w-4 h-4" />
+                        Decks Prontos
                     </button>
+                    <div className="flex bg-primary rounded-lg p-0.5">
+                        <button
+                            onClick={() => openCriarFlashcardModal({ mode: 'manual' })}
+                            className="px-3 py-1.5 hover:bg-white/10 text-primary-foreground rounded-md transition-colors flex items-center gap-2 text-sm font-medium"
+                            title="Criar Manualmente"
+                        >
+                            <PlusIcon className="w-4 h-4" />
+                            Manual
+                        </button>
+                        <div className="w-px bg-white/20 my-1"></div>
+                        <button
+                            onClick={() => openCriarFlashcardModal({ mode: 'ai' })}
+                            className="px-3 py-1.5 hover:bg-white/10 text-primary-foreground rounded-md transition-colors flex items-center gap-2 text-sm font-medium"
+                            title="Criar com Inteligência Artificial"
+                        >
+                            <SparklesIcon className="w-4 h-4" />
+                            IA
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -366,6 +842,11 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                             }
                         };
 
+                        const handleDeleteDisciplina = async () => {
+                            await removeDisciplina(disciplina.id);
+                            toast.success(`Disciplina "${disciplina.nome}" excluída.`);
+                        };
+
                         return (
                             <DeckCard
                                 key={disciplina.id}
@@ -376,6 +857,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                                 color="text-primary"
                                 showDeleteButton={true}
                                 onDeleteAll={handleDeleteAllForDisciplina}
+                                onDelete={disciplina.is_deck_only ? handleDeleteDisciplina : undefined}
                                 onSelect={() => {
                                     if (cardsInDeck.length > 0) {
                                         handleDeckSelection({ deck: cardsInDeck, name: disciplina.nome, isReviewSession: false, totalCards: cardsInDeck.length });
@@ -398,6 +880,9 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
             {/* Heatmap Removed as per user request */}
 
             {/* Busca e Filtros */}
+
+            {/* Decks Prontos para Importar (Modal) */}
+            {/* Decks Prontos - Moved to Main FlashcardsPage */}
         </div>
     );
 };
@@ -727,10 +1212,13 @@ const StudyView: React.FC = () => {
 
 const FlashcardsPage: React.FC = () => {
     const { session, startSession } = useFlashcardStudyStore();
-    const { flashcards } = useFlashcardsStore();
+    const { flashcards, fetchFlashcardsForTopics } = useFlashcardsStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const [viewMode, setViewMode] = useState<'decks' | 'saved-quizzes'>('decks');
     const [showImportExport, setShowImportExport] = useState(false);
+    const [showDefaultDecks, setShowDefaultDecks] = useState(false);
+
+    const allTopicIds = useMemo(() => disciplinas.flatMap(d => d.topicos.map(t => t.id)), [disciplinas]);
 
     return (
         <div data-tutorial="flashcards-content" className="w-full">
@@ -756,13 +1244,25 @@ const FlashcardsPage: React.FC = () => {
                             onSelectDeck={startSession}
                             onStartQuiz={() => { }}
                             onViewSavedQuizzes={() => { }}
+                            onOpenDefaultDecks={() => setShowDefaultDecks(true)}
                         />
                     </motion.div>
                 )}
             </AnimatePresence>
 
             <style>{`.perspective-1000 { perspective: 1000px; } .transform-style-3d { transform-style: preserve-3d; } .rotate-y-180 { transform: rotateY(180deg); } .backface-hidden { backface-visibility: hidden; }`}</style>
-        </div >
+
+            <DefaultDecksSection
+                disciplinas={disciplinas}
+                isOpen={showDefaultDecks}
+                onClose={() => setShowDefaultDecks(false)}
+                onImportSuccess={() => {
+                    if (allTopicIds.length > 0) {
+                        fetchFlashcardsForTopics(allTopicIds);
+                    }
+                }}
+            />
+        </div>
     );
 };
 

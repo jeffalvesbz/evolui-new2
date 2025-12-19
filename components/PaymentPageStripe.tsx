@@ -30,7 +30,7 @@ const faqData: FAQItem[] = [
     },
     {
         question: 'Qual a diferença entre Pro e Premium?',
-        answer: 'Pro tem limites (3 editais, 10 correções/mês, 30 questões IA/dia). Premium oferece recursos ilimitados, 100 questões IA/dia, OCR de redação manuscrita e suporte prioritário 24/7.'
+        answer: 'Pro tem limites (3 editais, 5 correções/mês, 30 questões IA/dia). Premium oferece editais ilimitados, 15 correções/mês, 100 questões IA/dia, OCR de redação manuscrita e suporte prioritário 24/7.'
     },
     {
         question: 'O desconto de 30% no plano anual é permanente?',
@@ -45,7 +45,7 @@ const faqData: FAQItem[] = [
 const comparisonData = [
     { feature: 'Editais e Planos', free: '1', pro: '3', premium: '∞' },
     { feature: 'Ciclos de Estudos', free: '1', pro: '3', premium: '∞' },
-    { feature: 'Correções IA/mês', free: '0', pro: '10', premium: '∞' },
+    { feature: 'Correções IA/mês', free: '0', pro: '5', premium: '15' },
     { feature: 'Questões IA/dia', free: '0', pro: '30', premium: '100' },
     { feature: 'Flashcards/mês', free: '50', pro: '500', premium: '2000' },
     { feature: 'OCR Redação', free: '✗', pro: '✗', premium: '✓' },
@@ -371,14 +371,14 @@ const PaymentPageStripe: React.FC = () => {
                                         onClick={() => handleStartTrial(plan.name)}
                                         disabled={startingTrial !== null || buttonState.disabled}
                                         className={`w-full py-4 rounded-xl font-bold text-base transition-all transform disabled:opacity-50 disabled:cursor-not-allowed ${buttonState.variant === 'current'
-                                                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500/50 cursor-not-allowed'
-                                                : buttonState.variant === 'upgrade'
-                                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 hover:scale-105'
-                                                    : buttonState.variant === 'downgrade'
-                                                        ? 'bg-muted text-muted-foreground border-2 border-border cursor-not-allowed'
-                                                        : plan.ctaStyle === 'solid'
-                                                            ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:scale-105'
-                                                            : 'border-2 border-primary text-primary hover:bg-primary/10 hover:scale-105'
+                                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-2 border-emerald-500/50 cursor-not-allowed'
+                                            : buttonState.variant === 'upgrade'
+                                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30 hover:scale-105'
+                                                : buttonState.variant === 'downgrade'
+                                                    ? 'bg-muted text-muted-foreground border-2 border-border cursor-not-allowed'
+                                                    : plan.ctaStyle === 'solid'
+                                                        ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:scale-105'
+                                                        : 'border-2 border-primary text-primary hover:bg-primary/10 hover:scale-105'
                                             }`}
                                     >
                                         {startingTrial === plan.name ? 'Processando...' : buttonState.text}

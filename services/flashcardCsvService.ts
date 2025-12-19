@@ -9,10 +9,14 @@ export interface CsvFlashcard {
 
 /**
  * Exporta flashcards para formato CSV
+ * NOTA: Flashcards importados de decks padrão (is_default=true) são excluídos da exportação
  */
 export const exportFlashcardsToCSV = (flashcards: Flashcard[]): string => {
+    // Filtrar flashcards que são de decks padrão (protegidos contra exportação)
+    const exportableFlashcards = flashcards.filter(fc => !(fc as any).is_default);
+
     const headers = ['pergunta', 'resposta', 'tags', 'topico_id'];
-    const rows = flashcards.map(fc => [
+    const rows = exportableFlashcards.map(fc => [
         escapeCsvField(fc.pergunta),
         escapeCsvField(fc.resposta),
         escapeCsvField((fc.tags || []).join(';')),

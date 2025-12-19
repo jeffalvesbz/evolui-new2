@@ -1,9 +1,9 @@
 // FlashcardGenerator component - generates flashcards by discipline
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { Flashcard } from '../types';
-import { LoaderIcon, SparklesIcon, Trash2Icon, SaveIcon, CheckIcon, XIcon, UploadIcon } from './icons';
+import { LoaderIcon, SparklesIcon, Trash2Icon, SaveIcon, CheckIcon, XIcon, UploadIcon, ChevronDownIcon } from './icons';
 
 import { toast } from './Sonner';
 
@@ -13,6 +13,104 @@ interface FlashcardGeneratorProps {
     onSave: () => void;
     onCancel: () => void;
 }
+
+// Simple MultiSelect Component
+const MultiSelect: React.FC<{
+    options: { id: string; label: string }[];
+    selectedIds: string[];
+    onChange: (ids: string[]) => void;
+    placeholder?: string;
+    disabled?: boolean;
+}> = ({ options, selectedIds, onChange, placeholder = "Selecione...", disabled = false }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Close on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleOption = (id: string) => {
+        if (selectedIds.includes(id)) {
+            onChange(selectedIds.filter(selectedId => selectedId !== id));
+        } else {
+            onChange([...selectedIds, id]);
+        }
+    };
+
+    const handleSelectAll = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (selectedIds.length === options.length) {
+            onChange([]);
+        } else {
+            onChange(options.map(o => o.id));
+        }
+    };
+
+    return (
+        <div className="relative w-full" ref={containerRef}>
+            <div
+                onClick={() => !disabled && setIsOpen(!isOpen)}
+                className={`w-full bg-slate-900 border rounded-md px-3 py-2 text-sm flex items-center justify-between cursor-pointer transition-colors ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-900/50' : 'border-slate-700 hover:border-violet-500'} ${isOpen ? 'ring-2 ring-violet-600 border-transparent' : ''}`}
+            >
+                <div className="truncate flex-1">
+                    {selectedIds.length === 0 ? (
+                        <span className="text-slate-400">{placeholder}</span>
+                    ) : selectedIds.length === 1 ? (
+                        <span className="text-slate-100">{options.find(o => o.id === selectedIds[0])?.label}</span>
+                    ) : (
+                        <span className="text-slate-100">{selectedIds.length} tópicos selecionados</span>
+                    )}
+                </div>
+                <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isOpen && !disabled && (
+                <div className="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-700 rounded-md shadow-xl max-h-60 overflow-y-auto">
+                    {options.length > 0 && (
+                        <div
+                            onClick={handleSelectAll}
+                            className="px-3 py-2 text-xs font-semibold text-violet-400 cursor-pointer hover:bg-slate-800 border-b border-slate-800 sticky top-0 bg-slate-900 z-10 flex items-center gap-2"
+                        >
+                            <div className={`w-3 h-3 border rounded border-violet-500 flex items-center justify-center ${selectedIds.length === options.length ? 'bg-violet-500' : ''}`}>
+                                {selectedIds.length === options.length && <CheckIcon className="w-2.5 h-2.5 text-white" />}
+                            </div>
+                            {selectedIds.length === options.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                        </div>
+                    )}
+                    {options.map(option => {
+                        const isSelected = selectedIds.includes(option.id);
+                        return (
+                            <div
+                                key={option.id}
+                                onClick={() => toggleOption(option.id)}
+                                className="px-3 py-2 hover:bg-slate-800 cursor-pointer flex items-center gap-2 text-sm transition-colors border-b border-slate-800/50 last:border-0"
+                            >
+                                <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors flex-shrink-0 ${isSelected ? 'bg-violet-600 border-violet-600' : 'border-slate-600'}`}>
+                                    {isSelected && <CheckIcon className="w-3 h-3 text-white" />}
+                                </div>
+                                <span className={isSelected ? 'text-slate-100 font-medium' : 'text-slate-400'}>
+                                    {option.label}
+                                </span>
+                            </div>
+                        );
+                    })}
+                    {options.length === 0 && (
+                        <div className="px-3 py-4 text-center text-sm text-slate-500">
+                            Nenhum tópico disponível
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId: initialTopicoId, onSave, onCancel }: FlashcardGeneratorProps) {
     const { generateFlashcards, addFlashcards, generating, generatorState, saveGeneratorState, clearGeneratorState } = useFlashcardsStore();
@@ -30,7 +128,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         step: (savedState?.step || 'input') as 'input' | 'preview',
         // Se houver estado salvo, usa ele; senão, usa as props iniciais
         selectedDisciplinaId: savedState?.selectedDisciplinaId || initialDisciplinaId || '',
-        selectedTopicoId: savedState?.selectedTopicoId || initialTopicoId || '',
+        selectedSourceTopicIds: savedState?.selectedSourceTopicIds || (initialTopicoId ? [initialTopicoId] : []),
     };
 
     const [mode, setMode] = useState<'topic' | 'text'>(initialState.mode);
@@ -40,7 +138,16 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
     const [generatedCards, setGeneratedCards] = useState<Partial<Flashcard>[]>(initialState.generatedCards);
     const [step, setStep] = useState<'input' | 'preview'>(initialState.step);
     const [selectedDisciplinaId, setSelectedDisciplinaId] = useState<string>(initialState.selectedDisciplinaId);
-    const [selectedTopicoId, setSelectedTopicoId] = useState<string>(initialState.selectedTopicoId);
+
+    // Multi-select state for inputs
+    const [selectedSourceTopicIds, setSelectedSourceTopicIds] = useState<string[]>(initialState.selectedSourceTopicIds);
+
+    // Single select state for saving
+    // Initialize with the first selected source topic if available, or empty
+    const [targetTopicoId, setTargetTopicoId] = useState<string>(
+        (selectedSourceTopicIds.length > 0 ? selectedSourceTopicIds[0] : '')
+    );
+
     const [selectedCardIndices, setSelectedCardIndices] = useState<Set<number>>(
         new Set(savedState?.selectedCardIndices || [])
     );
@@ -55,10 +162,10 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             generatedCards,
             step,
             selectedDisciplinaId,
-            selectedTopicoId,
+            selectedSourceTopicIds,
             selectedCardIndices: Array.from(selectedCardIndices),
         });
-    }, [mode, prompt, quantity, difficulty, generatedCards, step, selectedDisciplinaId, selectedTopicoId, selectedCardIndices, saveGeneratorState]);
+    }, [mode, prompt, quantity, difficulty, generatedCards, step, selectedDisciplinaId, selectedSourceTopicIds, selectedCardIndices, saveGeneratorState]);
 
     const topicosFiltrados = useMemo(() => {
         if (!selectedDisciplinaId) return [];
@@ -81,38 +188,44 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         });
     }, [selectedDisciplinaId, disciplinas]);
 
-    const topicoSelecionado = useMemo(() => {
-        return topicosFiltrados.find(t => t.id === selectedTopicoId);
-    }, [selectedTopicoId, topicosFiltrados]);
+    // Quando mudamos para o passo de preview, garantimos que temos um target definido
+    useEffect(() => {
+        if (step === 'preview' && !targetTopicoId && selectedSourceTopicIds.length > 0) {
+            setTargetTopicoId(selectedSourceTopicIds[0]);
+        }
+    }, [step, selectedSourceTopicIds, targetTopicoId]);
 
     const handleGenerate = async () => {
         console.log('[FlashcardGenerator] handleGenerate iniciado');
-        console.log('[FlashcardGenerator] Estado:', { mode, promptLength: prompt.length, quantity, difficulty, selectedDisciplinaId, selectedTopicoId });
+        console.log('[FlashcardGenerator] Estado:', { mode, promptLength: prompt.length, quantity, difficulty, selectedDisciplinaId, selectedSourceTopicIds });
 
         let temaParaGerar = prompt.trim();
 
         if (mode === 'topic') {
-            // Se houver tópico selecionado, validamos se ele existe na lista atual
-            if (selectedTopicoId) {
-                const topico = topicosFiltrados.find(t => t.id === selectedTopicoId);
-                if (topico) {
-                    // Combina o título do tópico com o prompt do usuário (se houver)
-                    temaParaGerar = topico.titulo;
+            // Check if we have selected topics
+            if (selectedSourceTopicIds.length > 0) {
+                // Get titles of selected topics
+                const selectedTopics = topicosFiltrados.filter(t => selectedSourceTopicIds.includes(t.id));
+                const topicTitles = selectedTopics.map(t => t.titulo).join(', ');
+
+                if (selectedTopics.length > 0) {
+                    // Combine topic titles
+                    temaParaGerar = `Tópicos: ${topicTitles}`;
                     if (prompt.trim()) {
                         temaParaGerar += `. Contexto adicional: ${prompt.trim()}`;
                     }
                 } else {
-                    // Tópico selecionado mas não encontrado na lista (erro de estado)
-                    console.warn('[FlashcardGenerator] Tópico selecionado (ID: ' + selectedTopicoId + ') não encontrado na lista atual.');
-                    // Tenta usar apenas o prompt se houver, ou falha
+                    // Selected IDs don't match current topics (maybe switched discipline?)
+                    console.warn('[FlashcardGenerator] Tópicos selecionados não encontrados na lista atual.');
+                    // Check if prompt is enough
                     if (!temaParaGerar) {
-                        toast.error('Tópico selecionado inválido. Por favor, selecione o tópico novamente.');
+                        toast.error('Tópicos selecionados inválidos. Por favor, selecione os tópicos novamente.');
                         return;
                     }
                 }
             } else if (!temaParaGerar) {
                 console.warn('[FlashcardGenerator] Nenhum tópico ou texto selecionado');
-                toast.error('Por favor, selecione um tópico ou descreva sobre o que você quer estudar.');
+                toast.error('Por favor, selecione pelo menos um tópico ou descreva sobre o que você quer estudar.');
                 return;
             }
         } else {
@@ -142,6 +255,10 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             if (cards && cards.length > 0) {
                 setGeneratedCards(cards);
                 setStep('preview');
+                // Set default target topic if not set
+                if (!targetTopicoId && selectedSourceTopicIds.length > 0) {
+                    setTargetTopicoId(selectedSourceTopicIds[0]);
+                }
             } else {
                 toast.error('Nenhum flashcard foi gerado. Tente novamente com um prompt diferente.');
             }
@@ -149,14 +266,13 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             console.error('[FlashcardGenerator] Erro ao gerar flashcards:', error);
             // O store já lança toast, mas vamos garantir caso o error venha de outro lugar
             const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
-            window.alert(`[DIAGNÓSTICO] Erro ao gerar flashcards:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
         }
     };
 
     const handleSaveAll = async () => {
         console.log('[FlashcardGenerator] handleSaveAll chamado');
         console.log('[FlashcardGenerator] selectedDisciplinaId:', selectedDisciplinaId);
-        console.log('[FlashcardGenerator] selectedTopicoId:', selectedTopicoId);
+        console.log('[FlashcardGenerator] targetTopicoId:', targetTopicoId); // Using target for saving
         console.log('[FlashcardGenerator] generatedCards.length:', generatedCards.length);
 
         try {
@@ -176,19 +292,19 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             if (!selectedDisciplinaId) {
                 console.warn('[FlashcardGenerator] selectedDisciplinaId está vazio!');
                 // Volta para a tela de input para selecionar disciplina
-                setStep('input');
+                // setStep('input'); // Don't allow going back, force selection here
+                toast.error('Selecione uma disciplina.');
                 return;
             }
 
-            if (!selectedTopicoId) {
-                console.warn('[FlashcardGenerator] selectedTopicoId está vazio!');
-                // Volta para a tela de input para selecionar tópico
-                setStep('input');
+            if (!targetTopicoId) {
+                console.warn('[FlashcardGenerator] targetTopicoId está vazio!');
+                toast.error('Selecione um tópico para salvar os flashcards.');
                 return;
             }
 
-            console.log('[FlashcardGenerator] Chamando addFlashcards com topicoId:', selectedTopicoId);
-            await addFlashcards(validCards, selectedTopicoId);
+            console.log('[FlashcardGenerator] Chamando addFlashcards com topicoId:', targetTopicoId);
+            await addFlashcards(validCards, targetTopicoId);
 
             // Remover os cards salvos da lista
             if (selectedCardIndices.size > 0) {
@@ -212,8 +328,6 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
             }
         } catch (error: any) {
             console.error('Erro ao salvar flashcards:', error);
-            const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
-            window.alert(`[DIAGNÓSTICO] Erro ao salvar flashcards:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
         }
     };
 
@@ -326,22 +440,24 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                     </div>
                 </div>
 
-                {/* Seleção de disciplina e tópico na preview */}
-                <div className={`grid grid-cols-2 gap-4 p-4 border rounded-lg ${!selectedDisciplinaId || !selectedTopicoId ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-muted/30 border-border'}`}>
-                    {(!selectedDisciplinaId || !selectedTopicoId) && (
+                {/* Seleção de disciplina e tópico (ALVO) na preview */}
+                <div className={`grid grid-cols-2 gap-4 p-4 border rounded-lg ${!selectedDisciplinaId || !targetTopicoId ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-muted/30 border-border'}`}>
+                    {(!selectedDisciplinaId || !targetTopicoId) && (
                         <div className="col-span-2 text-sm text-yellow-600 dark:text-yellow-400 font-medium flex items-center gap-2 mb-2">
-                            ⚠️ Selecione a disciplina e o tópico antes de salvar os flashcards
+                            ⚠️ Selecione onde salvar os flashcards
                         </div>
                     )}
                     <div>
                         <label className={`block text-xs mb-1 ${!selectedDisciplinaId ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}`}>
-                            Disciplina * {!selectedDisciplinaId && '(obrigatório)'}
+                            Disciplina Alvo
                         </label>
                         <select
                             value={selectedDisciplinaId}
                             onChange={e => {
                                 setSelectedDisciplinaId(e.target.value);
-                                setSelectedTopicoId(''); // Limpa tópico ao mudar disciplina
+                                setTargetTopicoId(''); // Limpa tópico ao mudar disciplina
+                                // Limpa input sources se mudar disciplina, opcional, mas seguro
+                                setSelectedSourceTopicIds([]);
                             }}
                             className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none ${!selectedDisciplinaId ? 'border-yellow-500' : 'border-border'}`}
                         >
@@ -352,17 +468,17 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                         </select>
                     </div>
                     <div>
-                        <label className={`block text-xs mb-1 ${selectedDisciplinaId && !selectedTopicoId ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}`}>
-                            Tópico * {selectedDisciplinaId && !selectedTopicoId && '(obrigatório)'}
+                        <label className={`block text-xs mb-1 ${selectedDisciplinaId && !targetTopicoId ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-muted-foreground'}`}>
+                            Tópico Alvo
                         </label>
                         <select
-                            value={selectedTopicoId}
+                            value={targetTopicoId}
                             onChange={e => {
-                                console.log('[FlashcardGenerator] Tópico selecionado:', e.target.value);
-                                setSelectedTopicoId(e.target.value);
+                                console.log('[FlashcardGenerator] Tópico Alvo selecionado:', e.target.value);
+                                setTargetTopicoId(e.target.value);
                             }}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
-                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed max-w-full ${selectedDisciplinaId && !selectedTopicoId ? 'border-yellow-500' : 'border-border'}`}
+                            className={`w-full bg-input border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed max-w-full ${selectedDisciplinaId && !targetTopicoId ? 'border-yellow-500' : 'border-border'}`}
                             style={{ maxWidth: '100%' }}
                         >
                             <option value="">Selecione...</option>
@@ -459,10 +575,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                     {mode === 'topic' && <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-primary" />}
                 </button>
                 <button onClick={() => setMode('text')} className={`flex-1 pb-2 text-sm font-medium transition-colors relative ${mode === 'text' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                    <span className="flex items-center justify-center gap-1.5">
-                        Por Texto
-                        {mode === 'text' && <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">Importar arquivo</span>}
-                    </span>
+                    Por Texto
                     {mode === 'text' && <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-primary" />}
                 </button>
             </div>
@@ -475,78 +588,72 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                             value={selectedDisciplinaId}
                             onChange={e => {
                                 setSelectedDisciplinaId(e.target.value);
-                                setSelectedTopicoId(''); // Limpa tópico ao mudar disciplina
+                                setSelectedSourceTopicIds([]); // Limpa tópicos ao mudar disciplina
+                                setTargetTopicoId('');
                             }}
-                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none"
+                            className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none"
                         >
-                            <option value="">Selecione...</option>
+                            <option value="" className="bg-slate-900 text-slate-400">Selecione...</option>
                             {disciplinas.map(d => (
-                                <option key={d.id} value={d.id}>{d.nome}</option>
+                                <option key={d.id} value={d.id} className="bg-slate-900 text-slate-100">{d.nome}</option>
                             ))}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Tópico (opcional)</label>
-                        <select
-                            value={selectedTopicoId}
-                            onChange={e => setSelectedTopicoId(e.target.value)}
+                        <label className="block text-xs text-muted-foreground mb-1">Tópicos (opcional)</label>
+                        <MultiSelect
+                            options={topicosFiltrados.map(t => ({ id: t.id, label: t.titulo }))}
+                            selectedIds={selectedSourceTopicIds}
+                            onChange={setSelectedSourceTopicIds}
                             disabled={!selectedDisciplinaId || topicosFiltrados.length === 0}
-                            className="w-full bg-input border border-border rounded-md p-2 text-sm text-foreground focus:ring-2 focus:ring-primary outline-none disabled:opacity-50 disabled:cursor-not-allowed max-w-full"
-                            style={{ maxWidth: '100%' }}
-                        >
-                            <option value="">Selecione...</option>
-                            {topicosFiltrados.map(t => (
-                                <option key={t.id} value={t.id} title={t.titulo}>
-                                    {t.titulo.length > 60 ? `${t.titulo.substring(0, 60)}...` : t.titulo}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="Selecione..."
+                        />
                     </div>
                     <p className="col-span-2 text-xs text-muted-foreground">
-                        💡 {selectedTopicoId && mode === 'topic'
-                            ? `O tópico "${topicoSelecionado?.titulo}" será usado como tema. Você pode descrever um tema adicional se quiser.`
-                            : 'Você pode selecionar a disciplina e tópico agora ou depois de gerar os flashcards'}
+                        💡 {selectedSourceTopicIds.length > 0 && mode === 'topic'
+                            ? `Os ${selectedSourceTopicIds.length} tópicos selecionados serão usados como base. Você pode adicionar mais contexto abaixo.`
+                            : 'Você pode selecionar a disciplina e os tópicos agora ou depois de gerar os flashcards'}
                     </p>
                 </div>
                 {mode === 'topic' ? (
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-foreground mb-1">
-                                {selectedTopicoId ? 'Tema adicional (opcional)' : 'Sobre o que você quer estudar?'}
+                                {selectedSourceTopicIds.length > 0 ? 'Contexto adicional (opcional)' : 'Sobre o que você quer estudar?'}
                             </label>
                             <input
-                                placeholder={selectedTopicoId
-                                    ? "Ex: Aspectos específicos, detalhes adicionais..."
+                                placeholder={selectedSourceTopicIds.length > 0
+                                    ? "Ex: Focar apenas na parte legislativa, ou em exemplos práticos..."
                                     : "Ex: Revolução Francesa, Leis de Newton, Verbos em Inglês..."}
                                 value={prompt}
                                 onChange={e => setPrompt(e.target.value)}
                                 className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
-                                {selectedTopicoId
-                                    ? `Se deixar vazio, será usado o tópico "${topicoSelecionado?.titulo}" como tema.`
+                                {selectedSourceTopicIds.length > 0
+                                    ? 'A IA usará os títulos dos tópicos selecionados + o contexto acima.'
                                     : 'Descreva o tema ou assunto que você quer estudar. Seja específico para melhores resultados.'}
                             </p>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-foreground mb-1">Quantidade</label>
-                                <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none">
-                                    <option value={3}>3 cards</option>
-                                    <option value={5}>5 cards</option>
-                                    <option value={10}>10 cards</option>
-                                    <option value={15}>15 cards</option>
-                                    <option value={20}>20 cards</option>
-                                    <option value={30}>30 cards</option>
-                                    <option value={50}>50 cards</option>
+                                <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
+                                    <option value={3} className="bg-slate-900">3 cards</option>
+                                    <option value={5} className="bg-slate-900">5 cards</option>
+                                    <option value={10} className="bg-slate-900">10 cards</option>
+                                    <option value={15} className="bg-slate-900">15 cards</option>
+                                    <option value={20} className="bg-slate-900">20 cards</option>
+                                    <option value={30} className="bg-slate-900">30 cards</option>
+                                    <option value={50} className="bg-slate-900">50 cards</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-foreground mb-1">Dificuldade</label>
-                                <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none">
-                                    <option value="fácil">Fácil</option>
-                                    <option value="médio">Médio</option>
-                                    <option value="difícil">Difícil</option>
+                                <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
+                                    <option value="fácil" className="bg-slate-900">Fácil</option>
+                                    <option value="médio" className="bg-slate-900">Médio</option>
+                                    <option value="difícil" className="bg-slate-900">Difícil</option>
                                 </select>
                             </div>
                         </div>
@@ -610,10 +717,10 @@ Exemplos de uso:
                 <button
                     type="button"
                     onClick={() => {
-                        console.log('[FlashcardGenerator] Botão clicado. Disabled?', generating || (mode === 'topic' && !selectedTopicoId && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50)));
+                        console.log('[FlashcardGenerator] Botão clicado. Disabled?', generating || (mode === 'topic' && selectedSourceTopicIds.length === 0 && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50)));
                         handleGenerate();
                     }}
-                    disabled={generating || (mode === 'topic' && !selectedTopicoId && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50))}
+                    disabled={generating || (mode === 'topic' && selectedSourceTopicIds.length === 0 && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50))}
                     className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {generating ? (

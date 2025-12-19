@@ -14,7 +14,7 @@ interface ModalStore {
   isRegisterEditalModalOpen: boolean;
   openRegisterEditalModal: () => void;
   closeRegisterEditalModal: () => void;
-  
+
   isAddTopicModalOpen: boolean;
   addTopicTargetDisciplinaId: string | null;
   shouldOpenInBatchMode: boolean;
@@ -37,19 +37,20 @@ interface ModalStore {
 
   isCriarFlashcardModalOpen: boolean;
   flashcardToEdit: Flashcard | null;
-  openCriarFlashcardModal: (flashcard?: Flashcard) => void;
+  flashcardModalMode: 'manual' | 'ai';
+  openCriarFlashcardModal: (options?: { flashcard?: Flashcard; mode?: 'manual' | 'ai' }) => void;
   closeCriarFlashcardModal: () => void;
 
   isAgendarRevisoesModalOpen: boolean;
   agendarRevisoesData: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string } | null;
   openAgendarRevisoesModal: (data: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string }) => void;
   closeAgendarRevisoesModal: () => void;
-  
+
   isConfirmarAgendarRevisoesModalOpen: boolean;
   confirmarAgendarRevisoesData: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string } | null;
   openConfirmarAgendarRevisoesModal: (data: { disciplinaId: string; disciplinaNome: string; topicoId: string; topicoNome: string }) => void;
   closeConfirmarAgendarRevisoesModal: () => void;
-  
+
   closeAllModals: () => void;
 }
 
@@ -64,7 +65,7 @@ export const useModalStore = create<ModalStore>((set) => ({
   isRegisterEditalModalOpen: false,
   openRegisterEditalModal: () => set({ isRegisterEditalModalOpen: true }),
   closeRegisterEditalModal: () => set({ isRegisterEditalModalOpen: false }),
-  
+
   isAddTopicModalOpen: false,
   addTopicTargetDisciplinaId: null,
   shouldOpenInBatchMode: false,
@@ -87,19 +88,28 @@ export const useModalStore = create<ModalStore>((set) => ({
 
   isCriarFlashcardModalOpen: false,
   flashcardToEdit: null,
-  openCriarFlashcardModal: (flashcard = null) => set({ isCriarFlashcardModalOpen: true, flashcardToEdit: flashcard }),
-  closeCriarFlashcardModal: () => set({ isCriarFlashcardModalOpen: false, flashcardToEdit: null }),
+  flashcardModalMode: 'manual',
+  openCriarFlashcardModal: (options = {}) => set({
+    isCriarFlashcardModalOpen: true,
+    flashcardToEdit: options.flashcard || null,
+    flashcardModalMode: options.mode || 'manual'
+  }),
+  closeCriarFlashcardModal: () => set({
+    isCriarFlashcardModalOpen: false,
+    flashcardToEdit: null,
+    flashcardModalMode: 'manual'
+  }),
 
   isAgendarRevisoesModalOpen: false,
   agendarRevisoesData: null,
   openAgendarRevisoesModal: (data) => set({ isAgendarRevisoesModalOpen: true, agendarRevisoesData: data }),
   closeAgendarRevisoesModal: () => set({ isAgendarRevisoesModalOpen: false, agendarRevisoesData: null }),
-  
+
   isConfirmarAgendarRevisoesModalOpen: false,
   confirmarAgendarRevisoesData: null,
   openConfirmarAgendarRevisoesModal: (data) => set({ isConfirmarAgendarRevisoesModalOpen: true, confirmarAgendarRevisoesData: data }),
   closeConfirmarAgendarRevisoesModal: () => set({ isConfirmarAgendarRevisoesModalOpen: false, confirmarAgendarRevisoesData: null }),
-  
+
   closeAllModals: () => set({
     isEditalModalOpen: false,
     editalModalInitialMode: 'list',

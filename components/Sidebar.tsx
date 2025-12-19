@@ -16,6 +16,7 @@ import {
   TrophyIcon,
   MenuIcon,
   LockIcon,
+  MessageCircleIcon,
 } from './icons';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
@@ -198,20 +199,56 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
 
 
 
-            <div className={`flex items-center ${isCollapsed ? 'flex-col' : ''} gap-2`}>
-              {!isCollapsed && (
-                <button
-                  onClick={() => {
-                    setActiveView('configuracoes');
-                    onClose();
-                  }}
-                  className="flex-1 flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5 group"
+            {/* Footer Buttons */}
+            {!isCollapsed ? (
+              <div className="space-y-2">
+                {/* WhatsApp Support Button - Full Width */}
+                <a
+                  href="https://wa.me/5511999999999"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-2 p-3 bg-green-500/10 rounded-xl hover:bg-green-500/20 transition-colors border border-green-500/10 group"
+                  title="Suporte via WhatsApp"
                 >
-                  <span className="font-medium text-sm text-muted-foreground group-hover:text-white transition-colors">Configurações</span>
-                  <SettingsIcon className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
-                </button>
-              )}
-              {isCollapsed && (
+                  <MessageCircleIcon className="w-4 h-4 text-green-400 group-hover:text-green-300 transition-colors" />
+                  <span className="font-medium text-sm text-green-400 group-hover:text-green-300 transition-colors">Suporte via WhatsApp</span>
+                </a>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setActiveView('configuracoes');
+                      onClose();
+                    }}
+                    className="flex-1 flex items-center justify-between p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors border border-white/5 group"
+                    title="Configurações"
+                  >
+                    <span className="font-medium text-sm text-muted-foreground group-hover:text-white transition-colors">Configurações</span>
+                    <SettingsIcon className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
+                  </button>
+
+                  <button onClick={logout} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors border border-red-500/10 hover:border-red-500/20 flex-shrink-0" title="Sair">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {/* Collapsed State */}
+                <a
+                  href="https://wa.me/5511999999999"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full p-3 bg-green-500/10 rounded-xl hover:bg-green-500/20 transition-colors border border-green-500/10 group flex items-center justify-center"
+                  title="Suporte via WhatsApp"
+                >
+                  <MessageCircleIcon className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors" />
+                </a>
+
                 <button
                   onClick={() => {
                     setActiveView('configuracoes');
@@ -222,15 +259,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                 >
                   <SettingsIcon className="w-5 h-5 text-muted-foreground group-hover:text-white transition-colors" />
                 </button>
-              )}
-              <button onClick={logout} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors border border-red-500/10 hover:border-red-500/20" title="Sair">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-              </button>
-            </div>
+
+                <button onClick={logout} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors border border-red-500/10 hover:border-red-500/20 flex items-center justify-center w-full" title="Sair">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </aside>

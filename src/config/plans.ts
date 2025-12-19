@@ -13,11 +13,11 @@ export interface Plan {
 export const plans: Plan[] = [
     {
         name: 'Pro',
-        monthlyPrice: 20.93,
+        monthlyPrice: 29.90,
         yearlyPrice: 251.16,
         features: [
             '3 Editais e Planos',
-            '10 Correções IA/mês',
+            '5 Correções IA/mês',
             '30 Questões IA/dia',
             '500 Flashcards/mês',
             'Estatísticas Avançadas'
@@ -28,12 +28,14 @@ export const plans: Plan[] = [
     },
     {
         name: 'Premium',
-        monthlyPrice: 34.93,
+        monthlyPrice: 49.90,
         yearlyPrice: 419.16,
         features: [
-            'Tudo Ilimitado',
+            'Editais e Ciclos ILIMITADOS',
+            '15 Correções IA/mês',
             '100 Questões IA/dia',
             '2000 Flashcards/mês',
+            '✨ Planejamento Semanal com IA',
             'OCR de Redação Manuscrita',
             'Suporte Prioritário 24/7'
         ],

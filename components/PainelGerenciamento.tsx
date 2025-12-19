@@ -93,7 +93,7 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
         <h3 className="text-xl font-bold text-foreground">Progresso Médio</h3>
         <p className="text-muted-foreground mb-2">Este é o seu avanço geral no edital. Continue focado!</p>
         <p className="text-xs text-muted-foreground font-medium">
-          {editaisCriados}/{maxEditais === Infinity ? '∞' : maxEditais} editais criados
+          {editaisCriados}/{maxEditais === -1 ? '∞' : maxEditais} editais criados
         </p>
       </div>
       <button
@@ -106,8 +106,8 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
         }}
         disabled={!podeCriarEdital}
         className={`w-full h-11 px-4 flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors ${podeCriarEdital
-            ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-            : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
+          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+          : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
           }`}
         data-tutorial="adicionar-disciplina-button"
       >

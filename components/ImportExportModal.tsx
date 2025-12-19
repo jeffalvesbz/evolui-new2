@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DownloadIcon, UploadIcon, XIcon } from './icons';
-import { exportFlashcardsToCSV, downloadCSV, importFlashcardsFromCSV, validateCsvFormat } from '../services/flashcardCsvService';
+import { importFlashcardsFromCSV, validateCsvFormat } from '../services/flashcardCsvService';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { toast } from './Sonner';
@@ -21,21 +21,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
         d.topicos.map(t => ({ id: t.id, titulo: t.titulo, disciplina: d.nome }))
     );
 
-    const handleExport = () => {
-        if (flashcards.length === 0) {
-            toast.error('Nenhum flashcard para exportar');
-            return;
-        }
 
-        try {
-            const csv = exportFlashcardsToCSV(flashcards);
-            const filename = `flashcards_${new Date().toISOString().split('T')[0]}.csv`;
-            downloadCSV(csv, filename);
-            toast.success(`${flashcards.length} flashcards exportados com sucesso!`);
-        } catch (error: any) {
-            toast.error(`Erro ao exportar: ${error.message}`);
-        }
-    };
 
     const handleUnifiedImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -145,7 +131,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-card rounded-xl p-6 max-w-lg w-full border border-border shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-foreground">Importar/Exportar Flashcards</h2>
+                    <h2 className="text-xl font-bold text-foreground">Importar Flashcards</h2>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -156,22 +142,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
 
                 <div className="space-y-6">
                     {/* Exportar */}
-                    <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
-                            <DownloadIcon className="w-5 h-5 text-primary" />
-                            Exportar para CSV
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-3">
-                            Baixe todos os seus flashcards em formato CSV
-                        </p>
-                        <button
-                            onClick={handleExport}
-                            disabled={flashcards.length === 0}
-                            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                        >
-                            Exportar {flashcards.length > 0 && `(${flashcards.length} cards)`}
-                        </button>
-                    </div>
+
 
                     {/* Importar Unificado */}
                     <div className="p-4 bg-muted/30 rounded-lg border border-border">

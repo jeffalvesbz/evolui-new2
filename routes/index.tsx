@@ -100,6 +100,11 @@ const AdminEditalDetalhes = safeLazy(() => import('../src/pages/admin/editais/[i
 const AdminDisciplinaDetalhes = safeLazy(() => import('../src/pages/admin/editais/[id]/disciplina/[disciplinaId]'));
 const AdminSolicitacoesEditais = safeLazy(() => import('../src/pages/admin/editais/solicitacoes'));
 
+// Admin Flashcards Pages
+const AdminFlashcardsList = safeLazy(() => import('../src/pages/admin/flashcards/index'));
+const AdminFlashcardsNovo = safeLazy(() => import('../src/pages/admin/flashcards/novo'));
+const AdminFlashcardsEdit = safeLazy(() => import('../src/pages/admin/flashcards/[id]'));
+
 // User Pages
 const UserEditaisDashboard = safeLazy(() => import('../src/pages/dashboard/editais'));
 const MinhasSolicitacoes = safeLazy(() => import('../src/pages/dashboard/minhas-solicitacoes'));
@@ -142,6 +147,11 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView, theme = 'da
         <Route path="/admin/editais/solicitacoes" element={<ProtectedAdminRoute><AdminSolicitacoesEditais /></ProtectedAdminRoute>} />
         <Route path="/admin/editais/:id" element={<ProtectedAdminRoute><AdminEditalDetalhes /></ProtectedAdminRoute>} />
         <Route path="/admin/editais/:id/disciplina/:disciplinaId" element={<ProtectedAdminRoute><AdminDisciplinaDetalhes /></ProtectedAdminRoute>} />
+
+        {/* Admin Flashcards Routes */}
+        <Route path="/admin/flashcards" element={<ProtectedAdminRoute><AdminFlashcardsList /></ProtectedAdminRoute>} />
+        <Route path="/admin/flashcards/novo" element={<ProtectedAdminRoute><AdminFlashcardsNovo /></ProtectedAdminRoute>} />
+        <Route path="/admin/flashcards/:id" element={<ProtectedAdminRoute><AdminFlashcardsEdit /></ProtectedAdminRoute>} />
 
         {/* User Dashboard Routes */}
         <Route path="/dashboard/editais" element={<UserEditaisDashboard />} />

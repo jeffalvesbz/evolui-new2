@@ -44,7 +44,7 @@ interface FlashcardStore {
     generatedCards: Partial<Flashcard>[];
     step: 'input' | 'preview';
     selectedDisciplinaId: string;
-    selectedTopicoId: string;
+    selectedSourceTopicIds: string[];
     selectedCardIndices?: number[];
   } | null;
   saveGeneratorState: (state: {
@@ -55,7 +55,7 @@ interface FlashcardStore {
     generatedCards: Partial<Flashcard>[];
     step: 'input' | 'preview';
     selectedDisciplinaId: string;
-    selectedTopicoId: string;
+    selectedSourceTopicIds: string[];
     selectedCardIndices?: number[];
   }) => void;
   clearGeneratorState: () => void;
@@ -88,26 +88,31 @@ export const useFlashcardsStore = create<FlashcardStore>((set, get) => ({
   },
 
   fetchFlashcardsForTopics: async (topicIds) => {
-    const { flashcards } = get();
-    const fetchedTopicIds = new Set(flashcards.map(fc => fc.topico_id));
     // Filtrar IDs vazios ou inválidos para evitar erro de UUID inválido
-    const idsToFetch = topicIds.filter(id => id && id.trim() !== '' && !fetchedTopicIds.has(id));
+    const validTopicIds = topicIds.filter(id => id && id.trim() !== '');
 
-    if (idsToFetch.length === 0) {
+    if (validTopicIds.length === 0) {
       return;
     }
 
     set({ loading: true });
     try {
-      // Use metadata fetching instead of full content
-      const newFlashcards = await getFlashcardsMetadata(idsToFetch);
+      // CORREÇÃO: Sempre buscar todos os flashcards para garantir que não perdemos nenhum
+      // devido a limites anteriores de paginação
+      const allFlashcardsForTopics = await getFlashcardsMetadata(validTopicIds);
+
+      console.log(`[fetchFlashcardsForTopics] Buscados ${allFlashcardsForTopics.length} flashcards para ${validTopicIds.length} tópicos`);
 
       set(state => {
-        const existingIds = new Set(state.flashcards.map(fc => fc.id));
-        // Cast to Flashcard since we know we are handling partials internally
-        const uniqueNewFlashcards = newFlashcards.filter(fc => !existingIds.has(fc.id!)) as Flashcard[];
+        // Mesclar: manter flashcards de outros tópicos e substituir/adicionar os novos
+        const topicIdSet = new Set(validTopicIds);
+        const flashcardsFromOtherTopics = state.flashcards.filter(fc => !topicIdSet.has(fc.topico_id));
+
+        // Adicionar todos os flashcards buscados
+        const newFlashcards = allFlashcardsForTopics as Flashcard[];
+
         return {
-          flashcards: [...state.flashcards, ...uniqueNewFlashcards]
+          flashcards: [...flashcardsFromOtherTopics, ...newFlashcards]
         };
       });
     } catch (error) {

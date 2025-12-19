@@ -24,7 +24,7 @@ import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, LabelList } from 'recharts';
 import { subDays, format } from 'date-fns';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { PeakHoursChart } from './PeakHoursChart';
@@ -281,26 +281,105 @@ const Estatisticas: React.FC = () => {
                 </div>
             </section>
 
+
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <CalendarDaysIcon className="w-5 h-5 text-primary" />
-                    Constância de Estudos
+                    <BarChart3Icon className="w-5 h-5 text-primary" />
+                    Disciplinas x Horas de Estudo
                 </h2>
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><CalendarDaysIcon className="w-5 h-5 text-emerald-500" /> Mapa de Atividades (Últimos 6 meses)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Mapa de Calor de Estudos"
-                            showPreview={true}
-                        >
-                            <ActivityHeatmap sessoes={sessoes} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="border-border shadow-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-emerald-500" /> Tempo por Disciplina</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <PremiumFeatureWrapper
+                                isLocked={planType === 'free'}
+                                requiredPlan="pro"
+                                feature="Gráfico de Tempo por Disciplina"
+                                showPreview={true}
+                            >
+                                {studyTimeDistribution.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height={400}>
+                                        <BarChart
+                                            data={studyTimeDistribution}
+                                            layout="vertical"
+                                            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                                            barSize={32}
+                                        >
+                                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                                            <XAxis
+                                                type="number"
+                                                stroke="var(--color-muted-foreground)"
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickFormatter={(value) => formatStudyDuration(value)}
+                                            />
+                                            <YAxis
+                                                type="category"
+                                                dataKey="name"
+                                                stroke="var(--color-muted-foreground)"
+                                                fontSize={12}
+                                                tickLine={false}
+                                                axisLine={false}
+                                                width={140}
+                                                tick={({ x, y, payload }) => (
+                                                    <g transform={`translate(${0},${y})`}>
+                                                        <text x={0} y={0} dy={4} textAnchor="start" fill="var(--color-muted-foreground)" fontSize={12} className="font-medium">
+                                                            {payload.value.length > 25 ? `${payload.value.substring(0, 25)}...` : payload.value}
+                                                        </text>
+                                                    </g>
+                                                )}
+                                            />
+                                            <Tooltip
+                                                cursor={{ fill: 'var(--color-accent)', opacity: 0.2 }}
+                                                contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)', borderRadius: '8px' }}
+                                                itemStyle={{ color: 'var(--color-foreground)' }}
+                                                formatter={(value: number) => formatStudyDuration(value)}
+                                            />
+                                            <Bar
+                                                dataKey="value"
+                                                fill="var(--color-primary)"
+                                                radius={[0, 4, 4, 0]}
+                                                background={{ fill: 'var(--color-muted)', opacity: 0.2, radius: [0, 4, 4, 0] }}
+                                            >
+                                                <LabelList
+                                                    dataKey="value"
+                                                    position="insideRight"
+                                                    fill="white"
+                                                    formatter={(value: number) => formatStudyDuration(value)}
+                                                    style={{ fontSize: '12px', fontWeight: 'bold' }}
+                                                />
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-[400px] text-center text-muted-foreground text-sm gap-2">
+                                        <LayersIcon className="w-10 h-10 opacity-20" />
+                                        <p>Nenhum estudo registrado ainda.</p>
+                                    </div>
+                                )}
+                            </PremiumFeatureWrapper>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-border shadow-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><CalendarDaysIcon className="w-5 h-5 text-emerald-500" /> Mapa de Atividades (Últimos 3 meses)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <PremiumFeatureWrapper
+                                isLocked={planType === 'free'}
+                                requiredPlan="pro"
+                                feature="Mapa de Calor de Estudos"
+                                showPreview={true}
+                            >
+                                <ActivityHeatmap sessoes={sessoes} />
+                            </PremiumFeatureWrapper>
+                        </CardContent>
+                    </Card>
+                </div>
             </section>
 
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">

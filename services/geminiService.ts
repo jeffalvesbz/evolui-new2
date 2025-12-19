@@ -2,6 +2,7 @@
 
 import { GoogleGenAI, Type } from '@google/genai';
 import { supabase } from './supabaseClient';
+import { recordFlashcardGeneration } from './statsService';
 import { Flashcard, CorrecaoCompleta, RedacaoCorrigida, User, StudyPlan, Disciplina, Topico, SessaoEstudo, Ciclo, SessaoCiclo, Revisao, CadernoErro, Friendship, FriendRequest, NivelDificuldade, NotasPesosEntrada, Simulation } from '../types';
 import { subDays } from 'date-fns';
 
@@ -1624,6 +1625,16 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
             throw new Error('Nenhum flashcard válido foi gerado.');
         }
 
+        // Registrar uso da cota de IA
+        try {
+            const userId = await getUserId();
+            await recordFlashcardGeneration(userId, validFlashcards.length);
+            console.log(`[gerarFlashcardsIA] Registrado uso de ${validFlashcards.length} flashcards/créditos de IA`);
+        } catch (logError) {
+            console.error('[gerarFlashcardsIA] Falha ao registrar log de uso:', logError);
+            // Não falhar a geração se o log falhar
+        }
+
         console.log(`✅ ${validFlashcards.length} flashcards gerados com sucesso`);
         return validFlashcards;
     } catch (error: any) {
@@ -1750,6 +1761,16 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
 
         if (validFlashcards.length === 0) {
             throw new Error('Nenhum flashcard válido foi gerado a partir do texto.');
+        }
+
+        // Registrar uso da cota de IA
+        try {
+            const userId = await getUserId();
+            await recordFlashcardGeneration(userId, validFlashcards.length);
+            console.log(`[gerarFlashcardsPorTexto] Registrado uso de ${validFlashcards.length} flashcards/créditos de IA`);
+        } catch (logError) {
+            console.error('[gerarFlashcardsPorTexto] Falha ao registrar log de uso:', logError);
+            // Não falhar a geração se o log falhar
         }
 
         console.log(`✅ ${validFlashcards.length} flashcards gerados com sucesso a partir do texto`);
@@ -2301,8 +2322,8 @@ export const getDisciplinas = async (studyPlanId: string): Promise<Disciplina[]>
 export const createDisciplina = async (studyPlanId: string, disciplinaData: Omit<Disciplina, 'id' | 'progresso' | 'studyPlanId'>) => {
     const userId = await getUserId();
     // Topicos are managed separately now
-    const { topicos, ...rest } = disciplinaData;
-    const payload = { ...rest, study_plan_id: studyPlanId, progresso: 0, user_id: userId };
+    const { topicos, is_deck_only, ...rest } = disciplinaData;
+    const payload = { ...rest, study_plan_id: studyPlanId, progresso: 0, user_id: userId, is_deck_only: is_deck_only || false };
     // FIX: Cast data to any to bypass 'never' type issue.
     const { data, error } = await supabase.from('disciplinas').insert(payload as any).select().single();
     if (error) throw error;
@@ -2634,21 +2655,12 @@ export const getSimulados = async (studyPlanId: string): Promise<Simulation[]> =
 
 export const createSimulado = async (studyPlanId: string, simuladoData: Omit<Simulation, 'id' | 'studyPlanId'>): Promise<Simulation> => {
     const userId = await getUserId();
-    const dbPayload = mapSimuladoToDb(simuladoData);
+    const dbPayload: any = mapSimuladoToDb(simuladoData);
     dbPayload.study_plan_id = studyPlanId;
     dbPayload.user_id = userId;
 
-    const { data, error } = await supabase.from('simulados').insert(dbPayload as any).select().single();
-
-    if (error) {
-        console.error('Erro ao criar simulado:', error);
-        throw error;
-    }
-
-    if (!data) {
-        throw new Error('Simulado criado, mas nenhum dado foi retornado');
-    }
-
+    const { data, error } = await supabase.from('simulados').insert(dbPayload).select().single();
+    if (error) throw error;
     return mapDbToSimulado(data);
 };
 
@@ -2952,20 +2964,40 @@ export const getFlashcardsMetadata = async (topicIds: string[]): Promise<Partial
     const validIds = topicIds.filter(id => id && id.trim() !== '');
     if (validIds.length === 0) return [];
 
-    const { data, error } = await supabase
-        .from('flashcards')
-        .select('id, topico_id, due_date, interval, ease_factor, tags')
-        .in('topico_id', validIds);
+    // Supabase limita a 1000 registros por query, então precisamos paginar
+    const PAGE_SIZE = 1000;
+    let allData: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-    if (error) throw error;
+    while (hasMore) {
+        const { data, error } = await supabase
+            .from('flashcards')
+            .select('id, topico_id, due_date, interval, ease_factor, tags, is_default')
+            .in('topico_id', validIds)
+            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-    return (data as any[]).map(item => ({
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            allData = [...allData, ...data];
+            hasMore = data.length === PAGE_SIZE;
+            page++;
+        } else {
+            hasMore = false;
+        }
+    }
+
+    console.log(`[getFlashcardsMetadata] Carregados ${allData.length} flashcards para ${validIds.length} tópicos`);
+
+    return allData.map(item => ({
         id: item.id,
         topico_id: item.topico_id,
         dueDate: item.due_date,
         interval: item.interval,
         easeFactor: item.ease_factor,
         tags: item.tags,
+        is_default: item.is_default,
         // Campos obrigatórios que virão vazios inicialmente
         pergunta: '',
         resposta: '',
@@ -3011,9 +3043,10 @@ export const createFlashcards = async (topicId: string, { flashcards }: { flashc
 
     // IMPORTANTE: Remover campo 'tags' pois não existe na tabela do banco de dados
     // O campo tags é usado apenas no frontend/aplicação, não no banco
+    // NOTA: O campo is_default é preservado pois foi adicionado à tabela
     const flashcardsToInsert = flashcards.map(fc => {
         // Desestruturar para remover tags e outros campos que não existem no DB
-        const { tags, _contentLoaded, ...dbFields } = fc as any;
+        const { tags, _contentLoaded, is_default, ...dbFields } = fc as any;
         return {
             ...dbFields,
             topico_id: topicId,
@@ -3021,6 +3054,7 @@ export const createFlashcards = async (topicId: string, { flashcards }: { flashc
             interval: 0, // 0 indica que o flashcard nunca foi estudado
             ease_factor: 2.5,
             due_date: tomorrow.toISOString(), // Disponível para estudo a partir de amanhã
+            is_default: is_default || false, // Preservar flag de flashcard padrão
         };
     });
 
@@ -3338,6 +3372,92 @@ export const declineFriendRequest = async (friendshipId: string) => {
         .eq('id', friendshipId);
 
     if (error) throw error;
+};
+
+
+export const gerarPlanejamentoSemanal = async (
+    horasPorDia: number,
+    materiasSelecionadas: string[],
+    nivel: string,
+    foco: string,
+    contexto: {
+        edital: string[],
+        topicosEstudadosRecentemente?: any[],
+        estatisticas?: any,
+        pontosFracos: any[]
+    }
+): Promise<any> => {
+    if (!ai) {
+        throw new Error('API Key do Gemini não configurada.');
+    }
+
+    // Preparar lista de tópicos já estudados
+    const topicosJaEstudados = contexto.topicosEstudadosRecentemente || [];
+    const topicosTexto = topicosJaEstudados.length > 0
+        ? `\n  TÓPICOS JÁ ESTUDADOS (últimos 30 dias - EVITE REPETIR):\n${topicosJaEstudados.map(t => `  - ${t.disciplina}: ${t.titulo} (estudado ${t.vezes}x)`).slice(0, 30).join('\n')}`
+        : '\n  (Nenhum histórico de estudos recente encontrado)';
+
+    const estatisticasTexto = contexto.estatisticas
+        ? `\n  ESTATÍSTICAS:\n  - Total de sessões (30 dias): ${contexto.estatisticas.totalSessoes}\n  - Disciplinas mais estudadas: ${contexto.estatisticas.disciplinasMaisEstudadas.map((d: any) => `${d.nome} (${d.sessoes} sessões)`).join(', ')}`
+        : '';
+
+    const prompt = `Atue como um mentor de estudos de elite. Crie um planejamento semanal DETALHADO E PERSONALIZADO.
+
+  PERFIL DO ALUNO:
+  - Disponibilidade diária: ${horasPorDia} horas
+  - Nível: ${nivel}
+  - Foco desta semana: ${foco}
+  
+  ⚠️ MATÉRIAS SELECIONADAS PARA ESTUDO (USE APENAS ESTAS):
+  ${materiasSelecionadas.map(m => `  • ${m}`).join('\n')}
+
+  CONTEXTO:
+  - Assuntos do Edital: ${JSON.stringify(contexto.edital.slice(0, 50))}${topicosTexto}${estatisticasTexto}
+
+  DIRETRIZES RÍGIDAS:
+  1. Crie uma grade para SEGUNDA a DOMINGO.
+  2. Distribua o tempo disponível (${horasPorDia}h/dia) em blocos de estudo.
+  3. Use ESTRITAMENTE estes tipos de atividade: 
+     - 'teoria': para aprender novos tópicos.
+     - 'questao': para resolver baterias de exercícios.
+     - 'lei_seca': para leitura de legislação.
+     - 'redacao': prática de escrita (APENAS 1 ou 2x na semana).
+     - 'revisao': revisão ativa de conteúdos passados.
+  4. Para 'redacao', o título DEVE SER "Praticar Redação". NÃO invente temas.
+  5. Varie as matérias no dia (intercale exatas e humanas se possível).
+  6. Se o foco for 'lei_seca', aumente a frequência desse tipo. Idem para outros focos.
+  7. **IMPORTANTE**: EVITE repetir tópicos que já foram estudados recentemente (listados acima). Priorize tópicos novos ou que precisam de revisão.
+  8. Distribua de forma equilibrada entre as matérias selecionadas, mas dê mais atenção às disciplinas menos estudadas.
+  9. **CRÍTICO**: Use SOMENTE as matérias listadas como "MATÉRIAS SELECIONADAS". NÃO adicione outras matérias do edital que não foram selecionadas.
+
+  RETORNE APENAS UM JSON VÁLIDO no seguinte formato (sem markdown, sem explicações):
+  {
+    "seg": [
+      { "titulo": "Estudar Crase (Português)", "disciplina": "Português", "type": "teoria", "duracaoEstimada": 60 },
+      { "titulo": "Resolver 15 questões de Crase", "disciplina": "Português", "type": "questao", "duracaoEstimada": 30 }
+    ],
+    "ter": [...]
+  }`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json'
+            }
+        });
+
+        let jsonText = response.text.trim();
+        jsonText = jsonText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').replace(/```$/g, '').trim();
+
+        const result = JSON.parse(jsonText);
+        return result;
+
+    } catch (error) {
+        console.error("Erro ao gerar planejamento com Gemini:", error);
+        return null;
+    }
 };
 
 

@@ -16,17 +16,20 @@ const generateTopicId = () =>
     : `topico-${Math.random().toString(36).slice(2, 10)}`;
 
 const Edital = () => {
-  const { 
-    disciplinas, 
-    addDisciplina, 
-    updateDisciplina, 
-    removeDisciplina, 
+  const {
+    disciplinas: allDisciplinas,
+    addDisciplina,
+    updateDisciplina,
+    removeDisciplina,
     getAverageProgress,
     addTopico,
     updateTopico,
     removeTopico,
   } = useDisciplinasStore();
-  
+
+  // Filtrar disciplinas que são apenas de decks para o cálculo de progresso e visualização
+  const disciplinas = useMemo(() => allDisciplinas.filter(d => !d.is_deck_only), [allDisciplinas]);
+
   const openAddTopicModal = useModalStore((state) => state.openAddTopicModal);
   const openAddTopicModalBatch = useModalStore((state) => state.openAddTopicModalBatch);
 
@@ -65,7 +68,7 @@ const Edital = () => {
         anotacoes: payload.anotacoes,
         topicos: [],
       });
-      
+
       // Step 2: Add topics to the newly created disciplina.
       // Adiciona os tópicos sequencialmente para preservar a ordem de inserção
       const topicosFiltrados = payload.topicos.filter(topic => topic.titulo && topic.titulo.trim());
@@ -79,8 +82,8 @@ const Edital = () => {
         };
         await addTopico(disciplina.id, newTopic);
       }
-      
-      const topicosMsg = payload.topicos.length > 0 
+
+      const topicosMsg = payload.topicos.length > 0
         ? `${payload.topicos.length} tópico(s) adicionado(s). Defina seus tópicos ou comece a estudar.`
         : 'Adicione tópicos para começar a organizar seus estudos.';
       toast.success(`Disciplina "${disciplina.nome}" adicionada! ${topicosMsg}`);
@@ -131,7 +134,7 @@ const Edital = () => {
             await updateTopico(selectedDiscipline.id, newTopic.id, newTopic);
           }
         } else { // New topic
-          if(newTopic.titulo?.trim()) { // Only add if it has a title
+          if (newTopic.titulo?.trim()) { // Only add if it has a title
             await addTopico(selectedDiscipline.id, {
               titulo: newTopic.titulo.trim(),
               concluido: newTopic.concluido || false,
@@ -154,7 +157,7 @@ const Edital = () => {
 
   const handleDeleteDisciplina = async (disciplinaId: string) => {
     const disciplina = disciplinas.find((item) => item.id === disciplinaId);
-    
+
     try {
       await removeDisciplina(disciplinaId);
       toast.success(`Disciplina "${disciplina?.nome ?? ''}" removida.`);

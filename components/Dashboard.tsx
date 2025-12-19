@@ -143,7 +143,8 @@ const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }
 
 const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }> = ({ data }) => {
   const COLORS = ['#8B5CF6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#ef4444'];
-  const isMobile = useIsMobile();
+  // Consider tablet as mobile for this chart layout to prevent legend clipping
+  const isMobile = useIsMobile(1024);
   return (
     <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
       <PieChart>
@@ -800,9 +801,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   <p className="text-3xl font-bold text-foreground">{estatisticasAdicionais.totalHoras}</p>
                 </div>
                 <Clock3 className="h-10 w-10 text-primary opacity-50" />
-              </div>
-            </CardContent>
-          </Card>
+              </div >
+            </CardContent >
+          </Card >
           <Card className="">
             <CardContent className="p-6 min-h-[110px] flex items-center">
               <div className="flex items-center justify-between w-full">
@@ -841,8 +842,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
+        </div >
+      </section >
 
       <section className="space-y-4">
         <SectionHeader
@@ -893,82 +894,160 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       </section>
 
       {/* Seção de Tópicos Mais Estudados e Estudos Recentes */}
-      <section className="grid gap-8 lg:grid-cols-2">
-        <Card className="">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              <BookOpenIcon className="h-4 w-4" />
-              Tópicos em Foco
-            </CardDescription>
-            <CardTitle className="text-2xl mt-1">Mais Estudados</CardTitle>
+      <section className="grid gap-6 lg:grid-cols-2">
+        {/* Mais Estudados - Premium List Design */}
+        <Card className="h-full border border-border/60 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] bg-card/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 pt-5 px-6">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                  <BarChart3 className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-base font-semibold tracking-tight text-foreground">Mais Estudados</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setActiveView('estatisticas')}
+              >
+                Ver todos
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="p-0">
             {topicosMaisEstudados.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed border-border bg-background/20 p-6 text-center text-sm text-muted-foreground">
-                Nenhum tópico estudado ainda.
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 ring-4 ring-muted/20">
+                  <BookOpenIcon className="h-5 w-5 text-muted-foreground/60" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Nenhum dado registrado</p>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Comece a estudar para ver seus tópicos principais aqui.</p>
               </div>
             ) : (
-              topicosMaisEstudados.map((topico, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50"
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-xs font-bold text-primary w-6 h-6 flex items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+              <div className="space-y-1 p-2">
+                {topicosMaisEstudados.map((topico, index) => (
+                  <div
+                    key={index}
+                    className="group flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-muted/40 transition-all duration-200"
+                  >
+                    {/* Rank Indicator */}
+                    <div className={`
+                      flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border
+                      ${index === 0 ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' :
+                        index === 1 ? 'bg-slate-300/10 text-slate-500 border-slate-300/20' :
+                          index === 2 ? 'bg-orange-700/10 text-orange-600 border-orange-600/20' :
+                            'bg-muted text-muted-foreground border-transparent'}
+                    `}>
                       {index + 1}
-                    </span>
-                    <p className="font-medium text-foreground text-sm break-words">{topico.nome}</p>
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium text-foreground truncate pr-4">
+                          {topico.nome}
+                        </p>
+                        <span className="text-xs font-mono font-medium text-muted-foreground/80 whitespace-nowrap">
+                          {topico.tempoFormatado}
+                        </span>
+                      </div>
+
+
+                    </div>
                   </div>
-                  <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto mt-1 sm:mt-0">
-                    <p className="font-semibold text-foreground whitespace-nowrap">{topico.tempoFormatado}</p>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="">
-          <CardHeader>
-            <CardDescription className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-primary">
-              <Sparkles className="h-4 w-4" />
-              Estudos recentes
-            </CardDescription>
-            <CardTitle className="text-2xl mt-1">Seus últimos movimentos</CardTitle>
+        {/* Estudos Recentes - Premium Timeline Design */}
+        <Card className="h-full border border-border/60 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] bg-card/80 backdrop-blur-sm">
+          <CardHeader className="pb-2 pt-5 px-6">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-secondary/10 text-secondary-foreground">
+                  <ActivityIcon className="h-4 w-4" />
+                </div>
+                <CardTitle className="text-base font-semibold tracking-tight text-foreground">Atividade Recente</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setActiveView('historico')}
+              >
+                Ver histórico
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-0">
             {recentStudies.length === 0 ? (
-              <div className="rounded-xl border-2 border-dashed border-border bg-background/20 p-6 text-center text-sm text-muted-foreground">
-                Nenhum estudo registrado ainda. Comece registrando sua próxima sessão!
+              <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 ring-4 ring-muted/20">
+                  <Play className="h-5 w-5 text-muted-foreground/60 ml-0.5" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Sem atividade recente</p>
+                <p className="text-xs text-muted-foreground mt-1">Suas sessões de estudo aparecerão aqui.</p>
               </div>
             ) : (
-              recentStudies.map((study) => (
-                <div
-                  key={study.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-border bg-background/30 p-4 transition-all duration-300 hover:border-primary/50 hover:bg-accent/50 hover:shadow-md"
-                >
-                  <div className="space-y-1">
-                    {study.disciplinaNome && (
-                      <p className="text-xs font-semibold text-primary uppercase tracking-wide">{study.disciplinaNome}</p>
-                    )}
-                    <p className="font-medium text-foreground break-words">{study.disciplina}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {study.data ? new Date(study.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Data não disponível'}
-                    </p>
-                  </div>
-                  <div className="text-left sm:text-right w-full sm:w-auto mt-1 sm:mt-0">
-                    <p className="font-medium text-foreground">{study.tempo}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{study.status}</p>
-                  </div>
+              <div className="relative p-2">
+
+                <div className="space-y-1">
+                  {recentStudies.map((study, index) => {
+                    const isToday = new Date(study.data).toDateString() === new Date().toDateString();
+
+                    return (
+                      <div
+                        key={study.id}
+                        className="group relative flex items-start gap-4 px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors"
+                      >
+                        {/* Simple Dot Indicator */}
+                        <div className={`
+                          mt-2 h-2 w-2 rounded-full shrink-0 transition-colors
+                          ${isToday ? 'bg-primary' : 'bg-muted-foreground/30'}
+                        `} />
+
+                        <div className="flex-1 min-w-0 grid gap-1">
+                          <div className="flex items-center gap-2">
+                            {study.disciplinaNome && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                                {study.disciplinaNome}
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground">
+                              {study.data ? new Date(study.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
+                            </span>
+                          </div>
+
+                          <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                            {study.disciplina}
+                          </p>
+                        </div>
+
+                        <div className="text-right flex flex-col items-end justify-center min-h-[40px]">
+                          <span className="font-mono text-xs font-medium text-foreground whitespace-nowrap">
+                            {study.tempo}
+                          </span>
+                          {/* Status as a small dot or refined badge */}
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className={`h-1.5 w-1.5 rounded-full ${study.status === 'concluído' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                            <span className="text-[10px] text-muted-foreground capitalize">
+                              {study.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))
+              </div>
             )}
           </CardContent>
         </Card>
       </section>
-    </div>
+    </div >
   )
 }
 
 export default Dashboard;
-

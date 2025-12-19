@@ -25,6 +25,7 @@ export interface Disciplina {
   anotacoes: string;
   topicos: Topico[];
   studyPlanId: string;
+  is_deck_only?: boolean;
 }
 
 export interface SessaoEstudo {
@@ -90,6 +91,7 @@ export interface Flashcard {
   estilo?: EstiloFlashcard;
   tags?: string[]; // Tags para categorização e busca
   _contentLoaded?: boolean; // Flag para indicar se o conteúdo completo foi carregado
+  is_default?: boolean; // Flashcards importados de decks padrão (não podem ser exportados)
 }
 
 // Tipos para sincronização de sessões de estudo

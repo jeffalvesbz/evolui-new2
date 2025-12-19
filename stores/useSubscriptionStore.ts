@@ -210,8 +210,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (state.planType === 'premium' && isActive) return true;
-    if (state.planType === 'pro' && isActive) return currentMonthCount < 10;
+    if (state.planType === 'premium' && isActive) return currentMonthCount < 15;
+    if (state.planType === 'pro' && isActive) return currentMonthCount < 5;
 
     return false;
   },
@@ -220,8 +220,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (state.planType === 'premium' && isActive) return -1;
-    if (state.planType === 'pro' && isActive) return 10;
+    if (state.planType === 'premium' && isActive) return 15;
+    if (state.planType === 'pro' && isActive) return 5;
 
     return 0;
   },
@@ -296,8 +296,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    // Planejamento semanal apenas PRO+ com assinatura ativa
-    return (state.planType === 'pro' || state.planType === 'premium') && isActive;
+    // Planejamento com IA é exclusivo PREMIUM
+    return state.planType === 'premium' && isActive;
   },
 
   canAccessTimer: () => {

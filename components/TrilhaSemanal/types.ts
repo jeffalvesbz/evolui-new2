@@ -10,6 +10,8 @@ export type DraggableTopic = Topico & {
    */
   instanceId: string;
   occurrenceIndex: number;
+  type?: 'teoria' | 'revisao' | 'questao' | 'lei_seca' | 'redacao';
+  duracaoEstimada?: number;
 };
 
 export interface TopicPreviewState {

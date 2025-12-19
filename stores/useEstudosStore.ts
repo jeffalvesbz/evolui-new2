@@ -4,10 +4,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { SessaoEstudo } from '../types';
 import { useUiStore } from './useUiStore';
 import { toast } from '../components/Sonner';
-import { getSessoes, createSessao, updateSessaoApi, deleteSessao, saveTrilhasPorSemana, getTrilhasPorSemana } from '../services/geminiService';
+import { getSessoes, createSessao, updateSessaoApi, deleteSessao, saveTrilhasPorSemana, getTrilhasPorSemana, gerarPlanejamentoSemanal } from '../services/geminiService';
 import { useEditalStore } from './useEditalStore';
 import { useCiclosStore } from './useCiclosStore';
 import { useHistoricoStore } from './useHistoricoStore';
+import { useDisciplinasStore } from './useDisciplinasStore';
 
 export interface SessaoAtual {
   topico: {
@@ -92,6 +93,11 @@ interface EstudosStore {
   saveTrilhasToDb: () => Promise<void>;
   syncTimer: () => void;
   _tick: () => void;
+  syncTimer: () => void;
+  _tick: () => void;
+
+  // AI Actions
+  gerarTrilhaComIA: (opcoes: { horasPorDia: number, materias: string[], nivel: string, foco: string }) => Promise<void>;
 }
 
 const emptyTrilha: TrilhaSemanalData = { seg: [], ter: [], qua: [], qui: [], sex: [], sab: [], dom: [] };
@@ -698,6 +704,164 @@ export const useEstudosStore = create<EstudosStore>()(
             // Se já estiver rodando, força um tick para garantir atualização visual imediata
             state._tick();
           }
+        }
+      },
+      gerarTrilhaComIA: async (opcoes) => {
+        const { horasPorDia, materias, nivel, foco } = opcoes;
+        const state = get();
+        const editalStore = useEditalStore.getState();
+        const disciplinasStore = useDisciplinasStore.getState();
+        const ciclosStore = useCiclosStore.getState();
+
+        if (!editalStore.editalAtivo) {
+          toast.error("Nenhum edital ativo para gerar o planejamento.");
+          return;
+        }
+
+        set({ loading: true });
+        try {
+          // Coletar tópicos estudados nos últimos 30 dias
+          const diasAtras = 30;
+          const dataLimite = new Date();
+          dataLimite.setDate(dataLimite.getDate() - diasAtras);
+
+          const topicosEstudados = state.sessoes
+            .filter(s => {
+              try {
+                const dataSessao = new Date(s.data_estudo);
+                return dataSessao >= dataLimite && s.studyPlanId === editalStore.editalAtivo?.id;
+              } catch {
+                return false;
+              }
+            })
+            .map(s => {
+              // Encontrar informações do tópico
+              const topico = disciplinasStore.disciplinas
+                ?.flatMap(d => d.topicos || [])
+                .find(t => t.id === s.topico_id);
+
+              const disciplina = disciplinasStore.disciplinas?.find(d =>
+                d.topicos?.some(t => t.id === s.topico_id)
+              );
+
+              return {
+                titulo: topico?.titulo || 'Tópico não identificado',
+                disciplina: disciplina?.nome || 'Disciplina não identificada',
+                data: s.data_estudo,
+                duracao: s.tempo_estudado
+              };
+            })
+            .filter(t => t.titulo !== 'Tópico não identificado'); // Remover entradas sem identificação
+
+          // Agrupar por tópico e contar frequência
+          const contagemTopicos = topicosEstudados.reduce((acc, t) => {
+            const key = `${t.disciplina}:${t.titulo}`;
+            if (!acc[key]) {
+              acc[key] = { ...t, vezes: 0 };
+            }
+            acc[key].vezes += 1;
+            return acc;
+          }, {} as Record<string, any>);
+
+          // Coletar contexto enriquecido
+          const contexto = {
+            edital: disciplinasStore.disciplinas?.map(d => d.nome) || [],
+            topicosEstudadosRecentemente: Object.values(contagemTopicos).slice(0, 50), // Top 50 mais recentes
+            estatisticas: {
+              totalSessoes: topicosEstudados.length,
+              disciplinasMaisEstudadas: Object.entries(
+                topicosEstudados.reduce((acc, t) => {
+                  if (t.disciplina) {
+                    acc[t.disciplina] = (acc[t.disciplina] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)
+              )
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([nome, count]) => ({ nome, sessoes: count }))
+            },
+            pontosFracos: [] // TODO: Integrar com caderno de erros no futuro
+          };
+
+          // Converter IDs de matérias para nomes
+          const nomesMateriasSelecionadas = materias
+            .map(id => disciplinasStore.disciplinas?.find(d => d.id === id)?.nome)
+            .filter((nome): nome is string => !!nome); // Remove undefined
+
+          const novaTrilha = await gerarPlanejamentoSemanal(
+            horasPorDia,
+            nomesMateriasSelecionadas,
+            nivel,
+            foco,
+            contexto
+          );
+
+          // Validar retorno (básico)
+          if (!novaTrilha || (!novaTrilha.seg && !novaTrilha.ter)) {
+            throw new Error("A IA não retornou um planejamento válido.");
+          }
+
+          // Adicionar IDs únicos para os itens da IA para permitir drag and drop
+          // A função setTrilhaCompleta espera TrilhaSemanalData (string[])
+          // MAS a IA retorna objetos completos. 
+          // O componente TrilhaSemanal mapeia IDs para objetos em `topicsByDay`?
+          // NÃO. TrilhaSemanalData guarda IDs (strings).
+          // O store guarda APENAS IDs na trilha. Os dados reais precisam estar em algum lugar?
+          // Atualmente o `TrilhaSemanal.tsx` parece ter `topicsByDay` que monta objetos DraggableTopics.
+          // Mas de onde vêm os dados originais? Do `useEstudosStore.sessoes`? Não, a trilha é independente?
+
+          // Re-checando: `useEstudosStore.trilha` é `Record<string, string[]>`. Guarda apenas IDs ou nomes?
+          // `TrilhaSemanal.tsx` cria DraggableTopic baseado em... onde?
+          // Ah, `items` são strings na `TrilhaSemanalData`.
+          // Se eu insiro strings COMPLEXAS da IA na trilha, eu quebro o tipo ou tenho que adaptar.
+          //
+          // PROBLEMA: O sistema atual usa IDs (strings) que possivelmente são IDs de tópicos do banco.
+          // A IA gera "títulos de atividades" que não existem no banco necessariamente.
+          //
+          // SOLUÇÃO: A `TrilhaSemanalData` pode aceitar strings arbitrárias.
+          // O `TopicCard` renderiza o que está nessa string?
+          // Vamos ver `TrilhaSemanal.tsx` -> `topicsByDay`.
+          // Ele faz um map: `topics.map((t, index) => ({ id: t.instanceId, ...t }))`
+          // Onde `topics` vem de `trilha[dia.id]`.
+          //
+          // Se `trilha` guarda strings, como viram objetos com `disciplinaId`, `type`, etc?
+          // Se o sistema atual só suporta strings simples, eu preciso serializar o objeto da IA em JSON string
+          // para salvar no array de strings da trilha.
+          // E o componente `TrilhaSemanal` deve ser capaz de fazer parse se for JSON.
+
+          // Vou assumir que vou salvar o objeto serializado no array de strings por enquanto,
+          // ou modificar a estrutura da `trilha` para suportar objetos.
+          // O type `TrilhaSemanalData` diz `[key: string]: string[];`.
+          // Vou serializar o objeto gerado pela IA (title, type, disciplina) em uma string JSON.
+          // E garantir que o `TrilhaSemanal.tsx` faça o parse.
+
+          const trilhaSerializada: any = {};
+          ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'].forEach(dia => {
+            const atividadesDia = novaTrilha[dia] || [];
+            trilhaSerializada[dia] = atividadesDia.map((ativ: any) => {
+              // Adiciona ID único
+              const itemComId = {
+                id: `ia-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                titulo: ativ.titulo,
+                disciplinaId: ativ.disciplina, // Usando nome como ID por enquanto ou tentar achar ID real
+                type: ativ.type,
+                duracaoEstimada: ativ.duracaoEstimada,
+                isAiGenerated: true
+              };
+              return JSON.stringify(itemComId);
+            });
+          });
+
+          // Atualizar trilha
+          get().setTrilhaCompleta(trilhaSerializada);
+
+          toast.success("Planejamento gerado com sucesso! 🚀");
+        } catch (error) {
+          console.error("Erro ao gerar trilha:", error);
+          toast.error("Erro ao criar planejamento. Tente novamente.");
+        } finally {
+          set({ loading: false });
         }
       },
     }),

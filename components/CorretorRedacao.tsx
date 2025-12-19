@@ -288,7 +288,7 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
         )}
 
         {correcao.avaliacaoGeral && (
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-5 border border-primary/20">
+            <div className="bg-muted/30 rounded-lg p-6 border border-border">
                 <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                     <span className="text-2xl">📊</span>
                     Avaliação Geral
@@ -457,7 +457,7 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
         </div>
 
         {correcao.sinteseFinal && (
-            <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-5 border-2 border-blue-500/20">
+            <div className="bg-muted/30 rounded-lg p-6 border-2 border-primary/20">
                 <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                     <span className="text-2xl">💡</span>
                     Síntese Final (Feedback Pedagógico)

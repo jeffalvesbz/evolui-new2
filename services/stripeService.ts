@@ -131,13 +131,13 @@ export const createPortalSession = async (): Promise<void> => {
 export const PLAN_INFO = {
     pro: {
         name: 'PRO',
-        monthlyPrice: 29.00,
+        monthlyPrice: 29.90,
         yearlyPrice: 240.00,
         features: [
             '3 Editais/Planos de Estudo',
             '3 Ciclos de Estudos',
             'Flashcards Ilimitados',
-            '10 Correções de Redação IA/mês',
+            '5 Correções de Redação IA/mês',
             'Planejamento Semanal',
             'Estatísticas Avançadas',
             'Exportação de Dados',
@@ -151,7 +151,7 @@ export const PLAN_INFO = {
         features: [
             'Tudo do PRO +',
             'Editais e Ciclos ILIMITADOS',
-            'Correções de IA ILIMITADAS',
+            '15 Correções de Redação IA/mês',
             'Upload de Redação Manuscrita (OCR)',
             'Análise IA Avançada',
             'Modo Offline',

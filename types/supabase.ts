@@ -139,6 +139,70 @@ export interface Database {
           progresso?: number
         }
       }
+      flashcard_decks_default: {
+        Row: {
+          id: string
+          nome: string
+          descricao: string | null
+          categoria: string | null
+          visivel: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          descricao?: string | null
+          categoria?: string | null
+          visivel?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          descricao?: string | null
+          categoria?: string | null
+          visivel?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      flashcards_default: {
+        Row: {
+          id: string
+          deck_id: string
+          pergunta: string
+          resposta: string
+          tags: string[] | null
+          ordem: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          deck_id: string
+          pergunta: string
+          resposta: string
+          tags?: string[] | null
+          ordem?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          deck_id?: string
+          pergunta?: string
+          resposta?: string
+          tags?: string[] | null
+          ordem?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'flashcards_default_deck_id_fkey'
+            columns: ['deck_id']
+            referencedRelation: 'flashcard_decks_default'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       editais_default: {
         Row: {
           id: string

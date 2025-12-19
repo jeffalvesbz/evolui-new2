@@ -15,12 +15,20 @@ interface FormData {
 }
 
 const CriarFlashcardModal: React.FC = () => {
-  const { isCriarFlashcardModalOpen, closeCriarFlashcardModal, flashcardToEdit } = useModalStore();
+  const { isCriarFlashcardModalOpen, closeCriarFlashcardModal, flashcardToEdit, flashcardModalMode } = useModalStore();
   const { disciplinas } = useDisciplinasStore();
   const { addFlashcard, updateFlashcard } = useFlashcardsStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addAnother, setAddAnother] = useState(true);
-  const [mode, setMode] = useState<'manual' | 'ai'>('manual');
+  // Use the mode from the store, defaulting to 'manual' if not set
+  const [mode, setMode] = useState<'manual' | 'ai'>(flashcardModalMode || 'manual');
+
+  // Update local mode state when store mode changes (e.g. when opening modal)
+  useEffect(() => {
+    if (isCriarFlashcardModalOpen) {
+      setMode(flashcardModalMode);
+    }
+  }, [isCriarFlashcardModalOpen, flashcardModalMode]);
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormData>();
   const selectedDisciplinaId = watch('disciplinaId');
@@ -93,10 +101,7 @@ const CriarFlashcardModal: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error('[CriarFlashcardModal] [DIAGNOSTIC] Erro:', error);
-      const msg = error?.message || JSON.stringify(error) || 'Erro desconhecido';
-      // Alertar usuário para diagnóstico
-      window.alert(`[DIAGNÓSTICO] Erro ao criar flashcard MANUAL:\n\n${msg}\n\nPor favor, tire um print desta tela.`);
+      console.error('[CriarFlashcardModal] Erro:', error);
       toast.error(`Não foi possível ${isEditMode ? 'atualizar' : 'criar'} o flashcard.`);
     } finally {
       setIsSubmitting(false);

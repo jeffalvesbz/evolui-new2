@@ -8,17 +8,37 @@ export async function countFlashcardsCreatedThisMonth(userId: string): Promise<n
     const start = startOfMonth(new Date()).toISOString();
     const end = endOfMonth(new Date()).toISOString();
 
-    const { count, error } = await supabase
-        .from('flashcards')
-        .select('*', { count: 'exact', head: true })
+    // Buscar do log de geração (contagem de IA)
+    const { data, error } = await (supabase
+        .from('flashcard_generation_log') as any)
+        .select('count')
         .eq('user_id', userId)
         .gte('created_at', start)
         .lte('created_at', end);
 
     if (error) {
-        console.error('Erro ao contar flashcards do mês:', error);
+        console.error('Erro ao contar flashcards do mês (log):', error);
         return 0;
     }
 
-    return count || 0;
+    // Somar contagem dos logs
+    const total = (data as any[])?.reduce((sum, record) => sum + (record.count || 0), 0) || 0;
+    return total;
+}
+
+/**
+ * Registra a geração de flashcards via IA
+ */
+export async function recordFlashcardGeneration(userId: string, count: number): Promise<void> {
+    const { error } = await (supabase
+        .from('flashcard_generation_log') as any)
+        .insert({
+            user_id: userId,
+            count: count
+        });
+
+    if (error) {
+        console.error('Erro ao registrar geração de flashcards:', error);
+        // Não lançar erro para não interromper o fluxo se o log falhar, mas logar console
+    }
 }

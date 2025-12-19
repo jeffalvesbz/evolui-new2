@@ -10,7 +10,7 @@ interface ActivityHeatmapProps {
 
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessoes }) => {
     const today = new Date();
-    const startDate = subDays(today, 180); // Last 6 months (approx) to fit without scroll
+    const startDate = subDays(today, 90); // Last 3 months
 
     const data = useMemo(() => {
         const days = eachDayOfInterval({ start: startDate, end: today });
@@ -76,29 +76,29 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessoes }) => 
     };
 
     return (
-        <div className="w-full pb-2">
-            <div className="flex gap-1 flex-wrap">
+        <div className="w-full pb-4 flex flex-col items-center">
+            <div className="flex gap-2 flex-wrap justify-center">
                 {weeks.map((week, weekIndex) => (
-                    <div key={weekIndex} className="flex flex-col gap-1">
+                    <div key={weekIndex} className="flex flex-col gap-2">
                         {week.map((day, dayIndex) => {
-                            if (!day) return <div key={`empty-${weekIndex}-${dayIndex}`} className="w-3 h-3" />;
+                            if (!day) return <div key={`empty-${weekIndex}-${dayIndex}`} className="w-7 h-7" />;
 
                             return (
                                 <TooltipProvider key={day.date.toISOString()}>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <div
-                                                className={`w-3 h-3 rounded-sm ${getLevelColor(day.level)} transition-colors hover:ring-1 hover:ring-ring`}
+                                                className={`w-7 h-7 rounded-md ${getLevelColor(day.level)} transition-all hover:scale-105 hover:shadow-sm cursor-pointer border border-transparent hover:border-border`}
                                             />
                                         </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p className="text-xs font-medium">
-                                                {format(day.date, "d 'de' MMMM, yyyy", { locale: ptBR })}
+                                        <TooltipContent side="top">
+                                            <p className="text-sm font-semibold">
+                                                {format(day.date, "d 'de' MMMM", { locale: ptBR })}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
                                                 {day.minutes > 0
-                                                    ? `${Math.round(day.minutes)} minutos estudados`
-                                                    : 'Nenhuma atividade'}
+                                                    ? `${Math.round(day.minutes)} min estudados`
+                                                    : 'Sem atividade'}
                                             </p>
                                         </TooltipContent>
                                     </Tooltip>
@@ -108,16 +108,16 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessoes }) => 
                     </div>
                 ))}
             </div>
-            <div className="flex items-center justify-end gap-2 mt-2 text-xs text-muted-foreground">
-                <span>Menos</span>
-                <div className="flex gap-1">
-                    <div className="w-3 h-3 rounded-sm bg-secondary/30" />
-                    <div className="w-3 h-3 rounded-sm bg-emerald-200 dark:bg-emerald-900" />
-                    <div className="w-3 h-3 rounded-sm bg-emerald-300 dark:bg-emerald-700" />
-                    <div className="w-3 h-3 rounded-sm bg-emerald-400 dark:bg-emerald-600" />
-                    <div className="w-3 h-3 rounded-sm bg-emerald-500 dark:bg-emerald-500" />
+            <div className="flex items-center gap-4 mt-6 text-sm text-muted-foreground">
+                <span className="text-xs font-medium">Menos</span>
+                <div className="flex gap-2">
+                    <div className="w-5 h-5 rounded bg-secondary/30" />
+                    <div className="w-5 h-5 rounded bg-emerald-200 dark:bg-emerald-900" />
+                    <div className="w-5 h-5 rounded bg-emerald-300 dark:bg-emerald-700" />
+                    <div className="w-5 h-5 rounded bg-emerald-400 dark:bg-emerald-600" />
+                    <div className="w-5 h-5 rounded bg-emerald-500 dark:bg-emerald-500" />
                 </div>
-                <span>Mais</span>
+                <span className="text-xs font-medium">Mais</span>
             </div>
         </div>
     );
