@@ -1,6 +1,7 @@
 import React from 'react';
 import { useModalStore } from '../stores/useModalStore';
-import { BookCopyIcon, PlusIcon, XIcon, SettingsIcon } from './icons';
+import { Modal } from './ui/BaseModal';
+import { BookCopyIcon, PlusIcon, SettingsIcon } from './icons';
 
 const RegisterEditalModal: React.FC = () => {
     const {
@@ -9,8 +10,6 @@ const RegisterEditalModal: React.FC = () => {
         openDefaultEditalModal,
         openEditalModal,
     } = useModalStore();
-
-    if (!isRegisterEditalModalOpen) return null;
 
     const handleUseDefault = () => {
         closeRegisterEditalModal();
@@ -28,31 +27,22 @@ const RegisterEditalModal: React.FC = () => {
     };
 
     return (
-        <div
-            className="fixed inset-0 z-[105] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={closeRegisterEditalModal}
+        <Modal
+            isOpen={isRegisterEditalModalOpen}
+            onClose={closeRegisterEditalModal}
+            size="3xl"
         >
-            <div
-                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl p-6 space-y-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">Editais</p>
-                        <h2 className="text-2xl font-bold mt-1">O que você deseja fazer?</h2>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Crie um novo edital, use um padrão ou gerencie seus editais existentes.
-                        </p>
-                    </div>
-                    <button
-                        onClick={closeRegisterEditalModal}
-                        className="p-2 rounded-full hover:bg-muted transition"
-                        aria-label="Fechar modal"
-                    >
-                        <XIcon className="w-5 h-5" />
-                    </button>
+            <Modal.Header onClose={closeRegisterEditalModal}>
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">Editais</p>
+                    <h2 className="text-2xl font-bold mt-1">O que você deseja fazer?</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Crie um novo edital, use um padrão ou gerencie seus editais existentes.
+                    </p>
                 </div>
+            </Modal.Header>
 
+            <Modal.Body>
                 <div className="grid gap-4 md:grid-cols-3">
                     <button
                         onClick={handleUseDefault}
@@ -102,8 +92,8 @@ const RegisterEditalModal: React.FC = () => {
                         <span className="text-sm font-semibold text-primary mt-auto">Abrir gerenciador</span>
                     </button>
                 </div>
-            </div>
-        </div>
+            </Modal.Body>
+        </Modal>
     );
 };
 

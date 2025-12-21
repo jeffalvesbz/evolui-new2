@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Sparkles, Check, Loader2 } from 'lucide-react';
+import { Modal } from './ui/BaseModal';
 import { createCheckoutSession, PLAN_INFO, calculateYearlyDiscount, type PlanType } from '../services/stripeService';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
@@ -47,21 +47,18 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
         const isSelected = selectedPlan === plan;
         const price = billingPeriod === 'monthly' ? info.monthlyPrice : info.yearlyPrice;
         const pricePerMonth = billingPeriod === 'yearly' ? (info.yearlyPrice / 12).toFixed(2) : info.monthlyPrice.toFixed(2);
-        const discount = calculateYearlyDiscount(plan);
 
         return (
-            <motion.div
+            <div
                 key={plan}
                 onClick={() => setSelectedPlan(plan)}
                 className={`
-          relative p-6 rounded-2xl border-2 cursor-pointer transition-all
-          ${isSelected
-                        ? 'border-primary bg-primary/5 shadow-lg scale-105'
+                    relative p-6 rounded-2xl border-2 cursor-pointer transition-all duration-200
+                    ${isSelected
+                        ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
                         : 'border-border hover:border-primary/50 hover:shadow-md'
                     }
-        `}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.98 }}
+                `}
             >
                 {plan === 'premium' && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-white text-xs font-bold rounded-full">
@@ -98,113 +95,94 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                         </li>
                     ))}
                 </ul>
-            </motion.div>
+            </div>
         );
     };
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={onClose}
-                    />
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative bg-background rounded-2xl p-8 max-w-4xl w-full shadow-2xl border border-border max-h-[90vh] overflow-y-auto"
-                    >
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-3 rounded-xl bg-primary/10">
-                                <Sparkles className="w-6 h-6 text-primary" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-bold">Upgrade para Premium</h2>
-                                {feature && (
-                                    <p className="text-muted-foreground">
-                                        <strong>{feature}</strong> está disponível nos planos pagos
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Toggle de período */}
-                        <div className="flex items-center justify-center gap-4 mb-8">
-                            <button
-                                onClick={() => setBillingPeriod('monthly')}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${billingPeriod === 'monthly'
-                                        ? 'bg-primary text-white'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                            >
-                                Mensal
-                            </button>
-                            <button
-                                onClick={() => setBillingPeriod('yearly')}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${billingPeriod === 'yearly'
-                                        ? 'bg-primary text-white'
-                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                            >
-                                Anual
-                                <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
-                                    -{calculateYearlyDiscount('pro')}%
-                                </span>
-                            </button>
-                        </div>
-
-                        {/* Cards dos planos */}
-                        <div className="grid md:grid-cols-2 gap-6 mb-8">
-                            {renderPlanCard('pro')}
-                            {renderPlanCard('premium')}
-                        </div>
-
-                        {/* Botões de ação */}
-                        <div className="flex gap-4">
-                            <button
-                                onClick={handleUpgrade}
-                                disabled={loading}
-                                className="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-4 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        Processando...
-                                    </>
-                                ) : (
-                                    <>
-                                        Começar Teste Grátis de 3 Dias
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={onClose}
-                                disabled={loading}
-                                className="px-8 border-2 border-border py-4 rounded-xl font-medium hover:bg-muted transition-colors disabled:opacity-50"
-                            >
-                                Voltar
-                            </button>
-                        </div>
-
-                        <p className="text-xs text-center text-muted-foreground mt-4">
-                            ✨ 3 dias de teste grátis • Sem cartão de crédito • Cancele quando quiser
-                        </p>
-                    </motion.div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            size="4xl"
+        >
+            <Modal.Header onClose={onClose}>
+                <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl bg-primary/10">
+                        <Sparkles className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold">Upgrade para Premium</h2>
+                        {feature && (
+                            <p className="text-muted-foreground">
+                                <strong>{feature}</strong> está disponível nos planos pagos
+                            </p>
+                        )}
+                    </div>
                 </div>
-            )}
-        </AnimatePresence>
+            </Modal.Header>
+
+            <Modal.Body className="space-y-8">
+                {/* Toggle de período */}
+                <div className="flex items-center justify-center gap-4">
+                    <button
+                        onClick={() => setBillingPeriod('monthly')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${billingPeriod === 'monthly'
+                            ? 'bg-primary text-white'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        Mensal
+                    </button>
+                    <button
+                        onClick={() => setBillingPeriod('yearly')}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${billingPeriod === 'yearly'
+                            ? 'bg-primary text-white'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                    >
+                        Anual
+                        <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full">
+                            -{calculateYearlyDiscount('pro')}%
+                        </span>
+                    </button>
+                </div>
+
+                {/* Cards dos planos */}
+                <div className="grid md:grid-cols-2 gap-6">
+                    {renderPlanCard('pro')}
+                    {renderPlanCard('premium')}
+                </div>
+            </Modal.Body>
+
+            <Modal.Footer className="flex-col sm:flex-row gap-4">
+                <button
+                    onClick={handleUpgrade}
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-4 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                    {loading ? (
+                        <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            Processando...
+                        </>
+                    ) : (
+                        <>
+                            Começar Teste Grátis de 3 Dias
+                        </>
+                    )}
+                </button>
+                <button
+                    onClick={onClose}
+                    disabled={loading}
+                    className="px-8 border-2 border-border py-4 rounded-xl font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                >
+                    Voltar
+                </button>
+            </Modal.Footer>
+
+            <p className="text-xs text-center text-muted-foreground pb-4 -mt-2">
+                ✨ 3 dias de teste grátis • Sem cartão de crédito • Cancele quando quiser
+            </p>
+        </Modal>
     );
 };

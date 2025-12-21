@@ -296,7 +296,7 @@ const Estatisticas: React.FC = () => {
                             <PremiumFeatureWrapper
                                 isLocked={planType === 'free'}
                                 requiredPlan="pro"
-                                feature="Gráfico de Tempo por Disciplina"
+                                feature="Descubra onde seu tempo está sendo mal distribuído"
                                 showPreview={true}
                             >
                                 {studyTimeDistribution.length > 0 ? (
@@ -372,7 +372,7 @@ const Estatisticas: React.FC = () => {
                             <PremiumFeatureWrapper
                                 isLocked={planType === 'free'}
                                 requiredPlan="pro"
-                                feature="Mapa de Calor de Estudos"
+                                feature="Visualize seus dias mais produtivos em segundos"
                                 showPreview={true}
                             >
                                 <ActivityHeatmap sessoes={sessoes} />
@@ -391,7 +391,7 @@ const Estatisticas: React.FC = () => {
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Gráfico de Desempenho Diário"
+                            feature="Identifique quedas de rendimento antes que virem hábito"
                             showPreview={true}
                         >
                             <ResponsiveContainer width="100%" height={300}>
@@ -419,7 +419,7 @@ const Estatisticas: React.FC = () => {
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Análise de Pontos Fortes e Fracos"
+                            feature="Pare de revisar o que você já domina"
                             showPreview={true}
                         >
                             <TopicPerformance sessoes={sessoes} disciplinas={disciplinas} />
@@ -437,7 +437,7 @@ const Estatisticas: React.FC = () => {
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Gráfico de Foco por Disciplina"
+                            feature="Veja exatamente no que você mais investe tempo"
                             showPreview={true}
                         >
                             {studyTimeDistribution.length > 0 ? (
@@ -473,7 +473,7 @@ const Estatisticas: React.FC = () => {
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Análise de Horários de Pico"
+                            feature="Descubra seu horário de ouro para estudar"
                             showPreview={true}
                         >
                             <PeakHoursChart sessoes={sessoes} />
@@ -489,7 +489,7 @@ const Estatisticas: React.FC = () => {
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Gráfico de Tendência de Simulados"
+                            feature="Acompanhe sua evolução real em provas"
                             showPreview={true}
                         >
                             {simulationTrend.length > 1 ? (

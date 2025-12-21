@@ -17,12 +17,13 @@ const AdminEditalNovo: React.FC = () => {
         nome: '',
         banca: '',
         ano: new Date().getFullYear(),
-        cargo: ''
+        cargo: '',
+        data_prova: ''
     });
 
     // JSON Mode State
     const [jsonInput, setJsonInput] = useState('');
-    
+
     // Texto Mode State
     const [textoInput, setTextoInput] = useState('');
 
@@ -60,10 +61,10 @@ const AdminEditalNovo: React.FC = () => {
             const titulo = item.titulo;
             const indice = item.indice || '';
             const tipo = item.tipo || 'topico';
-            
+
             // Monta o nome do tópico com o índice se disponível
             const nomeCompleto = indice ? `${indice} - ${titulo}` : titulo;
-            
+
             // Adiciona o item atual
             topicosParaInserir.push({
                 disciplina_default_id: disciplinaId,
@@ -192,21 +193,21 @@ const AdminEditalNovo: React.FC = () => {
                         else if (typeof topico === 'object' && topico !== null) {
                             // Extrai o título do objeto
                             const titulo = topico.titulo || topico.nome || JSON.stringify(topico);
-                            
+
                             // Adiciona o tópico principal
                             topicosParaInserir.push({
                                 disciplina_default_id: discData.id,
                                 nome: titulo,
                                 ordem: tIndex
                             });
-                            
+
                             // Se houver subtópicos, adiciona como tópicos filhos
                             if (topico.subtopicos && Array.isArray(topico.subtopicos)) {
                                 topico.subtopicos.forEach((subtopico: any, sIndex: number) => {
-                                    const subtitulo = typeof subtopico === 'string' 
-                                        ? subtopico 
+                                    const subtitulo = typeof subtopico === 'string'
+                                        ? subtopico
                                         : (subtopico.titulo || subtopico.nome || String(subtopico));
-                                    
+
                                     topicosParaInserir.push({
                                         disciplina_default_id: discData.id,
                                         nome: subtitulo,
@@ -246,11 +247,11 @@ const AdminEditalNovo: React.FC = () => {
 
             // Processar texto usando IA
             const data = await processarTextoEdital(textoInput);
-            
+
             // Converter para JSON e usar a mesma lógica de importação
             setJsonInput(JSON.stringify(data, null, 2));
             setMode('json');
-            
+
             // Processar automaticamente
             await handleJsonSubmit();
         } catch (err: any) {
@@ -351,6 +352,15 @@ const AdminEditalNovo: React.FC = () => {
                                         onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
                                         className="w-full p-2 rounded-md bg-background border border-input focus:border-primary outline-none"
                                         placeholder="Ex: Agente"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Data da Prova</label>
+                                    <input
+                                        type="date"
+                                        value={formData.data_prova}
+                                        onChange={(e) => setFormData({ ...formData, data_prova: e.target.value })}
+                                        className="w-full p-2 rounded-md bg-background border border-input focus:border-primary outline-none"
                                     />
                                 </div>
                             </div>

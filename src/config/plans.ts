@@ -7,6 +7,7 @@ export interface Plan {
     ctaStyle: 'outline' | 'solid';
     tag?: string;
     color: string;
+    isPro?: boolean;
     isPremium?: boolean;
 }
 
@@ -20,11 +21,14 @@ export const plans: Plan[] = [
             '5 Correções IA/mês',
             '30 Questões IA/dia',
             '500 Flashcards/mês',
+            '📚 Decks Flashcards Prontos',
             'Estatísticas Avançadas'
         ],
-        cta: 'Testar Grátis',
-        ctaStyle: 'outline',
-        color: 'bg-gradient-to-br from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 border-primary/40',
+        cta: 'Começar Agora',
+        ctaStyle: 'solid',
+        tag: 'Mais Popular',
+        color: 'bg-gradient-to-br from-primary/15 to-secondary/15 dark:from-primary/25 dark:to-secondary/25 border-primary/50',
+        isPro: true
     },
     {
         name: 'Premium',
@@ -39,10 +43,10 @@ export const plans: Plan[] = [
             'OCR de Redação Manuscrita',
             'Suporte Prioritário 24/7'
         ],
-        cta: 'Começar Agora',
-        ctaStyle: 'solid',
-        tag: 'Mais Popular',
-        color: 'bg-gradient-to-br from-primary/20 to-secondary/20 dark:from-primary/30 dark:to-secondary/30 border-primary/50',
+        cta: 'Fazer Upgrade',
+        ctaStyle: 'outline',
+        tag: 'Completo',
+        color: 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20 border-amber-500/40',
         isPremium: true
     }
 ];

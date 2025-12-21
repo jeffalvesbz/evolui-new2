@@ -5,7 +5,8 @@ import { useUiStore } from '../stores/useUiStore';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { scheduleAutoRevisoes } from '../hooks/useAutoRevisoes';
-import { BookOpenIcon, XIcon, ClockIcon, SaveIcon, SparklesIcon, PlusIcon } from './icons';
+import { Modal } from './ui/BaseModal';
+import { BookOpenIcon, ClockIcon, SaveIcon, SparklesIcon, PlusIcon, XIcon } from './icons';
 import { startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { sortTopicosPorNumero } from '../utils/sortTopicos';
@@ -289,361 +290,339 @@ const SalvarSessaoModal: React.FC = () => {
         }
     };
 
-    if (!isSaveModalOpen || !sessaoAtual) return null;
+    if (!sessaoAtual) return null;
 
     return (
-        <>
-            <style>{`
-                /* Limitar altura do dropdown de select para evitar que ultrapasse a tela */
-                select {
-                    max-height: 40px;
-                }
-                /* Garantir que o dropdown respeite os limites do modal */
-                form select:focus {
-                    position: relative;
-                    z-index: 1;
-                }
-                /* Truncar opções do select dentro do dropdown */
-                select option {
-                    max-width: 100%;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                    padding: 8px 12px;
-                }
-                /* Limitar altura máxima do select de tópico */
-                form select[name="topico"] {
-                    max-width: 100%;
-                    box-sizing: border-box;
-                }
-                /* Garantir que o container do select não ultrapasse os limites */
-                form select[name="topico"] {
-                    position: relative;
-                }
-                /* Limitar o tamanho do texto exibido no select */
-                form select[name="topico"] option {
-                    max-width: 100%;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
-            `}</style>
-            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={descartarSessao}>
-                <form onSubmit={handleSubmit(onSubmit)} className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-                    <header className="p-4 border-b border-border flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <BookOpenIcon className="w-6 h-6 text-primary" />
-                            <h2 className="text-lg font-bold">Salvar e Encerrar Estudo</h2>
-                        </div>
-                        <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg">
-                            <ClockIcon className="w-4 h-4 text-muted-foreground" />
-                            <input
-                                type="number"
-                                aria-label="Horas"
-                                value={editableHours}
-                                onChange={(e) => {
-                                    const hours = parseInt(e.target.value, 10);
-                                    setEditableHours(isNaN(hours) || hours < 0 ? 0 : hours);
-                                }}
-                                className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
-                                min="0"
-                            />
-                            <span className="font-bold text-muted-foreground">:</span>
-                            <input
-                                type="number"
-                                aria-label="Minutos"
-                                value={String(editableMinutes).padStart(2, '0')}
-                                onFocus={e => e.target.select()}
-                                onChange={(e) => {
-                                    const minutes = parseInt(e.target.value, 10);
-                                    setEditableMinutes(isNaN(minutes) || minutes < 0 ? 0 : Math.min(minutes, 59));
-                                }}
-                                className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
-                                min="0" max="59"
-                            />
-                        </div>
-                    </header>
+        <Modal
+            isOpen={isSaveModalOpen}
+            onClose={descartarSessao}
+            size="2xl"
+        >
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[95vh]">
+                <Modal.Header onClose={descartarSessao} showCloseButton={false} className="flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                        <BookOpenIcon className="w-6 h-6 text-primary" />
+                        <h2 className="text-lg font-bold">Salvar e Encerrar Estudo</h2>
+                    </div>
+                    <div className="flex items-center gap-2 bg-muted/30 px-3 py-1.5 rounded-lg ml-auto">
+                        <ClockIcon className="w-4 h-4 text-muted-foreground" />
+                        <input
+                            type="number"
+                            aria-label="Horas"
+                            value={editableHours}
+                            onChange={(e) => {
+                                const hours = parseInt(e.target.value, 10);
+                                setEditableHours(isNaN(hours) || hours < 0 ? 0 : hours);
+                            }}
+                            className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                            min="0"
+                        />
+                        <span className="font-bold text-muted-foreground">:</span>
+                        <input
+                            type="number"
+                            aria-label="Minutos"
+                            value={String(editableMinutes).padStart(2, '0')}
+                            onFocus={e => e.target.select()}
+                            onChange={(e) => {
+                                const minutes = parseInt(e.target.value, 10);
+                                setEditableMinutes(isNaN(minutes) || minutes < 0 ? 0 : Math.min(minutes, 59));
+                            }}
+                            className="w-12 bg-input border border-border focus:border-primary focus:ring-0 text-center font-mono font-semibold rounded-md p-1 text-foreground"
+                            min="0" max="59"
+                        />
+                    </div>
+                </Modal.Header>
 
-                    <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
-                        {sessaoAtual.isConclusaoRapida && (
-                            <div className="p-3 bg-primary/10 rounded-lg text-primary text-xs flex items-center gap-2">
-                                <SparklesIcon className="w-4 h-4 flex-shrink-0" />
-                                <span><b>Dica:</b> Ative o cronometro em seu próximo estudo para registrar automaticamente seu tempo e acompanhar sua evolução.</span>
-                            </div>
-                        )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Categoria *</label>
-                                <select {...register('categoria')} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
-                                    <option>Teoria</option><option>Questões</option><option>Revisão</option><option>Simulado</option>
+                <Modal.Body className="space-y-4 overflow-x-hidden">
+                    {sessaoAtual.isConclusaoRapida && (
+                        <div className="p-3 bg-primary/10 rounded-lg text-primary text-xs flex items-center gap-2">
+                            <SparklesIcon className="w-4 h-4 flex-shrink-0" />
+                            <span><b>Dica:</b> Ative o cronometro em seu próximo estudo para registrar automaticamente seu tempo e acompanhar sua evolução.</span>
+                        </div>
+                    )}
+
+                    <style>{`
+                        select option {
+                            max-width: 100%;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                            padding: 8px 12px;
+                        }
+                    `}</style>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Categoria *</label>
+                            <select {...register('categoria')} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
+                                <option>Teoria</option><option>Questões</option><option>Revisão</option><option>Simulado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
+                            <select {...register('disciplinaId', { required: true })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
+                                <option value="">Selecione a disciplina</option>
+                                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+                            </select>
+                            {errors.disciplinaId && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
+                            <div className="relative group w-full overflow-hidden">
+                                <select
+                                    {...register('topico', { required: true })}
+                                    disabled={!disciplinaIdSelecionada}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 pr-8 text-sm text-foreground focus:ring-primary focus:border-primary disabled:opacity-50 appearance-none truncate"
+                                    style={{
+                                        textOverflow: 'ellipsis',
+                                        overflow: 'hidden',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: '100%',
+                                        width: '100%',
+                                        boxSizing: 'border-box'
+                                    }}
+                                >
+                                    <option value="">Selecione o tópico</option>
+                                    {topicosDaDisciplina.map(t => (
+                                        <option key={t.id} value={t.titulo} title={t.titulo}>
+                                            {t.titulo.length > 80 ? `${t.titulo.substring(0, 80)}...` : t.titulo}
+                                        </option>
+                                    ))}
                                 </select>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Disciplina *</label>
-                                <select {...register('disciplinaId', { required: true })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary">
-                                    <option value="">Selecione a disciplina</option>
-                                    {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-                                </select>
-                                {errors.disciplinaId && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Tópico *</label>
-                                <div className="relative group w-full overflow-hidden">
-                                    <select
-                                        {...register('topico', { required: true })}
-                                        disabled={!disciplinaIdSelecionada}
-                                        className="w-full bg-input border border-border rounded-md px-3 py-2 pr-8 text-sm text-foreground focus:ring-primary focus:border-primary disabled:opacity-50 appearance-none truncate"
-                                        style={{
-                                            textOverflow: 'ellipsis',
-                                            overflow: 'hidden',
-                                            whiteSpace: 'nowrap',
-                                            maxWidth: '100%',
-                                            width: '100%',
-                                            boxSizing: 'border-box'
-                                        }}
-                                    >
-                                        <option value="">Selecione o tópico</option>
-                                        {topicosDaDisciplina.map(t => (
-                                            <option key={t.id} value={t.titulo} title={t.titulo}>
-                                                {t.titulo.length > 80 ? `${t.titulo.substring(0, 80)}...` : t.titulo}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                                {/* Tooltip com tópico completo ao passar o mouse */}
+                                {topicoSelecionado && topicoSelecionado.length > 50 && (
+                                    <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-lg text-xs text-foreground max-w-md z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal break-words">
+                                        {topicoSelecionado}
                                     </div>
-                                    {/* Tooltip com tópico completo ao passar o mouse */}
-                                    {topicoSelecionado && topicoSelecionado.length > 50 && (
-                                        <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-card border border-border rounded-lg shadow-lg text-xs text-foreground max-w-md z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal break-words">
-                                            {topicoSelecionado}
-                                        </div>
-                                    )}
-                                </div>
-                                {errors.topico && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
+                                )}
                             </div>
-
-                            {/* Novo campo de Data */}
-                            <div className="md:col-span-2">
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Data do Estudo</label>
-                                <input
-                                    type="date"
-                                    {...register('dataEstudo')}
-                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Material utilizado</label>
-                                <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. inicial</label>
-                                    <input {...register('paginaInicial')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. final</label>
-                                    <input {...register('paginaFinal')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
-                                </div>
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Comentários</label>
-                                <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
-                            </div>
+                            {errors.topico && <p className="text-xs text-red-500 mt-1">Campo obrigatório</p>}
                         </div>
 
-                        {(categoriaSelecionada === 'Questões' || categoriaSelecionada === 'Simulado') && (
-                            <div className="p-4 bg-muted/30 rounded-lg space-y-4 border border-border">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-sm font-semibold text-foreground">Desempenho</h3>
-                                    <label className="flex items-center gap-2 text-xs cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            {...register('isCebraspe')}
-                                            className="w-3.5 h-3.5 rounded text-primary bg-background border-muted-foreground focus:ring-primary"
-                                        />
-                                        Estilo Cebraspe (1 errada anula 1 certa)
-                                    </label>
-                                </div>
+                        {/* Novo campo de Data */}
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Data do Estudo</label>
+                            <input
+                                type="date"
+                                {...register('dataEstudo')}
+                                className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary"
+                            />
+                        </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="text-xs font-medium text-green-600 dark:text-green-400 mb-1 block">Certas</label>
-                                        <input
-                                            {...register('questoesCertas')}
-                                            type="number"
-                                            min="0"
-                                            className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-green-500 focus:border-green-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-red-600 dark:text-red-400 mb-1 block">Erradas</label>
-                                        <input
-                                            {...register('questoesErradas')}
-                                            type="number"
-                                            min="0"
-                                            className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-red-500 focus:border-red-500"
-                                        />
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-1">
-                                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Saldo Líquido</label>
-                                        <div className={`w-full px-3 py-2 text-sm font-bold rounded-md border ${saldoLiquido > 0 ? 'bg-green-500/10 text-green-600 border-green-200 dark:border-green-900' :
-                                            saldoLiquido < 0 ? 'bg-red-500/10 text-red-600 border-red-200 dark:border-red-900' :
-                                                'bg-muted text-muted-foreground border-border'
-                                            }`}>
-                                            {saldoLiquido}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Banca (Opcional)</label>
-                                    <input
-                                        {...register('banca')}
-                                        placeholder="Ex: Cebraspe, FGV, Vunesp..."
-                                        className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"
-                                    />
-                                </div>
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Material utilizado</label>
+                            <input {...register('materialUtilizado')} placeholder="Ex: PDF, livro, Video Aula" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. inicial</label>
+                                <input {...register('paginaInicial')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
                             </div>
-                        )}
+                            <div>
+                                <label className="text-sm font-medium text-muted-foreground mb-1 block">Pág. final</label>
+                                <input {...register('paginaFinal')} type="number" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                            </div>
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground mb-1 block">Comentários</label>
+                            <textarea {...register('comentarios')} rows={4} placeholder="Observações sobre o estudo, pontos de dúvida, etc." className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"></textarea>
+                        </div>
+                    </div>
 
-                        <div className="space-y-3 pt-4 border-t border-border">
-                            <div className="space-y-2">
-                                <label className="flex items-center gap-2 text-sm">
+                    {(categoriaSelecionada === 'Questões' || categoriaSelecionada === 'Simulado') && (
+                        <div className="p-4 bg-muted/30 rounded-lg space-y-4 border border-border">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-semibold text-foreground">Desempenho</h3>
+                                <label className="flex items-center gap-2 text-xs cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        {...register('gerarRevisoes')}
-                                        className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary"
+                                        {...register('isCebraspe')}
+                                        className="w-3.5 h-3.5 rounded text-primary bg-background border-muted-foreground focus:ring-primary"
                                     />
-                                    PROGRAMAR REVISÕES
+                                    Estilo Cebraspe (1 errada anula 1 certa)
                                 </label>
+                            </div>
 
-                                {watch('gerarRevisoes') && (
-                                    <div className="ml-6 space-y-2">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {intervalosRevisao.map((intervalo, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium"
-                                                >
-                                                    <span>{intervalo}d</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setIntervalosRevisao(prev => prev.filter((_, i) => i !== index));
-                                                        }}
-                                                        className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
-                                                    >
-                                                        <XIcon className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {!mostrarInputNovoIntervalo ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="text-xs font-medium text-green-600 dark:text-green-400 mb-1 block">Certas</label>
+                                    <input
+                                        {...register('questoesCertas')}
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-green-500 focus:border-green-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-red-600 dark:text-red-400 mb-1 block">Erradas</label>
+                                    <input
+                                        {...register('questoesErradas')}
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-red-500 focus:border-red-500"
+                                    />
+                                </div>
+                                <div className="col-span-2 sm:col-span-1">
+                                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Saldo Líquido</label>
+                                    <div className={`w-full px-3 py-2 text-sm font-bold rounded-md border ${saldoLiquido > 0 ? 'bg-green-500/10 text-green-600 border-green-200 dark:border-green-900' :
+                                        saldoLiquido < 0 ? 'bg-red-500/10 text-red-600 border-red-200 dark:border-red-900' :
+                                            'bg-muted text-muted-foreground border-border'
+                                        }`}>
+                                        {saldoLiquido}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Banca (Opcional)</label>
+                                <input
+                                    {...register('banca')}
+                                    placeholder="Ex: Cebraspe, FGV, Vunesp..."
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-3 pt-4 border-t border-border">
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    {...register('gerarRevisoes')}
+                                    className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary"
+                                />
+                                PROGRAMAR REVISÕES
+                            </label>
+
+                            {watch('gerarRevisoes') && (
+                                <div className="ml-6 space-y-2">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {intervalosRevisao.map((intervalo, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-sm font-medium"
+                                            >
+                                                <span>{intervalo}d</span>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setMostrarInputNovoIntervalo(true)}
-                                                    className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                                    onClick={() => {
+                                                        setIntervalosRevisao(prev => prev.filter((_, i) => i !== index));
+                                                    }}
+                                                    className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                                                 >
-                                                    <PlusIcon className="w-4 h-4" />
+                                                    <XIcon className="w-3 h-3" />
                                                 </button>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <input
-                                                        type="number"
-                                                        value={novoIntervalo}
-                                                        onChange={(e) => setNovoIntervalo(e.target.value)}
-                                                        placeholder="dias"
-                                                        className="w-20 bg-input border border-border rounded-md px-2 py-1 text-sm text-foreground focus:ring-primary focus:border-primary"
-                                                        min="1"
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter') {
-                                                                e.preventDefault();
-                                                                const valor = parseInt(novoIntervalo);
-                                                                if (valor > 0 && !intervalosRevisao.includes(valor)) {
-                                                                    setIntervalosRevisao(prev => [...prev, valor].sort((a, b) => a - b));
-                                                                    setNovoIntervalo('');
-                                                                    setMostrarInputNovoIntervalo(false);
-                                                                }
-                                                            } else if (e.key === 'Escape') {
-                                                                setMostrarInputNovoIntervalo(false);
-                                                                setNovoIntervalo('');
-                                                            }
-                                                        }}
-                                                        autoFocus
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
+                                            </div>
+                                        ))}
+                                        {!mostrarInputNovoIntervalo ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setMostrarInputNovoIntervalo(true)}
+                                                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                            >
+                                                <PlusIcon className="w-4 h-4" />
+                                            </button>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    value={novoIntervalo}
+                                                    onChange={(e) => setNovoIntervalo(e.target.value)}
+                                                    placeholder="dias"
+                                                    className="w-20 bg-input border border-border rounded-md px-2 py-1 text-sm text-foreground focus:ring-primary focus:border-primary"
+                                                    min="1"
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
                                                             const valor = parseInt(novoIntervalo);
                                                             if (valor > 0 && !intervalosRevisao.includes(valor)) {
                                                                 setIntervalosRevisao(prev => [...prev, valor].sort((a, b) => a - b));
                                                                 setNovoIntervalo('');
                                                                 setMostrarInputNovoIntervalo(false);
                                                             }
-                                                        }}
-                                                        className="px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs hover:bg-primary/90 transition-colors"
-                                                    >
-                                                        Adicionar
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
+                                                        } else if (e.key === 'Escape') {
                                                             setMostrarInputNovoIntervalo(false);
                                                             setNovoIntervalo('');
-                                                        }}
-                                                        className="px-2 py-1 bg-muted text-muted-foreground rounded-md text-xs hover:bg-muted/80 transition-colors"
-                                                    >
-                                                        Cancelar
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {intervalosRevisao.length === 0 && (
-                                            <p className="text-xs text-muted-foreground">Adicione pelo menos um intervalo de revisão</p>
+                                                        }
+                                                    }}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const valor = parseInt(novoIntervalo);
+                                                        if (valor > 0 && !intervalosRevisao.includes(valor)) {
+                                                            setIntervalosRevisao(prev => [...prev, valor].sort((a, b) => a - b));
+                                                            setNovoIntervalo('');
+                                                            setMostrarInputNovoIntervalo(false);
+                                                        }
+                                                    }}
+                                                    className="px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs hover:bg-primary/90 transition-colors"
+                                                >
+                                                    Adicionar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setMostrarInputNovoIntervalo(false);
+                                                        setNovoIntervalo('');
+                                                    }}
+                                                    className="px-2 py-1 bg-muted text-muted-foreground rounded-md text-xs hover:bg-muted/80 transition-colors"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                            <label className="flex items-center gap-2 text-sm">
-                                <input
-                                    type="checkbox"
-                                    {...register('teoriaFinalizada')}
-                                    disabled={sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-')}
-                                    className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary disabled:opacity-70"
-                                />
-                                Teoria finalizada
-                            </label>
-                            <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('contabilizarPlanejamento')} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" /> Contabilizar no planejamento</label>
-                        </div>
-                    </div>
-
-                    <footer className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2">
-                        <button type="button" onClick={descartarSessao} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <svg className="animate-spin h-4 w-4 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <SaveIcon className="w-4 h-4" /> Salvar estudo
-                                </>
+                                    {intervalosRevisao.length === 0 && (
+                                        <p className="text-xs text-muted-foreground">Adicione pelo menos um intervalo de revisão</p>
+                                    )}
+                                </div>
                             )}
-                        </button>
-                    </footer>
-                </form>
-            </div>
-        </>
+                        </div>
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                {...register('teoriaFinalizada')}
+                                disabled={sessaoAtual.isConclusaoRapida && !sessaoAtual.topico.id.startsWith('manual-')}
+                                className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary disabled:opacity-70"
+                            />
+                            Teoria finalizada
+                        </label>
+                        <label className="flex items-center gap-2 text-sm"><input type="checkbox" {...register('contabilizarPlanejamento')} className="w-4 h-4 rounded text-primary bg-background border-muted-foreground focus:ring-primary" /> Contabilizar no planejamento</label>
+                    </div>
+                </Modal.Body>
+
+                <Modal.Footer>
+                    <button type="button" onClick={descartarSessao} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <svg className="animate-spin h-4 w-4 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Salvando...
+                            </>
+                        ) : (
+                            <>
+                                <SaveIcon className="w-4 h-4" /> Salvar estudo
+                            </>
+                        )}
+                    </button>
+                </Modal.Footer>
+            </form>
+        </Modal>
     );
 };
 

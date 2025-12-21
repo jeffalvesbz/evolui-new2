@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { XIcon, UploadIcon, FileTextIcon, LinkIcon, LoaderIcon } from './icons';
+import { UploadIcon, FileTextIcon, LinkIcon, LoaderIcon } from './icons';
 import { toast } from './Sonner';
+import { Modal } from './ui/BaseModal';
 
 interface SolicitarEditalModalProps {
     isOpen: boolean;
@@ -22,8 +23,6 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
     const [uploading, setUploading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    if (!isOpen) return null;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -103,7 +102,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                 setUploading(true);
                 arquivoPdfUrl = await uploadPdfToStorage(pdfFile);
                 setUploading(false);
-                
+
                 if (!arquivoPdfUrl && !formData.link_edital.trim()) {
                     toast.error('Falha no upload do PDF. Por favor, forneça um link alternativo.');
                     setSubmitting(false);
@@ -129,7 +128,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
             if (error) throw error;
 
             toast.success('Solicitação enviada com sucesso! Nossa equipe analisará e incluirá o edital em breve.');
-            
+
             // Reset form
             setFormData({
                 nome_edital: '',
@@ -143,7 +142,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-            
+
             onClose();
         } catch (error: any) {
             console.error('Erro ao enviar solicitação:', error);
@@ -160,36 +159,25 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
     };
 
     return (
-        <div 
-            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={onClose}
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            size="2xl"
         >
-            <div
-                className="bg-card w-full max-w-2xl rounded-2xl border border-border shadow-2xl max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-start justify-between p-6 border-b border-slate-800 bg-[#131620] sticky top-0">
+            <Modal.Header onClose={onClose}>
+                <div className="flex items-center gap-2">
+                    <FileTextIcon className="w-6 h-6 text-purple-400" />
                     <div>
-                        <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-                            <FileTextIcon className="w-6 h-6 text-purple-400" />
-                            Solicitar Inclusão de Edital
-                        </h2>
-                        <p className="text-sm text-slate-400 mt-1">
-                            Não encontrou seu edital? Solicite a inclusão enviando o PDF ou link.
-                        </p>
+                        <h2 className="text-xl font-semibold text-foreground">Solicitar Inclusão de Edital</h2>
+                        <p className="text-sm text-muted-foreground">Não encontrou seu edital? Solicite a inclusão enviando o PDF ou link.</p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                        aria-label="Fechar modal"
-                    >
-                        <XIcon className="w-5 h-5" />
-                    </button>
                 </div>
+            </Modal.Header>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit}>
+                <Modal.Body className="space-y-6">
                     <div>
-                        <label htmlFor="nome_edital" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="nome_edital" className="block text-sm font-medium text-muted-foreground mb-2">
                             Nome do Edital <span className="text-red-400">*</span>
                         </label>
                         <input
@@ -199,14 +187,14 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                             value={formData.nome_edital}
                             onChange={handleInputChange}
                             required
-                            className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500"
+                            className="w-full bg-input border border-border text-foreground px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground"
                             placeholder="Ex: Concurso Público para Analista Judiciário"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label htmlFor="banca" className="block text-sm font-medium text-slate-300 mb-2">
+                            <label htmlFor="banca" className="block text-sm font-medium text-muted-foreground mb-2">
                                 Banca
                             </label>
                             <input
@@ -215,13 +203,13 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                                 name="banca"
                                 value={formData.banca}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500"
+                                className="w-full bg-input border border-border text-foreground px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground"
                                 placeholder="Ex: FGV, CESPE, VUNESP"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="cargo" className="block text-sm font-medium text-slate-300 mb-2">
+                            <label htmlFor="cargo" className="block text-sm font-medium text-muted-foreground mb-2">
                                 Cargo
                             </label>
                             <input
@@ -230,14 +218,14 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                                 name="cargo"
                                 value={formData.cargo}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500"
+                                className="w-full bg-input border border-border text-foreground px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground"
                                 placeholder="Ex: Analista Judiciário"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label htmlFor="ano" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="ano" className="block text-sm font-medium text-muted-foreground mb-2">
                             Ano
                         </label>
                         <input
@@ -248,34 +236,34 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                             onChange={handleInputChange}
                             min="2000"
                             max="2100"
-                            className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500"
+                            className="w-full bg-input border border-border text-foreground px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground"
                             placeholder="Ex: 2024"
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="link_edital" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="link_edital" className="block text-sm font-medium text-muted-foreground mb-2">
                             Link para o Edital
                         </label>
                         <div className="relative">
-                            <LinkIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <LinkIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="url"
                                 id="link_edital"
                                 name="link_edital"
                                 value={formData.link_edital}
                                 onChange={handleInputChange}
-                                className="w-full bg-slate-900 border border-slate-700 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500"
+                                className="w-full bg-input border border-border text-foreground pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground"
                                 placeholder="https://exemplo.com/edital.pdf"
                             />
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                             Ou faça upload de um PDF abaixo
                         </p>
                     </div>
 
                     <div>
-                        <label htmlFor="pdf_file" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="pdf_file" className="block text-sm font-medium text-muted-foreground mb-2">
                             Upload de PDF (máx. 10MB)
                         </label>
                         <div className="relative">
@@ -289,7 +277,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                             />
                             <label
                                 htmlFor="pdf_file"
-                                className="flex items-center justify-center gap-3 w-full bg-slate-900 border-2 border-dashed border-slate-700 text-slate-300 px-4 py-6 rounded-xl cursor-pointer hover:border-purple-500/50 hover:bg-slate-800/50 transition-colors"
+                                className="flex items-center justify-center gap-3 w-full bg-input border-2 border-dashed border-border text-muted-foreground px-4 py-6 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
                             >
                                 <UploadIcon className="w-5 h-5" />
                                 <span className="text-sm">
@@ -306,7 +294,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                     </div>
 
                     <div>
-                        <label htmlFor="observacoes" className="block text-sm font-medium text-slate-300 mb-2">
+                        <label htmlFor="observacoes" className="block text-sm font-medium text-muted-foreground mb-2">
                             Observações (opcional)
                         </label>
                         <textarea
@@ -315,36 +303,35 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
                             value={formData.observacoes}
                             onChange={handleInputChange}
                             rows={3}
-                            className="w-full bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 placeholder-slate-500 resize-none"
+                            className="w-full bg-input border border-border text-foreground px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder-muted-foreground resize-none"
                             placeholder="Informações adicionais sobre o edital..."
                         />
                     </div>
+                </Modal.Body>
 
-                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={submitting || uploading}
-                            className="px-5 py-2.5 text-slate-300 hover:text-white font-medium rounded-lg transition-colors border border-transparent hover:border-slate-700 disabled:opacity-50"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={submitting || uploading}
-                            className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                            {(submitting || uploading) && (
-                                <LoaderIcon className="w-4 h-4 animate-spin" />
-                            )}
-                            {uploading ? 'Enviando PDF...' : submitting ? 'Enviando...' : 'Enviar Solicitação'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <Modal.Footer>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={submitting || uploading}
+                        className="px-5 py-2.5 text-muted-foreground hover:text-foreground font-medium rounded-lg transition-colors border border-transparent hover:border-border disabled:opacity-50"
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={submitting || uploading}
+                        className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {(submitting || uploading) && (
+                            <LoaderIcon className="w-4 h-4 animate-spin" />
+                        )}
+                        {uploading ? 'Enviando PDF...' : submitting ? 'Enviando...' : 'Enviar Solicitação'}
+                    </button>
+                </Modal.Footer>
+            </form>
+        </Modal>
     );
 };
 
 export default SolicitarEditalModal;
-

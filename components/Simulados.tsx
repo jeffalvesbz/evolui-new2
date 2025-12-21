@@ -1,23 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon, XIcon } from './icons'
+import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon } from './icons'
 import { toast } from './Sonner'
 import { useStudyStore, Simulation } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
-
-const Modal: React.FC<{ children: React.ReactNode; onClose: () => void; }> = ({ children, onClose }) => (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto" onClick={onClose}>
-        <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-2xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            {children}
-        </div>
-    </div>
-);
+import { Modal } from './ui/BaseModal'
 
 const getTodayDateString = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const Simulados = () => {
@@ -27,7 +20,7 @@ const Simulados = () => {
   const updateSimulation = useStudyStore((state) => state.updateSimulation)
   const deleteSimulation = useStudyStore((state) => state.deleteSimulation)
   const fetchSimulados = useStudyStore((state) => state.fetchSimulados)
-  
+
   const simuladosFiltrados = useMemo(() => {
     if (!simulados || simulados.length === 0) return []
     if (!editalAtivo?.id) {
@@ -35,7 +28,7 @@ const Simulados = () => {
     }
     return simulados.filter(s => s.studyPlanId === editalAtivo.id)
   }, [simulados, editalAtivo?.id])
-  
+
   const [form, setForm] = useState({
     name: '', correct: 0, wrong: 0, blank: 0, durationMinutes: 0, notes: '', date: getTodayDateString(), isCebraspe: false
   })
@@ -63,7 +56,7 @@ const Simulados = () => {
       toast.error('Preencha o nome, a data e selecione um edital.')
       return
     }
-    
+
     const payload = {
       ...form,
       name: form.name.trim(),
@@ -104,6 +97,19 @@ const Simulados = () => {
     setIsCreateOpen(true)
   }
 
+  const handleCloseCreateModal = () => {
+    setIsCreateOpen(false);
+    setEditingSimulation(null);
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deleteTarget) {
+      await deleteSimulation(deleteTarget.id);
+      setDeleteTarget(null);
+      toast.success('Simulado excluído.');
+    }
+  }
+
   return (
     <div data-tutorial="simulados-content" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <section className="rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm">
@@ -126,14 +132,14 @@ const Simulados = () => {
               let scoreClass: string;
 
               if (simulation.isCebraspe) {
-                  const netScore = simulation.correct - simulation.wrong;
-                  scoreDisplay = netScore;
-                  scoreLabel = 'Pontos Líquidos';
-                  scoreClass = 'bg-yellow-500/20 text-yellow-400';
+                const netScore = simulation.correct - simulation.wrong;
+                scoreDisplay = netScore;
+                scoreLabel = 'Pontos Líquidos';
+                scoreClass = 'bg-yellow-500/20 text-yellow-400';
               } else {
-                  scoreDisplay = totalQuestions ? Math.round((simulation.correct / totalQuestions) * 100) : 0;
-                  scoreLabel = '% de acertos';
-                  scoreClass = 'bg-secondary/20 text-secondary';
+                scoreDisplay = totalQuestions ? Math.round((simulation.correct / totalQuestions) * 100) : 0;
+                scoreLabel = '% de acertos';
+                scoreClass = 'bg-secondary/20 text-secondary';
               }
 
               return (
@@ -144,7 +150,7 @@ const Simulados = () => {
                         {simulation.name}
                         {simulation.isCebraspe && <span className="text-xs font-bold bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Cebraspe</span>}
                       </h3>
-                      <p className="text-xs text-muted-foreground">{new Date(simulation.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})} • {simulation.durationMinutes} min</p>
+                      <p className="text-xs text-muted-foreground">{new Date(simulation.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} • {simulation.durationMinutes} min</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${scoreClass}`}>
@@ -172,45 +178,161 @@ const Simulados = () => {
         </div>
       </section>
 
-      {isCreateOpen && (
-        <Modal onClose={() => setIsCreateOpen(false)}>
-          <form onSubmit={handleSubmit} className="space-y-4 p-6 text-sm">
-            <header className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{editingSimulation ? 'Editar' : 'Registrar'} Simulado</h2>
-                <p className="text-xs text-muted-foreground">Preencha os resultados para acompanhar seu desempenho.</p>
-              </div>
-              <button type="button" onClick={() => setIsCreateOpen(false)} className="p-1 rounded-full hover:bg-muted text-foreground"><XIcon className="w-5 h-5" /></button>
-            </header>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-foreground">Nome</span><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required /></label>
-              
-              <label className="flex items-center gap-2 text-sm md:col-span-2 text-foreground">
-                  <input type="checkbox" checked={form.isCebraspe} onChange={e => setForm(p => ({ ...p, isCebraspe: e.target.checked }))} className="w-4 h-4 rounded text-primary bg-background border-border focus:ring-2 focus:ring-primary focus:ring-offset-0" />
-                  Estilo Cebraspe (uma errada anula uma certa)
-              </label>
-              
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-foreground">Acertos</span><input type="number" min="0" value={form.correct} onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-foreground">Erros</span><input type="number" min="0" value={form.wrong} onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-foreground">Em Branco</span><input type="number" min="0" value={form.blank} onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-foreground">Duração (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" /></label>
-              <label className="flex flex-col gap-2"><span className="text-xs font-semibold text-foreground">Data</span><input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" required /></label>
-              <label className="flex flex-col gap-2 md:col-span-2"><span className="text-xs font-semibold text-foreground">Observações</span><textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea></label>
+      {/* Modal de Criar/Editar Simulado */}
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={handleCloseCreateModal}
+        size="2xl"
+      >
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[95vh]">
+          <Modal.Header onClose={handleCloseCreateModal}>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{editingSimulation ? 'Editar' : 'Registrar'} Simulado</h2>
+              <p className="text-xs text-muted-foreground">Preencha os resultados para acompanhar seu desempenho.</p>
             </div>
-            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setIsCreateOpen(false)} className="h-9 px-4 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors">Cancelar</button><button type="submit" className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-colors"><SaveIcon className="w-4 h-4" /> Salvar</button></div>
-          </form>
-        </Modal>
-      )}
+          </Modal.Header>
 
-      {deleteTarget && (
-        <Modal onClose={() => setDeleteTarget(null)}>
-          <div className="p-6 space-y-4">
-            <h3 className="text-lg font-semibold">Excluir Simulado</h3>
-            <p className="text-sm text-muted-foreground">Tem certeza que quer excluir "{deleteTarget.name}"? Esta ação é irreversível.</p>
-            <div className="flex justify-end gap-2 pt-4 border-t border-border"><button type="button" onClick={() => setDeleteTarget(null)} className="h-9 px-4 rounded-lg border border-border hover:bg-muted">Cancelar</button><button type="button" onClick={async () => { if(deleteTarget) { await deleteSimulation(deleteTarget.id); setDeleteTarget(null); toast.success('Simulado excluído.');} }} className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600">Excluir</button></div>
-          </div>
-        </Modal>
-      )}
+          <Modal.Body className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex flex-col gap-2 md:col-span-2">
+                <span className="text-xs font-semibold text-foreground">Nome</span>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  required
+                />
+              </label>
+
+              <label className="flex items-center gap-2 text-sm md:col-span-2 text-foreground">
+                <input
+                  type="checkbox"
+                  checked={form.isCebraspe}
+                  onChange={e => setForm(p => ({ ...p, isCebraspe: e.target.checked }))}
+                  className="w-4 h-4 rounded text-primary bg-background border-border focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                />
+                Estilo Cebraspe (uma errada anula uma certa)
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-foreground">Acertos</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.correct}
+                  onChange={e => setForm(p => ({ ...p, correct: Number(e.target.value) }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-foreground">Erros</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.wrong}
+                  onChange={e => setForm(p => ({ ...p, wrong: Number(e.target.value) }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-foreground">Em Branco</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.blank}
+                  onChange={e => setForm(p => ({ ...p, blank: Number(e.target.value) }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-foreground">Duração (min)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.durationMinutes}
+                  onChange={e => setForm(p => ({ ...p, durationMinutes: Number(e.target.value) }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold text-foreground">Data</span>
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 md:col-span-2">
+                <span className="text-xs font-semibold text-foreground">Observações</span>
+                <textarea
+                  rows={2}
+                  value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                  className="rounded-lg border border-border bg-background p-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </label>
+            </div>
+          </Modal.Body>
+
+          <Modal.Footer>
+            <button
+              type="button"
+              onClick={handleCloseCreateModal}
+              className="h-9 px-4 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="h-9 px-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 transition-colors"
+            >
+              <SaveIcon className="w-4 h-4" /> Salvar
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        size="sm"
+      >
+        <Modal.Header onClose={() => setDeleteTarget(null)}>
+          <h3 className="text-lg font-semibold">Excluir Simulado</h3>
+        </Modal.Header>
+
+        <Modal.Body>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que quer excluir "{deleteTarget?.name}"? Esta ação é irreversível.
+          </p>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <button
+            type="button"
+            onClick={() => setDeleteTarget(null)}
+            className="h-9 px-4 rounded-lg border border-border hover:bg-muted transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleDeleteConfirm}
+            className="h-9 px-4 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+          >
+            Excluir
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }

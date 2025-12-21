@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { DownloadIcon, UploadIcon, XIcon } from './icons';
+import { UploadIcon } from './icons';
 import { importFlashcardsFromCSV, validateCsvFormat } from '../services/flashcardCsvService';
 import { useFlashcardsStore } from '../stores/useFlashcardStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { toast } from './Sonner';
+import { Modal } from './ui/BaseModal';
 
 interface ImportExportModalProps {
+    isOpen: boolean;
     onClose: () => void;
 }
 
-export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose }) => {
+export const ImportExportModal: React.FC<ImportExportModalProps> = ({ isOpen, onClose }) => {
     const { flashcards, addFlashcards } = useFlashcardsStore();
     const disciplinas = useDisciplinasStore(state => state.disciplinas);
     const [importing, setImporting] = useState(false);
@@ -20,8 +22,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
     const allTopics = disciplinas.flatMap(d =>
         d.topicos.map(t => ({ id: t.id, titulo: t.titulo, disciplina: d.nome }))
     );
-
-
 
     const handleUnifiedImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -128,98 +128,91 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({ onClose })
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-card rounded-xl p-6 max-w-lg w-full border border-border shadow-2xl">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-foreground">Importar Flashcards</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                    >
-                        <XIcon className="w-5 h-5 text-muted-foreground" />
-                    </button>
-                </div>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            size="lg"
+        >
+            <Modal.Header onClose={onClose}>
+                <h2 className="text-xl font-bold text-foreground">Importar Flashcards</h2>
+            </Modal.Header>
 
-                <div className="space-y-6">
-                    {/* Exportar */}
+            <Modal.Body className="space-y-6">
+                {/* Importar Unificado */}
+                <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
+                        <UploadIcon className="w-5 h-5 text-secondary" />
+                        Importar Flashcards
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                        Importe de CSV ou TXT (com ou sem cabeçalhos)
+                    </p>
 
+                    {/* Seletor de Destino */}
+                    <div className="mb-3">
+                        <label className="block text-sm font-medium text-foreground mb-2">
+                            Importar para
+                        </label>
 
-                    {/* Importar Unificado */}
-                    <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2 text-foreground">
-                            <UploadIcon className="w-5 h-5 text-secondary" />
-                            Importar Flashcards
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-3">
-                            Importe de CSV ou TXT (com ou sem cabeçalhos)
-                        </p>
+                        {/* Disciplina */}
+                        <select
+                            value={selectedDisciplinaId}
+                            onChange={(e) => {
+                                setSelectedDisciplinaId(e.target.value);
+                                if (e.target.value) setSelectedTopicId('');
+                            }}
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-2"
+                        >
+                            <option value="">Selecione uma disciplina...</option>
+                            {disciplinas.map(disc => (
+                                <option key={disc.id} value={disc.id}>
+                                    📚 {disc.nome} (todos os tópicos)
+                                </option>
+                            ))}
+                        </select>
 
-                        {/* Seletor de Destino */}
-                        <div className="mb-3">
-                            <label className="block text-sm font-medium text-foreground mb-2">
-                                Importar para
-                            </label>
+                        <div className="text-center text-xs text-muted-foreground my-2">ou</div>
 
-                            {/* Disciplina */}
-                            <select
-                                value={selectedDisciplinaId}
-                                onChange={(e) => {
-                                    setSelectedDisciplinaId(e.target.value);
-                                    if (e.target.value) setSelectedTopicId('');
-                                }}
-                                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 mb-2"
-                            >
-                                <option value="">Selecione uma disciplina...</option>
-                                {disciplinas.map(disc => (
-                                    <option key={disc.id} value={disc.id}>
-                                        📚 {disc.nome} (todos os tópicos)
-                                    </option>
-                                ))}
-                            </select>
-
-                            <div className="text-center text-xs text-muted-foreground my-2">ou</div>
-
-                            {/* Tópico específico */}
-                            <select
-                                value={selectedTopicId}
-                                onChange={(e) => {
-                                    setSelectedTopicId(e.target.value);
-                                    if (e.target.value) setSelectedDisciplinaId('');
-                                }}
-                                className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                disabled={!!selectedDisciplinaId}
-                            >
-                                <option value="">Selecione um tópico específico...</option>
-                                {allTopics.map(topic => (
-                                    <option key={topic.id} value={topic.id}>
-                                        📖 {topic.disciplina} → {topic.titulo}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Input de arquivo */}
-                        <input
-                            type="file"
-                            accept=".csv,.txt"
-                            onChange={handleUnifiedImport}
-                            disabled={importing || (!selectedTopicId && !selectedDisciplinaId)}
-                            className="w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        />
-
-                        {importing && (
-                            <p className="text-sm text-primary mt-2 animate-pulse">
-                                Importando flashcards...
-                            </p>
-                        )}
-
-                        <p className="text-xs text-muted-foreground mt-2">
-                            💡 <strong>CSV:</strong> aceita separadores , ou ; com/sem cabeçalho (pergunta,resposta,tags)<br />
-                            💡 <strong>TXT:</strong> uma pergunta por linha separada por | ou tab (Pergunta|Resposta)
-                        </p>
+                        {/* Tópico específico */}
+                        <select
+                            value={selectedTopicId}
+                            onChange={(e) => {
+                                setSelectedTopicId(e.target.value);
+                                if (e.target.value) setSelectedDisciplinaId('');
+                            }}
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            disabled={!!selectedDisciplinaId}
+                        >
+                            <option value="">Selecione um tópico específico...</option>
+                            {allTopics.map(topic => (
+                                <option key={topic.id} value={topic.id}>
+                                    📖 {topic.disciplina} → {topic.titulo}
+                                </option>
+                            ))}
+                        </select>
                     </div>
+
+                    {/* Input de arquivo */}
+                    <input
+                        type="file"
+                        accept=".csv,.txt"
+                        onChange={handleUnifiedImport}
+                        disabled={importing || (!selectedTopicId && !selectedDisciplinaId)}
+                        className="w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+
+                    {importing && (
+                        <p className="text-sm text-primary mt-2 animate-pulse">
+                            Importando flashcards...
+                        </p>
+                    )}
+
+                    <p className="text-xs text-muted-foreground mt-2">
+                        💡 <strong>CSV:</strong> aceita separadores , ou ; com/sem cabeçalho (pergunta,resposta,tags)<br />
+                        💡 <strong>TXT:</strong> uma pergunta por linha separada por | ou tab (Pergunta|Resposta)
+                    </p>
                 </div>
-            </div>
-        </div>
+            </Modal.Body>
+        </Modal>
     );
 };

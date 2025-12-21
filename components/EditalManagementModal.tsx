@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { useModalStore } from '../stores/useModalStore';
 import { useEditalStore } from '../stores/useEditalStore';
 import { StudyPlan } from '../types';
-import { XIcon, LandmarkIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon } from './icons';
+import { LandmarkIcon, PlusIcon, EditIcon, Trash2Icon, SaveIcon, XIcon } from './icons';
 import { toast } from './Sonner';
+import { Modal } from './ui/BaseModal';
 
 type FormState = Omit<StudyPlan, 'id'>;
 
@@ -16,7 +17,7 @@ const EditalManagementModal: React.FC = () => {
     const [selectedEdital, setSelectedEdital] = useState<StudyPlan | null>(null);
     const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     const { register, handleSubmit, reset, formState: { errors } } = useForm<FormState>();
 
     useEffect(() => {
@@ -71,7 +72,7 @@ const EditalManagementModal: React.FC = () => {
             setIsSubmitting(false);
         }
     };
-    
+
     const handleDelete = async (id: string) => {
         try {
             await removeEdital(id);
@@ -83,20 +84,16 @@ const EditalManagementModal: React.FC = () => {
         }
     };
 
-    if (!isEditalModalOpen) return null;
-
-    const renderList = () => (
+    const renderListContent = () => (
         <>
-            <div className="p-6 border-b border-border flex items-center justify-between">
+            <Modal.Header onClose={closeEditalModal}>
                 <div className="flex items-center gap-3">
                     <LandmarkIcon className="w-6 h-6 text-primary" />
                     <h2 className="text-lg font-bold">Gerenciar Editais</h2>
                 </div>
-                <button type="button" onClick={closeEditalModal} className="p-1.5 rounded-full hover:bg-muted">
-                    <XIcon className="w-5 h-5" />
-                </button>
-            </div>
-            <div className="p-4 sm:p-6 space-y-3 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
+            </Modal.Header>
+
+            <Modal.Body className="space-y-3">
                 {editais.map(edital => (
                     <div key={edital.id} className="bg-muted/50 p-3 rounded-lg flex items-center justify-between">
                         <div>
@@ -111,37 +108,36 @@ const EditalManagementModal: React.FC = () => {
                             </div>
                         ) : (
                             <div className="flex items-center gap-2">
-                                <button onClick={() => handleStartEdit(edital)} className="p-2 rounded hover:bg-background"><EditIcon className="w-4 h-4 text-muted-foreground"/></button>
-                                <button onClick={() => setDeleteConfirmationId(edital.id)} className="p-2 rounded hover:bg-background"><Trash2Icon className="w-4 h-4 text-red-500"/></button>
+                                <button onClick={() => handleStartEdit(edital)} className="p-2 rounded hover:bg-background"><EditIcon className="w-4 h-4 text-muted-foreground" /></button>
+                                <button onClick={() => setDeleteConfirmationId(edital.id)} className="p-2 rounded hover:bg-background"><Trash2Icon className="w-4 h-4 text-red-500" /></button>
                             </div>
                         )}
                     </div>
                 ))}
-                 {editais.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum edital cadastrado.</p>}
-            </div>
-            <div className="p-4 bg-muted/30 border-t border-border flex justify-end">
+                {editais.length === 0 && <p className="text-center text-muted-foreground py-8">Nenhum edital cadastrado.</p>}
+            </Modal.Body>
+
+            <Modal.Footer>
                 <button onClick={handleStartCreate} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center gap-2" data-tutorial="novo-edital-button">
-                    <PlusIcon className="w-5 h-5"/> Novo Edital
+                    <PlusIcon className="w-5 h-5" /> Novo Edital
                 </button>
-            </div>
+            </Modal.Footer>
         </>
     );
 
-    const renderForm = () => (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="p-6 border-b border-border flex items-center justify-between">
+    const renderFormContent = () => (
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[95vh]">
+            <Modal.Header onClose={handleCancelForm}>
                 <h2 className="text-lg font-bold">{mode === 'create' ? 'Novo Edital' : 'Editar Edital'}</h2>
-                <button type="button" onClick={handleCancelForm} className="p-1.5 rounded-full hover:bg-muted">
-                    <XIcon className="w-5 h-5" />
-                </button>
-            </div>
-            <div className="p-6 space-y-4 overflow-x-hidden">
+            </Modal.Header>
+
+            <Modal.Body className="space-y-4">
                 <div>
                     <label className="text-sm font-medium text-muted-foreground mb-1 block">Nome do Edital *</label>
                     <input {...register('nome', { required: 'O nome é obrigatório' })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.nome && <p className="text-xs text-red-500 mt-1">{errors.nome.message}</p>}
                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1 block">Órgão</label>
                         <input {...register('orgao')} placeholder="Ex: Receita Federal" className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
@@ -160,22 +156,25 @@ const EditalManagementModal: React.FC = () => {
                     <input type="date" {...register('data_alvo', { required: 'A data é obrigatória' })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground focus:ring-primary focus:border-primary" />
                     {errors.data_alvo && <p className="text-xs text-red-500 mt-1">{errors.data_alvo.message}</p>}
                 </div>
-            </div>
-            <div className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2">
+            </Modal.Body>
+
+            <Modal.Footer>
                 <button type="button" onClick={handleCancelForm} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
                 <button type="submit" disabled={isSubmitting} className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50">
-                     {isSubmitting ? 'Salvando...' : <><SaveIcon className="w-4 h-4"/> Salvar</>}
+                    {isSubmitting ? 'Salvando...' : <><SaveIcon className="w-4 h-4" /> Salvar</>}
                 </button>
-            </div>
+            </Modal.Footer>
         </form>
     );
 
     return (
-         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeEditalModal}>
-            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-lg my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                {mode === 'list' ? renderList() : renderForm()}
-            </div>
-        </div>
+        <Modal
+            isOpen={isEditalModalOpen}
+            onClose={mode === 'list' ? closeEditalModal : handleCancelForm}
+            size="lg"
+        >
+            {mode === 'list' ? renderListContent() : renderFormContent()}
+        </Modal>
     );
 };
 

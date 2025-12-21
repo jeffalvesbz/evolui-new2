@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { Disciplina, Topico, NivelDificuldade } from '../types';
-import { BookOpenIcon, PlusIcon, XIcon, Trash2Icon, SaveIcon } from './icons';
-import { toast } from './Sonner';
-import { EditIcon } from './icons';
+import { PlusIcon, Trash2Icon, SaveIcon } from './icons';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { useEditalStore } from '../stores/useEditalStore';
 
@@ -49,13 +47,11 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
   const { fields, append, remove } = useFieldArray({ control, name: 'topicos' });
   const topicos = watch('topicos');
 
-  const { planType, canCreateEdital, getMaxEditais } = useSubscriptionStore();
+  const { getMaxEditais } = useSubscriptionStore();
   const { editais } = useEditalStore();
 
   const maxEditais = getMaxEditais();
   const editaisCriados = editais.length;
-  const podeCriarEdital = canCreateEdital();
-
   useEffect(() => {
     if (mode === 'editing' && disciplinaSelecionada) {
       reset(disciplinaSelecionada);
@@ -97,22 +93,12 @@ const PainelGerenciamento: React.FC<PainelGerenciamentoProps> = ({
         </p>
       </div>
       <button
-        onClick={() => {
-          if (!podeCriarEdital) {
-            toast.error(`Limite de ${maxEditais} ${maxEditais === 1 ? 'edital atingido' : 'editais atingido'}. Faça upgrade para criar mais!`);
-            return;
-          }
-          onStartCreate();
-        }}
-        disabled={!podeCriarEdital}
-        className={`w-full h-11 px-4 flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors ${podeCriarEdital
-          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-          : 'bg-muted text-muted-foreground cursor-not-allowed opacity-60'
-          }`}
+        onClick={onStartCreate}
+        className="w-full h-11 px-4 flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
         data-tutorial="adicionar-disciplina-button"
       >
         <PlusIcon className="w-5 h-5" />
-        {podeCriarEdital ? 'Adicionar Disciplina' : `Limite Atingido (${planType.toUpperCase()})`}
+        Adicionar Disciplina
       </button>
     </div>
   );

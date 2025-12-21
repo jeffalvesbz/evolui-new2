@@ -276,7 +276,7 @@ const PaymentPageStripe: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/30 rounded-full">
                         <TrophyIcon className="w-4 h-4 text-purple-500" />
-                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">+10.000 Estudantes</span>
+                        <span className="text-xs font-semibold text-purple-600 dark:text-purple-400">+1.000 Estudantes</span>
                     </div>
                 </motion.div>
 
@@ -322,7 +322,7 @@ const PaymentPageStripe: React.FC = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.35 + index * 0.1 }}
-                            className={`relative rounded-2xl border-2 p-6 backdrop-blur-sm ${plan.color} ${plan.isPremium ? 'ring-2 ring-primary/60 shadow-2xl shadow-primary/20 md:scale-105' : 'shadow-lg'
+                            className={`relative rounded-2xl border-2 p-6 backdrop-blur-sm ${plan.color} ${plan.isPro ? 'ring-2 ring-primary/60 shadow-2xl shadow-primary/20 md:scale-105' : 'shadow-lg'
                                 } hover:shadow-xl transition-all duration-300 ${buttonState.variant === 'current' ? 'ring-2 ring-emerald-500/50' : ''}`}
                         >
                             {plan.tag && (

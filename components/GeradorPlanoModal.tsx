@@ -7,9 +7,10 @@ import { useEstudosStore, TrilhaSemanalData } from '../stores/useEstudosStore';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 import { toast } from './Sonner';
-import { XIcon, SparklesIcon, PlusIcon } from './icons';
+import { SparklesIcon, PlusIcon } from './icons';
 import { startOfWeek, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Modal } from './ui/BaseModal';
 
 type PlanoFormData = {
   disciplinasSelecionadas: string[];
@@ -192,183 +193,182 @@ const GeradorPlanoModal: React.FC = () => {
     }
   };
 
-  if (!isGeradorPlanoModalOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeGeradorPlanoModal}>
-      <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full">
-          <header className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <SparklesIcon className="w-6 h-6 text-primary" />
-              <h2 className="text-lg font-bold">Gerador de Plano de Estudos</h2>
-            </div>
-            <button type="button" onClick={closeGeradorPlanoModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
-          </header>
+    <Modal
+      isOpen={isGeradorPlanoModalOpen}
+      onClose={closeGeradorPlanoModal}
+      size="3xl"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col max-h-[95vh]">
+        <Modal.Header onClose={closeGeradorPlanoModal}>
+          <div className="flex items-center gap-2">
+            <SparklesIcon className="w-6 h-6 text-primary" />
+            <h2 className="text-lg font-bold">Gerador de Plano de Estudos</h2>
+          </div>
+        </Modal.Header>
 
-          <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
-            <PremiumFeatureWrapper
-              isLocked={planType === 'free'}
-              requiredPlan="pro"
-              feature="Gerador de Plano IA"
-              showPreview={true}
-            >
-              <main className="p-4 sm:p-6 overflow-y-auto flex-1 h-full">
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center min-h-[300px]">
-                    <SparklesIcon className="w-12 h-12 text-primary animate-pulse mb-4" />
-                    <h3 className="font-semibold text-lg text-foreground">Criando seu plano...</h3>
-                    <p className="text-muted-foreground mt-1">Aguarde, organizando seus estudos.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-muted-foreground mb-2">Matérias Selecionadas ({disciplinasSelecionadas.length}) *</label>
-                      <div className="p-3 bg-muted/30 rounded-lg min-h-[4rem] flex flex-wrap gap-2 border border-border">
-                        {disciplinasSelecionadas.length === 0 && <p className="text-sm text-muted-foreground">Selecione as matérias abaixo.</p>}
-                        {disciplinasSelecionadasObjetos.map(disciplina => (
-                          <span key={disciplina.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold">
-                            {disciplina.nome}
-                            <button type="button" onClick={() => handleRemoveDisciplina(disciplina.id)} className="p-0.5 rounded-full hover:bg-muted/50">
-                              <XIcon className="w-3.5 h-3.5" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                      {errors.disciplinasSelecionadas && <p className="text-xs text-red-500 mt-1">{errors.disciplinasSelecionadas.message as string}</p>}
+        <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
+          <PremiumFeatureWrapper
+            isLocked={planType === 'free'}
+            requiredPlan="pro"
+            feature="Gerador de Plano IA"
+            showPreview={true}
+          >
+            <Modal.Body className={isLoading ? 'flex items-center justify-center min-h-[300px]' : 'space-y-6'}>
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center text-center">
+                  <SparklesIcon className="w-12 h-12 text-primary animate-pulse mb-4" />
+                  <h3 className="font-semibold text-lg text-foreground">Criando seu plano...</h3>
+                  <p className="text-muted-foreground mt-1">Aguarde, organizando seus estudos.</p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Matérias Selecionadas ({disciplinasSelecionadas.length}) *</label>
+                    <div className="p-3 bg-muted/30 rounded-lg min-h-[4rem] flex flex-wrap gap-2 border border-border">
+                      {disciplinasSelecionadas.length === 0 && <p className="text-sm text-muted-foreground">Selecione as matérias abaixo.</p>}
+                      {disciplinasSelecionadasObjetos.map(disciplina => (
+                        <span key={disciplina.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-tr from-primary to-secondary text-black text-sm font-bold">
+                          {disciplina.nome}
+                          <button type="button" onClick={() => handleRemoveDisciplina(disciplina.id)} className="p-0.5 rounded-full hover:bg-muted/50">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </span>
+                      ))}
                     </div>
+                    {errors.disciplinasSelecionadas && <p className="text-xs text-red-500 mt-1">{errors.disciplinasSelecionadas.message as string}</p>}
+                  </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Suas Disciplinas</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {disciplinas.filter(d => !selectedDisciplinaIds.has(d.id)).map(d => (
-                            <button
-                              type="button"
-                              key={d.id}
-                              onClick={() => handleSelectDisciplina(d)}
-                              className="px-3 py-1.5 rounded-full border border-border text-sm hover:bg-muted"
-                            >
-                              {d.nome}
-                            </button>
-                          ))}
-                          {disciplinas.filter(d => !selectedDisciplinaIds.has(d.id)).length === 0 && (
-                            <p className="text-sm text-muted-foreground">Todas as disciplinas foram selecionadas.</p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-medium text-muted-foreground mb-2">Adicionar Matéria Personalizada</h4>
-                        <div className="flex gap-2">
-                          <input
-                            value={customMateria}
-                            onChange={e => {
-                              const valor = e.target.value;
-                              // Formata em Title Case enquanto digita
-                              const palavras = valor.split(' ');
-                              const ultimaPalavra = palavras[palavras.length - 1];
-                              const palavrasFormatadas = palavras.slice(0, -1).map(p => {
-                                if (!p) return p;
-                                if (p === p.toUpperCase() && p.length > 1) return p;
-                                return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
-                              });
-                              const valorFormatado = [...palavrasFormatadas, ultimaPalavra].join(' ');
-                              setCustomMateria(valorFormatado);
-                            }}
-                            placeholder="Digite o nome da matéria"
-                            className="flex-1 bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"
-                          />
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Suas Disciplinas</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {disciplinas.filter(d => !selectedDisciplinaIds.has(d.id)).map(d => (
                           <button
                             type="button"
-                            onClick={handleAddCustomMateria}
-                            className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30"
+                            key={d.id}
+                            onClick={() => handleSelectDisciplina(d)}
+                            className="px-3 py-1.5 rounded-full border border-border text-sm hover:bg-muted"
                           >
-                            <PlusIcon className="w-4 h-4" /> Adicionar
+                            {d.nome}
                           </button>
-                        </div>
+                        ))}
+                        {disciplinas.filter(d => !selectedDisciplinaIds.has(d.id)).length === 0 && (
+                          <p className="text-sm text-muted-foreground">Todas as disciplinas foram selecionadas.</p>
+                        )}
                       </div>
                     </div>
-
-                    {disciplinasSelecionadas.length > 0 && (
-                      <>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground mb-2 block">Em quais dias da semana você quer estudar? *</label>
-                          <div className="flex flex-wrap gap-2">
-                            {diasSemanaOptions.map(dia => {
-                              const isSelected = diasSelecionados.includes(dia.id);
-                              return (
-                                <button
-                                  key={dia.id}
-                                  type="button"
-                                  onClick={() => toggleDiaSemana(dia.id)}
-                                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isSelected
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                    }`}
-                                >
-                                  {dia.nome}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground mb-1 block">Quantas horas por semana você pode estudar?</label>
-                          <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground mb-2 block">Qual a sua dificuldade em cada matéria selecionada?</label>
-                          <div className="space-y-3">
-                            <Controller
-                              name="dificuldades"
-                              control={control}
-                              render={({ field }) => (
-                                <>
-                                  {disciplinasSelecionadasObjetos.map(d => (
-                                    <div key={d.id} className="p-3 bg-muted/30 rounded-lg flex items-center justify-between">
-                                      <span className="font-semibold">{d.nome}</span>
-                                      <div className="flex items-center gap-2">
-                                        {(['facil', 'medio', 'dificil'] as const).map(level => (
-                                          <button
-                                            key={level}
-                                            type="button"
-                                            onClick={() => field.onChange({ ...field.value, [d.id]: level })}
-                                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${field.value[d.id] === level ? 'bg-primary text-black' : 'bg-background/50 hover:bg-background'}`}
-                                          >
-                                            {level.charAt(0).toUpperCase() + level.slice(1)}
-                                          </button>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </>
-                              )}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Adicionar Matéria Personalizada</h4>
+                      <div className="flex gap-2">
+                        <input
+                          value={customMateria}
+                          onChange={e => {
+                            const valor = e.target.value;
+                            // Formata em Title Case enquanto digita
+                            const palavras = valor.split(' ');
+                            const ultimaPalavra = palavras[palavras.length - 1];
+                            const palavrasFormatadas = palavras.slice(0, -1).map(p => {
+                              if (!p) return p;
+                              if (p === p.toUpperCase() && p.length > 1) return p;
+                              return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+                            });
+                            const valorFormatado = [...palavrasFormatadas, ultimaPalavra].join(' ');
+                            setCustomMateria(valorFormatado);
+                          }}
+                          placeholder="Digite o nome da matéria"
+                          className="flex-1 bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCustomMateria}
+                          className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30"
+                        >
+                          <PlusIcon className="w-4 h-4" /> Adicionar
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </main>
-            </PremiumFeatureWrapper>
-          </div>
 
-          {!isLoading && planType !== 'free' && (
-            <footer className="p-4 bg-muted/30 border-t border-border flex justify-end gap-2 flex-shrink-0">
-              <button type="button" onClick={closeGeradorPlanoModal} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
-              <button
-                type="submit"
-                disabled={disciplinasSelecionadas.length === 0}
-                className="h-10 px-6 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <SparklesIcon className="w-4 h-4" /> Gerar Plano
-              </button>
-            </footer>
-          )}
-        </form>
-      </div>
-    </div>
+                  {disciplinasSelecionadas.length > 0 && (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Em quais dias da semana você quer estudar? *</label>
+                        <div className="flex flex-wrap gap-2">
+                          {diasSemanaOptions.map(dia => {
+                            const isSelected = diasSelecionados.includes(dia.id);
+                            return (
+                              <button
+                                key={dia.id}
+                                type="button"
+                                onClick={() => toggleDiaSemana(dia.id)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isSelected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                  }`}
+                              >
+                                {dia.nome}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-1 block">Quantas horas por semana você pode estudar?</label>
+                        <input type="number" {...register('horasSemanais', { min: 1 })} className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm text-foreground" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Qual a sua dificuldade em cada matéria selecionada?</label>
+                        <div className="space-y-3">
+                          <Controller
+                            name="dificuldades"
+                            control={control}
+                            render={({ field }) => (
+                              <>
+                                {disciplinasSelecionadasObjetos.map(d => (
+                                  <div key={d.id} className="p-3 bg-muted/30 rounded-lg flex items-center justify-between">
+                                    <span className="font-semibold">{d.nome}</span>
+                                    <div className="flex items-center gap-2">
+                                      {(['facil', 'medio', 'dificil'] as const).map(level => (
+                                        <button
+                                          key={level}
+                                          type="button"
+                                          onClick={() => field.onChange({ ...field.value, [d.id]: level })}
+                                          className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${field.value[d.id] === level ? 'bg-primary text-black' : 'bg-background/50 hover:bg-background'}`}
+                                        >
+                                          {level.charAt(0).toUpperCase() + level.slice(1)}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </Modal.Body>
+          </PremiumFeatureWrapper>
+        </div>
+
+        {!isLoading && planType !== 'free' && (
+          <Modal.Footer>
+            <button type="button" onClick={closeGeradorPlanoModal} className="h-10 px-4 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+            <button
+              type="submit"
+              disabled={disciplinasSelecionadas.length === 0}
+              className="h-10 px-6 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <SparklesIcon className="w-4 h-4" /> Gerar Plano
+            </button>
+          </Modal.Footer>
+        )}
+      </form>
+    </Modal>
   );
 };
 

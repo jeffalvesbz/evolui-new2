@@ -146,15 +146,15 @@ const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }
   // Consider tablet as mobile for this chart layout to prevent legend clipping
   const isMobile = useIsMobile(1024);
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 200 : 250}>
+    <ResponsiveContainer width="100%" height={isMobile ? 280 : 250}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
-          cy={isMobile ? "40%" : "50%"}
+          cy={isMobile ? "35%" : "50%"}
           labelLine={false}
-          outerRadius={isMobile ? 70 : 90}
-          innerRadius={isMobile ? 50 : 60}
+          outerRadius={isMobile ? 60 : 90}
+          innerRadius={isMobile ? 40 : 60}
           fill="#8884d8"
           dataKey="value"
           paddingAngle={5}
@@ -169,7 +169,11 @@ const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }
           layout={isMobile ? 'horizontal' : 'vertical'}
           verticalAlign={isMobile ? 'bottom' : 'middle'}
           align={isMobile ? 'center' : 'right'}
-          wrapperStyle={{ fontSize: '0.875rem', color: 'var(--color-muted-foreground)' }}
+          wrapperStyle={{
+            fontSize: isMobile ? '0.75rem' : '0.875rem',
+            color: 'var(--color-muted-foreground)',
+            paddingTop: isMobile ? '10px' : '0'
+          }}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -854,8 +858,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           <PremiumFeatureWrapper
             isLocked={isPremiumFeature}
             requiredPlan="pro"
-            feature="Gráfico de Desempenho Diário"
-            blurAmount="md"
+            feature="Identifique quedas de rendimento antes que virem hábito"
+            blurAmount="sm"
           >
             <Card className="">
               <CardHeader>
@@ -871,8 +875,8 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
           <PremiumFeatureWrapper
             isLocked={isPremiumFeature}
             requiredPlan="pro"
-            feature="Gráfico de Foco por Disciplina"
-            blurAmount="md"
+            feature="Descubra onde seu tempo está sendo mal distribuído"
+            blurAmount="sm"
           >
             <Card className="">
               <CardHeader>
@@ -929,7 +933,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 {topicosMaisEstudados.map((topico, index) => (
                   <div
                     key={index}
-                    className="group flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-muted/40 transition-all duration-200"
+                    className="group flex items-center gap-3 sm:gap-4 px-3 sm:px-4 py-3 rounded-lg hover:bg-muted/40 transition-all duration-200"
                   >
                     {/* Rank Indicator */}
                     <div className={`
@@ -943,11 +947,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                     </div>
 
                     <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm font-medium text-foreground truncate pr-4">
+                      <div className="flex justify-between items-center gap-2">
+                        <p className="text-sm font-medium text-foreground line-clamp-2 min-w-0 leading-tight">
                           {topico.nome}
                         </p>
-                        <span className="text-xs font-mono font-medium text-muted-foreground/80 whitespace-nowrap">
+                        <span className="text-xs font-mono font-medium text-muted-foreground/80 whitespace-nowrap shrink-0">
                           {topico.tempoFormatado}
                         </span>
                       </div>
@@ -1000,7 +1004,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                     return (
                       <div
                         key={study.id}
-                        className="group relative flex items-start gap-4 px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors"
+                        className="group relative flex items-start gap-3 sm:gap-4 px-3 sm:px-4 py-3 rounded-lg hover:bg-muted/40 transition-colors"
                       >
                         {/* Simple Dot Indicator */}
                         <div className={`
@@ -1009,23 +1013,23 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         `} />
 
                         <div className="flex-1 min-w-0 grid gap-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {study.disciplinaNome && (
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
                                 {study.disciplinaNome}
                               </span>
                             )}
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-[11px] text-muted-foreground whitespace-nowrap">
                               {study.data ? new Date(study.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}
                             </span>
                           </div>
 
-                          <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors leading-tight">
                             {study.disciplina}
                           </p>
                         </div>
 
-                        <div className="text-right flex flex-col items-end justify-center min-h-[40px]">
+                        <div className="text-right flex flex-col items-end justify-center min-h-[40px] shrink-0 ml-1">
                           <span className="font-mono text-xs font-medium text-foreground whitespace-nowrap">
                             {study.tempo}
                           </span>

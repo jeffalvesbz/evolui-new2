@@ -799,7 +799,7 @@ OBRIGATÓRIO PARA ENEM: Retorne EXATAMENTE 5 competências do Enem na "avaliacao
 
         // Usar o mesmo modelo que funciona em outras partes do código (gemini-2.5-flash)
         response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash', // Modelo com boa qualidade
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
@@ -1061,7 +1061,7 @@ export const extrairTextoDeImagem = async (base64Image: string, mimeType: string
     }
     const imagePart = { inlineData: { mimeType, data: base64Image } };
     const textPart = { text: "Transcreva o texto contido nesta imagem." };
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts: [imagePart, textPart] } });
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash-lite', contents: { parts: [imagePart, textPart] } });
     return response.text;
 };
 
@@ -1102,7 +1102,7 @@ Retorne APENAS a mensagem motivacional, sem aspas ou formatação adicional.`;
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-lite', // Modelo mais barato para mensagens simples
             contents: prompt
         });
         return response.text.trim();
@@ -1168,7 +1168,7 @@ Retorne APENAS um objeto JSON com o seguinte formato:
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash', // Modelo com boa qualidade
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1274,7 +1274,7 @@ FORMATO DE SAÍDA (JSON):
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash', // Modelo com boa qualidade
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1396,7 +1396,7 @@ FORMATO DE SAÍDA (JSON):
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash', // Melhor qualidade para quiz
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1497,7 +1497,7 @@ FORMATO DE SAÍDA (JSON ARRAY):
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-lite', // Modelo mais econômico
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1573,13 +1573,18 @@ INSTRUÇÕES IMPORTANTES:
 5. As perguntas devem testar compreensão, não apenas memorização
 6. Use linguagem clara e adequada ao nível de dificuldade especificado
 
-Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
+FORMATO OBRIGATÓRIO - Retorne um array JSON com objetos contendo EXATAMENTE estes campos:
+[
+  { "pergunta": "texto da pergunta", "resposta": "texto da resposta", "tags": ["tag1", "tag2"] }
+]
+
+Retorne APENAS o array JSON, sem texto adicional.`;
 
     try {
         console.log(`🤖 Gerando ${quantidade} flashcards sobre "${tema}" (dificuldade: ${dificuldade})...`);
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-lite', // Modelo mais econômico
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1717,7 +1722,7 @@ Retorne APENAS um array JSON válido, sem texto adicional antes ou depois.`;
         console.log(`🤖 Gerando ~${quantidade} flashcards a partir de texto (${textoLimitado.length} caracteres)...`);
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-lite', // Modelo mais econômico
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'
@@ -1865,6 +1870,103 @@ const editalExtracaoSchema = {
 };
 
 /**
+ * Pré-processa o texto do edital para melhorar a extração
+ * - Remove caracteres especiais problemáticos
+ * - Normaliza espaços e quebras de linha
+ * - Detecta e formata padrões de numeração
+ * - Detecta subdivisões com numeração romana (I, II, III)
+ */
+const preProcessarTextoEdital = (texto: string): string => {
+    let processado = texto;
+
+    // Remover caracteres especiais problemáticos
+    processado = processado
+        .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
+        .replace(/\u00A0/g, ' ') // Non-breaking spaces
+        .replace(/\r\n/g, '\n') // Normalizar quebras de linha
+        .replace(/\r/g, '\n');
+
+    // Normalizar múltiplos espaços (mas preservar quebras de linha)
+    processado = processado.replace(/[ \t]+/g, ' ');
+
+    // ⚠️ CRÍTICO: Detectar subdivisões com numeração romana (I, II, III, IV, V)
+    // Ex: "... algo. I CONTABILIDADE AVANÇADA: 1 Tema" -> "... algo.\n\n=== I CONTABILIDADE AVANÇADA ===\n\n1 Tema"
+    processado = processado.replace(
+        /([.;:])\s*(I{1,3}|IV|V|VI{0,3})\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+):/gi,
+        '$1\n\n=== $2 $3 ===\n\n'
+    );
+
+    // Variante sem dois pontos no final
+    processado = processado.replace(
+        /([.;])\s*(I{1,3}|IV|V|VI{0,3})\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ][A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ\s]+)\s+(\d)/gi,
+        '$1\n\n=== $2 $3 ===\n\n$4'
+    );
+
+    // Detectar padrões de numeração colados e adicionar quebra de linha
+    // Ex: "1 Tema A 2 Tema B" -> "1 Tema A\n2 Tema B"
+    processado = processado.replace(/(\.)\s*(\d+(?:\.\d+)*)\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ])/g, '$1\n$2 $3');
+
+    // Detectar disciplinas em maiúsculas coladas
+    // Ex: "tema anterior LÍNGUA PORTUGUESA: 1 tópico" -> "tema anterior\nLÍNGUA PORTUGUESA:\n1 tópico"
+    processado = processado.replace(
+        /([a-záéíóúâêîôûãõç.,;:])\s+((?:CONHECIMENTOS\s+(?:GERAIS|ESPECÍFICOS|BÁSICOS)|LÍNGUA\s+PORTUGUESA|DIREITO\s+\w+|MATEMÁTICA|RACIOCÍNIO\s+LÓGICO|INFORMÁTICA|NOÇÕES\s+DE\s+\w+|LEGISLAÇÃO|CONTABILIDADE\s+\w+)[^a-z]*)/gi,
+        '$1\n\n$2'
+    );
+
+    // Adicionar quebra antes de números de seção principais (ex: "13.2.2 CONHECIMENTOS")
+    processado = processado.replace(
+        /([^\n])(\d{1,2}(?:\.\d{1,2}){1,3})\s+(CONHECIMENTOS|LÍNGUA|DIREITO|MATEMÁTICA|RACIOCÍNIO|INFORMÁTICA|NOÇÕES|LEGISLAÇÃO|CONTABILIDADE)/gi,
+        '$1\n$2 $3'
+    );
+
+    // Separar tópicos numerados que estão colados
+    // Ex: "1.1 Tema A. 1.2 Tema B" -> "1.1 Tema A.\n1.2 Tema B"
+    processado = processado.replace(/([.;])\s*(\d+(?:\.\d+)+)\s+/g, '$1\n$2 ');
+
+    // Remover linhas vazias excessivas
+    processado = processado.replace(/\n{3,}/g, '\n\n');
+
+    return processado.trim();
+};
+
+/**
+ * Formata texto em Title Case inteligente
+ * - Primeira letra de cada palavra maiúscula
+ * - Preserva siglas (TCDF, CEBRASPE, etc.)
+ * - Preserva preposições em minúsculo
+ */
+const formatarTitleCaseInteligente = (texto: string): string => {
+    if (!texto) return '';
+
+    const preposicoes = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'com', 'sem', 'sob', 'sobre', 'entre', 'até', 'a', 'o', 'as', 'os', 'à', 'às', 'ao', 'aos'];
+
+    return texto
+        .split(' ')
+        .map((palavra, index) => {
+            if (!palavra) return palavra;
+
+            // Manter siglas em maiúsculas (2+ letras todas maiúsculas)
+            if (palavra === palavra.toUpperCase() && palavra.length > 1 && /^[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇ]+$/.test(palavra)) {
+                return palavra;
+            }
+
+            // Manter números com pontos (ex: "1.1", "13.2.2")
+            if (/^\d+(?:\.\d+)*$/.test(palavra)) {
+                return palavra;
+            }
+
+            // Preposições em minúsculo (exceto se for primeira palavra)
+            if (index > 0 && preposicoes.includes(palavra.toLowerCase())) {
+                return palavra.toLowerCase();
+            }
+
+            // Primeira letra maiúscula, resto minúscula
+            return palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase();
+        })
+        .join(' ');
+};
+
+/**
  * Processa texto bruto de edital e extrai automaticamente disciplinas e tópicos usando IA
  * @param textoEdital Texto bruto do edital (pode ser copiado de PDF ou documento)
  * @returns JSON estruturado no formato hierárquico do sistema
@@ -1878,169 +1980,181 @@ export const processarTextoEdital = async (textoEdital: string): Promise<any> =>
         throw new Error('Texto do edital muito curto. Forneça pelo menos 50 caracteres.');
     }
 
-    const prompt = `Você é um especialista em processar editais de concursos públicos. Analise o texto do edital fornecido e extraia todas as disciplinas e seus respectivos tópicos/subtópicos/itens.
+    // Pré-processar o texto para melhorar a extração
+    const textoProcessado = preProcessarTextoEdital(textoEdital);
 
-TEXTO DO EDITAL:
-${textoEdital}
+    console.log('📝 Texto pré-processado. Tamanho original:', textoEdital.length, '| Processado:', textoProcessado.length);
 
-INSTRUÇÕES:
-1. Identifique o órgão, cargo e outras informações relevantes do edital
-2. Extraia TODAS as disciplinas mencionadas no edital
-3. Para cada disciplina, identifique a estrutura completa de conteúdo:
-   - Tópicos principais (com índices numéricos se disponíveis, ex: "1", "2", "10")
-   - Subtópicos (com índices como "1.1", "1.2", etc.)
-   - Itens específicos (com índices como "1.1.1", "1.1.2", etc.)
-4. Preserve a hierarquia e numeração quando disponível
-5. Se não houver numeração clara, crie uma estrutura lógica baseada no texto
-6. Mantenha os títulos exatamente como aparecem no edital (sem alterações)
+    const prompt = `Você é um especialista em processar editais de concursos públicos brasileiros. Sua tarefa é extrair TODAS as disciplinas e tópicos do texto fornecido.
 
-FORMATO DE SAÍDA:
-Retorne APENAS um JSON válido no seguinte formato:
+═══════════════════════════════════════════════════════════════
+                    TEXTO DO EDITAL
+═══════════════════════════════════════════════════════════════
+${textoProcessado}
+═══════════════════════════════════════════════════════════════
+
+INSTRUÇÕES DETALHADAS:
+
+1. IDENTIFICAÇÃO DE DISCIPLINAS:
+   - Procure por padrões como "CONHECIMENTOS GERAIS", "CONHECIMENTOS ESPECÍFICOS", "CONHECIMENTOS BÁSICOS"
+   - Identifique disciplinas em MAIÚSCULAS como "LÍNGUA PORTUGUESA", "DIREITO CONSTITUCIONAL", etc.
+   - O NOME da disciplina deve usar APENAS a primeira letra maiúscula (Title Case)
+
+2. ⚠️ SUBDIVISÕES COM NUMERAÇÃO ROMANA (CRÍTICO):
+   - Quando houver "I DISCIPLINA A:" e "II DISCIPLINA B:" dentro de uma mesma seção, CRIE DISCIPLINAS SEPARADAS
+   - Exemplo: "CONTABILIDADE AVANÇADA E CONTABILIDADE DE CUSTOS: I CONTABILIDADE AVANÇADA: ... II CONTABILIDADE DE CUSTOS: ..."
+     → DEVE criar DUAS disciplinas separadas: "Contabilidade Avançada" e "Contabilidade de Custos"
+   - Os tópicos após "I DISCIPLINA:" pertencem APENAS a essa disciplina, não se misturam com "II"
+   - NUNCA coloque "I - NOME" ou "II - NOME" como tópicos no final - eles são MARCADORES DE DISCIPLINA
+
+3. SEPARAÇÃO DE TÓPICOS:
+   - Tópicos são numerados: "1", "2", "3" ou "1.1", "1.2", "2.1"
+   - Os tópicos REINICIAM a numeração para cada disciplina/subdivisão
+   - Se "I CONTABILIDADE AVANÇADA" tem tópicos 1-7, e "II CONTABILIDADE DE CUSTOS" tem tópicos 1-6, são disciplinas diferentes!
+   - Às vezes os tópicos vêm separados por ponto final ou ponto e vírgula
+
+4. HIERARQUIA:
+   - Tópicos principais: "1", "2", "3"
+   - Subtópicos: "1.1", "1.2", "2.1" 
+   - Itens: "1.1.1", "1.1.2"
+   - Subtópicos como "3.1" pertencem ao tópico "3" da MESMA disciplina
+
+5. REGRAS DE FORMATAÇÃO DE NOMES:
+   - Nome da DISCIPLINA: Title Case (ex: "Língua Portuguesa", "Contabilidade Avançada")
+   - EXCEÇÃO: Siglas devem permanecer em maiúsculas (ex: "NBC TSP 34", "CFC")
+   - Tópicos: Manter exatamente como aparecem no edital
+
+FORMATO DE SAÍDA (JSON):
 {
   "meta": {
-    "orgao": "Nome do órgão",
-    "cargo": "Nome do cargo",
+    "orgao": "Nome do órgão (se identificável)",
+    "cargo": "Nome do cargo (se identificável)",
     "versao": "1.0"
   },
   "disciplinas": [
     {
-      "nome": "Nome da Disciplina",
+      "nome": "Contabilidade Avançada",
       "conteudo": [
         {
           "indice": "1",
-          "titulo": "Título do Tópico",
+          "titulo": "Conteúdo integral da disciplina Contabilidade Geral...",
           "tipo": "topico",
-          "filhos": [
-            {
-              "indice": "1.1",
-              "titulo": "Título do Subtópico",
-              "tipo": "subtopico",
-              "filhos": [
-                {
-                  "titulo": "Item específico",
-                  "tipo": "item"
-                }
-              ]
-            }
-          ]
+          "filhos": []
+        }
+      ]
+    },
+    {
+      "nome": "Contabilidade de Custos",
+      "conteudo": [
+        {
+          "indice": "1",
+          "titulo": "Conceitos gerais e terminologia...",
+          "tipo": "topico",
+          "filhos": []
         }
       ]
     }
   ]
 }
 
-IMPORTANTE:
-- Seja preciso e completo - extraia TODAS as disciplinas e tópicos
-- Preserve a estrutura hierárquica quando clara
-- Se o texto não tiver estrutura clara, crie uma organização lógica
-- Use "topico" para tópicos principais, "subtopico" para subtópicos, "item" para itens específicos
-- Mantenha os índices quando disponíveis no texto original
-- Se não houver índices, você pode omitir o campo "indice"`;
+REGRAS CRÍTICAS:
+- Retorne APENAS JSON válido, sem markdown, sem explicações
+- Extraia TODAS as disciplinas, não pule nenhuma
+- Se houver "I", "II", "III" seguidos de nomes em maiúsculas, são DISCIPLINAS SEPARADAS
+- NUNCA misture tópicos de "I" com tópicos de "II"
+- Se um tópico for muito longo ou parecer ter múltiplos itens, separe-os
+- Preserve a numeração original dos tópicos
+- O campo "filhos" pode ser omitido se não houver subtópicos`;
 
-    try {
-        // Usar prompt sem schema restritivo para evitar problemas de validação
-        const promptFinal = `${prompt}
+    // Função auxiliar para fazer a chamada à IA
+    const chamarIA = async (promptParaEnviar: string, tentativa: number): Promise<string> => {
+        console.log(`🤖 Chamando Gemini (tentativa ${tentativa})...`);
 
-IMPORTANTE: 
-- Retorne APENAS um JSON válido, sem markdown, sem código, sem explicações
-- O JSON deve começar com { e terminar com }
-- Se uma disciplina não tiver conteúdo, retorne um array vazio []
-- Se um item não tiver filhos, retorne um array vazio [] ou omita o campo
-- Garanta que TODAS as disciplinas sejam extraídas do texto`;
-
-        // Solicitar resposta em JSON
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: promptFinal,
+            model: 'gemini-2.5-flash-lite', // Modelo mais barato e rápido
+            contents: promptParaEnviar,
             config: {
                 responseMimeType: 'application/json'
             }
         });
 
-        let jsonText = response.text.trim();
+        return response.text.trim();
+    };
+
+    // Função para limpar e parsear JSON
+    const limparEParsearJSON = (jsonText: string): any => {
+        // Limpar possíveis markdown ou código
+        let limpo = jsonText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').replace(/```$/g, '').trim();
 
         // Verificar se a resposta parece estar truncada
-        if (jsonText && !jsonText.endsWith('}') && !jsonText.endsWith(']')) {
-            console.warn('Resposta da IA pode estar truncada. Tentando processar mesmo assim...');
-            // Tentar encontrar o último objeto/array válido
-            const lastOpenBrace = jsonText.lastIndexOf('{');
-            const lastOpenBracket = jsonText.lastIndexOf('[');
-            const lastClose = Math.max(jsonText.lastIndexOf('}'), jsonText.lastIndexOf(']'));
+        if (limpo && !limpo.endsWith('}') && !limpo.endsWith(']')) {
+            console.warn('Resposta da IA pode estar truncada. Tentando corrigir...');
 
-            if (lastOpenBrace > lastClose) {
-                // JSON incompleto - tentar fechar
-                const openCount = (jsonText.substring(0, lastOpenBrace + 1).match(/\{/g) || []).length;
-                const closeCount = (jsonText.match(/\}/g) || []).length;
-                const missing = openCount - closeCount;
-                if (missing > 0) {
-                    jsonText = jsonText + '\n' + '}'.repeat(missing);
-                }
+            const openBraces = (limpo.match(/\{/g) || []).length;
+            const closeBraces = (limpo.match(/\}/g) || []).length;
+            const openBrackets = (limpo.match(/\[/g) || []).length;
+            const closeBrackets = (limpo.match(/\]/g) || []).length;
+
+            // Fechar arrays abertos
+            if (openBrackets > closeBrackets) {
+                limpo += ']'.repeat(openBrackets - closeBrackets);
+            }
+
+            // Fechar objetos abertos
+            if (openBraces > closeBraces) {
+                limpo += '}'.repeat(openBraces - closeBraces);
             }
         }
 
-        // Limpar possíveis markdown ou código
-        jsonText = jsonText.replace(/^```json\n?/i, '').replace(/^```\n?/i, '').replace(/```$/g, '').trim();
+        return JSON.parse(limpo);
+    };
 
-        // Tentar parse do JSON
+    try {
+        let jsonText = await chamarIA(prompt, 1);
         let resultado;
+
         try {
-            resultado = JSON.parse(jsonText);
+            resultado = limparEParsearJSON(jsonText);
         } catch (parseError: any) {
-            console.warn('Erro ao fazer parse direto do JSON:', parseError.message);
-            console.warn('Texto recebido (primeiros 1000 chars):', jsonText.substring(0, 1000));
+            console.warn('❌ Erro no parse da primeira tentativa:', parseError.message);
+            console.warn('Texto recebido (primeiros 500 chars):', jsonText.substring(0, 500));
 
-            // Se falhar, tentar extrair JSON do texto
-            let jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+            // RETRY: Segunda tentativa com prompt mais específico
+            const promptRetry = `${prompt}
 
-            if (!jsonMatch) {
-                // Tentar encontrar JSON que pode estar incompleto
-                const openBraces = (jsonText.match(/\{/g) || []).length;
-                const closeBraces = (jsonText.match(/\}/g) || []).length;
+⚠️ ATENÇÃO EXTRA:
+A resposta anterior teve problemas de formatação JSON. Por favor:
+1. Certifique-se de retornar um JSON COMPLETO e válido
+2. Não truncar a resposta
+3. Fechar todos os arrays e objetos corretamente
+4. Se o texto for muito grande, priorize as disciplinas principais`;
 
-                if (openBraces > closeBraces) {
-                    // JSON incompleto - tentar completar
-                    const missingBraces = openBraces - closeBraces;
-                    jsonText = jsonText + '\n' + '}'.repeat(missingBraces);
-                    jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-                }
-            }
+            console.log('🔄 Tentando novamente com prompt mais específico...');
+            jsonText = await chamarIA(promptRetry, 2);
 
-            if (jsonMatch) {
-                try {
-                    let jsonToParse = jsonMatch[0];
+            try {
+                resultado = limparEParsearJSON(jsonText);
+            } catch (retryError: any) {
+                console.error('❌ Erro também na segunda tentativa:', retryError.message);
 
-                    // Tentar corrigir JSON incompleto
-                    const openBraces = (jsonToParse.match(/\{/g) || []).length;
-                    const closeBraces = (jsonToParse.match(/\}/g) || []).length;
-
-                    if (openBraces > closeBraces) {
-                        // Adicionar chaves faltantes
-                        const missing = openBraces - closeBraces;
-                        // Tentar fechar arrays primeiro
-                        if (jsonToParse.match(/\[/g) && !jsonToParse.match(/\]/g)) {
-                            jsonToParse = jsonToParse.replace(/([^\]]+)$/, '$1]');
-                        }
-                        // Fechar objetos
-                        jsonToParse = jsonToParse + '\n' + '}'.repeat(missing);
+                // Última tentativa: extrair JSON parcial
+                const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    try {
+                        resultado = limparEParsearJSON(jsonMatch[0]);
+                        console.log('✅ Conseguiu extrair JSON parcial');
+                    } catch (e) {
+                        throw new Error(`Erro ao processar JSON após 2 tentativas: ${parseError.message}. Tente usar o modo JSON manual.`);
                     }
-
-                    resultado = JSON.parse(jsonToParse);
-                } catch (e: any) {
-                    console.error('Erro ao processar JSON extraído:', e.message);
-                    console.error('JSON tentado (primeiros 500 chars):', jsonMatch[0].substring(0, 500));
-
-                    // Última tentativa: pedir novamente com prompt mais específico
-                    throw new Error(`Erro ao processar JSON: ${parseError.message}. A resposta da IA pode estar incompleta ou mal formatada. Tente novamente ou use o modo JSON manual.`);
+                } else {
+                    throw new Error('Não foi possível extrair JSON válido da resposta da IA.');
                 }
-            } else {
-                console.error('Texto completo recebido da IA:', jsonText);
-                throw new Error('Não foi possível extrair JSON válido da resposta da IA. A resposta pode não estar em formato JSON ou está incompleta.');
             }
         }
 
-        // Log para debug (apenas em desenvolvimento)
+        // Log para debug
         if (import.meta.env.DEV) {
-            console.log('Resultado processado:', JSON.stringify(resultado, null, 2).substring(0, 1000));
+            console.log('✅ Resultado processado:', JSON.stringify(resultado, null, 2).substring(0, 1000));
         }
 
         // Validação e normalização
@@ -2059,7 +2173,6 @@ IMPORTANTE:
 
         // Validar e normalizar disciplinas
         if (!resultado.disciplinas) {
-            // Tentar encontrar disciplinas em outros campos possíveis
             if (resultado.disciplina) {
                 resultado.disciplinas = Array.isArray(resultado.disciplina) ? resultado.disciplina : [resultado.disciplina];
             } else if (resultado.materias) {
@@ -2073,21 +2186,25 @@ IMPORTANTE:
             resultado.disciplinas = [resultado.disciplinas];
         }
 
-        // Função para formatar texto em Title Case (primeira letra de cada palavra maiúscula)
-        const formatarTitleCase = (texto: string): string => {
-            if (!texto) return '';
-            return texto
-                .split(' ')
-                .map(palavra => {
-                    if (!palavra) return palavra;
-                    // Manter siglas em maiúsculas (ex: TCDF, CEBRASPE)
-                    if (palavra === palavra.toUpperCase() && palavra.length > 1) {
-                        return palavra;
-                    }
-                    // Primeira letra maiúscula, resto minúscula
-                    return palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase();
-                })
-                .join(' ');
+        // Função recursiva para normalizar filhos
+        const normalizarFilhos = (filhos: any[]): any[] => {
+            if (!Array.isArray(filhos)) return [];
+
+            return filhos.map((item: any) => {
+                if (typeof item === 'string') {
+                    return {
+                        titulo: item,
+                        tipo: 'subtopico',
+                        filhos: []
+                    };
+                }
+                return {
+                    indice: item.indice || item.index || '',
+                    titulo: item.titulo || item.title || item.nome || item.name || '',
+                    tipo: item.tipo || item.type || 'subtopico',
+                    filhos: normalizarFilhos(item.filhos || item.children || item.subtopicos || item.subtopics || [])
+                };
+            });
         };
 
         // Filtrar disciplinas vazias e normalizar estrutura
@@ -2096,11 +2213,11 @@ IMPORTANTE:
             .map((d: any) => {
                 const nomeOriginal = d.nome || d.name || '';
                 const disciplina = {
-                    nome: formatarTitleCase(nomeOriginal),
+                    nome: formatarTitleCaseInteligente(nomeOriginal),
                     conteudo: d.conteudo || d.content || d.topicos || d.topics || []
                 };
 
-                // Normalizar conteúdo se necessário
+                // Normalizar conteúdo
                 if (Array.isArray(disciplina.conteudo)) {
                     disciplina.conteudo = disciplina.conteudo.map((item: any) => {
                         if (typeof item === 'string') {
@@ -2114,7 +2231,7 @@ IMPORTANTE:
                             indice: item.indice || item.index || '',
                             titulo: item.titulo || item.title || item.nome || item.name || '',
                             tipo: item.tipo || item.type || 'topico',
-                            filhos: item.filhos || item.children || item.subtopicos || item.subtopics || []
+                            filhos: normalizarFilhos(item.filhos || item.children || item.subtopicos || item.subtopics || [])
                         };
                     });
                 } else {
@@ -2128,9 +2245,11 @@ IMPORTANTE:
             throw new Error('Nenhuma disciplina válida foi encontrada. Verifique se o texto do edital contém informações sobre disciplinas e tópicos.');
         }
 
+        console.log(`✅ Extração concluída: ${resultado.disciplinas.length} disciplinas encontradas`);
+
         return resultado;
     } catch (error: any) {
-        console.error("Erro ao processar texto do edital:", error);
+        console.error("❌ Erro ao processar texto do edital:", error);
         if (error.message && error.message.includes('API key')) {
             throw new Error('API Key do Gemini não configurada ou inválida. Configure a variável VITE_GEMINI_API_KEY no arquivo .env');
         }
@@ -2964,31 +3083,42 @@ export const getFlashcardsMetadata = async (topicIds: string[]): Promise<Partial
     const validIds = topicIds.filter(id => id && id.trim() !== '');
     if (validIds.length === 0) return [];
 
-    // Supabase limita a 1000 registros por query, então precisamos paginar
+    // Supabase tem limite de URL length para .in() queries
+    // Batching topic IDs em chunks de 100 para evitar Bad Request
+    const BATCH_SIZE = 100;
     const PAGE_SIZE = 1000;
     let allData: any[] = [];
-    let page = 0;
-    let hasMore = true;
 
-    while (hasMore) {
-        const { data, error } = await supabase
-            .from('flashcards')
-            .select('id, topico_id, due_date, interval, ease_factor, tags, is_default')
-            .in('topico_id', validIds)
-            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    // Dividir validIds em batches
+    for (let batchStart = 0; batchStart < validIds.length; batchStart += BATCH_SIZE) {
+        const batchIds = validIds.slice(batchStart, batchStart + BATCH_SIZE);
 
-        if (error) throw error;
+        let page = 0;
+        let hasMore = true;
 
-        if (data && data.length > 0) {
-            allData = [...allData, ...data];
-            hasMore = data.length === PAGE_SIZE;
-            page++;
-        } else {
-            hasMore = false;
+        while (hasMore) {
+            const { data, error } = await supabase
+                .from('flashcards')
+                .select('id, topico_id, due_date, interval, ease_factor, tags, is_default')
+                .in('topico_id', batchIds)
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+            if (error) {
+                console.error(`[getFlashcardsMetadata] Erro no batch ${batchStart}-${batchStart + BATCH_SIZE}:`, error);
+                throw error;
+            }
+
+            if (data && data.length > 0) {
+                allData = [...allData, ...data];
+                hasMore = data.length === PAGE_SIZE;
+                page++;
+            } else {
+                hasMore = false;
+            }
         }
     }
 
-    console.log(`[getFlashcardsMetadata] Carregados ${allData.length} flashcards para ${validIds.length} tópicos`);
+    console.log(`[getFlashcardsMetadata] Carregados ${allData.length} flashcards para ${validIds.length} tópicos (${Math.ceil(validIds.length / BATCH_SIZE)} batches)`);
 
     return allData.map(item => ({
         id: item.id,
@@ -3008,14 +3138,29 @@ export const getFlashcardsMetadata = async (topicIds: string[]): Promise<Partial
 export const getFlashcardsContent = async (flashcardIds: string[]): Promise<Flashcard[]> => {
     if (!flashcardIds || flashcardIds.length === 0) return [];
 
-    const { data, error } = await supabase
-        .from('flashcards')
-        .select('*')
-        .in('id', flashcardIds);
+    // Batching IDs em chunks de 100 para evitar Bad Request por URL muito longa
+    const BATCH_SIZE = 100;
+    let allData: any[] = [];
 
-    if (error) throw error;
+    for (let batchStart = 0; batchStart < flashcardIds.length; batchStart += BATCH_SIZE) {
+        const batchIds = flashcardIds.slice(batchStart, batchStart + BATCH_SIZE);
 
-    return (data as any[]).map(mapDbToFlashcard);
+        const { data, error } = await supabase
+            .from('flashcards')
+            .select('*')
+            .in('id', batchIds);
+
+        if (error) {
+            console.error(`[getFlashcardsContent] Erro no batch ${batchStart}-${batchStart + BATCH_SIZE}:`, error);
+            throw error;
+        }
+
+        if (data) {
+            allData = [...allData, ...data];
+        }
+    }
+
+    return allData.map(mapDbToFlashcard);
 };
 export const createFlashcards = async (topicId: string, { flashcards }: { flashcards: Omit<Flashcard, 'id' | 'topico_id' | 'interval' | 'easeFactor' | 'dueDate'>[] }): Promise<Flashcard[]> => {
     console.log('[createFlashcards] Iniciando criação de flashcards...');
@@ -3441,7 +3586,7 @@ export const gerarPlanejamentoSemanal = async (
 
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-flash-lite', // Modelo mais barato para planejamento
             contents: prompt,
             config: {
                 responseMimeType: 'application/json'

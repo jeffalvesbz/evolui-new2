@@ -457,23 +457,147 @@ const AvaliacaoDetalhada: React.FC<{ correcao: CorrecaoCompleta; tema?: string; 
         </div>
 
         {correcao.sinteseFinal && (
-            <div className="bg-muted/30 rounded-lg p-6 border-2 border-primary/20">
-                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                    <span className="text-2xl">💡</span>
-                    Síntese Final (Feedback Pedagógico)
+            <div className="bg-gradient-to-br from-primary/5 via-muted/30 to-secondary/5 rounded-xl p-6 border border-primary/20 shadow-lg">
+                <h3 className="text-xl font-bold text-foreground mb-6 flex items-center gap-3">
+                    <span className="text-3xl">💡</span>
+                    <span>Síntese Final</span>
+                    <span className="text-sm font-normal text-muted-foreground bg-muted px-3 py-1 rounded-full">Feedback Pedagógico</span>
                 </h3>
-                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed space-y-3">
-                    {correcao.sinteseFinal.split('\n').map((paragrafo, idx) => {
-                        if (paragrafo.trim().startsWith('-') || paragrafo.trim().startsWith('•')) {
+
+                <div className="space-y-6">
+                    {(() => {
+                        // Dividir o texto em seções baseadas nos cabeçalhos
+                        const sections: Array<{ title: string; icon: string; color: string; content: string[] }> = [];
+                        let currentSection: { title: string; icon: string; color: string; content: string[] } | null = null;
+
+                        const sectionPatterns = [
+                            { regex: /^\*?\*?PONTOS?\s*FORTES?\s*(DO\s*TEXTO)?:?\*?\*?$/i, icon: '✅', color: 'green', title: 'Pontos Fortes' },
+                            { regex: /^\*?\*?ASPECTOS?\s*A\s*DESENVOLVER\s*(URGENTEMENTE)?:?\*?\*?$/i, icon: '⚠️', color: 'yellow', title: 'Aspectos a Desenvolver' },
+                            { regex: /^\*?\*?SUGEST[ÕO]ES?\s*(PERSONALIZADAS?)?\s*(PARA\s*A\s*PR[ÓO]XIMA\s*REDA[ÇC][ÃA]O)?:?\*?\*?$/i, icon: '💡', color: 'blue', title: 'Sugestões para Próxima Redação' },
+                            { regex: /^\*?\*?FOCO\s*(NOS\s*CRIT[ÉE]RIOS\s*(QUE\s*MAIS\s*IMPACTAM\s*A\s*NOTA)?)?(\s*\([^)]+\))?:?\*?\*?$/i, icon: '🎯', color: 'purple', title: 'Foco nos Critérios Importantes' },
+                            { regex: /^\*?\*?PLANO\s*DE\s*A[ÇC][ÃA]O:?\*?\*?$/i, icon: '📋', color: 'cyan', title: 'Plano de Ação' },
+                        ];
+
+                        const lines = correcao.sinteseFinal.split('\n');
+
+                        lines.forEach(line => {
+                            const trimmed = line.trim();
+                            if (!trimmed) return;
+
+                            // Verificar se é um cabeçalho de seção
+                            const matchedPattern = sectionPatterns.find(p => p.regex.test(trimmed));
+                            if (matchedPattern) {
+                                if (currentSection) {
+                                    sections.push(currentSection);
+                                }
+                                currentSection = {
+                                    title: matchedPattern.title,
+                                    icon: matchedPattern.icon,
+                                    color: matchedPattern.color,
+                                    content: []
+                                };
+                                return;
+                            }
+
+                            // Se temos uma seção atual, adicionar conteúdo
+                            if (currentSection) {
+                                currentSection.content.push(trimmed);
+                            } else {
+                                // Conteúdo sem seção - criar seção geral
+                                if (sections.length === 0 || sections[sections.length - 1].title !== 'Visão Geral') {
+                                    sections.push({ title: 'Visão Geral', icon: '📊', color: 'primary', content: [] });
+                                }
+                                sections[sections.length - 1].content.push(trimmed);
+                            }
+                        });
+
+                        if (currentSection) {
+                            sections.push(currentSection);
+                        }
+
+                        // Se não detectou seções, mostrar como texto simples
+                        if (sections.length === 0) {
                             return (
-                                <div key={idx} className="flex items-start gap-2 pl-2">
-                                    <span className="text-primary mt-1">•</span>
-                                    <span>{paragrafo.trim().replace(/^[-•]\s*/, '')}</span>
+                                <div className="text-sm text-foreground leading-relaxed space-y-3">
+                                    {lines.map((paragrafo, idx) => {
+                                        const trimmed = paragrafo.trim();
+                                        if (!trimmed) return null;
+                                        if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+                                            return (
+                                                <div key={idx} className="flex items-start gap-3 pl-2">
+                                                    <span className="text-primary mt-0.5">•</span>
+                                                    <span>{trimmed.replace(/^[-•]\s*/, '')}</span>
+                                                </div>
+                                            );
+                                        }
+                                        return <p key={idx} className="text-justify">{paragrafo}</p>;
+                                    })}
                                 </div>
                             );
                         }
-                        return <p key={idx}>{paragrafo}</p>;
-                    })}
+
+                        // Renderizar seções detectadas
+                        const colorClasses: Record<string, { bg: string; border: string; icon: string }> = {
+                            green: { bg: 'bg-green-500/10', border: 'border-green-500/30', icon: 'text-green-500' },
+                            yellow: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', icon: 'text-yellow-500' },
+                            blue: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: 'text-blue-500' },
+                            purple: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: 'text-purple-500' },
+                            cyan: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', icon: 'text-cyan-500' },
+                            primary: { bg: 'bg-primary/10', border: 'border-primary/30', icon: 'text-primary' },
+                        };
+
+                        return sections.map((section, sectionIdx) => {
+                            const colors = colorClasses[section.color] || colorClasses.primary;
+
+                            return (
+                                <div key={sectionIdx} className={`${colors.bg} rounded-lg p-5 border ${colors.border}`}>
+                                    <h4 className={`font-bold text-base mb-4 flex items-center gap-2 ${colors.icon}`}>
+                                        <span className="text-xl">{section.icon}</span>
+                                        <span className="text-foreground">{section.title}</span>
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {section.content.map((line, lineIdx) => {
+                                            // Detectar linhas numeradas
+                                            const numMatch = line.match(/^(\d+)\.\s*\*?\*?(.+?):?\*?\*?\s*(.*)$/);
+                                            if (numMatch) {
+                                                const [, num, title, rest] = numMatch;
+                                                return (
+                                                    <div key={lineIdx} className="flex items-start gap-3">
+                                                        <span className={`flex-shrink-0 w-6 h-6 rounded-full ${colors.bg} border ${colors.border} flex items-center justify-center text-xs font-bold ${colors.icon}`}>
+                                                            {num}
+                                                        </span>
+                                                        <div className="flex-1">
+                                                            <span className="font-semibold text-foreground">{title}</span>
+                                                            {rest && <span className="text-foreground"> {rest}</span>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Detectar linhas com marcadores
+                                            if (line.startsWith('-') || line.startsWith('•') || line.startsWith('*')) {
+                                                const content = line.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '');
+                                                return (
+                                                    <div key={lineIdx} className="flex items-start gap-3 pl-2">
+                                                        <span className={`${colors.icon} mt-1.5`}>▸</span>
+                                                        <span className="text-sm text-foreground leading-relaxed">{content}</span>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Texto normal
+                                            const content = line.replace(/\*\*/g, '');
+                                            return (
+                                                <p key={lineIdx} className="text-sm text-foreground leading-relaxed pl-2">
+                                                    {content}
+                                                </p>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         )}

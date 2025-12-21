@@ -363,19 +363,36 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                             </div>
                         )}
 
-                        {!canGenerate && maxQuestionsPerDay > 0 && (
-                            <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-xl flex items-center gap-3">
-                                <span className="text-xl">⏳</span>
-                                <div>
-                                    <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                                        Limite Diário Atingido
-                                    </p>
-                                    <p className="text-xs text-orange-600/80 dark:text-orange-400/80">
-                                        Você atingiu o limite de {maxQuestionsPerDay} questões hoje.
-                                    </p>
+
+                        {!canGenerate && maxQuestionsPerDay > 0 && (() => {
+                            // Calcular tempo até meia-noite
+                            const now = new Date();
+                            const midnight = new Date(now);
+                            midnight.setHours(24, 0, 0, 0);
+                            const diffMs = midnight.getTime() - now.getTime();
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                            const timeUntilReset = diffHours > 0
+                                ? `${diffHours}h ${diffMinutes}min`
+                                : `${diffMinutes} minutos`;
+
+                            return (
+                                <div className="mb-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-xl flex items-center gap-3">
+                                    <span className="text-xl">⏳</span>
+                                    <div>
+                                        <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                            Limite Diário Atingido
+                                        </p>
+                                        <p className="text-xs text-orange-600/80 dark:text-orange-400/80">
+                                            Você atingiu o limite de {maxQuestionsPerDay} questões hoje.
+                                        </p>
+                                        <p className="text-xs text-orange-600/80 dark:text-orange-400/80 mt-1">
+                                            🕐 Você poderá gerar novamente em <span className="font-semibold">{timeUntilReset}</span>
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         <div className="flex gap-3">
                             <button

@@ -39,6 +39,7 @@ import { FlashcardStatsCard } from './FlashcardStatsCard';
 import { supabase } from '../services/supabaseClient';
 import { ImportExportModal } from './ImportExportModal';
 import { TrophyIcon, DownloadIcon } from './icons';
+import { useNavigate } from 'react-router-dom';
 
 // --- Helper & Sub-components ---
 
@@ -189,6 +190,7 @@ const DefaultDecksSection: React.FC<{
     isOpen: boolean;
     onClose: () => void;
 }> = ({ disciplinas, onImportSuccess, isOpen, onClose }) => {
+    const navigate = useNavigate();
     const [decks, setDecks] = useState<DefaultDeck[]>([]);
     const [loading, setLoading] = useState(true);
     const [importingDeckId, setImportingDeckId] = useState<string | null>(null);
@@ -342,7 +344,7 @@ const DefaultDecksSection: React.FC<{
                                     <span className="p-1.5 bg-purple-600/10 rounded-lg text-purple-500">
                                         <GiftIcon className="w-5 h-5" />
                                     </span>
-                                    Decks Prontos
+                                    Flashcards Prontos
                                 </h2>
                                 {!isPro && (
                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border uppercase tracking-wider">
@@ -459,29 +461,30 @@ const DefaultDecksSection: React.FC<{
                             </div>
                         )}
 
-                        {/* Locked State Overlay */}
+                        {/* Locked State Overlay - Design profissional e sutil */}
                         {!isPro && !loading && (
-                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pb-20">
-                                <div className="bg-card border border-border p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center mx-4 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pb-20 bg-gradient-to-b from-transparent via-background/60 to-background/80">
+                                <div className="bg-card/95 backdrop-blur-md border border-border/50 p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm text-center mx-4 relative overflow-hidden">
+                                    {/* Gradiente decorativo sutil */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 pointer-events-none" />
 
-                                    <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mb-5">
-                                        <LockIcon className="w-7 h-7 text-purple-600 dark:text-purple-400" />
+                                    {/* Ícone de cadeado discreto */}
+                                    <div className="w-12 h-12 bg-purple-500/10 dark:bg-purple-500/20 rounded-full flex items-center justify-center mb-4 border border-purple-500/20">
+                                        <LockIcon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                                     </div>
 
-                                    <h3 className="text-xl font-bold text-foreground mb-2">Recurso Premium</h3>
-                                    <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
-                                        Os Decks Prontos são exclusivos para assinantes Pro e Premium.
+                                    <h3 className="text-lg font-bold text-foreground mb-2">Recurso Pro</h3>
+                                    <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+                                        Os Flashcards Prontos são exclusivos para assinantes Pro e Premium.
                                     </p>
 
-                                    <a
-                                        href="/planos"
-                                        className="w-full py-2.5 px-6 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
-                                        onClick={(e) => { e.preventDefault(); toast("Redirecionando para planos..."); }}
+                                    <button
+                                        onClick={() => navigate('/pagamento')}
+                                        className="w-full py-2.5 px-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all shadow-md flex items-center justify-center gap-2 text-sm"
                                     >
                                         <SparklesIcon className="w-4 h-4" />
-                                        Fazer Upgrade
-                                    </a>
+                                        Ver análise completa
+                                    </button>
                                 </div>
                             </div>
                         )}
@@ -781,7 +784,7 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
                         className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-colors flex items-center gap-2 text-sm font-medium shadow-lg shadow-purple-900/20"
                     >
                         <GiftIcon className="w-4 h-4" />
-                        Decks Prontos
+                        Flashcards Prontos
                     </button>
                     <div className="flex bg-primary rounded-lg p-0.5">
                         <button
@@ -826,10 +829,10 @@ const DeckSelectionView: React.FC<{ onSelectDeck: (session: StudySession) => voi
             </div>
 
             {/* Modal Import/Export */}
-            {showImportExport && <ImportExportModal onClose={() => setShowImportExport(false)} />}
+            {showImportExport && <ImportExportModal isOpen={showImportExport} onClose={() => setShowImportExport(false)} />}
 
             <div>
-                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4">Decks por Matéria</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4">Flashcards por Matéria</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {disciplinas.map((disciplina) => {
                         const cardsInDeck = getFlashcardsByDisciplina(disciplina.id);
@@ -927,7 +930,7 @@ const StudySummary: React.FC = () => {
             </div>
 
             <button onClick={exitSession} className="mt-6 h-10 px-6 rounded-lg bg-primary text-primary-foreground font-semibold">
-                Voltar aos Decks
+                Voltar aos Flashcards
             </button>
         </div>
     );

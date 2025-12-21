@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useModalStore } from '../stores/useModalStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
 import { useCiclosStore } from '../stores/useCiclosStore';
 import { toast } from './Sonner';
 import { Disciplina, SessaoCiclo, Ciclo } from '../types';
-import { XIcon, BookOpenIcon, ClockIcon, SettingsIcon, CheckCircle2Icon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon, ArrowUpIcon, ArrowDownIcon } from './icons';
+import { BookOpenIcon, ClockIcon, SettingsIcon, CheckCircle2Icon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon, ArrowUpIcon, ArrowDownIcon, XIcon } from './icons';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { Modal } from './ui/BaseModal';
 
 // --- Types ---
 type MateriaCiclo = {
@@ -326,8 +326,6 @@ const CriarCicloModal: React.FC = () => {
         }
     };
 
-    if (!isCriarCicloModalOpen) return null;
-
     const etapas = [
         { icon: BookOpenIcon, title: 'Matérias' },
         { icon: ClockIcon, title: 'Duração' },
@@ -335,52 +333,53 @@ const CriarCicloModal: React.FC = () => {
     ];
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-2 sm:p-4 overflow-y-auto" onClick={closeCriarCicloModal}>
-            <div className="bg-card rounded-xl border border-border shadow-2xl w-full max-w-3xl my-auto max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <header className="p-4 border-b border-border flex items-center justify-between">
-                    <h2 className="text-lg font-bold">Criar Novo Ciclo de Estudos</h2>
-                    <button type="button" onClick={closeCriarCicloModal} className="p-1.5 rounded-full hover:bg-muted"><XIcon className="w-5 h-5" /></button>
-                </header>
+        <Modal
+            isOpen={isCriarCicloModalOpen}
+            onClose={closeCriarCicloModal}
+            size="3xl"
+        >
+            <Modal.Header onClose={closeCriarCicloModal}>
+                <h2 className="text-lg font-bold">Criar Novo Ciclo de Estudos</h2>
+            </Modal.Header>
 
-                <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 overflow-x-hidden">
-                    {/* Stepper */}
-                    <div className="flex items-center justify-center mb-4 sm:mb-6">
-                        {etapas.map((item, index) => (
-                            <React.Fragment key={index}>
-                                <div className="flex flex-col items-center">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${etapa > index + 1 ? 'bg-secondary border-secondary text-black' : etapa === index + 1 ? 'border-primary text-primary scale-110' : 'border-border text-muted-foreground'}`}>
-                                        {etapa > index + 1 ? <CheckCircle2Icon className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}
-                                    </div>
-                                    <span className={`mt-2 text-xs font-bold ${etapa === index + 1 ? 'text-primary' : 'text-muted-foreground'}`}>{item.title}</span>
+            <Modal.Body className="space-y-4 sm:space-y-6 overflow-x-hidden">
+                {/* Stepper */}
+                <div className="flex items-center justify-center mb-4 sm:mb-6">
+                    {etapas.map((item, index) => (
+                        <React.Fragment key={index}>
+                            <div className="flex flex-col items-center">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${etapa > index + 1 ? 'bg-secondary border-secondary text-black' : etapa === index + 1 ? 'border-primary text-primary scale-110' : 'border-border text-muted-foreground'}`}>
+                                    {etapa > index + 1 ? <CheckCircle2Icon className="w-5 h-5" /> : <item.icon className="w-5 h-5" />}
                                 </div>
-                                {index < etapas.length - 1 && <div className={`flex-1 h-0.5 mx-4 ${etapa > index + 1 ? 'bg-secondary' : 'bg-border'}`}></div>}
-                            </React.Fragment>
-                        ))}
-                    </div>
-
-                    <div className="min-h-[40vh]">
-                        {etapa === 1 && <Etapa1 formMethods={formMethods} />}
-                        {etapa === 2 && <Etapa2 formMethods={formMethods} />}
-                        {etapa === 3 && <Etapa3 formMethods={formMethods} />}
-                    </div>
+                                <span className={`mt-2 text-xs font-bold ${etapa === index + 1 ? 'text-primary' : 'text-muted-foreground'}`}>{item.title}</span>
+                            </div>
+                            {index < etapas.length - 1 && <div className={`flex-1 h-0.5 mx-4 ${etapa > index + 1 ? 'bg-secondary' : 'bg-border'}`}></div>}
+                        </React.Fragment>
+                    ))}
                 </div>
 
-                <footer className="p-4 bg-muted/30 border-t border-border flex justify-between items-center">
-                    <button type="button" onClick={() => etapa > 1 && setEtapa(etapa - 1)} disabled={etapa === 1} className="h-10 px-4 flex items-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50">
-                        <ChevronLeftIcon className="w-4 h-4" /> Voltar
+                <div className="min-h-[40vh]">
+                    {etapa === 1 && <Etapa1 formMethods={formMethods} />}
+                    {etapa === 2 && <Etapa2 formMethods={formMethods} />}
+                    {etapa === 3 && <Etapa3 formMethods={formMethods} />}
+                </div>
+            </Modal.Body>
+
+            <Modal.Footer className="justify-between">
+                <button type="button" onClick={() => etapa > 1 && setEtapa(etapa - 1)} disabled={etapa === 1} className="h-10 px-4 flex items-center gap-2 rounded-lg border border-border text-sm font-medium hover:bg-muted disabled:opacity-50">
+                    <ChevronLeftIcon className="w-4 h-4" /> Voltar
+                </button>
+                {etapa < 3 ? (
+                    <button type="button" onClick={handleNext} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
+                        Próximo <ChevronRightIcon className="w-4 h-4" />
                     </button>
-                    {etapa < 3 ? (
-                        <button type="button" onClick={handleNext} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90">
-                            Próximo <ChevronRightIcon className="w-4 h-4" />
-                        </button>
-                    ) : (
-                        <button type="button" onClick={handleSubmit(onSubmit)} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold hover:bg-secondary/90">
-                            <CheckCircle2Icon className="w-4 h-4" /> Concluir e Salvar Ciclo
-                        </button>
-                    )}
-                </footer>
-            </div>
-        </div>
+                ) : (
+                    <button type="button" onClick={handleSubmit(onSubmit)} className="h-10 px-6 flex items-center gap-2 rounded-lg bg-secondary text-black text-sm font-bold hover:bg-secondary/90">
+                        <CheckCircle2Icon className="w-4 h-4" /> Concluir e Salvar Ciclo
+                    </button>
+                )}
+            </Modal.Footer>
+        </Modal>
     );
 };
 

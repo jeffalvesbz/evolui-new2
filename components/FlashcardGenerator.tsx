@@ -120,7 +120,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
     // Props iniciais só são usadas se não houver estado salvo
     const savedState = generatorState;
     const initialState = {
-        mode: (savedState?.mode || 'topic') as 'topic' | 'text',
+        mode: 'topic' as const,
         prompt: savedState?.prompt || '',
         quantity: savedState?.quantity || 5,
         difficulty: savedState?.difficulty || 'médio',
@@ -131,7 +131,7 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
         selectedSourceTopicIds: savedState?.selectedSourceTopicIds || (initialTopicoId ? [initialTopicoId] : []),
     };
 
-    const [mode, setMode] = useState<'topic' | 'text'>(initialState.mode);
+    const mode = 'topic'; // Modo texto removido para economizar custos com IA
     const [prompt, setPrompt] = useState(initialState.prompt);
     const [quantity, setQuantity] = useState(initialState.quantity);
     const [difficulty, setDifficulty] = useState(initialState.difficulty);
@@ -228,23 +228,10 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                 toast.error('Por favor, selecione pelo menos um tópico ou descreva sobre o que você quer estudar.');
                 return;
             }
-        } else {
-            // Modo texto: precisa de texto
-            if (!temaParaGerar) {
-                console.warn('[FlashcardGenerator] Texto vazio');
-                toast.error('Por favor, cole o texto para gerar os flashcards.');
-                return;
-            }
         }
 
-        if (mode === 'topic' && temaParaGerar.length < 3) {
+        if (temaParaGerar.length < 3) {
             toast.error('O tema deve ter pelo menos 3 caracteres.');
-            return;
-        }
-
-        if (mode === 'text' && temaParaGerar.length < 50) {
-            console.warn('[FlashcardGenerator] Texto muito curto:', temaParaGerar.length);
-            toast.error('O texto deve ter pelo menos 50 caracteres para gerar flashcards relevantes.');
             return;
         }
 
@@ -569,16 +556,6 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
 
     return (
         <div className="space-y-6">
-            <div className="flex gap-4 border-b border-border pb-4">
-                <button onClick={() => setMode('topic')} className={`flex-1 pb-2 text-sm font-medium transition-colors relative ${mode === 'topic' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                    Por Tópico
-                    {mode === 'topic' && <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-primary" />}
-                </button>
-                <button onClick={() => setMode('text')} className={`flex-1 pb-2 text-sm font-medium transition-colors relative ${mode === 'text' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
-                    Por Texto
-                    {mode === 'text' && <span className="absolute bottom-[-17px] left-0 w-full h-0.5 bg-primary" />}
-                </button>
-            </div>
             <div className="space-y-4">
                 {/* Seleção de disciplina e tópico (opcional na etapa de input) */}
                 <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 border border-border rounded-lg">
@@ -615,100 +592,48 @@ export function FlashcardGenerator({ disciplinaId: initialDisciplinaId, topicoId
                             : 'Você pode selecionar a disciplina e os tópicos agora ou depois de gerar os flashcards'}
                     </p>
                 </div>
-                {mode === 'topic' ? (
-                    <div className="space-y-4">
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-foreground mb-1">
+                            {selectedSourceTopicIds.length > 0 ? 'Contexto adicional (opcional)' : 'Sobre o que você quer estudar?'}
+                        </label>
+                        <input
+                            placeholder={selectedSourceTopicIds.length > 0
+                                ? "Ex: Focar apenas na parte legislativa, ou em exemplos práticos..."
+                                : "Ex: Revolução Francesa, Leis de Newton, Verbos em Inglês..."}
+                            value={prompt}
+                            onChange={e => setPrompt(e.target.value)}
+                            className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {selectedSourceTopicIds.length > 0
+                                ? 'A IA usará os títulos dos tópicos selecionados + o contexto acima.'
+                                : 'Descreva o tema ou assunto que você quer estudar. Seja específico para melhores resultados.'}
+                        </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
-                                {selectedSourceTopicIds.length > 0 ? 'Contexto adicional (opcional)' : 'Sobre o que você quer estudar?'}
-                            </label>
-                            <input
-                                placeholder={selectedSourceTopicIds.length > 0
-                                    ? "Ex: Focar apenas na parte legislativa, ou em exemplos práticos..."
-                                    : "Ex: Revolução Francesa, Leis de Newton, Verbos em Inglês..."}
-                                value={prompt}
-                                onChange={e => setPrompt(e.target.value)}
-                                className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {selectedSourceTopicIds.length > 0
-                                    ? 'A IA usará os títulos dos tópicos selecionados + o contexto acima.'
-                                    : 'Descreva o tema ou assunto que você quer estudar. Seja específico para melhores resultados.'}
-                            </p>
+                            <label className="block text-sm font-medium text-foreground mb-1">Quantidade</label>
+                            <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
+                                <option value={3} className="bg-slate-900">3 cards</option>
+                                <option value={5} className="bg-slate-900">5 cards</option>
+                                <option value={10} className="bg-slate-900">10 cards</option>
+                                <option value={15} className="bg-slate-900">15 cards</option>
+                                <option value={20} className="bg-slate-900">20 cards</option>
+                                <option value={30} className="bg-slate-900">30 cards</option>
+                                <option value={50} className="bg-slate-900">50 cards</option>
+                            </select>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">Quantidade</label>
-                                <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
-                                    <option value={3} className="bg-slate-900">3 cards</option>
-                                    <option value={5} className="bg-slate-900">5 cards</option>
-                                    <option value={10} className="bg-slate-900">10 cards</option>
-                                    <option value={15} className="bg-slate-900">15 cards</option>
-                                    <option value={20} className="bg-slate-900">20 cards</option>
-                                    <option value={30} className="bg-slate-900">30 cards</option>
-                                    <option value={50} className="bg-slate-900">50 cards</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">Dificuldade</label>
-                                <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
-                                    <option value="fácil" className="bg-slate-900">Fácil</option>
-                                    <option value="médio" className="bg-slate-900">Médio</option>
-                                    <option value="difícil" className="bg-slate-900">Difícil</option>
-                                </select>
-                            </div>
+                        <div>
+                            <label className="block text-sm font-medium text-foreground mb-1">Dificuldade</label>
+                            <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-md p-2 text-slate-100 focus:ring-2 focus:ring-violet-600 outline-none">
+                                <option value="fácil" className="bg-slate-900">Fácil</option>
+                                <option value="médio" className="bg-slate-900">Médio</option>
+                                <option value="difícil" className="bg-slate-900">Difícil</option>
+                            </select>
                         </div>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-sm font-medium text-foreground">Cole o texto para gerar flashcards</label>
-                            </div>
-                            <textarea
-                                placeholder="Cole aqui um parágrafo, resumo, anotação ou conteúdo de estudo. Mínimo 50 caracteres.
-
-Exemplos de uso:
-• Cole um resumo de aula
-• Cole um trecho de livro ou artigo
-• Cole suas anotações pessoais"
-                                value={prompt}
-                                onChange={e => setPrompt(e.target.value)}
-                                className="w-full bg-input border border-border rounded-md p-3 text-foreground focus:ring-2 focus:ring-primary outline-none min-h-[200px] font-mono text-sm leading-relaxed"
-                            />
-                            <div className="flex items-center justify-between mt-2">
-                                <p className="text-xs text-muted-foreground">
-                                    A IA irá identificar os conceitos chave e criar perguntas baseadas exclusivamente no texto fornecido.
-                                </p>
-                                {prompt.length > 0 && (
-                                    <span className={`text-xs font-medium ${prompt.length < 50 ? 'text-yellow-600 dark:text-yellow-500' : 'text-green-600 dark:text-green-500'}`}>
-                                        {prompt.length} caractere{prompt.length !== 1 ? 's' : ''}
-                                        {prompt.length < 50 && ` (mínimo 50)`}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">Quantidade aproximada</label>
-                                <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="w-full bg-input border border-border rounded-md p-2 text-foreground focus:ring-2 focus:ring-primary outline-none">
-                                    <option value={3}>~3 cards</option>
-                                    <option value={5}>~5 cards</option>
-                                    <option value={10}>~10 cards</option>
-                                    <option value={15}>~15 cards</option>
-                                    <option value={20}>~20 cards</option>
-                                    <option value={30}>~30 cards</option>
-                                    <option value={50}>~50 cards</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1">Dica</label>
-                                <div className="w-full bg-muted/30 border border-border rounded-md p-2 text-xs text-muted-foreground">
-                                    💡 Textos maiores geram mais flashcards relevantes
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                </div>
             </div>
             <div className="pt-4 flex gap-3">
                 <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 rounded-lg border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors">
@@ -717,10 +642,10 @@ Exemplos de uso:
                 <button
                     type="button"
                     onClick={() => {
-                        console.log('[FlashcardGenerator] Botão clicado. Disabled?', generating || (mode === 'topic' && selectedSourceTopicIds.length === 0 && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50)));
+                        console.log('[FlashcardGenerator] Botão clicado. Disabled?', generating || (selectedSourceTopicIds.length === 0 && !prompt.trim()));
                         handleGenerate();
                     }}
-                    disabled={generating || (mode === 'topic' && selectedSourceTopicIds.length === 0 && !prompt.trim()) || (mode === 'text' && (!prompt.trim() || prompt.trim().length < 50))}
+                    disabled={generating || (selectedSourceTopicIds.length === 0 && !prompt.trim())}
                     className="flex-1 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {generating ? (
