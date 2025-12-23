@@ -118,7 +118,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       const isRecovery = isRecoveryEvent || isRecoveryUrl;
 
       if (isRecovery) {
-        console.log('🔒 Modo de recuperação detectado no AuthStore (Evento:', isRecoveryEvent, 'URL/Storage:', isRecoveryUrl, ')');
+        console.log('🔒 Modo de recuperação detectado - Forçando flag via LocalStorage');
+        localStorage.setItem('evolui_force_reset', 'true');
+        set({ isPasswordRecovery: true });
+      } else if (localStorage.getItem('evolui_force_reset') === 'true') {
+        // Se a flag persistente existir, restaurar o modo de recovery
+        console.log('🔒 Modo de recuperação restaurado via LocalStorage');
         set({ isPasswordRecovery: true });
       }
 
@@ -131,11 +136,18 @@ export const useAuthStore = create<AuthState>((set) => ({
           },
           session,
           isAuthenticated: true,
-          // Mantém true se já for true (para não perder o estado se vier outro evento logo depois)
-          isPasswordRecovery: state.isPasswordRecovery || isRecovery
+          // Mantém true se já for true OU se tivermos a flag no localStorage
+          isPasswordRecovery: state.isPasswordRecovery || isRecovery || localStorage.getItem('evolui_force_reset') === 'true'
         }));
       } else {
-        set({ user: null, session: null, isAuthenticated: false, isPasswordRecovery: false });
+        // Se fez logout, limpar tudo se não for recovery
+        const shouldClearRecovery = event === 'SIGNED_OUT' && !isRecovery;
+        if (shouldClearRecovery) {
+          localStorage.removeItem('evolui_force_reset');
+          set({ user: null, session: null, isAuthenticated: false, isPasswordRecovery: false });
+        } else {
+          set({ user: null, session: null, isAuthenticated: false });
+        }
       }
     });
   },

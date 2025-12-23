@@ -36,6 +36,7 @@ export const ResetPasswordPage: React.FC = () => {
     useEffect(() => {
         return () => {
             sessionStorage.removeItem('evolui_recovery_flow');
+            localStorage.removeItem('evolui_force_reset');
             (window as any).__IS_RECOVERY_FLOW__ = false;
         };
     }, []);
@@ -107,6 +108,7 @@ export const ResetPasswordPage: React.FC = () => {
 
             // Limpar flags
             sessionStorage.removeItem('evolui_recovery_flow');
+            localStorage.removeItem('evolui_force_reset');
 
             // Redirecionar para o dashboard após 2 segundos
             // Usando window.location.href para forçar reload completo e limpar o estado de recovery
