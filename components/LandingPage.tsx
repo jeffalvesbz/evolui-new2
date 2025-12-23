@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
 import {
     CheckCircle2Icon,
-    BookOpenIcon,
-    TrophyIcon,
-    ClockIcon,
-    ChevronDownIcon,
-    ChevronUpIcon,
-    SparklesIcon,
-    UsersIcon,
+    BrainCircuitIcon,
+    BarChart3Icon,
+    XCircleIcon,
     ArrowRightIcon,
     LandmarkIcon,
     XIcon,
-    TrendingUpIcon,
-    TargetIcon,
-    CalendarIcon,
-    BrainCircuitIcon,
-    BarChart3Icon,
-    ShieldCheckIcon,
-    ZapIcon,
+    LayoutDashboardIcon,
+    TimerIcon,
+    SparklesIcon,
+    LockIcon,
+    Volume2Icon,
+    VolumeXIcon,
+    UsersIcon,
     StarIcon,
-    XCircleIcon
+    ChevronDownIcon,
+    MessageCircleIcon,
+    MailIcon
 } from './icons';
-import { plans, Plan } from '../src/config/plans';
 
 // --- Animations ---
 const fadeInUp = {
@@ -39,228 +37,63 @@ const staggerContainer = {
     }
 };
 
-const scaleIn = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: "easeOut" } }
-};
-
-// --- Data ---
-const features = [
-    {
-        icon: CalendarIcon,
-        title: 'Planejamento inteligente',
-        description: 'Monte seu plano de estudos em minutos, com base em disciplinas, metas e tempo disponível.',
-        color: 'from-violet-500 to-purple-600',
-        size: 'large'
-    },
-    {
-        icon: ClockIcon,
-        title: 'Cronômetro e foco',
-        description: 'Cronometre seus estudos, mantenha o foco e registre o tempo real dedicado a cada matéria.',
-        color: 'from-pink-500 to-rose-600',
-        size: 'small'
-    },
-    {
-        icon: BookOpenIcon,
-        title: 'Flashcards inteligentes',
-        description: 'Use repetição espaçada para memorizar melhor e revisar no momento certo.',
-        color: 'from-cyan-500 to-blue-600',
-        size: 'small'
-    },
-    {
-        icon: BrainCircuitIcon,
-        title: 'Revisões automáticas',
-        description: 'Nunca mais esqueça o que estudou. O ELEVA agenda revisões de forma estratégica.',
-        color: 'from-emerald-500 to-green-600',
-        size: 'small'
-    },
-    {
-        icon: BarChart3Icon,
-        title: 'Dashboard de progresso',
-        description: 'Veja sua evolução com métricas reais: constância, desempenho e histórico.',
-        color: 'from-amber-500 to-orange-600',
-        size: 'small'
-    },
-    {
-        icon: TrendingUpIcon,
-        title: 'Trilha semanal organizada',
-        description: 'Saiba exatamente o que estudar em cada dia da semana, sem perder tempo decidindo.',
-        color: 'from-indigo-500 to-blue-600',
-        size: 'large'
-    },
-    {
-        icon: TrophyIcon,
-        title: 'Gamificação e motivação',
-        description: 'Ganhe XP, mantenha streaks e acompanhe sua evolução de forma visual e motivadora.',
-        color: 'from-yellow-400 to-orange-500',
-        size: 'small'
-    }
-];
-
-const faqs = [
-    {
-        question: 'O ELEVA serve para qualquer concurso?',
-        answer: 'Sim. Você adapta o plano à sua realidade e ao edital que estiver estudando.'
-    },
-    {
-        question: 'Preciso estudar muitas horas por dia?',
-        answer: 'Não. O foco é constância e eficiência, não quantidade.'
-    },
-    {
-        question: 'Funciona no celular e no computador?',
-        answer: 'Sim. O ELEVA é pensado para uso diário, em qualquer dispositivo.'
-    },
-    {
-        question: 'É melhor que planilhas?',
-        answer: 'Planilhas não pensam por você. O ELEVA sim.'
-    }
-];
-
-const testimonials = [
-    {
-        name: "Maria S.",
-        role: "Concurseira - TRF",
-        text: "A correção de redação IA é incrível! Me ajudou muito a melhorar.",
-        rating: 5
-    },
-    {
-        name: "João P.",
-        role: "Aprovado - PRF",
-        text: "O sistema de ciclos mudou completamente minha forma de estudar.",
-        rating: 5
-    },
-    {
-        name: "Ana L.",
-        role: "Estudante - PF",
-        text: "Vale cada centavo! Recursos essenciais para quem estuda sério.",
-        rating: 5
-    }
-];
-
-const galleryImages = [
-    { src: "/app-shot-1.png", alt: "Dashboard Geral", title: "Dashboard Completo" },
-    { src: "/app-shot-3.png", alt: "Ciclos de Estudo", title: "Ciclos de Estudo" },
-    { src: "/app-shot-4.png", alt: "Corretor de Redação", title: "Corretor IA Detalhado" },
-    { src: "/app-shot-5.png", alt: "Flashcards Pergunta", title: "Flashcards (Frente)" },
-    { src: "/app-shot-6.png", alt: "Flashcards Resposta", title: "Flashcards (Verso)" },
-    { src: "/app-shot-7.png", alt: "Quizzes Gerados", title: "Quizzes Ilimitados" },
-];
-
-const Carousel = () => {
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    const nextSlide = () => {
-        setCurrentIndex((prev) => (prev + 1) % galleryImages.length);
-    };
-
-    const prevSlide = () => {
-        setCurrentIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
-    };
-
-    return (
-        <div className="relative max-w-5xl mx-auto px-4 mt-12">
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 aspect-video bg-black/50 shadow-2xl">
-                <AnimatePresence mode='wait'>
-                    <motion.div
-                        key={currentIndex}
-                        initial={{ opacity: 0, x: 50 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -50 }}
-                        transition={{ duration: 0.3 }}
-                        className="absolute inset-0"
-                    >
-                        <img
-                            src={galleryImages[currentIndex].src}
-                            alt={galleryImages[currentIndex].alt}
-                            className="w-full h-full object-contain p-2"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 pt-12">
-                            <h3 className="text-xl md:text-2xl font-bold text-white text-center">{galleryImages[currentIndex].title}</h3>
-                        </div>
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
-            <button
-                onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-primary/90 border border-white/10 text-white transition-all z-10 backdrop-blur-sm -translate-x-1/2 md:-translate-x-0 group"
-                aria-label="Anterior"
-            >
-                <ChevronDownIcon className="w-6 h-6 rotate-90 text-white group-hover:scale-110 transition-transform" />
-            </button>
-            <button
-                onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/50 hover:bg-primary/90 border border-white/10 text-white transition-all z-10 backdrop-blur-sm translate-x-1/2 md:translate-x-0 group"
-                aria-label="Próximo"
-            >
-                <ChevronDownIcon className="w-6 h-6 -rotate-90 text-white group-hover:scale-110 transition-transform" />
-            </button>
-
-            <div className="flex justify-center gap-2 mt-6">
-                {galleryImages.map((_, idx) => (
-                    <button
-                        key={idx}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`transition-all duration-300 rounded-full h-2 ${idx === currentIndex ? 'bg-primary w-8' : 'bg-white/20 w-2 hover:bg-white/40'}`}
-                        aria-label={`Ir para imagem ${idx + 1}`}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-};
-
-
 // --- Sub-Components ---
 
-const MockDashboard = () => (
-    <motion.div
-        initial={{ opacity: 0, y: 40, rotateX: 10 }}
-        animate={{ opacity: 1, y: 0, rotateX: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="relative w-full max-w-[800px] mx-auto lg:mr-0 rounded-xl border border-white/10 shadow-2xl overflow-hidden z-10"
-        style={{ perspective: '1000px' }}
-    >
-        <video
-            src="/dashboard-demo.mp4"
-            loop
-            playsInline
-            controls
-            poster="/app-shot-1.png"
-            className="w-full h-auto object-cover"
-        />
-
-        {/* Glow Effect */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-primary/20 to-secondary/10 blur-[60px] -z-10 pointer-events-none" />
-    </motion.div>
+const PainItem = ({ text }: { text: string }) => (
+    <motion.li variants={fadeInUp} className="flex items-start gap-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors">
+        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
+        <span className="text-lg text-red-100/80">{text}</span>
+    </motion.li>
 );
 
-const FeatureCard = ({ feature }: { feature: typeof features[0] }) => (
+const SolutionCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
     <motion.div
-        variants={scaleIn}
-        className={`group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition-colors ${feature.size === 'large' ? 'md:col-span-2' : ''}`}
+        whileHover={{ y: -5 }}
+        className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all duration-300 relative overflow-hidden group"
     >
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-            <feature.icon className="w-6 h-6 text-white" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-7 h-7 text-primary" />
         </div>
-        <h3 className="text-xl font-bold font-display mb-2 text-foreground">{feature.title}</h3>
-        <p className="text-muted-foreground">{feature.description}</p>
-
-        {/* Hover Glow */}
-        <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-gradient-to-br from-white/5 to-white/0 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-500" />
+        <h3 className="text-2xl font-bold mb-3 text-white">{title}</h3>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
     </motion.div>
 );
 
-const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const TestimonialCard = ({ name, role, text, avatar }: { name: string, role: string, text: string, avatar: string }) => (
+    <motion.div
+        whileHover={{ y: -3 }}
+        className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-all"
+    >
+        <div className="flex items-center gap-1 mb-4">
+            {[...Array(5)].map((_, i) => (
+                <StarIcon key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            ))}
+        </div>
+        <p className="text-muted-foreground mb-6 leading-relaxed italic">"{text}"</p>
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-black font-bold">
+                {avatar}
+            </div>
+            <div>
+                <p className="font-semibold text-white text-sm">{name}</p>
+                <p className="text-xs text-muted-foreground">{role}</p>
+            </div>
+        </div>
+    </motion.div>
+);
+
+const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
     return (
-        <div className="border-b border-white/10 last:border-0">
+        <div className="border-b border-white/10">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full py-4 flex items-center justify-between text-left hover:text-primary transition-colors"
+                className="w-full py-5 flex items-center justify-between text-left hover:text-primary transition-colors"
             >
                 <span className="font-medium text-lg">{question}</span>
-                {isOpen ? <ChevronUpIcon className="w-5 h-5 text-muted-foreground" /> : <ChevronDownIcon className="w-5 h-5 text-muted-foreground" />}
+                <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
                 {isOpen && (
@@ -268,9 +101,10 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                     >
-                        <p className="pb-4 text-muted-foreground leading-relaxed">{answer}</p>
+                        <p className="pb-5 text-muted-foreground leading-relaxed">{answer}</p>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -278,15 +112,41 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
     );
 };
 
-// --- Main Page ---
-
 export const LandingPage: React.FC = () => {
     const [showLogin, setShowLogin] = useState(false);
+    const [initialAuthMode, setInitialAuthMode] = useState<'login' | 'signup'>('login');
+    const [isMuted, setIsMuted] = useState(true);
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const handleCTAClick = () => setShowLogin(true);
+    // Sincronizar URL com o estado do modal
+    useEffect(() => {
+        if (location.pathname === '/signup' || location.pathname === '/cadastro') {
+            setInitialAuthMode('signup');
+            setShowLogin(true);
+        } else if (location.pathname === '/login') {
+            setInitialAuthMode('login');
+            setShowLogin(true);
+        } else {
+            setShowLogin(false);
+        }
+    }, [location.pathname]);
+
+    const handleSignupClick = () => {
+        navigate('/signup');
+    };
+
+    const handleLoginClick = () => {
+        navigate('/login');
+    };
+
+    const handleCloseModal = () => {
+        setShowLogin(false);
+        navigate('/');
+    };
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-body overflow-x-hidden selection:bg-primary/30">
+        <div className="min-h-screen bg-[#0A0A0B] text-foreground font-body overflow-x-hidden selection:bg-primary/30">
 
             {/* Background Grid Pattern */}
             <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" style={{
@@ -294,396 +154,325 @@ export const LandingPage: React.FC = () => {
                 backgroundSize: '40px 40px'
             }} />
 
-            {/* Navbar */}
-            <nav className="fixed top-0 inset-x-0 z-50 h-16 border-b border-white/10 bg-background/80 backdrop-blur-md">
-                <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                            <LandmarkIcon className="w-5 h-5 text-white" />
+            {/* Navbar (Minimalist) */}
+            <nav className="fixed top-0 inset-x-0 z-50 h-20 border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <LandmarkIcon className="w-6 h-6 text-black" />
                         </div>
-                        <span className="font-display font-bold text-xl tracking-tight">Eleva</span>
+                        <span className="font-display font-bold text-2xl tracking-tight">Eleva</span>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button onClick={handleCTAClick} className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
-                            Entrar
-                        </button>
-                        <button onClick={handleCTAClick} className="text-sm font-semibold bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
-                            Começar Agora
-                        </button>
-                    </div>
+                    {/* Login CTA only - No Menu */}
+                    <button
+                        onClick={handleLoginClick}
+                        className="text-sm font-medium text-muted-foreground hover:text-white transition-colors"
+                    >
+                        Já tenho conta
+                    </button>
                 </div>
             </nav>
 
-            <main className="relative z-10">
-                {/* Hero Section */}
-                <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <main className="relative z-10 pt-20">
+
+                {/* 🔵 HERO SECTION */}
+                <section className="pt-24 pb-32 px-6 relative overflow-hidden">
+                    {/* Glow Effects */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/20 blur-[120px] rounded-full opacity-30 -z-10" />
+
+                    <div className="max-w-4xl mx-auto text-center space-y-8">
                         <motion.div
                             initial="hidden"
                             animate="visible"
                             variants={staggerContainer}
-                            className="text-center lg:text-left space-y-6"
+                            className="space-y-8"
                         >
-                            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider">
-                                <SparklesIcon className="w-3 h-3" />
-                                Estude com método
-                            </motion.div>
-
-                            <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl md:text-6xl font-display font-bold leading-[1.1]">
-                                Eleve seu estudo. <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Eleve seus resultados.</span>
+                            <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-[1.1] tracking-tight">
+                                Pare de estudar <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">sem método.</span>
                             </motion.h1>
 
-                            <motion.p variants={fadeInUp} className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                                Pare de estudar no escuro. O ELEVA transforma estudo desorganizado em um plano inteligente, mensurável e eficiente.
+                            <motion.p variants={fadeInUp} className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                                Organize seus estudos em um só lugar com o Eleva. Flashcards inteligentes, quizzes e organização diária para quem estuda sério.
                             </motion.p>
 
-                            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                                <button onClick={handleCTAClick} className="btn-gradient px-8 py-3.5 text-lg rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
-                                    Comece agora gratuitamente
-                                    <ArrowRightIcon className="w-5 h-5" />
+                            <motion.div variants={fadeInUp} className="flex flex-col items-center gap-4">
+                                <button
+                                    onClick={handleSignupClick}
+                                    className="group relative px-8 py-4 bg-white text-black text-lg font-bold rounded-full shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:scale-105 transition-all duration-300 flex items-center gap-3"
+                                >
+                                    👉 Criar meu plano de estudos grátis
+                                    <div className="absolute inset-0 rounded-full border border-black/10" />
                                 </button>
+                                <p className="text-sm text-muted-foreground/60">Sem cartão. Sem compromisso.</p>
+
+                                {/* Social Proof */}
+                                <div className="flex items-center gap-2 mt-4 py-2 px-4 rounded-full bg-white/5 border border-white/10">
+                                    <div className="flex -space-x-2">
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">M</div>
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-green-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">L</div>
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">A</div>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">+500 estudantes já usam o Eleva</span>
+                                </div>
                             </motion.div>
-
                         </motion.div>
-
-                        {/* Hero Image / Mock Interface */}
-                        <MockDashboard />
                     </div>
                 </section>
 
-                {/* Problem Section */}
-                <section className="py-20 px-4 bg-white/5 border-y border-white/5">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-display font-bold mb-10">
-                            <span className="text-red-500">❌</span> O problema não é falta de esforço. <br /> É falta de método.
-                        </h2>
-
-                        <div className="grid md:grid-cols-2 gap-8 text-left">
-                            <div className="space-y-4">
-                                <p className="text-lg text-muted-foreground mb-4">Se você estuda ou já estudou para provas, provavelmente se identifica:</p>
-                                <ul className="space-y-3">
-                                    <li className="flex items-start gap-3">
-                                        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-                                        <span>Estuda muito, mas sente que não evolui</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-                                        <span>Não sabe exatamente o que estudar hoje</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-                                        <span>Se perde entre PDFs, vídeos, anotações e editais</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <div className="space-y-4">
-                                <p className="text-lg text-muted-foreground mb-4 opacity-0 lg:opacity-100">...</p>
-                                <ul className="space-y-3">
-                                    <li className="flex items-start gap-3">
-                                        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-                                        <span>Falta constância e motivação</span>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-                                        <span>Não consegue medir se está no caminho certo</span>
-                                    </li>
-                                </ul>
-                                <div className="mt-8 p-4 bg-red-500/10 rounded-xl border border-red-500/20 text-center">
-                                    <p className="text-white font-medium">O resultado? Cansaço, frustração e a sensação de tempo perdido.</p>
+                {/* 🎥 VÍDEO DEMO */}
+                <section className="py-12 px-6">
+                    <div className="max-w-6xl mx-auto">
+                        <motion.div
+                            initial={{ opacity: 0, y: 40 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.8 }}
+                            className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-primary/20 bg-[#0F0F11]"
+                        >
+                            {/* Browser Header Mockup */}
+                            <div className="h-10 bg-white/5 border-b border-white/5 flex items-center px-4 gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                                <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                <div className="ml-4 px-3 py-1 bg-black/50 rounded-md text-[10px] text-muted-foreground font-mono flex items-center gap-1">
+                                    <LockIcon className="w-3 h-3" />
+                                    meueleva.com
                                 </div>
                             </div>
+
+                            {/* Video Container */}
+                            <div className="relative aspect-video bg-black/50 overflow-hidden group">
+                                <video
+                                    src="/dashboard-demo.mp4"
+                                    autoPlay
+                                    loop
+                                    muted={isMuted}
+                                    playsInline
+                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
+                                />
+
+                                {/* Sound Toggle */}
+                                <button
+                                    onClick={() => setIsMuted(!isMuted)}
+                                    className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white/70 hover:text-white backdrop-blur-sm transition-all z-20"
+                                >
+                                    {isMuted ? <VolumeXIcon className="w-5 h-5" /> : <Volume2Icon className="w-5 h-5" />}
+                                </button>
+
+                                {/* Overlay Gradient for smoother blend */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none" />
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* 🟣 BLOCO DE DOR (Identificação) */}
+                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/40 border-y border-white/5">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+                                Se você estuda, mas sente que não evolui...
+                            </h2>
+                            <p className="text-muted-foreground">Isso soa familiar?</p>
+                        </div>
+
+                        <ul className="space-y-4 max-w-2xl mx-auto mb-12">
+                            <PainItem text="Estuda muito e esquece rápido" />
+                            <PainItem text="Não sabe o que revisar hoje" />
+                            <PainItem text="Perde tempo organizando planilhas" />
+                            <PainItem text="Falta constância e motivação" />
+                        </ul>
+
+                        <div className="text-center p-8 bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10">
+                            <p className="text-2xl font-medium text-white mb-2">O problema não é falta de esforço.</p>
+                            <p className="text-xl text-primary font-bold">É falta de método.</p>
                         </div>
                     </div>
                 </section>
 
-                {/* Solution Section */}
-                <section className="py-20 px-4">
-                    <div className="max-w-4xl mx-auto text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
-                            <span className="text-emerald-500">✅</span> A solução: estudar com estratégia, não com improviso.
+                {/* 🟢 BLOCO DE SOLUÇÃO (O Eleva) */}
+                <section className="py-32 px-6 text-center">
+                    <div className="mb-16">
+                        <span className="inline-block py-1 px-3 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold mb-6">
+                            A SOLUÇÃO
+                        </span>
+                        <h2 className="text-4xl md:text-5xl font-display font-bold">
+                            O Eleva resolve isso pra você
                         </h2>
-                        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                            O ELEVA organiza seu estudo em um sistema inteligente que mostra <strong>o que estudar</strong>, <strong>quando estudar</strong>, <strong>quanto tempo estudar</strong> e <strong>como revisar</strong>.
+                    </div>
+
+                    <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 text-left">
+                        <SolutionCard
+                            icon={LayoutDashboardIcon}
+                            title="Organização automática"
+                            description="Tudo em um só lugar. Cronograma, materiais e metas organizados automaticamente, sem bagunça."
+                        />
+                        <SolutionCard
+                            icon={BrainCircuitIcon}
+                            title="Revisão inteligente"
+                            description="Você revisa apenas o que precisa. Nosso algoritmo garante que você não esqueça o conteúdo."
+                        />
+                        <SolutionCard
+                            icon={BarChart3Icon}
+                            title="Progresso visível"
+                            description="Saiba exatamente onde está evoluindo com métricas claras de desempenho e constância."
+                        />
+                    </div>
+                </section>
+
+                {/* 🟠 BLOCO DE PROVA */}
+                <section className="py-24 px-6 bg-[#0F0F11] border-t border-white/5">
+                    <div className="max-w-4xl mx-auto text-center space-y-8">
+                        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/5 border border-white/10 mb-4">
+                            <SparklesIcon className="w-6 h-6 text-yellow-500 mr-2" />
+                            <span className="text-lg font-medium text-white">Metodologia comprovada</span>
+                        </div>
+
+                        <h2 className="text-3xl md:text-4xl font-display font-bold text-white">
+                            Feito para quem leva os estudos a sério
+                        </h2>
+
+                        <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                            O Eleva foi criado para estudantes e concurseiros que querem
+                            <span className="text-white font-semibold"> constância, clareza e evolução real </span>
+                            — sem perder tempo com planilhas ou métodos confusos.
                         </p>
                     </div>
                 </section>
 
+                {/* 🔵 BLOCO DE CTA FORTE */}
+                <section className="py-32 px-6 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50" />
 
-                {/* Features Grid ("Bento" Style) */}
-                <section className="py-10 px-4 bg-gradient-to-b from-transparent to-background-dark/50">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16 max-w-3xl mx-auto">
-                            <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">🚀 O que o <span className="text-primary">ELEVA</span> faz por você</h2>
-                        </div>
+                    <div className="max-w-3xl mx-auto text-center relative z-10 p-12 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm">
+                        <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">
+                            Comece hoje. É grátis.
+                        </h2>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24 items-center">
-                            <div className="order-2 lg:order-1 relative group">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-purple-500/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                                <img
-                                    src="/app-shot-5.png"
-                                    alt="Flashcards Mobile Interface"
-                                    className="relative rounded-3xl border border-white/10 shadow-2xl mx-auto max-w-[300px] md:max-w-xs hover:scale-105 transition-transform duration-500"
-                                />
-                            </div>
-                            <div className="order-1 lg:order-2 space-y-6">
-                                <h3 className="text-3xl font-bold font-display">Estude em qualquer lugar</h3>
-                                <p className="text-lg text-muted-foreground">
-                                    Com o nosso sistema de flashcards mobile-first, você transforma qualquer tempo morto em aprendizado ativo.
-                                </p>
-                                <ul className="space-y-4">
-                                    <li className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-                                            <ZapIcon className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">Memorização acelerada</p>
-                                            <p className="text-sm text-muted-foreground">Algoritmos que priorizam o que você erra.</p>
-                                        </div>
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary">
-                                            <BookOpenIcon className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">Revisão espaçada</p>
-                                            <p className="text-sm text-muted-foreground">Nunca mais esqueça o que estudou ontem.</p>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {features.map((feature, idx) => (
-                                <FeatureCard key={idx} feature={feature} />
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Differentiation Section */}
-                <section className="py-24 px-4 bg-white/[0.02]">
-                    <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-                        <div>
-                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">💡 Por que o ELEVA é diferente?</h2>
-                            <p className="text-lg text-muted-foreground mb-8">O ELEVA não é só mais um app de organização.</p>
-
-                            <ul className="space-y-4 mb-8">
-                                <li className="flex items-center gap-3 text-red-400">
-                                    <XIcon className="w-5 h-5" /> Não é lista de tarefas
-                                </li>
-                                <li className="flex items-center gap-3 text-red-400">
-                                    <XIcon className="w-5 h-5" /> Não é agenda genérica
-                                </li>
-                                <li className="flex items-center gap-3 text-red-400">
-                                    <XIcon className="w-5 h-5" /> Não é planilha improvisada
-                                </li>
-                            </ul>
-
-                            <p className="text-xl font-medium text-white p-6 bg-primary/10 rounded-2xl border border-primary/20">
-                                Ele é um sistema de estudos baseado em método, pensado para quem precisa de resultado, não de mais conteúdo.
+                        <div className="flex flex-col items-center gap-4">
+                            <button
+                                onClick={handleSignupClick}
+                                className="w-full sm:w-auto px-12 py-5 bg-primary hover:bg-primary-dark text-white text-xl font-bold rounded-xl shadow-xl shadow-primary/20 hover:scale-105 transition-all duration-300 active:scale-95"
+                            >
+                                👉 Criar conta gratuita
+                            </button>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <TimerIcon className="w-4 h-4" />
+                                Leva menos de 1 minuto
                             </p>
                         </div>
-                        <div className="space-y-6">
-                            <h3 className="text-2xl font-bold mb-4">🎯 Para quem é o ELEVA</h3>
-                            <ul className="space-y-3">
-                                {[
-                                    'Concurseiros (PF, PC, TCU, tribunais, fiscais, etc.)',
-                                    'Estudantes universitários',
-                                    'Quem estuda por conta própria',
-                                    'Quem trabalha e tem pouco tempo',
-                                    'Quem quer estudar com constância e estratégia'
-                                ].map((item, i) => (
-                                    <li key={i} className="flex items-center gap-3">
-                                        <CheckCircle2Icon className="w-5 h-5 text-emerald-500 shrink-0" />
-                                        <span>{item}</span>
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <div className="pt-8 border-t border-white/10 mt-8">
-                                <h3 className="text-xl font-bold mb-4 text-red-400">❌ Para quem não é</h3>
-                                <ul className="space-y-3">
-                                    <li className="flex items-center gap-3 text-muted-foreground">
-                                        <XIcon className="w-5 h-5 text-red-500" /> Quem busca “atalhos milagrosos”
-                                    </li>
-                                    <li className="flex items-center gap-3 text-muted-foreground">
-                                        <XIcon className="w-5 h-5 text-red-500" /> Quem não quer se comprometer com constância
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
-                {/* Founder Section */}
-                <section className="py-20 px-4 text-center">
-                    <div className="max-w-3xl mx-auto bg-stone-900/50 p-10 rounded-3xl border border-white/5">
-                        <h3 className="text-2xl font-bold mb-4">💬 Criado por quem estuda de verdade</h3>
-                        <p className="text-lg text-muted-foreground leading-relaxed">
-                            O ELEVA foi criado por quem conhece na prática a pressão dos concursos, a falta de tempo e a necessidade de estudar com método. <br />
-                            <span className="text-white font-medium mt-2 block">Ele nasce da realidade, não da teoria.</span>
+                {/* 🔴 BLOCO FINAL (Urgência Suave) */}
+                <section className="pb-16 px-6 text-center">
+                    <div className="max-w-2xl mx-auto">
+                        <p className="text-lg text-muted-foreground mb-6">
+                            Quanto mais você adia, mais tempo perde estudando do jeito errado.
                         </p>
+                        <button
+                            onClick={handleSignupClick}
+                            className="text-white hover:text-primary font-medium border-b border-transparent hover:border-primary transition-all pb-0.5"
+                        >
+                            Comece agora. Criar conta no Eleva →
+                        </button>
                     </div>
                 </section>
 
-                {/* Gallery Section */}
-                <section className="py-24 px-4 bg-white/[0.02] border-y border-white/5">
-                    <div className="max-w-7xl mx-auto">
+                {/* ⭐ DEPOIMENTOS */}
+                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/20">
+                    <div className="max-w-6xl mx-auto">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">Por dentro do ELEVA</h2>
-                            <p className="text-muted-foreground">Interface moderna, intuitiva e focada no seu desempenho.</p>
-                        </div>
-
-                        <Carousel />
-                    </div>
-                </section>
-
-                {/* Pricing Plans */}
-                <section className="py-24 px-4">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">Planos</h2>
-                            <p className="text-muted-foreground">Escolha o seu nível de comprometimento.</p>
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                            {/* Free */}
-                            <div className="rounded-3xl p-8 border border-white/10 bg-card hover:border-primary/30 transition-colors">
-                                <div className="mb-6">
-                                    <div className="font-semibold text-lg mb-2">Plano Gratuito</div>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-4xl font-bold">R$ 0</span>
-                                        <span className="text-muted-foreground">/mês</span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mt-2">Ideal para começar.</p>
-                                </div>
-                                <button onClick={handleCTAClick} className="w-full py-3 rounded-xl border border-white/20 hover:bg-white/5 font-semibold transition-colors mb-6">
-                                    Começar gratuitamente
-                                </button>
-                                <ul className="space-y-3 text-sm text-muted-foreground">
-                                    {['Planejamento básico', 'Cronômetro', 'Organização inicial'].map(i => (
-                                        <li key={i} className="flex gap-2"><CheckCircle2Icon className="w-4 h-4 text-emerald-500" /> {i}</li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            {plans.map((plan) => (
-                                <div key={plan.name} className={`rounded-3xl p-8 border ${plan.isPremium ? 'border-primary/50 bg-primary/5 relative shadow-2xl shadow-primary/20' : 'border-white/10 bg-card'} hover:border-primary/30 transition-colors`}>
-                                    {plan.tag && (
-                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold">
-                                            {plan.tag}
-                                        </div>
-                                    )}
-                                    <div className="mb-6">
-                                        <div className={`font-semibold text-lg mb-2 ${plan.isPremium ? 'text-primary' : ''}`}>{plan.name}</div>
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-4xl font-bold">R$ {plan.monthlyPrice.toString().replace('.', ',')}</span>
-                                            <span className="text-muted-foreground">/mês</span>
-                                        </div>
-                                        {plan.yearlyPrice && (
-                                            <div className="text-xs text-emerald-400 mt-1">
-                                                Economize R$ {(plan.monthlyPrice * 12 - plan.yearlyPrice).toFixed(2).replace('.', ',')}/ano
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button onClick={handleCTAClick} className={`w-full py-3 rounded-xl font-semibold transition-colors mb-6 ${plan.ctaStyle === 'solid' ? 'bg-primary hover:bg-primary-dark text-white shadow-lg shadow-primary/25' : 'border border-primary/50 text-primary hover:bg-primary/10'}`}>
-                                        {plan.cta}
-                                    </button>
-                                    <ul className="space-y-3 text-sm text-muted-foreground">
-                                        {plan.features.map(i => (
-                                            <li key={i} className="flex gap-2"><CheckCircle2Icon className={`w-4 h-4 ${plan.isPremium ? 'text-primary' : 'text-emerald-500'}`} /> {i}</li>
-                                        ))}
-                                    </ul>
-                                    {plan.isPremium && (
-                                        <div className="mt-6 pt-6 border-t border-white/10 text-center">
-                                            <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">Sem risco</p>
-                                            <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-                                                <span>✓ Cancele quando quiser</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* Testimonials Section */}
-                <section className="py-24 px-4 bg-white/[0.02]">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-                                O que dizem nossos <span className="text-primary">estudantes</span>
+                            <span className="inline-block py-1 px-3 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-bold mb-6">
+                                DEPOIMENTOS
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-display font-bold">
+                                O que dizem sobre o Eleva
                             </h2>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {testimonials.map((t, idx) => (
-                                <div key={idx} className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
-                                    <div className="flex gap-1 mb-4">
-                                        {[...Array(t.rating)].map((_, i) => (
-                                            <StarIcon key={i} className="w-5 h-5 text-primary fill-primary" />
-                                        ))}
-                                    </div>
-                                    <p className="text-lg italic text-muted-foreground mb-6">"{t.text}"</p>
-                                    <div>
-                                        <div className="font-bold text-white">{t.name}</div>
-                                        <div className="text-sm text-muted-foreground">{t.role}</div>
-                                    </div>
-                                </div>
-                            ))}
+
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <TestimonialCard
+                                name="Mariana S."
+                                role="Aprovada no TRF3"
+                                text="Finalmente parei de esquecer o que estudava. O sistema de revisão do Eleva mudou minha rotina completamente."
+                                avatar="M"
+                            />
+                            <TestimonialCard
+                                name="Lucas P."
+                                role="Estudante de Medicina"
+                                text="Uso os flashcards todo dia. Em 3 meses, minha retenção de conteúdo aumentou absurdamente. Recomendo demais!"
+                                avatar="L"
+                            />
+                            <TestimonialCard
+                                name="Ana C."
+                                role="Concurseira - Área Fiscal"
+                                text="O dashboard me mostra exatamente onde preciso focar. Parei de perder tempo estudando o que já sei."
+                                avatar="A"
+                            />
                         </div>
                     </div>
                 </section>
 
-                {/* FAQ Section */}
-                <section className="py-24 px-4 bg-white/[0.02]">
-                    <div className="max-w-2xl mx-auto">
-                        <h2 className="text-3xl font-display font-bold mb-8 text-center">Perguntas Frequentes (FAQ)</h2>
+                {/* ❓ FAQ */}
+                <section className="py-24 px-6">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-4xl font-display font-bold">
+                                Perguntas Frequentes
+                            </h2>
+                        </div>
+
                         <div className="space-y-2">
-                            {faqs.map((faq, idx) => (
-                                <FAQItem key={idx} {...faq} />
-                            ))}
+                            <FAQItem
+                                question="É realmente grátis?"
+                                answer="Sim! O plano gratuito inclui acesso ao dashboard, flashcards manuais, e organização básica. Você pode usar sem pagar nada e fazer upgrade quando quiser mais recursos."
+                            />
+                            <FAQItem
+                                question="Funciona para qual tipo de estudo?"
+                                answer="O Eleva foi feito para concurseiros, estudantes de medicina, direito, e qualquer pessoa que precisa memorizar grandes volumes de conteúdo. Funciona para qualquer área!"
+                            />
+                            <FAQItem
+                                question="Posso cancelar a qualquer momento?"
+                                answer="Com certeza! Não há fidelidade ou multa. Você pode cancelar seu plano Pro ou Premium quando quiser, sem burocracia."
+                            />
+                            <FAQItem
+                                question="Como funciona o sistema de revisão?"
+                                answer="Usamos repetição espaçada (spaced repetition), o mesmo método usado por poliglotas e aprovados em concursos difíceis. O sistema calcula automaticamente quando você deve revisar cada conteúdo."
+                            />
+                            <FAQItem
+                                question="Meus dados estão seguros?"
+                                answer="Sim! Usamos criptografia de ponta a ponta e seus dados ficam armazenados em servidores seguros. Nunca compartilhamos suas informações com terceiros."
+                            />
                         </div>
                     </div>
                 </section>
 
-                {/* Final CTA */}
-                <section className="py-24 px-4 text-center">
-                    <div className="max-w-4xl mx-auto bg-gradient-to-r from-primary/20 via-primary/5 to-secondary/20 rounded-3xl p-12 border border-white/10 relative overflow-hidden">
-                        <div className="relative z-10">
-                            <h2 className="text-4xl font-display font-bold mb-6">Chega de estudar sem saber se está no caminho certo.</h2>
-                            <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-                                O ELEVA mostra o caminho. <br />
-                                Você só precisa caminhar.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onClick={handleCTAClick} className="btn-gradient px-10 py-4 text-lg rounded-xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform flex items-center justify-center gap-2">
-                                    Começar agora gratuitamente
-                                </button>
-                                <button onClick={handleCTAClick} className="px-10 py-4 text-lg rounded-xl border border-white/10 hover:bg-white/5 transition-colors font-medium">
-                                    Elevar meus resultados
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Footer */}
-                <footer className="py-12 px-4 border-t border-white/10 bg-background text-sm">
-                    <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-8 mb-12">
-                        <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                                    <LandmarkIcon className="w-3 h-3 text-white" />
+                {/* 🦶 FOOTER */}
+                <footer className="py-12 px-6 border-t border-white/5 bg-[#0A0A0B]">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+                                    <LandmarkIcon className="w-4 h-4 text-black" />
                                 </div>
-                                <span className="font-bold font-display text-lg">Eleva</span>
+                                <span className="font-display font-bold text-lg">Eleva</span>
                             </div>
-                            <p className="text-muted-foreground">Estude com método. Evolua de verdade.</p>
+
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
+                                <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>
+                                <a href="mailto:suporte@meueleva.com" className="hover:text-white transition-colors flex items-center gap-1">
+                                    <MailIcon className="w-4 h-4" />
+                                    suporte@meueleva.com
+                                </a>
+                            </div>
                         </div>
-                    </div>
-                    <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 text-center text-muted-foreground">
-                        &copy; 2024 Eleva Tecnologia. Todos os direitos reservados.
+
+                        <div className="mt-8 pt-8 border-t border-white/5 text-center text-xs text-muted-foreground">
+                            © {new Date().getFullYear()} Eleva. Todos os direitos reservados.
+                        </div>
                     </div>
                 </footer>
 
@@ -695,23 +484,23 @@ export const LandingPage: React.FC = () => {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                onClick={() => setShowLogin(false)}
-                                className="absolute inset-0 bg-background/90 backdrop-blur-md"
+                                onClick={handleCloseModal}
+                                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                             />
 
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="relative z-10 w-full max-w-md bg-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+                                className="relative z-10 w-full max-w-md"
                             >
                                 <button
-                                    onClick={() => setShowLogin(false)}
-                                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-white/10 transition-colors z-20"
+                                    onClick={handleCloseModal}
+                                    className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white transition-colors"
                                 >
-                                    <XIcon className="w-5 h-5" />
+                                    <XIcon className="w-6 h-6" />
                                 </button>
-                                <LoginPage />
+                                <LoginPage initialAuthMode={initialAuthMode} />
                             </motion.div>
                         </div>
                     )}

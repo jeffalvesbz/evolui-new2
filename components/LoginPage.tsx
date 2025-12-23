@@ -23,9 +23,13 @@ const GitHubIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-export const LoginPage: React.FC = () => {
+interface LoginPageProps {
+  initialAuthMode?: 'login' | 'signup' | 'forgot';
+}
+
+export const LoginPage: React.FC<LoginPageProps> = ({ initialAuthMode = 'login' }) => {
   const { login, signup, signInWithOAuth, resetPassword, loading } = useAuthStore();
-  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'forgot'>(initialAuthMode);
   const [showPassword, setShowPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
