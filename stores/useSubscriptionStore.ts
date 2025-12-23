@@ -14,7 +14,7 @@ interface SubscriptionState {
   flashcardsCreatedThisMonth: number;
   quizQuestionsGeneratedToday: number;
   fetchSubscription: () => Promise<void>;
-  startTrial: (planType: 'pro' | 'premium') => Promise<void>;
+  startTrial: (planType: 'pro') => Promise<void>;
   canCreateEdital: (currentCount: number) => boolean;
   getMaxEditais: () => number;
   canCreateCiclo: (currentCount: number) => boolean;
@@ -86,7 +86,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
 
-  startTrial: async (planType: 'pro' | 'premium') => {
+  startTrial: async (planType: 'pro') => {
     set({ loading: true });
     try {
       const { data: { user } } = await supabase.auth.getUser();

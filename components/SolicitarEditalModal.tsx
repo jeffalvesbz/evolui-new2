@@ -58,7 +58,7 @@ const SolicitarEditalModal: React.FC<SolicitarEditalModalProps> = ({ isOpen, onC
             if (uploadError) {
                 // Se o bucket não existir, criar ele primeiro
                 if (uploadError.message.includes('Bucket not found')) {
-                    toast.error('Bucket de storage não configurado. Entre em contato com o suporte.');
+                    toast.error('Bucket de storage não configurado. Entre em contato com o suporte: suporte@meueleva.com');
                     return null;
                 }
                 throw uploadError;

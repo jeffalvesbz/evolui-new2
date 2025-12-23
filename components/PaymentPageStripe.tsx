@@ -18,7 +18,7 @@ interface FAQItem {
 const faqData: FAQItem[] = [
     {
         question: 'Qual a política de reembolso?',
-        answer: 'De acordo com o Código de Defesa do Consumidor (Art. 49), você tem 7 dias para desistir da compra e receber reembolso integral, sem necessidade de justificativa. Basta entrar em contato conosco.'
+        answer: 'De acordo com o Código de Defesa do Consumidor (Art. 49), você tem 7 dias para desistir da compra e receber reembolso integral, sem necessidade de justificativa. Basta entrar em contato pelo email suporte@meueleva.com.'
     },
     {
         question: 'Preciso informar cartão de crédito?',

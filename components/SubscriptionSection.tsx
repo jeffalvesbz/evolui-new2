@@ -210,7 +210,7 @@ const SubscriptionSection: React.FC = () => {
                     <div className="w-full p-4 bg-muted/50 rounded-lg border border-muted text-center">
                         <p className="font-medium text-foreground">Assinatura gerenciada manualmente</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Entre em contato com o suporte para alterações.
+                            Entre em contato com o suporte para alterações: suporte@meueleva.com
                         </p>
                     </div>
                 ) : null}

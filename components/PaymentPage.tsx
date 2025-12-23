@@ -4,6 +4,8 @@ import { CheckCircle2Icon, SparklesIcon, ChevronDownIcon, TargetIcon } from './i
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 import { toast } from './Sonner';
 import { useNavigate } from 'react-router-dom';
+import { createCheckoutSession } from '../services/stripeService';
+import { supabase } from '../services/supabaseClient';
 
 type BillingPeriod = 'monthly' | 'yearly';
 
@@ -49,9 +51,9 @@ const plans: Plan[] = [
       'Upload de Redação Manuscrita (OCR)',
       'Suporte Prioritário'
     ],
-    cta: 'Começar Teste Premium',
+    cta: 'Assinar Premium',
     ctaStyle: 'solid',
-    tag: 'Acesso Total no Teste',
+    tag: 'Mais Popular',
     color: 'bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-500/20 dark:to-yellow-500/20 border-amber-300 dark:border-amber-500/50',
     yearlyDiscount: 30,
     isPremium: true
@@ -123,19 +125,35 @@ const PaymentPage: React.FC = () => {
   };
 
   const handleStartTrial = async (planName: string) => {
-    const planType = planName.toLowerCase() === 'premium' ? 'premium' : 'pro';
+    const isPremium = planName.toLowerCase() === 'premium';
     setStartingTrial(planName);
 
     try {
-      await startTrial(planType);
+      if (isPremium) {
+        // Premium não tem trial grátis - redireciona para checkout do Stripe
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('Você precisa estar logado para assinar');
+          navigate('/login');
+          return;
+        }
+
+        toast.info('Redirecionando para pagamento seguro...');
+        await createCheckoutSession('premium', billingPeriod, user.id);
+        // O redirecionamento acontece automaticamente no createCheckoutSession
+        return;
+      }
+
+      // Pro tem trial grátis de 7 dias
+      await startTrial('pro');
       toast.success(`Teste grátis de 7 dias iniciado! Bem-vindo ao plano ${planName}!`);
       // Redirecionar para o dashboard após iniciar o trial
       setTimeout(() => {
         navigate('/dashboard');
       }, 1500);
     } catch (error: any) {
-      console.error('Erro ao iniciar trial:', error);
-      toast.error(error.message || 'Não foi possível iniciar o teste grátis. Tente novamente.');
+      console.error('Erro ao processar:', error);
+      toast.error(error.message || 'Não foi possível processar. Tente novamente.');
     } finally {
       setStartingTrial(null);
     }

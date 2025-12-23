@@ -386,7 +386,7 @@ const App: React.FC = () => {
             <KeyboardShortcutsHelp open={isKeyboardHelpOpen} onOpenChange={setIsKeyboardHelpOpen} />
           </Suspense>
 
-          <Suspense fallback={<ModalSkeleton />}>
+          <Suspense fallback={null}>
             <SalvarSessaoModal />
             <EditalManagementModal />
             <ActivateDefaultEditalModal />

@@ -64,7 +64,7 @@ serve(async (req) => {
         let errorCode = 'UNKNOWN_ERROR'
 
         if (error.message === 'Customer ID not found') {
-            errorMessage = 'ID do cliente Stripe não encontrado. Entre em contato com o suporte.'
+            errorMessage = 'ID do cliente Stripe não encontrado. Entre em contato com o suporte: suporte@meueleva.com'
             errorCode = 'CUSTOMER_ID_NOT_FOUND'
         } else if (error.message === 'Unauthorized') {
             errorMessage = 'Usuário não autorizado'

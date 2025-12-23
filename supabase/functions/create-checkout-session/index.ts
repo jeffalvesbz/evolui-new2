@@ -43,7 +43,8 @@ serve(async (req) => {
                 billing_period: billingPeriod,
             },
             subscription_data: {
-                trial_period_days: 3,
+                // Trial de 3 dias apenas para o plano Pro (evita abuso de IA no Premium)
+                ...(planType === 'pro' ? { trial_period_days: 3 } : {}),
                 metadata: {
                     user_id: userId,
                     plan_type: planType,

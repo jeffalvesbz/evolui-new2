@@ -203,6 +203,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
   useEditalSync();
   const user = useAuthStore((state) => state.user);
   const editalAtivo = useEditalStore((state) => state.editalAtivo);
+  const updateEdital = useEditalStore((state) => state.updateEdital);
+
+  // Estado para edição inline da data da prova
+  const [isEditingExamDate, setIsEditingExamDate] = useState(false);
+  const [tempExamDate, setTempExamDate] = useState('');
   const abrirModalEstudoManual = useEstudosStore((state) => state.abrirModalEstudoManual);
   const openRegisterEditalModal = useModalStore((state) => state.openRegisterEditalModal);
   const fetchErros = useCadernoErrosStore((state) => state.fetchErros); // Destructure fetchErros
@@ -627,9 +632,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <div className="space-y-2.5 rounded-2xl border border-white/10 bg-muted/30 p-4">
+            <div className="space-y-2.5 rounded-xl border border-border bg-card/50 p-4">
               {editalAtivo?.nome && (
-                <div className="pb-2.5 mb-2 border-b border-white/10">
+                <div className="pb-2.5 mb-2 border-b border-border">
                   <h3 className="text-sm font-bold text-foreground leading-tight">
                     {editalAtivo.nome}
                   </h3>
@@ -673,11 +678,62 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 const diasRestantes = Math.max(0, differenceInDays(dataAlvo, hoje));
                 const progressoPercentual = Math.min(100, Math.round((diasDecorridos / diasTotais) * 100));
 
+                const handleSaveExamDate = async () => {
+                  if (!tempExamDate || !editalAtivo) return;
+                  try {
+                    await updateEdital(editalAtivo.id, { data_alvo: tempExamDate });
+                    setIsEditingExamDate(false);
+                    setTempExamDate('');
+                  } catch (error) {
+                    console.error('Erro ao atualizar data da prova:', error);
+                  }
+                };
+
+                const handleStartEdit = () => {
+                  setTempExamDate(editalAtivo.data_alvo);
+                  setIsEditingExamDate(true);
+                };
+
+                const handleCancelEdit = () => {
+                  setIsEditingExamDate(false);
+                  setTempExamDate('');
+                };
+
                 return (
-                  <div className="mt-4 pt-3 border-t border-white/10">
+                  <div className="mt-4 pt-3 border-t border-border">
                     <div className="flex items-center justify-between text-xs mb-2">
                       <span className="text-muted-foreground">Progresso até a prova</span>
-                      <span className="text-muted-foreground">{diasRestantes} {diasRestantes === 1 ? 'dia' : 'dias'} restantes</span>
+                      {isEditingExamDate ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="date"
+                            value={tempExamDate}
+                            onChange={(e) => setTempExamDate(e.target.value)}
+                            className="bg-input border border-border rounded-md px-2 py-1 text-xs text-foreground focus:ring-primary focus:border-primary"
+                          />
+                          <button
+                            onClick={handleSaveExamDate}
+                            className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/90 transition-colors"
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleStartEdit}
+                          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors group"
+                          title="Editar data da prova"
+                        >
+                          <span>{diasRestantes} {diasRestantes === 1 ? 'dia' : 'dias'} restantes</span>
+                          <EditIcon className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <Progress value={progressoPercentual} className="h-2 flex-1" />
@@ -745,19 +801,31 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="rounded-lg border border-border bg-background/30 p-4 flex flex-col items-center justify-center">
-                  <div className="flex items-center justify-center gap-1.5 mb-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <p className="text-2xl font-bold text-orange-500">{streak}</p>
+                <div className="rounded-xl border border-border bg-card/50 p-4 flex flex-col items-center justify-center hover:border-orange-500/50 hover:bg-orange-500/5 transition-all duration-300 group">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                      <Flame className="h-4 w-4 text-orange-500" />
+                    </div>
+                    <p className="text-3xl font-bold text-orange-500">{streak}</p>
                   </div>
                   <p className="text-xs text-muted-foreground font-medium">Dias Seguidos</p>
                 </div>
-                <div className="rounded-lg border border-border bg-background/30 p-4 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-primary mb-2">{revisoesPendentes}</p>
+                <div className="rounded-xl border border-border bg-card/50 p-4 flex flex-col items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 group">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Target className="h-4 w-4 text-primary" />
+                    </div>
+                    <p className="text-3xl font-bold text-foreground">{revisoesPendentes}</p>
+                  </div>
                   <p className="text-xs text-muted-foreground font-medium">Revisões</p>
                 </div>
-                <div className="rounded-lg border border-border bg-background/30 p-4 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-primary mb-2">{errosResolvidosHoje}</p>
+                <div className="rounded-xl border border-border bg-card/50 p-4 flex flex-col items-center justify-center hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
+                      <BookOpenCheckIcon className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    <p className="text-3xl font-bold text-foreground">{errosResolvidosHoje}</p>
+                  </div>
                   <p className="text-xs text-muted-foreground font-medium">Erros resolvidos</p>
                 </div>
               </div>
@@ -767,23 +835,24 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       </section>
 
       <section>
-        <Card className="p-5 text-center min-h-[90px] flex flex-col justify-center relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-secondary/10 opacity-50 group-hover:opacity-100 transition-opacity" />
+        <Card className="p-6 text-center min-h-[100px] flex flex-col justify-center relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5 opacity-60 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute top-3 left-4 text-primary/20 text-4xl font-serif">"</div>
+          <div className="absolute bottom-3 right-4 text-primary/20 text-4xl font-serif">"</div>
           {isMessageLoading ? (
-            <div className="space-y-2 animate-pulse">
+            <div className="space-y-2 animate-pulse relative z-10">
               <div className="h-4 bg-muted/50 rounded-full w-3/4 mx-auto"></div>
               <div className="h-4 bg-muted/50 rounded-full w-1/2 mx-auto"></div>
             </div>
           ) : (
-            <>
-              <p className="text-lg italic text-foreground/90 flex items-center justify-center gap-2">
-                {motivationalMessage.autor === null && <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />}
-                <span>“{motivationalMessage.frase}”</span>
+            <div className="relative z-10">
+              <p className="text-lg italic text-foreground/90 leading-relaxed">
+                {motivationalMessage.frase}
               </p>
               {motivationalMessage.autor && (
-                <p className="text-sm text-primary mt-2">— {motivationalMessage.autor}</p>
+                <p className="text-sm text-primary mt-3 font-medium">— {motivationalMessage.autor}</p>
               )}
-            </>
+            </div>
           )}
         </Card>
       </section>
