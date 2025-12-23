@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
       premiumOnly: true
     },
     { id: 'flashcards', label: 'Flashcards', icon: <LayersIcon /> },
-    { id: 'quiz', label: 'Quiz', icon: <TrophyIcon /> },
+    { id: 'quiz', label: 'Questões com IA', icon: <TrophyIcon /> },
     { id: 'revisoes', label: 'Revisões', icon: <CalendarClockIcon /> },
     { id: 'simulados', label: 'Simulados', icon: <FileTextIcon /> },
     { id: 'estatisticas', label: 'Estatísticas', icon: <BarChart3Icon /> },

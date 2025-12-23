@@ -143,8 +143,8 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                                 <TrophyIcon className="w-6 h-6 text-primary" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">Configurar Quiz IA</h2>
-                                <p className="text-sm text-muted-foreground">Personalize seu treino focado</p>
+                                <h2 className="text-xl font-bold text-foreground">Questões com IA</h2>
+                                <p className="text-sm text-muted-foreground">Configure suas questões personalizadas</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                                         Recurso Premium
                                     </p>
                                     <p className="text-xs text-yellow-600/80 dark:text-yellow-400/80">
-                                        Faça upgrade para gerar quizzes ilimitados com IA.
+                                        Faça upgrade para gerar questões ilimitadas com IA.
                                     </p>
                                 </div>
                             </div>
@@ -412,7 +412,7 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                                 disabled={!selectedDisciplina || (!canGenerate && maxQuestionsPerDay > 0)}
                                 className="flex-1 py-3 px-6 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-primary/25 active:scale-[0.98]"
                             >
-                                {!canGenerate && maxQuestionsPerDay === 0 ? 'Fazer Upgrade Agora' : 'Começar Quiz'}
+                                {!canGenerate && maxQuestionsPerDay === 0 ? 'Fazer Upgrade Agora' : 'Iniciar Questões'}
                             </button>
                         </div>
                     </div>

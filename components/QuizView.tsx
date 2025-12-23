@@ -81,7 +81,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
                     className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <ChevronLeftIcon className="w-5 h-5" />
-                    Sair do Quiz
+                    Sair
                 </button>
             </div>
 

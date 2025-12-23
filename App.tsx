@@ -33,6 +33,8 @@ import { BreadcrumbProvider } from './contexts/BreadcrumbContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginPage } from './components/LoginPage';
 import { LandingPage } from './components/LandingPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { useLocation } from 'react-router-dom';
 import { ModalSkeleton } from './components/skeletons';
 import { getLocalDateISO } from './utils/dateUtils';
 
@@ -365,6 +367,14 @@ const App: React.FC = () => {
         <p className="text-muted-foreground">Aguarde um momento.</p>
       </div>
     );
+  }
+
+  // Verificar se estamos na rota de reset de senha (não requer autenticação)
+  const isResetPasswordRoute = window.location.pathname === '/reset-password' ||
+    window.location.hash.includes('type=recovery');
+
+  if (isResetPasswordRoute) {
+    return <ResetPasswordPage />;
   }
 
   if (!isAuthenticated) {

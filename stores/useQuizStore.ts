@@ -140,7 +140,7 @@ export const useQuizStore = create<QuizStore>((set, get) => ({
               .from('quizzes')
               .insert({
                 user_id: userData.user.id,
-                title: disciplineName ? `Quiz de ${disciplineName}` : 'Quiz Gerado',
+                title: disciplineName ? `Questões de ${disciplineName}` : 'Questões Geradas',
                 mode: quizMode,
                 questions: questions,
                 created_at: new Date().toISOString(),

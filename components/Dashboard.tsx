@@ -546,12 +546,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
       isOverdue: revisoesAtrasadasCount > 0,
     },
     {
-      label: 'Erros resolvidos',
-      value: errosResolvidosHoje,
-      icon: BookOpenCheckIcon,
-      helper: `${erros.length} cadastrados`,
-    },
-    {
       label: 'Progresso diário',
       value: `${metaPercentual}%`,
       icon: Flame,
@@ -822,11 +816,11 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                 <div className="rounded-xl border border-border bg-card/50 p-4 flex flex-col items-center justify-center hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all duration-300 group">
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-                      <BookOpenCheckIcon className="h-4 w-4 text-emerald-500" />
+                      <Clock3 className="h-4 w-4 text-emerald-500" />
                     </div>
-                    <p className="text-3xl font-bold text-foreground">{errosResolvidosHoje}</p>
+                    <p className="text-3xl font-bold text-foreground">{sessoes.filter(s => s.data_estudo === new Date().toISOString().split('T')[0]).length}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground font-medium">Erros resolvidos</p>
+                  <p className="text-xs text-muted-foreground font-medium">Sessões Hoje</p>
                 </div>
               </div>
             </div>

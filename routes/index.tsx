@@ -5,6 +5,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { DashboardSkeleton } from '../components/skeletons';
 import { LoginPage } from '../components/LoginPage';
 import { LandingPage } from '../components/LandingPage';
+import { ResetPasswordPage } from '../components/ResetPasswordPage';
 
 // Mapeamento de rotas para views
 const routeToViewMap: Record<string, string> = {
@@ -162,6 +163,9 @@ export const AppRoutes: React.FC<AppRoutesProps> = ({ setActiveView, theme = 'da
 
         {/* Quiz Route */}
         <Route path="/quiz" element={<QuizPage />} />
+
+        {/* Reset Password Route */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

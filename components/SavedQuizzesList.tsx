@@ -67,7 +67,7 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                             className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
                         />
                     </div>
-                    <p className="text-muted-foreground">Carregando quizzes...</p>
+                    <p className="text-muted-foreground">Carregando questões...</p>
                 </div>
             </div>
         );
@@ -85,7 +85,7 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                         >
                             <XIcon className="w-6 h-6" />
                         </button>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Quizzes Salvos</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Questões Salvas</h1>
                     </div>
                     <p className="text-muted-foreground text-sm sm:text-base">
                         Evolua seus estudos com questões geradas por IA.
@@ -161,12 +161,12 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                 <div className="text-center py-20">
                     <TrophyIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="text-xl font-bold text-foreground mb-2">
-                        {searchQuery || selectedMode !== 'all' ? 'Nenhum quiz encontrado' : 'Nenhum quiz salvo ainda'}
+                        {searchQuery || selectedMode !== 'all' ? 'Nenhuma questão encontrada' : 'Nenhuma questão salva ainda'}
                     </h3>
                     <p className="text-muted-foreground text-sm">
                         {searchQuery || selectedMode !== 'all'
                             ? 'Tente ajustar os filtros de busca.'
-                            : 'Crie seu primeiro quiz para começar!'}
+                            : 'Gere suas primeiras questões para começar!'}
                     </p>
                 </div>
             ) : (
@@ -235,7 +235,7 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                                 className="w-full h-10 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
                             >
                                 <PlayIcon className="w-4 h-4" />
-                                Refazer Quiz
+                                Refazer Questões
                             </button>
                         </motion.div>
                     ))}

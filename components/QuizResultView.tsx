@@ -51,7 +51,7 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({ onRestart, onExi
                     <TrophyIcon className="w-16 h-16 text-yellow-400" />
                 </motion.div>
 
-                <h2 className="text-2xl font-bold text-foreground mb-1">Quiz Concluído!</h2>
+                <h2 className="text-2xl font-bold text-foreground mb-1">Questões Concluídas!</h2>
                 <p className={`text-lg font-semibold ${performance.color}`}>{performance.text}</p>
             </motion.div>
 

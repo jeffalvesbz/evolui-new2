@@ -121,7 +121,7 @@ const QuizPage: React.FC = () => {
                                 />
                             </div>
                             <div>
-                                <h2 className="text-2xl font-bold text-foreground mb-2">Gerando seu Quiz com IA</h2>
+                                <h2 className="text-2xl font-bold text-foreground mb-2">Gerando Questões com IA</h2>
                                 <p className="text-muted-foreground max-w-md mx-auto mb-6">
                                     Analisando seus materiais e criando questões personalizadas...
                                 </p>
@@ -159,7 +159,7 @@ const QuizPage: React.FC = () => {
                                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-lg shadow-primary/20"
                                 >
                                     <PlusCircleIcon className="w-5 h-5" />
-                                    Novo Quiz
+                                    Novas Questões
                                 </button>
                             </div>
                             <SavedQuizzesList
@@ -187,9 +187,9 @@ const QuizPage: React.FC = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             className="bg-card border border-border rounded-xl p-6 max-w-md w-full shadow-2xl"
                         >
-                            <h3 className="text-xl font-bold text-foreground mb-2">Quiz em Andamento</h3>
+                            <h3 className="text-xl font-bold text-foreground mb-2">Questões em Andamento</h3>
                             <p className="text-muted-foreground mb-6">
-                                Você tem um quiz não finalizado. Deseja continuar de onde parou?
+                                Você tem questões não finalizadas. Deseja continuar de onde parou?
                             </p>
                             <div className="flex gap-3 justify-end">
                                 <button
@@ -202,7 +202,7 @@ const QuizPage: React.FC = () => {
                                     onClick={handleResumeQuiz}
                                     className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                                 >
-                                    Continuar Quiz
+                                    Continuar Questões
                                 </button>
                             </div>
                         </motion.div>
