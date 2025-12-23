@@ -32,6 +32,14 @@ export const ResetPasswordPage: React.FC = () => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    // Limpar flag de recovery ao desmontar ou concluir
+    useEffect(() => {
+        return () => {
+            sessionStorage.removeItem('evolui_recovery_flow');
+            (window as any).__IS_RECOVERY_FLOW__ = false;
+        };
+    }, []);
+
     const form = useForm<ResetPasswordInput>({
         resolver: zodResolver(resetPasswordSchema),
         defaultValues: {
@@ -96,6 +104,9 @@ export const ResetPasswordPage: React.FC = () => {
 
             setSuccess(true);
             toast.success('Senha alterada com sucesso!');
+
+            // Limpar flags
+            sessionStorage.removeItem('evolui_recovery_flow');
 
             // Redirecionar para o dashboard após 2 segundos
             // Usando window.location.href para forçar reload completo e limpar o estado de recovery

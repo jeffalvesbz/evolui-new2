@@ -247,7 +247,8 @@ const App: React.FC = () => {
     const hash = window.location.hash;
     const isRecovery = hash.includes('type=recovery') ||
       window.location.pathname === '/reset-password' ||
-      (window as any).__IS_RECOVERY_FLOW__ === true;
+      (window as any).__IS_RECOVERY_FLOW__ === true ||
+      sessionStorage.getItem('evolui_recovery_flow') === 'true';
     return isRecovery;
   });
 

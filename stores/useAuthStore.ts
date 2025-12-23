@@ -107,9 +107,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.log(`Auth event: ${event}`);
 
       const user = session?.user;
-      const isRecovery = event === 'PASSWORD_RECOVERY';
+
+      // Detecção robusta de recovery: evento OU URL
+      const isRecoveryEvent = event === 'PASSWORD_RECOVERY';
+      const isRecoveryUrl = window.location.hash.includes('type=recovery') ||
+        window.location.search.includes('type=recovery') ||
+        (window as any).__IS_RECOVERY_FLOW__ === true ||
+        sessionStorage.getItem('evolui_recovery_flow') === 'true';
+
+      const isRecovery = isRecoveryEvent || isRecoveryUrl;
 
       if (isRecovery) {
+        console.log('🔒 Modo de recuperação detectado no AuthStore (Evento:', isRecoveryEvent, 'URL/Storage:', isRecoveryUrl, ')');
         set({ isPasswordRecovery: true });
       }
 

@@ -5,9 +5,9 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
 // Detectar fluxo de recuperação ANTES de qualquer coisa (React, Router, Supabase)
-// Isso garante que sabemos a intenção original mesmo se a URL for limpa
 if (window.location.hash.includes('type=recovery')) {
   (window as any).__IS_RECOVERY_FLOW__ = true;
+  sessionStorage.setItem('evolui_recovery_flow', 'true');
   console.log('🔒 Detectado fluxo de recuperação de senha via URL');
 }
 
