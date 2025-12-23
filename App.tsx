@@ -368,10 +368,11 @@ const App: React.FC = () => {
     }, 3000); // Reset after 3 seconds of inactivity
   };
 
+  const { isPasswordRecovery } = useAuthStore();
+
   // PRIMEIRO: Verificar se estamos no fluxo de recovery de senha
-  // Isso deve vir ANTES de qualquer outra verificação (loading, autenticação)
-  // porque o Supabase automaticamente autentica o usuário com o token de recovery
-  if (isRecoveryMode) {
+  // Combina detecção de URL e evento do Supabase
+  if (isRecoveryMode || isPasswordRecovery) {
     return <ResetPasswordPage />;
   }
 

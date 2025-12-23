@@ -9,6 +9,7 @@ interface AuthState {
   session: Session | null;
   isAuthenticated: boolean;
   loading: boolean;
+  isPasswordRecovery: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   signInWithOAuth: (provider: 'google' | 'github') => Promise<void>;
@@ -22,6 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   isAuthenticated: false,
   loading: false,
+  isPasswordRecovery: false,
 
   login: async (email, password) => {
     set({ loading: true });
@@ -97,24 +99,34 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null, isAuthenticated: false });
+    set({ user: null, session: null, isAuthenticated: false, isPasswordRecovery: false });
   },
 
   checkAuth: () => {
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`Auth event: ${event}`);
+
       const user = session?.user;
+      const isRecovery = event === 'PASSWORD_RECOVERY';
+
+      if (isRecovery) {
+        set({ isPasswordRecovery: true });
+      }
+
       if (user) {
-        set({
+        set((state) => ({
           user: {
             id: user.id,
             name: user.user_metadata.name || 'Usuário',
             email: user.email || ''
           },
           session,
-          isAuthenticated: true
-        });
+          isAuthenticated: true,
+          // Mantém true se já for true (para não perder o estado se vier outro evento logo depois)
+          isPasswordRecovery: state.isPasswordRecovery || isRecovery
+        }));
       } else {
-        set({ user: null, session: null, isAuthenticated: false });
+        set({ user: null, session: null, isAuthenticated: false, isPasswordRecovery: false });
       }
     });
   },
