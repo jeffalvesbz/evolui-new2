@@ -1,4 +1,5 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { supabase } from './supabaseClient';
 
 // Singleton do Stripe
 let stripePromise: Promise<Stripe | null>;
@@ -101,11 +102,18 @@ export const createCheckoutSession = async (
  */
 export const createPortalSession = async (): Promise<void> => {
     try {
+        // Get the user's session token
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError || !session) {
+            throw new Error('Usuário não autenticado');
+        }
+
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'Authorization': `Bearer ${session.access_token}`,
             },
         });
 
