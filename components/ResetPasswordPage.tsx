@@ -98,8 +98,9 @@ export const ResetPasswordPage: React.FC = () => {
             toast.success('Senha alterada com sucesso!');
 
             // Redirecionar para o dashboard após 2 segundos
+            // Usando window.location.href para forçar reload completo e limpar o estado de recovery
             setTimeout(() => {
-                navigate('/dashboard');
+                window.location.href = '/dashboard';
             }, 2000);
         } catch (err: any) {
             console.error('Reset password error:', err);
@@ -183,7 +184,7 @@ export const ResetPasswordPage: React.FC = () => {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => navigate('/dashboard')}
+                                onClick={() => window.location.href = '/dashboard'}
                                 className="w-full h-11 px-4 flex items-center justify-center gap-2 btn-gradient shadow-lg shadow-primary/20 hover:shadow-primary/40"
                             >
                                 Ir para o Dashboard

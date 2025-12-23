@@ -241,6 +241,15 @@ const App: React.FC = () => {
   const editalAtivo = useEditalStore(state => state.editalAtivo);
   const { closeAllModals } = useModalStore();
 
+  // Detectar se estamos no fluxo de recovery de senha (ANTES de qualquer autenticação)
+  const [isRecoveryMode, setIsRecoveryMode] = useState(() => {
+    // Verificar hash da URL para token de recovery
+    const hash = window.location.hash;
+    const isRecovery = hash.includes('type=recovery') ||
+      window.location.pathname === '/reset-password';
+    return isRecovery;
+  });
+
   // Usar hook de navegação para obter view atual e função de navegação
   const { currentView, setActiveView } = useNavigation();
 
@@ -359,6 +368,13 @@ const App: React.FC = () => {
     }, 3000); // Reset after 3 seconds of inactivity
   };
 
+  // PRIMEIRO: Verificar se estamos no fluxo de recovery de senha
+  // Isso deve vir ANTES de qualquer outra verificação (loading, autenticação)
+  // porque o Supabase automaticamente autentica o usuário com o token de recovery
+  if (isRecoveryMode) {
+    return <ResetPasswordPage />;
+  }
+
   if (isAppLoading) {
     return (
       <div className="w-full h-screen flex flex-col items-center justify-center bg-background text-foreground">
@@ -367,14 +383,6 @@ const App: React.FC = () => {
         <p className="text-muted-foreground">Aguarde um momento.</p>
       </div>
     );
-  }
-
-  // Verificar se estamos na rota de reset de senha (não requer autenticação)
-  const isResetPasswordRoute = window.location.pathname === '/reset-password' ||
-    window.location.hash.includes('type=recovery');
-
-  if (isResetPasswordRoute) {
-    return <ResetPasswordPage />;
   }
 
   if (!isAuthenticated) {
