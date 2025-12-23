@@ -246,7 +246,8 @@ const App: React.FC = () => {
     // Verificar hash da URL para token de recovery
     const hash = window.location.hash;
     const isRecovery = hash.includes('type=recovery') ||
-      window.location.pathname === '/reset-password';
+      window.location.pathname === '/reset-password' ||
+      (window as any).__IS_RECOVERY_FLOW__ === true;
     return isRecovery;
   });
 
