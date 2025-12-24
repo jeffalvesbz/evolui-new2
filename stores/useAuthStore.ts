@@ -56,6 +56,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         },
       });
       if (error) throw error;
+
+      // Disparar evento de conversão GA4/Google Ads
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'sign_up', {
+          method: 'email'
+        });
+      }
     } catch (error) {
       console.error("Signup failed:", error);
       throw error;
