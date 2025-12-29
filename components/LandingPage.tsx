@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
+import { PricingSection } from './PricingSection';
 import {
     CheckCircle2Icon,
     BrainCircuitIcon,
@@ -414,6 +415,10 @@ export const LandingPage: React.FC = () => {
                         </div>
                     </div>
                 </section>
+
+
+                {/* 💲 PREÇOS */}
+                <PricingSection />
 
                 {/* ❓ FAQ */}
                 <section className="py-24 px-6">

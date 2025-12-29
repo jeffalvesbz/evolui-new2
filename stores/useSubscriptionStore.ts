@@ -260,9 +260,9 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
     const current = state.quizQuestionsGeneratedToday;
 
-    // Free: sem acesso a quiz IA
+    // Free: 5 questões/dia (Degustação)
     if (!isActive && state.planType === 'free') {
-      return false;
+      return (current + questionCount) <= 5;
     }
 
     // Pro: 30 questões/dia
@@ -282,7 +282,7 @@ export const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const state = get();
     const isActive = state.hasActiveSubscription() || state.isTrialActive();
 
-    if (!isActive && state.planType === 'free') return 0;
+    if (!isActive && state.planType === 'free') return 5;
     if (state.planType === 'pro' && isActive) return 30;
     if (state.planType === 'premium' && isActive) return 100;
     return 0;

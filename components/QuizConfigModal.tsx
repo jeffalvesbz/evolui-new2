@@ -226,7 +226,7 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                         {/* Configurações Gerais */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Coluna Esquerda: Quantidade e Matéria */}
-                            <div className="space-y-8">
+                            <div className="flex flex-col gap-6 min-h-0">
                                 {/* Número de Questões */}
                                 <section>
                                     <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -261,7 +261,7 @@ export const QuizConfigModal: React.FC<QuizConfigModalProps> = ({
                                         <BookOpenIcon className="w-4 h-4 text-primary" />
                                         Disciplina
                                     </h3>
-                                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-2 custom-scrollbar max-h-[50vh]">
                                         {disciplinas.map((disciplina) => (
                                             <button
                                                 key={disciplina.id}

@@ -1001,7 +1001,7 @@ const TrilhaSemanal: React.FC = () => {
                         setBuscaModal('');
                         setDisciplinaFiltro(null);
                     }}>
-                        <div className="bg-card border-2 border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-card border-2 border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                             <div className="p-3 sm:p-4 border-b border-border flex items-start sm:items-center justify-between gap-2 flex-shrink-0">
                                 <div className="flex-1 min-w-0">
                                     <h2 className="text-lg sm:text-xl font-bold truncate">Adicionar à Trilha</h2>
@@ -1065,32 +1065,17 @@ const TrilhaSemanal: React.FC = () => {
                                         className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 rounded-lg border border-border bg-background text-xs sm:text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                     />
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                    <button
-                                        onClick={() => setDisciplinaFiltro(null)}
-                                        className={`px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${disciplinaFiltro === null
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                            }`}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <select
+                                        value={disciplinaFiltro || ''}
+                                        onChange={(e) => setDisciplinaFiltro(e.target.value || null)}
+                                        className="flex-1 min-w-[200px] px-3 py-2 rounded-lg border border-border bg-background text-xs sm:text-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                                     >
-                                        Todas
-                                    </button>
-                                    {disciplinas && disciplinas.length > 0 ? (
-                                        disciplinas.map(d => (
-                                            <button
-                                                key={d.id}
-                                                onClick={() => setDisciplinaFiltro(d.id)}
-                                                className={`px-2 sm:px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-colors truncate max-w-[150px] sm:max-w-none ${disciplinaFiltro === d.id
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                                    }`}
-                                            >
-                                                {d.nome}
-                                            </button>
-                                        ))
-                                    ) : (
-                                        <span className="text-[10px] sm:text-xs text-muted-foreground">Nenhuma disciplina disponível</span>
-                                    )}
+                                        <option value="">Todas as disciplinas</option>
+                                        {disciplinas && disciplinas.map(d => (
+                                            <option key={d.id} value={d.id}>{d.nome}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="flex items-center gap-1.5 sm:gap-2">
                                     <button
