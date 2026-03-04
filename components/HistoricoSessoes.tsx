@@ -84,7 +84,7 @@ const HistoricoSessoes: React.FC<HistoricoSessoesProps> = ({ historico, onEdit, 
                                             <div className="flex items-center gap-3">
                                                 <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
                                                     <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 text-muted-foreground" /><span className="text-lg font-bold text-foreground">{formatarTempo(item.duracao_minutos)}</span></div>
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold ${getOrigemBadge(item.origem)}`}>
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${getOrigemBadge(item.origem)}`}>
                                                         {item.origem === 'ciclo_estudos' ? 'Ciclo' : item.origem === 'trilha' ? 'Trilha' : item.origem?.charAt(0).toUpperCase() + item.origem?.slice(1)}
                                                     </span>
                                                 </div>
@@ -107,7 +107,7 @@ const HistoricoSessoes: React.FC<HistoricoSessoesProps> = ({ historico, onEdit, 
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
                                                         <div className="flex items-center gap-2"><ClockIcon className="w-4 h-4 text-muted-foreground" /><span className="text-lg font-bold text-foreground">{formatarTempo(item.duracao_minutos)}</span></div>
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-secondary/20 text-secondary">{item.precisao}% Acertos</span>
+                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-secondary/20 text-secondary">{item.precisao}% Acertos</span>
                                                     </div>
                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button onClick={() => onEdit(item)} className="p-2 rounded-lg text-primary hover:bg-primary/10" title="Editar"><EditIcon className="w-4 h-4" /></button>
@@ -116,9 +116,9 @@ const HistoricoSessoes: React.FC<HistoricoSessoesProps> = ({ historico, onEdit, 
                                                 </div>
                                             </div>
                                             <div className="mt-3 pt-3 border-t border-border text-xs grid grid-cols-3 gap-2 text-center">
-                                                <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded font-semibold">Acertos: {item.acertos}</div>
-                                                <div className="p-1.5 bg-red-500/10 text-red-400 rounded font-semibold">Erros: {item.erros}</div>
-                                                <div className="p-1.5 bg-yellow-500/10 text-yellow-400 rounded font-semibold">Brancos: {item.brancos}</div>
+                                                <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-full font-semibold">Acertos: {item.acertos}</div>
+                                                <div className="p-1.5 bg-red-500/10 text-red-400 rounded-full font-semibold">Erros: {item.erros}</div>
+                                                <div className="p-1.5 bg-yellow-500/10 text-yellow-400 rounded-full font-semibold">Brancos: {item.brancos}</div>
                                             </div>
                                         </>
                                     )}

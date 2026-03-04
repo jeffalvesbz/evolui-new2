@@ -143,39 +143,58 @@ const WeeklyStudyChart: React.FC<{ data: { name: string; 'Tempo (min)': number }
 
 const DisciplineFocusChart: React.FC<{ data: { name: string; value: number }[] }> = ({ data }) => {
   const COLORS = ['#8B5CF6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#ef4444'];
-  // Consider tablet as mobile for this chart layout to prevent legend clipping
-  const isMobile = useIsMobile(1024);
+  const chartHeight = Math.max(200, data.length * 40 + 40);
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 280 : 250}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy={isMobile ? "35%" : "50%"}
-          labelLine={false}
-          outerRadius={isMobile ? 60 : 90}
-          innerRadius={isMobile ? 40 : 60}
-          fill="#8884d8"
-          dataKey="value"
-          paddingAngle={5}
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip content={<CustomPieTooltip />} />
-        <Legend
-          iconSize={10}
-          layout={isMobile ? 'horizontal' : 'vertical'}
-          verticalAlign={isMobile ? 'bottom' : 'middle'}
-          align={isMobile ? 'center' : 'right'}
-          wrapperStyle={{
-            fontSize: isMobile ? '0.75rem' : '0.875rem',
-            color: 'var(--color-muted-foreground)',
-            paddingTop: isMobile ? '10px' : '0'
-          }}
+    <ResponsiveContainer width="100%" height={chartHeight}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
+        barSize={20}
+      >
+        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" opacity={0.5} />
+        <XAxis
+          type="number"
+          stroke="var(--color-muted-foreground)"
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(value: number) => formatStudyDuration(value)}
         />
-      </PieChart>
+        <YAxis
+          type="category"
+          dataKey="name"
+          stroke="var(--color-muted-foreground)"
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+          width={130}
+          tick={({ x, y, payload }: any) => (
+            <g transform={`translate(${0},${y})`}>
+              <text x={0} y={0} dy={4} textAnchor="start" fill="var(--color-muted-foreground)" fontSize={11} className="font-medium">
+                {payload.value.length > 22 ? `${payload.value.substring(0, 22)}…` : payload.value}
+              </text>
+            </g>
+          )}
+        />
+        <Tooltip
+          cursor={{ fill: 'var(--color-accent)', opacity: 0.2 }}
+          contentStyle={{
+            backgroundColor: 'rgba(15, 23, 42, 0.98)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '0.75rem',
+            padding: '12px',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+          }}
+          itemStyle={{ color: '#ffffff' }}
+          formatter={(value: number) => [formatStudyDuration(value), 'Tempo']}
+        />
+        <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+          {data.map((_entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 };
@@ -762,7 +781,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                         value={safeGoalMinutes}
                         onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setGoalMinutes(Number(event.target.value))}
                         aria-label="Definir meta diaria"
-                        className="rounded-md border border-border bg-input px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        className="rounded-full border border-border bg-input px-2 py-1 text-xs font-semibold text-foreground shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         {goalOptions.map((option) => (
                           <option key={option} value={option}>
@@ -782,7 +801,7 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveView }) => {
                   <div className="flex items-center justify-between text-sm mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">Meta semanal</span>
-                      <span className="rounded-md border border-border bg-input px-2 py-1 text-xs font-semibold text-foreground">
+                      <span className="rounded-full border border-border bg-input px-3 py-1 text-xs font-semibold text-foreground">
                         {safeWeeklyGoalHours}h
                       </span>
                     </div>

@@ -40,24 +40,21 @@ const NavItem: React.FC<{ icon: React.ReactNode; label: string; isActive: boolea
     <div className="relative group">
       <button
         onClick={onClick}
-        className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3.5 px-4'} py-3.5 rounded-xl transition-all duration-200 ease-out relative text-sm ${isActive
-          ? 'bg-primary/10 text-white shadow-[0_0_20px_rgba(139,92,246,0.15)] border border-primary/20'
-          : 'text-muted-foreground hover:bg-white/5 hover:text-white hover:translate-x-0.5'
+        className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2' : 'space-x-3.5 px-4'} py-3.5 rounded-xl transition-colors duration-200 ease-out relative text-sm font-medium ${isActive
+          ? 'bg-white/10 text-white border border-white/5'
+          : 'text-muted-foreground hover:bg-white/5 hover:text-white border border-transparent'
           }`}
         aria-label={label}
       >
         {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-gradient-to-b from-primary to-secondary rounded-r-full shadow-[0_0_10px_rgba(139,92,246,0.5)]"></div>
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary rounded-r-full shadow-[0_0_8px_rgba(139,92,246,0.4)]"></div>
         )}
-        <div className={`w-5 h-5 flex-shrink-0 transition-all duration-200 ${isActive ? 'text-primary scale-110' : 'group-hover:text-white group-hover:scale-105'}`}>{icon}</div>
+        <div className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${isActive ? 'text-primary' : 'group-hover:text-white'}`}>{icon}</div>
         {!isCollapsed && (
           <>
-            <span className={`flex-1 text-left font-medium transition-colors duration-200 ${isActive ? 'text-white' : ''}`}>{label}</span>
+            <span className={`flex-1 text-left transition-colors duration-200 ${isActive ? 'text-white' : ''}`}>{label}</span>
             {showBadge && (
-              <div className={`p-1 rounded-md transition-all duration-200 ${premiumOnly
-                ? 'bg-primary/10 text-primary shadow-[0_0_10px_rgba(139,92,246,0.2)]'
-                : 'bg-secondary/10 text-secondary shadow-[0_0_10px_rgba(6,182,212,0.2)]'
-                }`} title={premiumOnly ? 'Exclusivo Premium' : 'Exclusivo Pro'}>
+              <div className="p-1 rounded-md bg-white/5 text-muted-foreground transition-colors duration-200 border border-white/5" title={premiumOnly ? 'Exclusivo Premium' : 'Exclusivo Pro'}>
                 <LockIcon className="w-3 h-3" />
               </div>
             )}
@@ -136,9 +133,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
               >
                 <MenuIcon className="w-5 h-5" />
               </button>
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-2xl shadow-lg">E</div>
+              <div className="relative group flex-shrink-0">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur-sm opacity-20 group-hover:opacity-40 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-xl shadow-md border border-white/10">E</div>
               </div>
               <div>
                 <h1 className="text-lg font-bold text-white tracking-wide font-display">ELEVA</h1>
@@ -155,9 +152,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
               >
                 <MenuIcon className="w-5 h-5" />
               </button>
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-2xl shadow-lg">E</div>
+              <div className="relative group flex-shrink-0">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-xl blur-sm opacity-20 group-hover:opacity-40 transition duration-300"></div>
+                <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white w-10 h-10 flex items-center justify-center rounded-xl font-bold text-xl shadow-md border border-white/10">E</div>
               </div>
             </>
           )}
@@ -190,9 +187,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                   setActiveView('pagamento');
                   onClose();
                 }}
-                className="w-full p-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl font-bold text-sm transition-all duration-300 transform hover:scale-[1.02] shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2 group border border-white/10"
+                className="w-full p-3.5 bg-[#1e293b] hover:bg-[#253245] border border-amber-500/20 hover:border-amber-500/40 text-amber-500 hover:text-amber-400 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 group relative overflow-hidden"
               >
-                <TrophyIcon className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
+                <TrophyIcon className="w-4 h-4 transition-transform" />
                 <span className="font-display tracking-wide">FAZER UPGRADE</span>
               </button>
             )}
@@ -207,11 +204,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                   href="https://wa.me/5511999999999"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 p-3 bg-green-500/10 rounded-xl hover:bg-green-500/20 transition-colors border border-green-500/10 group"
+                  className="w-full flex items-center justify-center gap-2 p-3 bg-white/5 rounded-xl hover:bg-green-500/10 transition-colors border border-white/5 hover:border-green-500/20 group"
                   title="Suporte via WhatsApp"
                 >
-                  <MessageCircleIcon className="w-4 h-4 text-green-400 group-hover:text-green-300 transition-colors" />
-                  <span className="font-medium text-sm text-green-400 group-hover:text-green-300 transition-colors">Suporte via WhatsApp</span>
+                  <MessageCircleIcon className="w-4 h-4 text-muted-foreground group-hover:text-green-400 transition-colors" />
+                  <span className="font-medium text-sm text-muted-foreground group-hover:text-green-400 transition-colors">Suporte via WhatsApp</span>
                 </a>
 
                 <div className="flex items-center gap-2">
@@ -227,8 +224,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                     <SettingsIcon className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
                   </button>
 
-                  <button onClick={logout} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors border border-red-500/10 hover:border-red-500/20 flex-shrink-0" title="Sair">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <button onClick={logout} className="p-3 bg-white/5 text-muted-foreground rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-colors border border-white/5 hover:border-red-500/20 flex-shrink-0 group" title="Sair">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                       <polyline points="16 17 21 12 16 7"></polyline>
                       <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -243,10 +240,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                   href="https://wa.me/5511999999999"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full p-3 bg-green-500/10 rounded-xl hover:bg-green-500/20 transition-colors border border-green-500/10 group flex items-center justify-center"
+                  className="w-full p-3 bg-white/5 rounded-xl hover:bg-green-500/10 transition-colors border border-white/5 hover:border-green-500/20 group flex items-center justify-center"
                   title="Suporte via WhatsApp"
                 >
-                  <MessageCircleIcon className="w-5 h-5 text-green-400 group-hover:text-green-300 transition-colors" />
+                  <MessageCircleIcon className="w-5 h-5 text-muted-foreground group-hover:text-green-400 transition-colors" />
                 </a>
 
                 <button
@@ -260,8 +257,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isOpen, on
                   <SettingsIcon className="w-5 h-5 text-muted-foreground group-hover:text-white transition-colors" />
                 </button>
 
-                <button onClick={logout} className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 transition-colors border border-red-500/10 hover:border-red-500/20 flex items-center justify-center w-full" title="Sair">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <button onClick={logout} className="p-3 bg-white/5 text-muted-foreground rounded-xl hover:bg-red-500/10 hover:text-red-400 transition-colors border border-white/5 hover:border-red-500/20 flex items-center justify-center w-full group" title="Sair">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>

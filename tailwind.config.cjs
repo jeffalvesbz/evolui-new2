@@ -41,10 +41,10 @@ module.exports = {
         "full": "9999px"
       },
       boxShadow: {
-        'subtle': '0 4px 20px rgba(0, 0, 0, 0.08)',
-        'subtle-dark': '0 10px 30px rgba(0, 0, 0, 0.3)',
-        'glow': '0 0 20px rgba(139, 92, 246, 0.3)',
-        'neon': '0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3)',
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.04)',
+        'subtle-dark': '0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 4px 8px 0 rgba(0, 0, 0, 0.1)',
+        'glow': '0 0 15px rgba(139, 92, 246, 0.15)',
+        'neon': '0 0 8px rgba(139, 92, 246, 0.2), 0 0 16px rgba(139, 92, 246, 0.15)',
       }
     },
   },

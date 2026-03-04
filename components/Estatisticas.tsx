@@ -25,7 +25,8 @@ import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, LabelList } from 'recharts';
-import { subDays, format } from 'date-fns';
+import { subDays, format, startOfWeek, endOfWeek, subWeeks, eachWeekOfInterval, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isSameMonth, isSameWeek } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { PeakHoursChart } from './PeakHoursChart';
 import { TopicPerformance } from './TopicPerformance';
@@ -39,14 +40,25 @@ const formatStudyDuration = (minutes: number) => {
     return `${hours}h ${remaining}min`;
 };
 
-const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: string | number; color: string; }> = ({ icon: Icon, title, value, color }) => (
-    <Card className="border-border shadow-md">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: string | number; color: string; trend?: number; trendLabel?: string }> = ({ icon: Icon, title, value, color, trend, trendLabel }) => (
+    <Card className="border-border shadow-md overflow-hidden relative group">
+        <div className={`absolute inset-0 bg-gradient-to-br from-${color.replace('text-', '')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+        <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            <Icon className={`w-5 h-5 ${color}`} />
+            <div className={`p-2 rounded-md bg-${color.replace('text-', '')}/10`}>
+                <Icon className={`w-4 h-4 ${color}`} />
+            </div>
         </CardHeader>
-        <CardContent>
-            <div className="text-3xl font-bold text-foreground">{value}</div>
+        <CardContent className="relative z-10">
+            <div className="text-3xl font-bold text-foreground tracking-tight">{value}</div>
+            {trend !== undefined && (
+                <div className="flex items-center gap-1.5 mt-2">
+                    <span className={`text-xs font-semibold flex items-center gap-0.5 ${trend > 0 ? 'text-emerald-500' : trend < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {trend > 0 ? '↑' : trend < 0 ? '↓' : '−'} {Math.abs(trend)}%
+                    </span>
+                    {trendLabel && <span className="text-[10px] text-muted-foreground/80 lowercase">{trendLabel}</span>}
+                </div>
+            )}
         </CardContent>
     </Card>
 );
@@ -61,6 +73,8 @@ const Estatisticas: React.FC = () => {
     const todosSimulados = useStudyStore(state => state.simulations);
     const { streak } = useUnifiedStreak();
     const { planType } = useSubscriptionStore();
+    const [timeRange, setTimeRange] = React.useState<'daily' | 'weekly' | 'monthly'>('daily');
+    const [sortConfig, setSortConfig] = React.useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
 
     // Filtrar dados por studyPlanId para mostrar apenas do edital ativo
     const sessoes = editalAtivo?.id
@@ -79,12 +93,28 @@ const Estatisticas: React.FC = () => {
     // --- Memoized Calculations ---
 
     const generalStats = useMemo(() => {
+        const hoje = new Date();
+        const startOfThisWeekDate = startOfWeek(hoje);
+        const startOfLastWeekDate = subWeeks(startOfThisWeekDate, 1);
+
+        const sessoesThisWeek = sessoes.filter(s => new Date(s.data_estudo) >= startOfThisWeekDate);
+        const sessoesLastWeek = sessoes.filter(s => {
+            const d = new Date(s.data_estudo);
+            return d >= startOfLastWeekDate && d < startOfThisWeekDate;
+        });
+
+        const minutosThisWeek = sessoesThisWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
+        const minutosLastWeek = sessoesLastWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
+        const tempoTrend = minutosLastWeek > 0 ? Math.round(((minutosThisWeek - minutosLastWeek) / minutosLastWeek) * 100) : (minutosThisWeek > 0 ? 100 : 0);
+
         const totalMinutosEstudo = sessoes.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
         const totalMinutosSimulado = simulados.reduce((acc, s) => acc + s.duration_minutes, 0);
         const totalMinutos = totalMinutosEstudo + totalMinutosSimulado;
 
         const totalSessoes = sessoes.length;
         const totalAtividades = totalSessoes + simulados.length;
+        const sessoesTrend = sessoesLastWeek.length > 0 ? Math.round(((sessoesThisWeek.length - sessoesLastWeek.length) / sessoesLastWeek.length) * 100) : (sessoesThisWeek.length > 0 ? 100 : 0);
+
         const mediaSessao = totalAtividades > 0 ? totalMinutos / totalAtividades : 0;
         const progressoEdital = getAverageProgress();
 
@@ -93,6 +123,8 @@ const Estatisticas: React.FC = () => {
             mediaSessao: `${mediaSessao.toFixed(0)} min`,
             progressoEdital: `${progressoEdital.toFixed(0)}%`,
             totalSessoes: totalAtividades,
+            tempoTrend,
+            sessoesTrend
         };
     }, [sessoes, simulados, getAverageProgress]);
 
@@ -224,23 +256,113 @@ const Estatisticas: React.FC = () => {
             .sort((a, b) => b.value - a.value);
     }, [sessoes, simulados, findTopicById]);
 
-    const dailyPerformanceLast30Days = useMemo(() => {
+    const performanceChartData = useMemo(() => {
         const hoje = new Date();
-        const dias = Array.from({ length: 30 }, (_, i) => subDays(hoje, 29 - i));
-        return dias.map(dia => {
-            const diaStr = dia.toDateString();
-            const sessoesDoDia = sessoes.filter(s => new Date(s.data_estudo).toDateString() === diaStr);
-            const tempoEstudoMinutos = Math.round(sessoesDoDia.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60);
 
-            const simuladosDoDia = simulados.filter(s => new Date(s.date).toDateString() === diaStr);
-            const tempoSimuladoMinutos = simuladosDoDia.reduce((acc, s) => acc + s.duration_minutes, 0);
+        // Helper to parse date string to local Date object at start of day
+        // This prevents timezone shifts when parsing YYYY-MM-DD
+        const parseDate = (dateStr: string) => {
+            if (!dateStr) return new Date();
+            // If it's YYYY-MM-DD, append time to force local parsing
+            if (dateStr.length === 10 && dateStr.includes('-')) {
+                return new Date(`${dateStr}T00:00:00`);
+            }
+            return new Date(dateStr);
+        };
 
-            return {
-                name: format(dia, 'dd/MM'),
-                'Tempo (min)': tempoEstudoMinutos + tempoSimuladoMinutos,
-            };
-        });
-    }, [sessoes, simulados]);
+        if (timeRange === 'daily') {
+            const dias = Array.from({ length: 30 }, (_, i) => subDays(hoje, 29 - i));
+            return dias.map(dia => {
+                const diaStr = dia.toDateString();
+                const sessoesDoDia = sessoes.filter(s => parseDate(s.data_estudo).toDateString() === diaStr);
+                const tempoEstudoMinutos = sessoesDoDia.reduce((acc, s) => acc + s.tempo_estudado, 0) / 60;
+
+                const simuladosDoDia = simulados.filter(s => parseDate(s.date).toDateString() === diaStr);
+                const tempoSimuladoMinutos = simuladosDoDia.reduce((acc, s) => acc + s.duration_minutes, 0);
+
+                const totalMinutes = tempoEstudoMinutos + tempoSimuladoMinutos;
+                const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+                return {
+                    name: format(dia, 'dd/MM'),
+                    value: totalHours,
+                    unit: 'h'
+                };
+            });
+        }
+
+        if (timeRange === 'weekly') {
+            const end = endOfWeek(hoje);
+            const start = subWeeks(end, 11);
+            const weeks = eachWeekOfInterval({ start, end });
+
+            return weeks.map(weekStart => {
+                const weekEnd = endOfWeek(weekStart);
+
+                const tempoEstudoSeconds = sessoes.reduce((acc, s) => {
+                    const d = parseDate(s.data_estudo);
+                    if (d >= weekStart && d <= weekEnd) {
+                        return acc + s.tempo_estudado;
+                    }
+                    return acc;
+                }, 0);
+
+                const tempoSimuladoMinutes = simulados.reduce((acc, s) => {
+                    const d = parseDate(s.date);
+                    if (d >= weekStart && d <= weekEnd) {
+                        return acc + s.duration_minutes;
+                    }
+                    return acc;
+                }, 0);
+
+                const totalMinutes = (tempoEstudoSeconds / 60) + tempoSimuladoMinutes;
+                const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+                return {
+                    name: format(weekStart, 'dd/MM'),
+                    value: totalHours,
+                    unit: 'h'
+                };
+            });
+        }
+
+        if (timeRange === 'monthly') {
+            const end = endOfMonth(hoje);
+            const start = subMonths(end, 11);
+            const months = eachMonthOfInterval({ start, end });
+
+            return months.map(monthStart => {
+                const monthEnd = endOfMonth(monthStart);
+
+                const tempoEstudoSeconds = sessoes.reduce((acc, s) => {
+                    const d = parseDate(s.data_estudo);
+                    if (d >= monthStart && d <= monthEnd) {
+                        return acc + s.tempo_estudado;
+                    }
+                    return acc;
+                }, 0);
+
+                const tempoSimuladoMinutes = simulados.reduce((acc, s) => {
+                    const d = parseDate(s.date);
+                    if (d >= monthStart && d <= monthEnd) {
+                        return acc + s.duration_minutes;
+                    }
+                    return acc;
+                }, 0);
+
+                const totalMinutes = (tempoEstudoSeconds / 60) + tempoSimuladoMinutes;
+                const totalHours = Math.round((totalMinutes / 60) * 10) / 10;
+
+                return {
+                    name: format(monthStart, 'MMM/yy'),
+                    value: totalHours,
+                    unit: 'h'
+                };
+            });
+        }
+
+        return [];
+    }, [sessoes, simulados, timeRange]);
 
     const simulationTrend = useMemo(() => {
         return simulados
@@ -253,6 +375,61 @@ const Estatisticas: React.FC = () => {
                 };
             });
     }, [simulados]);
+
+    const sortedDetalhamentoDisciplinas = useMemo(() => {
+        let sortableItems = [...performanceStats.detalhamentoDisciplinas];
+        if (sortConfig !== null) {
+            sortableItems.sort((a, b) => {
+                let aValue: number | string = 0;
+                let bValue: number | string = 0;
+
+                if (sortConfig.key === 'nome') {
+                    aValue = a.nome;
+                    bValue = b.nome;
+                } else if (sortConfig.key === 'total') {
+                    aValue = a.total;
+                    bValue = b.total;
+                } else if (sortConfig.key === 'certas') {
+                    aValue = a.certas;
+                    bValue = b.certas;
+                } else if (sortConfig.key === 'erradas') {
+                    aValue = a.erradas;
+                    bValue = b.erradas;
+                } else if (sortConfig.key === 'aproveitamento') {
+                    aValue = a.total > 0 ? (a.certas / a.total) : 0;
+                    bValue = b.total > 0 ? (b.certas / b.total) : 0;
+                } else if (sortConfig.key === 'aprov_liquido') {
+                    aValue = a.total > 0 ? (a.saldo / a.total) : 0;
+                    bValue = b.total > 0 ? (b.saldo / b.total) : 0;
+                } else if (sortConfig.key === 'saldo') {
+                    aValue = a.saldo;
+                    bValue = b.saldo;
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems;
+    }, [performanceStats.detalhamentoDisciplinas, sortConfig]);
+
+    const handleSort = (key: string) => {
+        let direction: 'asc' | 'desc' = 'desc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'desc') {
+            direction = 'asc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const SortIcon = ({ columnKey }: { columnKey: string }) => {
+        if (!sortConfig || sortConfig.key !== columnKey) return <span className="text-muted-foreground/30 ml-1 text-[10px] w-2 inline-block">↕</span>;
+        return <span className="text-primary ml-1 text-xs font-bold w-2 inline-block">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+    };
 
 
     const COLORS = ['#3B82F6', '#22C55E', '#F97316', '#A855F7', '#EC4899', '#6366F1', '#F59E0B'];
@@ -270,10 +447,10 @@ const Estatisticas: React.FC = () => {
                     Visão Geral
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-                    <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" />
+                    <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs sem. anterior" />
                     <MetricCard icon={TrophyIcon} title="Progresso" value={generalStats.progressoEdital} color="text-secondary" />
                     <MetricCard icon={FlameIcon} title="Sequência" value={`${streak} dias`} color="text-orange-500" />
-                    <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" />
+                    <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" trend={generalStats.sessoesTrend} trendLabel="vs sem. anterior" />
                     <MetricCard icon={CheckCircle2Icon} title="Questões" value={performanceStats.totalQuestoesResolvidas} color="text-indigo-500" />
                     <MetricCard icon={TrendingUpIcon} title="Acerto Geral" value={performanceStats.taxaAcertoGeral} color="text-emerald-500" />
                     <MetricCard icon={BookOpenCheckIcon} title="Taxa Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
@@ -304,7 +481,7 @@ const Estatisticas: React.FC = () => {
                                         <BarChart
                                             data={studyTimeDistribution}
                                             layout="vertical"
-                                            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                                            margin={{ top: 5, right: 100, left: 10, bottom: 5 }}
                                             barSize={32}
                                         >
                                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--color-border)" opacity={0.5} />
@@ -340,14 +517,15 @@ const Estatisticas: React.FC = () => {
                                             />
                                             <Bar
                                                 dataKey="value"
-                                                fill="var(--color-primary)"
                                                 radius={[0, 4, 4, 0]}
-                                                background={{ fill: 'var(--color-muted)', opacity: 0.2, radius: [0, 4, 4, 0] }}
                                             >
+                                                {studyTimeDistribution.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
                                                 <LabelList
                                                     dataKey="value"
-                                                    position="insideRight"
-                                                    fill="white"
+                                                    position="right"
+                                                    fill="var(--color-foreground)"
                                                     formatter={(value: number) => formatStudyDuration(value)}
                                                     style={{ fontSize: '12px', fontWeight: 'bold' }}
                                                 />
@@ -384,8 +562,31 @@ const Estatisticas: React.FC = () => {
 
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><BarChart3Icon className="w-5 h-5 text-primary" /> Desempenho Diário (30 dias)</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="flex items-center gap-2">
+                            <BarChart3Icon className="w-5 h-5 text-primary" />
+                            {timeRange === 'daily' ? 'Desempenho Diário' : timeRange === 'weekly' ? 'Desempenho Semanal' : 'Desempenho Mensal'}
+                        </CardTitle>
+                        <div className="flex bg-muted rounded-lg p-1 text-xs">
+                            <button
+                                onClick={() => setTimeRange('daily')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'daily' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Dia
+                            </button>
+                            <button
+                                onClick={() => setTimeRange('weekly')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'weekly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Sem
+                            </button>
+                            <button
+                                onClick={() => setTimeRange('monthly')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'monthly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Mês
+                            </button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <PremiumFeatureWrapper
@@ -395,16 +596,23 @@ const Estatisticas: React.FC = () => {
                             showPreview={true}
                         >
                             <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={dailyPerformanceLast30Days}>
+                                <BarChart data={performanceChartData}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                                     <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}m`} />
+                                    <YAxis
+                                        stroke="var(--color-muted-foreground)"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => `${value}h`}
+                                    />
                                     <Tooltip
                                         cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
                                         contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
                                         itemStyle={{ color: 'var(--color-foreground)' }}
+                                        formatter={(value: number) => [`${value}h`, 'Tempo']}
                                     />
-                                    <Bar dataKey="Tempo (min)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="value" name="Tempo (h)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </PremiumFeatureWrapper>
@@ -441,24 +649,56 @@ const Estatisticas: React.FC = () => {
                             showPreview={true}
                         >
                             {studyTimeDistribution.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie data={studyTimeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8">
-                                            {studyTimeDistribution.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-                                            itemStyle={{ color: 'var(--color-foreground)' }}
-                                            formatter={(value: number) => `${formatStudyDuration(value)}`}
-                                        />
-                                        <Legend iconSize={10} wrapperStyle={{ fontSize: '0.7rem', paddingTop: '10px' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <div className="flex flex-col items-center gap-4">
+                                    <ResponsiveContainer width="100%" height={200}>
+                                        <PieChart>
+                                            <Pie
+                                                data={studyTimeDistribution}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius={80}
+                                                innerRadius={50}
+                                                fill="#8884d8"
+                                                paddingAngle={3}
+                                                strokeWidth={0}
+                                            >
+                                                {studyTimeDistribution.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)', borderRadius: '8px' }}
+                                                itemStyle={{ color: 'var(--color-foreground)' }}
+                                                formatter={(value: number) => `${formatStudyDuration(value)}`}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="w-full max-h-[120px] overflow-y-auto space-y-1.5 px-1">
+                                        {studyTimeDistribution.map((item, index) => (
+                                            <div key={index} className="flex items-center justify-between text-xs gap-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span
+                                                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                                    />
+                                                    <span className="text-muted-foreground truncate">{item.name}</span>
+                                                </div>
+                                                <span className="text-foreground font-medium whitespace-nowrap">{formatStudyDuration(item.value)}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             ) : (
-                                <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
-                                    Nenhum estudo registrado.
+                                <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-3">
+                                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center ring-4 ring-muted/20">
+                                        <LayersIcon className="h-6 w-6 text-muted-foreground/50" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-foreground">Nenhum estudo registrado</p>
+                                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Inicie uma sessão de estudos para visualizar a distribuição do seu tempo.</p>
+                                    </div>
                                 </div>
                             )}
                         </PremiumFeatureWrapper>
@@ -507,8 +747,18 @@ const Estatisticas: React.FC = () => {
                                     </LineChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="flex items-center justify-center h-[300px] text-center text-muted-foreground text-sm">
-                                    {simulados.length > 0 ? "Registre mais simulados." : "Nenhum simulado."}
+                                <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-3">
+                                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center ring-4 ring-muted/20">
+                                        <FileTextIcon className="h-6 w-6 text-muted-foreground/50" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-foreground">
+                                            {simulados.length > 0 ? "Poucos dados coletados" : "Nenhum simulado"}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                                            {simulados.length > 0 ? "Continue resolvendo simulados para ver a tendência." : "Registre seus simulados para acompanhar sua evolução real."}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </PremiumFeatureWrapper>
@@ -525,25 +775,33 @@ const Estatisticas: React.FC = () => {
                     <div className="bg-card border border-border rounded-lg overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium">
+                                <thead className="bg-muted/50 text-muted-foreground font-medium select-none">
                                     <tr>
-                                        <th className="px-4 py-3">Disciplina</th>
-                                        <th className="px-4 py-3 text-center">Questões</th>
-                                        <th className="px-4 py-3 text-center text-green-600 dark:text-green-400">Certas</th>
-                                        <th className="px-4 py-3 text-center text-red-600 dark:text-red-400">Erradas</th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aproveitamento
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('nome')}>
+                                            Disciplina <SortIcon columnKey="nome" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aprov. Líquido
+                                        <th className="px-4 py-3 text-center cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('total')}>
+                                            Questões <SortIcon columnKey="total" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Saldo
+                                        <th className="px-4 py-3 text-center text-green-600 dark:text-green-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('certas')}>
+                                            Certas <SortIcon columnKey="certas" />
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-red-600 dark:text-red-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('erradas')}>
+                                            Erradas <SortIcon columnKey="erradas" />
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aproveitamento')}>
+                                            Aproveitamento <SortIcon columnKey="aproveitamento" />
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aprov_liquido')}>
+                                            Aprov. Líquido <SortIcon columnKey="aprov_liquido" />
+                                        </th>
+                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('saldo')}>
+                                            Saldo <SortIcon columnKey="saldo" />
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
-                                    {performanceStats.detalhamentoDisciplinas.map((d, i) => {
+                                    {sortedDetalhamentoDisciplinas.map((d, i) => {
                                         const aproveitamento = d.total > 0 ? Math.round((d.certas / d.total) * 100) : 0;
                                         return (
                                             <tr key={i} className="hover:bg-muted/30 transition-colors">
