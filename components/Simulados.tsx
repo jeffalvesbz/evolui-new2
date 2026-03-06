@@ -1,9 +1,22 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { SaveIcon, EditIcon, PlayCircleIcon, PlusCircleIcon, Trash2Icon } from './icons'
 import { toast } from './Sonner'
-import { useStudyStore, Simulation } from '../stores/useStudyStore'
+import { useStudyStore } from '../stores/useStudyStore'
 import { useEditalStore } from '../stores/useEditalStore'
 import { Modal } from './ui/BaseModal'
+
+export interface Simulation {
+  id: string;
+  name: string;
+  correct: number;
+  wrong: number;
+  blank?: number;
+  durationMinutes: number;
+  notes?: string;
+  date: string;
+  studyPlanId: string;
+  isCebraspe?: boolean;
+}
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -138,7 +151,7 @@ const Simulados = () => {
                 scoreClass = 'bg-yellow-500/20 text-yellow-400';
               } else {
                 scoreDisplay = totalQuestions ? Math.round((simulation.correct / totalQuestions) * 100) : 0;
-                scoreLabel = '% de acertos';
+                scoreLabel = 'de acertos';
                 scoreClass = 'bg-secondary/20 text-secondary';
               }
 
@@ -160,11 +173,12 @@ const Simulados = () => {
                       <button type="button" onClick={() => setDeleteTarget(simulation)} className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent bg-muted text-muted-foreground transition hover:border-red-500 hover:text-red-500"><Trash2Icon className="h-4 w-4" /></button>
                     </div>
                   </div>
-                  <div className="mt-4 grid gap-2 text-xs sm:grid-cols-4">
+                  <div className="mt-4 grid gap-2 text-xs grid-cols-2 sm:grid-cols-5">
                     <span className="rounded-lg bg-blue-500/20 px-3 py-2 text-center font-bold text-blue-400">Acertos: {simulation.correct}</span>
                     <span className="rounded-lg bg-red-500/20 px-3 py-2 text-center font-bold text-red-400">Erros: {simulation.wrong}</span>
-                    <span className="rounded-lg bg-yellow-500/20 px-3 py-2 text-center font-bold text-yellow-400">Brancos: {simulation.blank}</span>
-                    <span className="rounded-lg bg-muted/50 px-3 py-2 text-center font-bold text-foreground">Questões: {totalQuestions}</span>
+                    <span className="rounded-lg bg-yellow-500/20 px-3 py-2 text-center font-bold text-yellow-500">Brancos: {simulation.blank}</span>
+                    <span className="rounded-lg bg-purple-500/20 px-3 py-2 text-center font-bold text-purple-400">Líquidos: {simulation.correct - simulation.wrong}</span>
+                    <span className="rounded-lg bg-muted/50 px-3 py-2 text-center font-bold text-foreground">Total: {totalQuestions}</span>
                   </div>
                   {simulation.notes && <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">{simulation.notes}</p>}
                 </article>

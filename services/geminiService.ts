@@ -2709,12 +2709,14 @@ export const deleteRedacao = async (redacaoId: string): Promise<void> => {
 };
 
 // --- Custom CRUD for Simulados ---
-// NOTA: O banco de dados usa camelCase para estas colunas (não snake_case)
 const mapSimuladoToDb = (simuladoData: Partial<Simulation>) => {
-    const { studyPlanId, ...rest } = simuladoData;
-    // O banco usa camelCase: durationMinutes, isCebraspe
-    // Não precisa mapear, apenas remover studyPlanId
-    return rest;
+    const { studyPlanId, durationMinutes, isCebraspe, ...rest } = simuladoData as any;
+
+    const dbPayload: any = { ...rest };
+    if (durationMinutes !== undefined) dbPayload.duration_minutes = durationMinutes;
+    if (isCebraspe !== undefined) dbPayload.is_cebraspe = isCebraspe;
+
+    return dbPayload;
 };
 
 const mapDbToSimulado = (dbData: any): Simulation => {

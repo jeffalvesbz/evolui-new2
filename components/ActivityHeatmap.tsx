@@ -16,8 +16,19 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessoes }) => 
         const days = eachDayOfInterval({ start: startDate, end: today });
         const activityMap = new Map<string, number>();
 
+        // Helper to parse date string to local Date object at start of day
+        // This prevents timezone shifts when parsing YYYY-MM-DD
+        const parseDate = (dateStr: string) => {
+            if (!dateStr) return new Date();
+            // If it's YYYY-MM-DD, append time to force local parsing
+            if (dateStr.length === 10 && dateStr.includes('-')) {
+                return new Date(`${dateStr}T00:00:00`);
+            }
+            return new Date(dateStr);
+        };
+
         sessoes.forEach(sessao => {
-            const dateKey = format(new Date(sessao.data_estudo), 'yyyy-MM-dd');
+            const dateKey = format(parseDate(sessao.data_estudo), 'yyyy-MM-dd');
             const currentMinutes = activityMap.get(dateKey) || 0;
             activityMap.set(dateKey, currentMinutes + (sessao.tempo_estudado / 60));
         });

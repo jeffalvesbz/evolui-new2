@@ -74,14 +74,16 @@ export const BaseModal: React.FC<BaseModalProps> = ({
     const modalRef = useRef<HTMLDivElement>(null);
     const previousActiveElement = useRef<Element | null>(null);
 
-    // Handle ESC key
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (closeOnEsc && e.key === 'Escape') {
-            onClose();
-        }
-    }, [closeOnEsc, onClose]);
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            if (closeOnEsc && e.key === 'Escape') {
+                onClose();
+            }
+        },
+        [closeOnEsc, onClose]
+    );
 
-    // Lock body scroll and manage focus when modal opens
+    // Lock body scroll and manage focus when modal opens (runs only when isOpen changes)
     useEffect(() => {
         if (isOpen) {
             // Store the previously focused element
@@ -89,9 +91,6 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
             // Lock body scroll
             document.body.style.overflow = 'hidden';
-
-            // Add ESC listener
-            document.addEventListener('keydown', handleKeyDown);
 
             // Focus the modal
             setTimeout(() => {
@@ -109,8 +108,17 @@ export const BaseModal: React.FC<BaseModalProps> = ({
 
         return () => {
             document.body.style.overflow = '';
-            document.removeEventListener('keydown', handleKeyDown);
         };
+    }, [isOpen]);
+
+    // Add ESC listener (this might re-run if onClose changes, but won't steal focus)
+    useEffect(() => {
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+            return () => {
+                document.removeEventListener('keydown', handleKeyDown);
+            };
+        }
     }, [isOpen, handleKeyDown]);
 
     // Handle overlay click
