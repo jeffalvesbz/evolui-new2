@@ -110,7 +110,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
             </div>
 
             {/* Pergunta */}
-            <div className="bg-card/60 backdrop-blur-xl rounded-xl p-6 border border-white/10 mb-4">
+            <div className="bg-card/60 backdrop-blur-xl rounded-xl p-6 border border-border mb-4">
                 <h2 className="text-xl font-bold text-center mb-6 text-foreground">
                     {currentQuestion.flashcard.pergunta}
                 </h2>
