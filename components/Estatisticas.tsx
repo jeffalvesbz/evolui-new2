@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Skeleton } from './ui/Skeleton';
 import {
     BarChart3Icon,
     TrendingUpIcon,
@@ -81,6 +82,7 @@ const Estatisticas: React.FC = () => {
     // --- Data Hooks ---
     const { editalAtivo } = useEditalStore();
     const todasSessoes = useEstudosStore(state => state.sessoes);
+    const isLoadingEstudos = useEstudosStore(state => state.loading);
     const { getAverageProgress, findTopicById, disciplinas } = useDisciplinasStore();
     const todasRevisoes = useRevisoesStore(state => state.revisoes);
     const todosErros = useCadernoErrosStore(state => state.erros);
@@ -460,16 +462,30 @@ const Estatisticas: React.FC = () => {
                     <TargetIcon className="w-5 h-5 text-primary" />
                     Visão Geral
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                    <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs sem. anterior" />
-                    <MetricCard icon={TrophyIcon} title="Progresso" value={generalStats.progressoEdital} color="text-secondary" />
-                    <MetricCard icon={FlameIcon} title="Sequência" value={`${streak} dias`} color="text-orange-500" />
-                    <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" trend={generalStats.sessoesTrend} trendLabel="vs sem. anterior" />
-                    <MetricCard icon={CheckCircle2Icon} title="Questões" value={performanceStats.totalQuestoesResolvidas} color="text-indigo-500" />
-                    <MetricCard icon={TrendingUpIcon} title="Acerto Geral" value={performanceStats.taxaAcertoGeral} color="text-emerald-500" />
-                    <MetricCard icon={BookOpenCheckIcon} title="Taxa Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
-                    <MetricCard icon={FileTextIcon} title="Média Simulados" value={performanceStats.mediaAcertosSimulados} color="text-green-500" />
-                </div>
+                {isLoadingEstudos ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Skeleton className="h-3 w-20" />
+                                    <Skeleton variant="rect" className="h-8 w-8 rounded-md" />
+                                </div>
+                                <Skeleton className="h-8 w-24" />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                        <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs sem. anterior" />
+                        <MetricCard icon={TrophyIcon} title="Progresso" value={generalStats.progressoEdital} color="text-secondary" />
+                        <MetricCard icon={FlameIcon} title="Sequência" value={`${streak} dias`} color="text-orange-500" />
+                        <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" trend={generalStats.sessoesTrend} trendLabel="vs sem. anterior" />
+                        <MetricCard icon={CheckCircle2Icon} title="Questões" value={performanceStats.totalQuestoesResolvidas} color="text-indigo-500" />
+                        <MetricCard icon={TrendingUpIcon} title="Acerto Geral" value={performanceStats.taxaAcertoGeral} color="text-emerald-500" />
+                        <MetricCard icon={BookOpenCheckIcon} title="Taxa Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
+                        <MetricCard icon={FileTextIcon} title="Média Simulados" value={performanceStats.mediaAcertosSimulados} color="text-green-500" />
+                    </div>
+                )}
             </section>
 
 

@@ -66,7 +66,23 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
     };
 
     if (!session || !currentQuestion) {
-        return null;
+        return (
+            <div className="w-full max-w-lg mx-auto p-6 text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto ring-4 ring-muted/20">
+                    <CheckCircle2Icon className="w-8 h-8 text-muted-foreground/40" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Nenhuma questão disponível</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    Adicione flashcards ao seu deck para gerar um quiz. Quanto mais cards, mais perguntas!
+                </p>
+                <button
+                    onClick={onExit}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
+                >
+                    Voltar e adicionar flashcards
+                </button>
+            </div>
+        );
     }
 
     const progress = ((session.currentQuestionIndex + 1) / session.questions.length) * 100;

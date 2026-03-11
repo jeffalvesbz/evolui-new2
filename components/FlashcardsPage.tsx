@@ -400,19 +400,33 @@ const DefaultDecksSection: React.FC<{
                                 <p className="animate-pulse">Carregando biblioteca...</p>
                             </div>
                         ) : decks.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                                <TrophyIcon className="w-12 h-12 mb-4 opacity-20" />
-                                <p>Nenhum deck disponível no momento.</p>
+                            <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-4">
+                                <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center ring-4 ring-muted/20">
+                                    <TrophyIcon className="w-8 h-8 text-muted-foreground/40" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-foreground">Nenhum deck disponível</p>
+                                    <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                                        Os decks prontos aparecem aqui. Volte em breve ou crie seus próprios flashcards.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 min-h-[44px] bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
+                                >
+                                    Criar meus flashcards
+                                </button>
                             </div>
                         ) : filteredDecks.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                                <div className="opacity-20 mb-4">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <div className="flex flex-col items-center justify-center py-12 text-center px-4 space-y-2">
+                                <div className="opacity-30">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="11" cy="11" r="8"></circle>
                                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                     </svg>
                                 </div>
-                                <p>Nenhum resultado para "{searchQuery}"</p>
+                                <p className="font-medium text-foreground">Nenhum resultado</p>
+                                <p className="text-sm text-muted-foreground">Tente outro termo para "{searchQuery}"</p>
                             </div>
                         ) : (
                             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${!isPro ? 'opacity-30 pointer-events-none select-none filter blur-[1px]' : ''}`}>

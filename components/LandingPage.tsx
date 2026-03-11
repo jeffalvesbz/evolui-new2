@@ -113,6 +113,66 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
     );
 };
 
+// Fallback shown when the demo video fails to load
+const DemoFallback: React.FC = () => (
+    <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-[#0F0F11] to-[#0A0A0B] p-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl opacity-60 pointer-events-none select-none">
+            {[
+                { label: 'Tempo Total', value: '124h', icon: '⏱' },
+                { label: 'Sequência', value: '21 dias', icon: '🔥' },
+                { label: 'Acerto Geral', value: '78%', icon: '🎯' },
+                { label: 'Revisões', value: '92%', icon: '📚' },
+            ].map(c => (
+                <div key={c.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+                    <div className="text-2xl mb-1">{c.icon}</div>
+                    <div className="text-lg font-bold text-white">{c.value}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{c.label}</div>
+                </div>
+            ))}
+        </div>
+        <p className="text-sm text-muted-foreground/60 text-center">
+            Pré-visualização do dashboard
+        </p>
+    </div>
+);
+
+const VideoWithFallback: React.FC<{ isMuted: boolean; onToggleMute: () => void }> = ({ isMuted, onToggleMute }) => {
+    const [hasError, setHasError] = React.useState(false);
+    const [isLoaded, setIsLoaded] = React.useState(false);
+
+    if (hasError) {
+        return <DemoFallback />;
+    }
+
+    return (
+        <>
+            {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                    <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                </div>
+            )}
+            <video
+                src="/dashboard-demo.mp4"
+                autoPlay
+                loop
+                muted={isMuted}
+                playsInline
+                onLoadedData={() => setIsLoaded(true)}
+                onError={() => setHasError(true)}
+                className={`w-full h-full object-cover transition-opacity duration-500 ${isLoaded ? 'opacity-90 group-hover:opacity-100' : 'opacity-0'}`}
+            />
+            {isLoaded && (
+                <button
+                    onClick={onToggleMute}
+                    className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white/70 hover:text-white backdrop-blur-sm transition-all z-20"
+                >
+                    {isMuted ? <VolumeXIcon className="w-5 h-5" /> : <Volume2Icon className="w-5 h-5" />}
+                </button>
+            )}
+        </>
+    );
+};
+
 export const LandingPage: React.FC = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [initialAuthMode, setInitialAuthMode] = useState<'login' | 'signup'>('login');
@@ -244,22 +304,7 @@ export const LandingPage: React.FC = () => {
 
                             {/* Video Container */}
                             <div className="relative aspect-video bg-black/50 overflow-hidden group">
-                                <video
-                                    src="/dashboard-demo.mp4"
-                                    autoPlay
-                                    loop
-                                    muted={isMuted}
-                                    playsInline
-                                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
-                                />
-
-                                {/* Sound Toggle */}
-                                <button
-                                    onClick={() => setIsMuted(!isMuted)}
-                                    className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white/70 hover:text-white backdrop-blur-sm transition-all z-20"
-                                >
-                                    {isMuted ? <VolumeXIcon className="w-5 h-5" /> : <Volume2Icon className="w-5 h-5" />}
-                                </button>
+                                <VideoWithFallback isMuted={isMuted} onToggleMute={() => setIsMuted(!isMuted)} />
 
                                 {/* Overlay Gradient for smoother blend */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none" />
