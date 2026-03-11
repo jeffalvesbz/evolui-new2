@@ -11,7 +11,7 @@ interface MobileHeaderProps {
 
 const MobileHeader: React.FC<MobileHeaderProps> = ({ onOpenSidebar, theme, toggleTheme }) => {
   return (
-    <header className="sticky top-0 z-30 flex lg:hidden items-center justify-between h-[60px] px-4 border-b border-white/10 bg-card/50 backdrop-blur-lg">
+    <header className="sticky top-0 z-30 flex lg:hidden items-center justify-between h-[60px] px-4 border-b border-border bg-card/50 backdrop-blur-lg">
       <div className="flex items-center">
         <button onClick={onOpenSidebar} className="p-2 -ml-2 text-muted-foreground" aria-label="Abrir menu">
           <MenuIcon className="w-6 h-6" />

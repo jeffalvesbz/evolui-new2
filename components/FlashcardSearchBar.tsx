@@ -50,7 +50,7 @@ export const FlashcardSearchBar: React.FC<FlashcardSearchBarProps> = ({
                     placeholder="Buscar por pergunta, resposta ou tag..."
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    className="w-full pl-10 pr-10 py-2 bg-card/60 backdrop-blur-xl border border-white/10 rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full pl-10 pr-10 py-2 bg-card/60 backdrop-blur-xl border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
                 {hasActiveFilters && (
                     <button
@@ -68,7 +68,7 @@ export const FlashcardSearchBar: React.FC<FlashcardSearchBarProps> = ({
                 <div className="relative">
                     <button
                         onClick={() => setShowTagsDropdown(!showTagsDropdown)}
-                        className="flex items-center gap-2 px-3 py-2 bg-card/60 backdrop-blur-xl border border-white/10 rounded-lg text-sm text-foreground hover:border-primary/50 transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 bg-card/60 backdrop-blur-xl border border-border rounded-lg text-sm text-foreground hover:border-primary/50 transition-colors"
                     >
                         <TagIcon className="w-4 h-4" />
                         <span>Filtrar por tags</span>

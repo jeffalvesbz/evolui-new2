@@ -40,12 +40,25 @@ const formatStudyDuration = (minutes: number) => {
     return `${hours}h ${remaining}min`;
 };
 
-const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: string | number; color: string; trend?: number; trendLabel?: string }> = ({ icon: Icon, title, value, color, trend, trendLabel }) => (
+const metricColorMap: Record<string, { iconBg: string; gradientFrom: string }> = {
+    'text-primary':    { iconBg: 'bg-primary/10',    gradientFrom: 'from-primary/5' },
+    'text-secondary':  { iconBg: 'bg-secondary/10',  gradientFrom: 'from-secondary/5' },
+    'text-orange-500': { iconBg: 'bg-orange-500/10', gradientFrom: 'from-orange-500/5' },
+    'text-purple-500': { iconBg: 'bg-purple-500/10', gradientFrom: 'from-purple-500/5' },
+    'text-indigo-500': { iconBg: 'bg-indigo-500/10', gradientFrom: 'from-indigo-500/5' },
+    'text-emerald-500':{ iconBg: 'bg-emerald-500/10',gradientFrom: 'from-emerald-500/5' },
+    'text-blue-500':   { iconBg: 'bg-blue-500/10',   gradientFrom: 'from-blue-500/5' },
+    'text-green-500':  { iconBg: 'bg-green-500/10',  gradientFrom: 'from-green-500/5' },
+};
+
+const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: string | number; color: string; trend?: number; trendLabel?: string }> = ({ icon: Icon, title, value, color, trend, trendLabel }) => {
+    const colors = metricColorMap[color] ?? { iconBg: 'bg-primary/10', gradientFrom: 'from-primary/5' };
+    return (
     <Card className="border-border shadow-md overflow-hidden relative group">
-        <div className={`absolute inset-0 bg-gradient-to-br from-${color.replace('text-', '')}/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradientFrom} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
         <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-            <div className={`p-2 rounded-md bg-${color.replace('text-', '')}/10`}>
+            <div className={`p-2 rounded-md ${colors.iconBg}`}>
                 <Icon className={`w-4 h-4 ${color}`} />
             </div>
         </CardHeader>
@@ -61,7 +74,8 @@ const MetricCard: React.FC<{ icon: React.ElementType; title: string; value: stri
             )}
         </CardContent>
     </Card>
-);
+    );
+};
 
 const Estatisticas: React.FC = () => {
     // --- Data Hooks ---

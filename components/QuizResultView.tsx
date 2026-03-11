@@ -60,7 +60,7 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({ onRestart, onExi
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-card/60 backdrop-blur-xl rounded-xl p-6 border border-white/10 mb-4"
+                className="bg-card/60 backdrop-blur-xl rounded-xl p-6 border border-border mb-4"
             >
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="text-center">
@@ -98,7 +98,7 @@ export const QuizResultView: React.FC<QuizResultViewProps> = ({ onRestart, onExi
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-card/60 backdrop-blur-xl rounded-xl p-4 border border-white/10 mb-4"
+                className="bg-card/60 backdrop-blur-xl rounded-xl p-4 border border-border mb-4"
             >
                 <div className="grid grid-cols-2 gap-2">
                     <div className="flex items-center justify-between p-2.5 bg-green-500/10 rounded-lg border border-green-500/30">

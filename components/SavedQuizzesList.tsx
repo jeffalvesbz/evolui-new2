@@ -108,7 +108,7 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 space-y-4"
+                        className="bg-card/60 backdrop-blur-xl border border-border rounded-xl p-4 space-y-4"
                     >
                         {/* Search */}
                         <div className="relative">
@@ -176,7 +176,7 @@ export const SavedQuizzesList: React.FC<SavedQuizzesListProps> = ({ onStartQuiz,
                             key={quiz.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-card/60 backdrop-blur-xl border border-white/10 rounded-xl p-5 hover:border-primary/50 transition-all cursor-pointer group relative"
+                            className="bg-card/60 backdrop-blur-xl border border-border rounded-xl p-5 hover:border-primary/50 transition-all cursor-pointer group relative"
                             onClick={() => handleStartQuiz(quiz)}
                         >
                             {/* Delete Button */}

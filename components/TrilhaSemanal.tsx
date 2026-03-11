@@ -815,7 +815,7 @@ const TrilhaSemanal: React.FC = () => {
                         onClick={() => setIsAiModalOpen(false)}
                     >
                         <div
-                            className="bg-card border-2 border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col"
+                            className="bg-card border-2 border-border rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Header */}
@@ -1001,7 +1001,7 @@ const TrilhaSemanal: React.FC = () => {
                         setBuscaModal('');
                         setDisciplinaFiltro(null);
                     }}>
-                        <div className="bg-card border-2 border-white/10 rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <div className="bg-card border-2 border-border rounded-lg shadow-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
                             <div className="p-3 sm:p-4 border-b border-border flex items-start sm:items-center justify-between gap-2 flex-shrink-0">
                                 <div className="flex-1 min-w-0">
                                     <h2 className="text-lg sm:text-xl font-bold truncate">Adicionar à Trilha</h2>

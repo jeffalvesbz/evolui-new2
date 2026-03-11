@@ -236,7 +236,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
 
             <Command className="bg-card border border-border rounded-lg shadow-2xl overflow-hidden">
 
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
 
                 <SearchIcon className="w-5 h-5 text-muted-foreground" />
 
@@ -254,7 +254,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
 
                 />
 
-                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 rounded border border-white/10">
+                <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-muted-foreground bg-muted/50 rounded border border-border">
 
                   ESC
 
@@ -330,7 +330,7 @@ const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onOpenChange }) =
 
 
 
-              <div className="px-4 py-2 border-t border-white/10 text-xs text-muted-foreground flex items-center justify-between">
+              <div className="px-4 py-2 border-t border-border text-xs text-muted-foreground flex items-center justify-between">
 
                 <span>Use ↑↓ para navegar, Enter para selecionar</span>
 

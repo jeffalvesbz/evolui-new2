@@ -19,7 +19,8 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Inter (body) + Outfit (display/headings) — font-display:swap prevents FOIT -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
@@ -171,6 +172,24 @@
 
     ::-webkit-scrollbar-thumb:hover {
       background: #555;
+    }
+
+    /* Mobile: pause background animations to save battery */
+    @media (max-width: 768px) {
+      body::before,
+      body::after {
+        animation-play-state: paused;
+        filter: blur(60px);
+        opacity: 0.06;
+      }
+    }
+
+    /* Reduced motion: disable all animations */
+    @media (prefers-reduced-motion: reduce) {
+      body::before,
+      body::after {
+        animation: none;
+      }
     }
   </style>
   <script type="importmap">
