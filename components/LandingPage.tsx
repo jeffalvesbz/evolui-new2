@@ -42,22 +42,22 @@ const staggerContainer = {
 
 const PainItem = ({ text }: { text: string }) => (
     <motion.li variants={fadeInUp} className="flex items-start gap-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors">
-        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
-        <span className="text-lg text-red-100/80">{text}</span>
+        <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 shrink-0 mt-0.5" />
+        <span className="text-sm sm:text-lg text-red-100/80">{text}</span>
     </motion.li>
 );
 
 const SolutionCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
     <motion.div
         whileHover={{ y: -5 }}
-        className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all duration-300 relative overflow-hidden group"
+        className="p-5 sm:p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all duration-300 relative overflow-hidden group"
     >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-            <Icon className="w-7 h-7 text-primary" />
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-primary" />
         </div>
-        <h3 className="text-2xl font-bold mb-3 text-white">{title}</h3>
+        <h3 className="text-xl sm:text-2xl font-bold mb-3 text-white">{title}</h3>
         <p className="text-muted-foreground leading-relaxed">{description}</p>
     </motion.div>
 );
@@ -93,7 +93,7 @@ const FAQItem = ({ question, answer }: { question: string, answer: string }) => 
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full py-5 flex items-center justify-between text-left hover:text-primary transition-colors"
             >
-                <span className="font-medium text-lg">{question}</span>
+                <span className="font-medium text-sm sm:text-lg text-left">{question}</span>
                 <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
@@ -157,7 +157,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Navbar (Minimalist) */}
             <nav className="fixed top-0 inset-x-0 z-50 h-20 border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md">
-                <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
                             <LandmarkIcon className="w-6 h-6 text-black" />
@@ -177,7 +177,7 @@ export const LandingPage: React.FC = () => {
             <main className="relative z-10 pt-20">
 
                 {/* 🔵 HERO SECTION */}
-                <section className="pt-24 pb-32 px-6 relative overflow-hidden">
+                <section className="pt-12 sm:pt-24 pb-12 sm:pb-32 px-4 sm:px-6 relative overflow-hidden">
                     {/* Glow Effects */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/20 blur-[120px] rounded-full opacity-30 -z-10" />
 
@@ -188,19 +188,19 @@ export const LandingPage: React.FC = () => {
                             variants={staggerContainer}
                             className="space-y-8"
                         >
-                            <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-[1.1] tracking-tight">
+                            <motion.h1 variants={fadeInUp} className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold leading-[1.1] tracking-tight">
                                 Pare de estudar <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">sem método.</span>
                             </motion.h1>
 
-                            <motion.p variants={fadeInUp} className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                            <motion.p variants={fadeInUp} className="text-base sm:text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                                 Organize seus estudos em um só lugar com o Eleva. Flashcards inteligentes, quizzes e organização diária para quem estuda sério.
                             </motion.p>
 
                             <motion.div variants={fadeInUp} className="flex flex-col items-center gap-4">
                                 <button
                                     onClick={handleSignupClick}
-                                    className="group relative px-8 py-4 bg-white text-black text-lg font-bold rounded-full shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:scale-105 transition-all duration-300 flex items-center gap-3"
+                                    className="group relative px-6 sm:px-8 py-3.5 sm:py-4 bg-white text-black text-base sm:text-lg font-bold rounded-full shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:scale-105 transition-all duration-300 flex items-center gap-3"
                                 >
                                     👉 Criar meu plano de estudos grátis
                                     <div className="absolute inset-0 rounded-full border border-black/10" />
@@ -222,7 +222,7 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* 🎥 VÍDEO DEMO */}
-                <section className="py-12 px-6">
+                <section className="py-8 sm:py-12 px-4 sm:px-6">
                     <div className="max-w-6xl mx-auto">
                         <motion.div
                             initial={{ opacity: 0, y: 40 }}
@@ -269,10 +269,10 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* 🟣 BLOCO DE DOR (Identificação) */}
-                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/40 border-y border-white/5">
+                <section className="py-10 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-transparent to-black/40 border-y border-white/5">
                     <div className="max-w-3xl mx-auto">
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+                        <div className="text-center mb-8 sm:mb-12">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-4">
                                 Se você estuda, mas sente que não evolui...
                             </h2>
                             <p className="text-muted-foreground">Isso soa familiar?</p>
@@ -285,25 +285,25 @@ export const LandingPage: React.FC = () => {
                             <PainItem text="Falta constância e motivação" />
                         </ul>
 
-                        <div className="text-center p-8 bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10">
-                            <p className="text-2xl font-medium text-white mb-2">O problema não é falta de esforço.</p>
-                            <p className="text-xl text-primary font-bold">É falta de método.</p>
+                        <div className="text-center p-5 sm:p-8 bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10">
+                            <p className="text-lg sm:text-2xl font-medium text-white mb-2">O problema não é falta de esforço.</p>
+                            <p className="text-base sm:text-xl text-primary font-bold">É falta de método.</p>
                         </div>
                     </div>
                 </section>
 
                 {/* 🟢 BLOCO DE SOLUÇÃO (O Eleva) */}
-                <section className="py-32 px-6 text-center">
-                    <div className="mb-16">
+                <section className="py-12 sm:py-32 px-4 sm:px-6 text-center">
+                    <div className="mb-8 sm:mb-16">
                         <span className="inline-block py-1 px-3 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold mb-6">
                             A SOLUÇÃO
                         </span>
-                        <h2 className="text-4xl md:text-5xl font-display font-bold">
+                        <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold">
                             O Eleva resolve isso pra você
                         </h2>
                     </div>
 
-                    <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 text-left">
+                    <div className="max-w-6xl mx-auto grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 text-left">
                         <SolutionCard
                             icon={LayoutDashboardIcon}
                             title="Organização automática"
@@ -323,18 +323,18 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* 🟠 BLOCO DE PROVA */}
-                <section className="py-24 px-6 bg-[#0F0F11] border-t border-white/5">
+                <section className="py-10 sm:py-24 px-4 sm:px-6 bg-[#0F0F11] border-t border-white/5">
                     <div className="max-w-4xl mx-auto text-center space-y-8">
                         <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/5 border border-white/10 mb-4">
                             <SparklesIcon className="w-6 h-6 text-yellow-500 mr-2" />
                             <span className="text-lg font-medium text-white">Metodologia comprovada</span>
                         </div>
 
-                        <h2 className="text-3xl md:text-4xl font-display font-bold text-white">
+                        <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-white">
                             Feito para quem leva os estudos a sério
                         </h2>
 
-                        <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                        <p className="text-base sm:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
                             O Eleva foi criado para estudantes e concurseiros que querem
                             <span className="text-white font-semibold"> constância, clareza e evolução real </span>
                             — sem perder tempo com planilhas ou métodos confusos.
@@ -343,18 +343,18 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* 🔵 BLOCO DE CTA FORTE */}
-                <section className="py-32 px-6 relative overflow-hidden">
+                <section className="py-12 sm:py-32 px-4 sm:px-6 relative overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50" />
 
-                    <div className="max-w-3xl mx-auto text-center relative z-10 p-12 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm">
-                        <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">
+                    <div className="max-w-3xl mx-auto text-center relative z-10 p-5 sm:p-12 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm">
+                        <h2 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold mb-6 sm:mb-8">
                             Comece hoje. É grátis.
                         </h2>
 
                         <div className="flex flex-col items-center gap-4">
                             <button
                                 onClick={handleSignupClick}
-                                className="w-full sm:w-auto px-12 py-5 bg-primary hover:bg-primary-dark text-white text-xl font-bold rounded-xl shadow-xl shadow-primary/20 hover:scale-105 transition-all duration-300 active:scale-95"
+                                className="w-full sm:w-auto px-6 sm:px-12 py-4 sm:py-5 bg-primary hover:bg-primary-dark text-white text-base sm:text-xl font-bold rounded-xl shadow-xl shadow-primary/20 hover:scale-105 transition-all duration-300 active:scale-95"
                             >
                                 👉 Criar conta gratuita
                             </button>
@@ -382,18 +382,18 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* ⭐ DEPOIMENTOS */}
-                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/20">
+                <section className="py-10 sm:py-24 px-4 sm:px-6 bg-gradient-to-b from-transparent to-black/20">
                     <div className="max-w-6xl mx-auto">
-                        <div className="text-center mb-16">
+                        <div className="text-center mb-8 sm:mb-16">
                             <span className="inline-block py-1 px-3 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-bold mb-6">
                                 DEPOIMENTOS
                             </span>
-                            <h2 className="text-3xl md:text-4xl font-display font-bold">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold">
                                 O que dizem sobre o Eleva
                             </h2>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
+                        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                             <TestimonialCard
                                 name="Mariana S."
                                 role="Aprovada no TRF3"
@@ -421,10 +421,10 @@ export const LandingPage: React.FC = () => {
                 <PricingSection />
 
                 {/* ❓ FAQ */}
-                <section className="py-24 px-6">
+                <section className="py-10 sm:py-24 px-4 sm:px-6">
                     <div className="max-w-3xl mx-auto">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-display font-bold">
+                        <div className="text-center mb-8 sm:mb-16">
+                            <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold">
                                 Perguntas Frequentes
                             </h2>
                         </div>
@@ -455,7 +455,7 @@ export const LandingPage: React.FC = () => {
                 </section>
 
                 {/* 🦶 FOOTER */}
-                <footer className="py-12 px-6 border-t border-white/5 bg-[#0A0A0B]">
+                <footer className="py-8 sm:py-12 px-4 sm:px-6 border-t border-white/5 bg-[#0A0A0B]">
                     <div className="max-w-6xl mx-auto">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                             <div className="flex items-center gap-3">

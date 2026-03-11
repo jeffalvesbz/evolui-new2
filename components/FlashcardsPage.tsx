@@ -333,7 +333,7 @@ const DefaultDecksSection: React.FC<{
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             {/* Matches CriarFlashcardModal style: bg-card, border-border, shadow-2xl */}
-            <div className="bg-card border border-border rounded-xl max-w-5xl w-full shadow-2xl h-[85vh] relative overflow-hidden">
+            <div className="bg-card border border-border rounded-xl max-w-5xl w-full shadow-2xl h-[95svh] sm:h-[85vh] relative overflow-hidden">
                 <div className="absolute inset-0 overflow-y-auto">
 
                     {/* Header */}

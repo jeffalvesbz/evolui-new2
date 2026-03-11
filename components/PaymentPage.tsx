@@ -168,7 +168,7 @@ const PaymentPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-5xl font-bold text-foreground mb-4">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Experimente o Eleva Premium por 7 dias
           </h1>
           <p className="text-xl font-semibold text-primary dark:text-primary/90 mb-2">
@@ -234,7 +234,7 @@ const PaymentPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className={`relative rounded-2xl border p-6 lg:p-8 ${plan.color} backdrop-blur-sm flex flex-col hover:border-opacity-50 dark:hover:border-white/20 transition-all duration-300 ${plan.isPremium ? 'scale-105 lg:scale-110 z-10 shadow-2xl' : ''
+              className={`relative rounded-2xl border p-4 sm:p-6 lg:p-8 ${plan.color} backdrop-blur-sm flex flex-col hover:border-opacity-50 dark:hover:border-white/20 transition-all duration-300 ${plan.isPremium ? 'lg:scale-110 z-10 shadow-2xl' : ''
                 }`}
             >
               {/* Tag do Premium */}

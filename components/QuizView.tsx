@@ -73,7 +73,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
     const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="w-full max-w-4xl mx-auto p-3 sm:p-6">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <button
@@ -110,7 +110,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
             </div>
 
             {/* Pergunta */}
-            <div className="bg-card/60 backdrop-blur-xl rounded-xl p-6 border border-border mb-4">
+            <div className="bg-card/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-border mb-4">
                 <h2 className="text-xl font-bold text-center mb-6 text-foreground">
                     {currentQuestion.flashcard.pergunta}
                 </h2>
@@ -132,7 +132,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
                                     transition={{ delay: index * 0.05 }}
                                     onClick={() => handleAnswer(option)}
                                     disabled={showResult}
-                                    className={`w-full p-3 rounded-lg border-2 text-left transition-all ${showCorrect
+                                    className={`w-full p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${showCorrect
                                         ? 'border-green-500 bg-green-500/20'
                                         : showIncorrect
                                             ? 'border-red-500 bg-red-500/20'
@@ -179,7 +179,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onExit, onComplete }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     onClick={handleNext}
-                    className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors text-sm"
+                    className="w-full py-3 min-h-[44px] bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors text-sm"
                 >
                     {session.currentQuestionIndex < session.questions.length - 1
                         ? 'Próxima →'

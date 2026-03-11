@@ -451,7 +451,7 @@ const Estatisticas: React.FC = () => {
     return (
         <div data-tutorial="estatisticas-content" className="space-y-6">
             <header>
-                <h1 className="text-3xl font-bold text-foreground">Estatísticas</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Estatísticas</h1>
                 <p className="text-muted-foreground mt-1">Analise seu desempenho e otimize sua rotina de estudos.</p>
             </header>
 
@@ -460,7 +460,7 @@ const Estatisticas: React.FC = () => {
                     <TargetIcon className="w-5 h-5 text-primary" />
                     Visão Geral
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                     <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs sem. anterior" />
                     <MetricCard icon={TrophyIcon} title="Progresso" value={generalStats.progressoEdital} color="text-secondary" />
                     <MetricCard icon={FlameIcon} title="Sequência" value={`${streak} dias`} color="text-orange-500" />
@@ -789,40 +789,40 @@ const Estatisticas: React.FC = () => {
                     <div className="bg-card border border-border rounded-lg overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium select-none">
+                                <thead className="bg-muted/50 text-muted-foreground font-medium select-none text-xs sm:text-sm">
                                     <tr>
-                                        <th className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('nome')}>
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('nome')}>
                                             Disciplina <SortIcon columnKey="nome" />
                                         </th>
-                                        <th className="px-4 py-3 text-center cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('total')}>
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('total')}>
                                             Questões <SortIcon columnKey="total" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-green-600 dark:text-green-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('certas')}>
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-green-600 dark:text-green-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('certas')}>
                                             Certas <SortIcon columnKey="certas" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-red-600 dark:text-red-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('erradas')}>
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-red-600 dark:text-red-400 cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('erradas')}>
                                             Erradas <SortIcon columnKey="erradas" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aproveitamento')}>
-                                            Aproveitamento <SortIcon columnKey="aproveitamento" />
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aproveitamento')}>
+                                            Aprov. <SortIcon columnKey="aproveitamento" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aprov_liquido')}>
-                                            Aprov. Líquido <SortIcon columnKey="aprov_liquido" />
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('aprov_liquido')}>
+                                            Liq. <SortIcon columnKey="aprov_liquido" />
                                         </th>
-                                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('saldo')}>
+                                        <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-muted/80 transition-colors" onClick={() => handleSort('saldo')}>
                                             Saldo <SortIcon columnKey="saldo" />
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-border">
+                                <tbody className="divide-y divide-border text-xs sm:text-sm">
                                     {sortedDetalhamentoDisciplinas.map((d, i) => {
                                         const aproveitamento = d.total > 0 ? Math.round((d.certas / d.total) * 100) : 0;
                                         return (
                                             <tr key={i} className="hover:bg-muted/30 transition-colors">
-                                                <td className="px-4 py-3 font-medium">{d.nome}</td>
-                                                <td className="px-4 py-3 text-center">{d.total}</td>
-                                                <td className="px-4 py-3 text-center text-green-600 dark:text-green-400 font-medium">{d.certas}</td>
-                                                <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-medium">{d.erradas}</td>
+                                                <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium max-w-[120px] sm:max-w-none truncate">{d.nome}</td>
+                                                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">{d.total}</td>
+                                                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-green-600 dark:text-green-400 font-medium">{d.certas}</td>
+                                                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-red-600 dark:text-red-400 font-medium">{d.erradas}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
