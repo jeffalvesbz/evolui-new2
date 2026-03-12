@@ -511,8 +511,66 @@ const Estatisticas: React.FC = () => {
                 </PremiumFeatureWrapper>
             </section>
 
-            {/* Comparativo Semanal + Consistência */}
+            {/* Desempenho Temporal + Comparativo Semanal */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-border shadow-md">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="flex items-center gap-2">
+                            <BarChart3Icon className="w-5 h-5 text-primary" />
+                            {timeRange === 'daily' ? 'Desempenho Diário' : timeRange === 'weekly' ? 'Desempenho Semanal' : 'Desempenho Mensal'}
+                        </CardTitle>
+                        <div className="flex bg-muted rounded-lg p-1 text-xs">
+                            <button
+                                onClick={() => setTimeRange('daily')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'daily' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Dia
+                            </button>
+                            <button
+                                onClick={() => setTimeRange('weekly')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'weekly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Sem
+                            </button>
+                            <button
+                                onClick={() => setTimeRange('monthly')}
+                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'monthly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Mês
+                            </button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Identifique quedas de rendimento antes que virem hábito"
+                            showPreview={true}
+                        >
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={performanceChartData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis
+                                        stroke="var(--color-muted-foreground)"
+                                        fontSize={12}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={(value) => `${value}h`}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
+                                        contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
+                                        itemStyle={{ color: 'var(--color-foreground)' }}
+                                        formatter={(value: number) => [`${value}h`, 'Tempo']}
+                                    />
+                                    <Bar dataKey="value" name="Tempo (h)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </PremiumFeatureWrapper>
+                    </CardContent>
+                </Card>
+
                 <Card className="border-border shadow-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -531,68 +589,9 @@ const Estatisticas: React.FC = () => {
                         </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
-
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <SparklesIcon className="w-5 h-5 text-orange-500" />
-                            Índice de Consistência
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Saiba se você estuda com regularidade ou só em vésperas"
-                            showPreview={true}
-                        >
-                            <ConsistencyScore sessoes={sessoes} simulados={simulados} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
             </section>
 
-            {/* Evolução por Disciplina + Eficiência */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUpIcon className="w-5 h-5 text-emerald-500" />
-                            Evolução por Disciplina
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Veja se seu aproveitamento está subindo ou caindo por matéria"
-                            showPreview={true}
-                        >
-                            <DisciplineEvolution sessoes={sessoes} disciplinas={disciplinas} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ZapIcon className="w-5 h-5 text-amber-500" />
-                            Eficiência de Estudo
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Descubra onde seu tempo rende mais e onde está sendo desperdiçado"
-                            showPreview={true}
-                        >
-                            <StudyEfficiency sessoes={sessoes} disciplinas={disciplinas} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-            </section>
-
+            {/* Tempo por Disciplina + Heatmap */}
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                     <BarChart3Icon className="w-5 h-5 text-primary" />
@@ -694,61 +693,23 @@ const Estatisticas: React.FC = () => {
                 </div>
             </section>
 
+            {/* Evolução por Disciplina + Desempenho por Tópico */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-border shadow-md">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <BarChart3Icon className="w-5 h-5 text-primary" />
-                            {timeRange === 'daily' ? 'Desempenho Diário' : timeRange === 'weekly' ? 'Desempenho Semanal' : 'Desempenho Mensal'}
+                            <TrendingUpIcon className="w-5 h-5 text-emerald-500" />
+                            Evolução por Disciplina
                         </CardTitle>
-                        <div className="flex bg-muted rounded-lg p-1 text-xs">
-                            <button
-                                onClick={() => setTimeRange('daily')}
-                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'daily' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                Dia
-                            </button>
-                            <button
-                                onClick={() => setTimeRange('weekly')}
-                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'weekly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                Sem
-                            </button>
-                            <button
-                                onClick={() => setTimeRange('monthly')}
-                                className={`px-3 py-1 rounded-md transition-all ${timeRange === 'monthly' ? 'bg-background shadow text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                            >
-                                Mês
-                            </button>
-                        </div>
                     </CardHeader>
                     <CardContent>
                         <PremiumFeatureWrapper
                             isLocked={planType === 'free'}
                             requiredPlan="pro"
-                            feature="Identifique quedas de rendimento antes que virem hábito"
+                            feature="Veja se seu aproveitamento está subindo ou caindo por matéria"
                             showPreview={true}
                         >
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={performanceChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                                    <YAxis
-                                        stroke="var(--color-muted-foreground)"
-                                        fontSize={12}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickFormatter={(value) => `${value}h`}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: 'var(--color-primary-a, rgba(59, 130, 246, 0.1))' }}
-                                        contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)' }}
-                                        itemStyle={{ color: 'var(--color-foreground)' }}
-                                        formatter={(value: number) => [`${value}h`, 'Tempo']}
-                                    />
-                                    <Bar dataKey="value" name="Tempo (h)" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            <DisciplineEvolution sessoes={sessoes} disciplinas={disciplinas} />
                         </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
@@ -770,7 +731,27 @@ const Estatisticas: React.FC = () => {
                 </Card>
             </section>
 
+            {/* Consistência + Eficiência + Foco por Disciplina */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <SparklesIcon className="w-5 h-5 text-orange-500" />
+                            Índice de Consistência
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Saiba se você estuda com regularidade ou só em vésperas"
+                            showPreview={true}
+                        >
+                            <ConsistencyScore sessoes={sessoes} simulados={simulados} />
+                        </PremiumFeatureWrapper>
+                    </CardContent>
+                </Card>
+
                 <Card className="border-border shadow-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary" /> Foco por Disciplina</CardTitle>
@@ -851,6 +832,28 @@ const Estatisticas: React.FC = () => {
                             showPreview={true}
                         >
                             <PeakHoursChart sessoes={sessoes} />
+                        </PremiumFeatureWrapper>
+                    </CardContent>
+                </Card>
+            </section>
+
+            {/* Eficiência + Tendência de Simulados */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ZapIcon className="w-5 h-5 text-amber-500" />
+                            Eficiência de Estudo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Descubra onde seu tempo rende mais e onde está sendo desperdiçado"
+                            showPreview={true}
+                        >
+                            <StudyEfficiency sessoes={sessoes} disciplinas={disciplinas} />
                         </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
