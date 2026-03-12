@@ -108,7 +108,7 @@ const Estatisticas: React.FC = () => {
 
     const generalStats = useMemo(() => {
         const hoje = new Date();
-        const startOfThisWeekDate = startOfWeek(hoje);
+        const startOfThisWeekDate = startOfWeek(hoje, { weekStartsOn: 1 });
         const startOfLastWeekDate = subWeeks(startOfThisWeekDate, 1);
 
         const sessoesThisWeek = sessoes.filter(s => new Date(s.data_estudo) >= startOfThisWeekDate);
@@ -116,9 +116,14 @@ const Estatisticas: React.FC = () => {
             const d = new Date(s.data_estudo);
             return d >= startOfLastWeekDate && d < startOfThisWeekDate;
         });
+        const simuladosThisWeek = simulados.filter(s => new Date(s.date) >= startOfThisWeekDate);
+        const simuladosLastWeek = simulados.filter(s => {
+            const d = new Date(s.date);
+            return d >= startOfLastWeekDate && d < startOfThisWeekDate;
+        });
 
-        const minutosThisWeek = sessoesThisWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
-        const minutosLastWeek = sessoesLastWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
+        const minutosThisWeek = sessoesThisWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0) + simuladosThisWeek.reduce((acc, s) => acc + s.duration_minutes, 0);
+        const minutosLastWeek = sessoesLastWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0) + simuladosLastWeek.reduce((acc, s) => acc + s.duration_minutes, 0);
         const tempoTrend = minutosLastWeek > 0 ? Math.round(((minutosThisWeek - minutosLastWeek) / minutosLastWeek) * 100) : (minutosThisWeek > 0 ? 100 : 0);
 
         const totalMinutosEstudo = sessoes.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0);
@@ -127,7 +132,9 @@ const Estatisticas: React.FC = () => {
 
         const totalSessoes = sessoes.length;
         const totalAtividades = totalSessoes + simulados.length;
-        const sessoesTrend = sessoesLastWeek.length > 0 ? Math.round(((sessoesThisWeek.length - sessoesLastWeek.length) / sessoesLastWeek.length) * 100) : (sessoesThisWeek.length > 0 ? 100 : 0);
+        const atividadesThisWeek = sessoesThisWeek.length + simuladosThisWeek.length;
+        const atividadesLastWeek = sessoesLastWeek.length + simuladosLastWeek.length;
+        const sessoesTrend = atividadesLastWeek > 0 ? Math.round(((atividadesThisWeek - atividadesLastWeek) / atividadesLastWeek) * 100) : (atividadesThisWeek > 0 ? 100 : 0);
 
         const mediaSessao = totalAtividades > 0 ? totalMinutos / totalAtividades : 0;
         const progressoEdital = getAverageProgress();
@@ -176,7 +183,7 @@ const Estatisticas: React.FC = () => {
             const certas = s.questoes_certas || 0;
             const erradas = s.questoes_erradas || 0;
             if (s.is_cebraspe) {
-                return acc + Math.max(0, certas - erradas);
+                return acc + (certas - erradas);
             }
             return acc + certas;
         }, 0);
@@ -184,7 +191,7 @@ const Estatisticas: React.FC = () => {
         // Para simulados, assumimos que o saldo é calculado se for Cebraspe
         const saldoLiquidoSimulados = simulados.reduce((acc, s) => {
             if (s.is_cebraspe) {
-                return acc + Math.max(0, s.correct - s.wrong);
+                return acc + (s.correct - s.wrong);
             }
             return acc + s.correct;
         }, 0);
@@ -211,7 +218,7 @@ const Estatisticas: React.FC = () => {
 
             const certas = sessao.questoes_certas || 0;
             const erradas = sessao.questoes_erradas || 0;
-            const saldo = sessao.is_cebraspe ? Math.max(0, certas - erradas) : certas;
+            const saldo = sessao.is_cebraspe ? (certas - erradas) : certas;
 
             statsPorDisciplina[nomeDisciplina].certas += certas;
             statsPorDisciplina[nomeDisciplina].erradas += erradas;
@@ -229,7 +236,7 @@ const Estatisticas: React.FC = () => {
 
             const certas = sim.correct || 0;
             const erradas = sim.wrong || 0;
-            const saldo = sim.is_cebraspe ? Math.max(0, certas - erradas) : certas;
+            const saldo = sim.is_cebraspe ? (certas - erradas) : certas;
 
             statsPorDisciplina[nomeDisciplina].certas += certas;
             statsPorDisciplina[nomeDisciplina].erradas += erradas;
@@ -306,12 +313,12 @@ const Estatisticas: React.FC = () => {
         }
 
         if (timeRange === 'weekly') {
-            const end = endOfWeek(hoje);
+            const end = endOfWeek(hoje, { weekStartsOn: 1 });
             const start = subWeeks(end, 11);
-            const weeks = eachWeekOfInterval({ start, end });
+            const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
 
             return weeks.map(weekStart => {
-                const weekEnd = endOfWeek(weekStart);
+                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
                 const tempoEstudoSeconds = sessoes.reduce((acc, s) => {
                     const d = parseDate(s.data_estudo);
