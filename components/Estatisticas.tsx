@@ -25,7 +25,7 @@ import PremiumFeatureWrapper from './PremiumFeatureWrapper';
 import { useUnifiedStreak } from '../utils/unifiedStreakCalculator';
 import { Card, CardHeader, CardContent, CardTitle } from './ui/Card';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line, LabelList } from 'recharts';
-import { subDays, format, startOfWeek, endOfWeek, subWeeks, eachWeekOfInterval, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isSameMonth, isSameWeek } from 'date-fns';
+import { subDays, format, endOfWeek, subWeeks, eachWeekOfInterval, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, isSameMonth, isSameWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { PeakHoursChart } from './PeakHoursChart';
@@ -108,18 +108,19 @@ const Estatisticas: React.FC = () => {
 
     const generalStats = useMemo(() => {
         const hoje = new Date();
-        const startOfThisWeekDate = startOfWeek(hoje, { weekStartsOn: 1 });
-        const startOfLastWeekDate = subWeeks(startOfThisWeekDate, 1);
+        // Usar janelas rolantes de 7 dias para comparação justa (evita semana incompleta)
+        const seteDiasAtras = subDays(hoje, 7);
+        const quatorzeDiasAtras = subDays(hoje, 14);
 
-        const sessoesThisWeek = sessoes.filter(s => new Date(s.data_estudo) >= startOfThisWeekDate);
+        const sessoesThisWeek = sessoes.filter(s => new Date(s.data_estudo) >= seteDiasAtras);
         const sessoesLastWeek = sessoes.filter(s => {
             const d = new Date(s.data_estudo);
-            return d >= startOfLastWeekDate && d < startOfThisWeekDate;
+            return d >= quatorzeDiasAtras && d < seteDiasAtras;
         });
-        const simuladosThisWeek = simulados.filter(s => new Date(s.date) >= startOfThisWeekDate);
+        const simuladosThisWeek = simulados.filter(s => new Date(s.date) >= seteDiasAtras);
         const simuladosLastWeek = simulados.filter(s => {
             const d = new Date(s.date);
-            return d >= startOfLastWeekDate && d < startOfThisWeekDate;
+            return d >= quatorzeDiasAtras && d < seteDiasAtras;
         });
 
         const minutosThisWeek = sessoesThisWeek.reduce((acc, s) => acc + (s.tempo_estudado / 60), 0) + simuladosThisWeek.reduce((acc, s) => acc + s.duration_minutes, 0);
@@ -313,12 +314,12 @@ const Estatisticas: React.FC = () => {
         }
 
         if (timeRange === 'weekly') {
-            const end = endOfWeek(hoje, { weekStartsOn: 1 });
+            const end = endOfWeek(hoje);
             const start = subWeeks(end, 11);
-            const weeks = eachWeekOfInterval({ start, end }, { weekStartsOn: 1 });
+            const weeks = eachWeekOfInterval({ start, end });
 
             return weeks.map(weekStart => {
-                const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
+                const weekEnd = endOfWeek(weekStart);
 
                 const tempoEstudoSeconds = sessoes.reduce((acc, s) => {
                     const d = parseDate(s.data_estudo);
@@ -468,10 +469,10 @@ const Estatisticas: React.FC = () => {
                     Visão Geral
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
-                    <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs sem. anterior" />
+                    <MetricCard icon={ClockIcon} title="Tempo Total" value={generalStats.totalHorasEstudo} color="text-primary" trend={generalStats.tempoTrend} trendLabel="vs 7 dias anteriores" />
                     <MetricCard icon={TrophyIcon} title="Progresso" value={generalStats.progressoEdital} color="text-secondary" />
                     <MetricCard icon={FlameIcon} title="Sequência" value={`${streak} dias`} color="text-orange-500" />
-                    <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" trend={generalStats.sessoesTrend} trendLabel="vs sem. anterior" />
+                    <MetricCard icon={BookCopyIcon} title="Atividades" value={generalStats.totalSessoes} color="text-purple-500" trend={generalStats.sessoesTrend} trendLabel="vs 7 dias anteriores" />
                     <MetricCard icon={CheckCircle2Icon} title="Questões" value={performanceStats.totalQuestoesResolvidas} color="text-indigo-500" />
                     <MetricCard icon={TrendingUpIcon} title="Acerto Geral" value={performanceStats.taxaAcertoGeral} color="text-emerald-500" />
                     <MetricCard icon={BookOpenCheckIcon} title="Taxa Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
