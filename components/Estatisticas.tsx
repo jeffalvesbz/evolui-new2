@@ -591,7 +591,26 @@ const Estatisticas: React.FC = () => {
                 </Card>
             </section>
 
-            {/* Tempo por Disciplina + Heatmap */}
+            {/* Mapa de Atividades - Full Width */}
+            <section className="space-y-4">
+                <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><CalendarDaysIcon className="w-5 h-5 text-emerald-500" /> Mapa de Atividades (Últimos 3 meses)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Visualize seus dias mais produtivos em segundos"
+                            showPreview={true}
+                        >
+                            <ActivityHeatmap sessoes={sessoes} />
+                        </PremiumFeatureWrapper>
+                    </CardContent>
+                </Card>
+            </section>
+
+            {/* Tempo por Disciplina + Foco por Disciplina */}
             <section className="space-y-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                     <BarChart3Icon className="w-5 h-5 text-primary" />
@@ -677,16 +696,68 @@ const Estatisticas: React.FC = () => {
 
                     <Card className="border-border shadow-md">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><CalendarDaysIcon className="w-5 h-5 text-emerald-500" /> Mapa de Atividades (Últimos 3 meses)</CardTitle>
+                            <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary" /> Foco por Disciplina</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <PremiumFeatureWrapper
                                 isLocked={planType === 'free'}
                                 requiredPlan="pro"
-                                feature="Visualize seus dias mais produtivos em segundos"
+                                feature="Veja exatamente no que você mais investe tempo"
                                 showPreview={true}
                             >
-                                <ActivityHeatmap sessoes={sessoes} />
+                                {studyTimeDistribution.length > 0 ? (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <ResponsiveContainer width="100%" height={250}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={studyTimeDistribution}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={90}
+                                                    innerRadius={55}
+                                                    fill="#8884d8"
+                                                    paddingAngle={3}
+                                                    strokeWidth={0}
+                                                >
+                                                    {studyTimeDistribution.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip
+                                                    contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)', borderRadius: '8px' }}
+                                                    itemStyle={{ color: 'var(--color-foreground)' }}
+                                                    formatter={(value: number) => `${formatStudyDuration(value)}`}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                        <div className="w-full max-h-[140px] overflow-y-auto space-y-1.5 px-1">
+                                            {studyTimeDistribution.map((item, index) => (
+                                                <div key={index} className="flex items-center justify-between text-xs gap-2">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span
+                                                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                                                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                                        />
+                                                        <span className="text-muted-foreground truncate">{item.name}</span>
+                                                    </div>
+                                                    <span className="text-foreground font-medium whitespace-nowrap">{formatStudyDuration(item.value)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-3">
+                                        <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center ring-4 ring-muted/20">
+                                            <LayersIcon className="h-6 w-6 text-muted-foreground/50" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">Nenhum estudo registrado</p>
+                                            <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Inicie uma sessão de estudos para visualizar a distribuição do seu tempo.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </PremiumFeatureWrapper>
                         </CardContent>
                     </Card>
@@ -731,7 +802,7 @@ const Estatisticas: React.FC = () => {
                 </Card>
             </section>
 
-            {/* Consistência + Eficiência + Foco por Disciplina */}
+            {/* Consistência + Horários de Pico + Tendência de Simulados */}
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="border-border shadow-md">
                     <CardHeader>
@@ -754,74 +825,6 @@ const Estatisticas: React.FC = () => {
 
                 <Card className="border-border shadow-md">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><LayersIcon className="w-5 h-5 text-primary" /> Foco por Disciplina</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Veja exatamente no que você mais investe tempo"
-                            showPreview={true}
-                        >
-                            {studyTimeDistribution.length > 0 ? (
-                                <div className="flex flex-col items-center gap-4">
-                                    <ResponsiveContainer width="100%" height={200}>
-                                        <PieChart>
-                                            <Pie
-                                                data={studyTimeDistribution}
-                                                dataKey="value"
-                                                nameKey="name"
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={80}
-                                                innerRadius={50}
-                                                fill="#8884d8"
-                                                paddingAngle={3}
-                                                strokeWidth={0}
-                                            >
-                                                {studyTimeDistribution.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip
-                                                contentStyle={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-border)', color: 'var(--color-foreground)', borderRadius: '8px' }}
-                                                itemStyle={{ color: 'var(--color-foreground)' }}
-                                                formatter={(value: number) => `${formatStudyDuration(value)}`}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                    <div className="w-full max-h-[120px] overflow-y-auto space-y-1.5 px-1">
-                                        {studyTimeDistribution.map((item, index) => (
-                                            <div key={index} className="flex items-center justify-between text-xs gap-2">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <span
-                                                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                                    />
-                                                    <span className="text-muted-foreground truncate">{item.name}</span>
-                                                </div>
-                                                <span className="text-foreground font-medium whitespace-nowrap">{formatStudyDuration(item.value)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-16 text-center px-4 space-y-3">
-                                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center ring-4 ring-muted/20">
-                                        <LayersIcon className="h-6 w-6 text-muted-foreground/50" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-medium text-foreground">Nenhum estudo registrado</p>
-                                        <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Inicie uma sessão de estudos para visualizar a distribuição do seu tempo.</p>
-                                    </div>
-                                </div>
-                            )}
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-md">
-                    <CardHeader>
                         <CardTitle className="flex items-center gap-2"><ClockIcon className="w-5 h-5 text-blue-500" /> Horários de Pico</CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -832,28 +835,6 @@ const Estatisticas: React.FC = () => {
                             showPreview={true}
                         >
                             <PeakHoursChart sessoes={sessoes} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-            </section>
-
-            {/* Eficiência + Tendência de Simulados */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ZapIcon className="w-5 h-5 text-amber-500" />
-                            Eficiência de Estudo
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Descubra onde seu tempo rende mais e onde está sendo desperdiçado"
-                            showPreview={true}
-                        >
-                            <StudyEfficiency sessoes={sessoes} disciplinas={disciplinas} />
                         </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
@@ -898,6 +879,28 @@ const Estatisticas: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+                        </PremiumFeatureWrapper>
+                    </CardContent>
+                </Card>
+            </section>
+
+            {/* Eficiência de Estudo - Full Width */}
+            <section className="space-y-4">
+                <Card className="border-border shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <ZapIcon className="w-5 h-5 text-amber-500" />
+                            Eficiência de Estudo
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <PremiumFeatureWrapper
+                            isLocked={planType === 'free'}
+                            requiredPlan="pro"
+                            feature="Descubra onde seu tempo rende mais e onde está sendo desperdiçado"
+                            showPreview={true}
+                        >
+                            <StudyEfficiency sessoes={sessoes} disciplinas={disciplinas} />
                         </PremiumFeatureWrapper>
                     </CardContent>
                 </Card>
