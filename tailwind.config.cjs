@@ -11,27 +11,28 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        "primary": "#8B5CF6", // Violet 500
-        "primary-dark": "#7C3AED", // Violet 600
-        "primary-glow": "rgba(139, 92, 246, 0.5)",
-        "secondary": "#06b6d4", // Cyan 500
-        "background-light": "#f8fafc",
-        "background-dark": "#0B0F19", // Deep Navy
-        "success": "#10b981",
-        "accent": "#8B5CF6",
-        "vibrant-blue": "#06b6d4",
-        "text-light": "#f1f5f9",
-        "text-dark": "#1e293b",
-        "module-bg-light": "#ffffff",
-        "module-bg-dark": "rgba(255, 255, 255, 0.03)",
-        "border-light": "#e5e7eb",
-        "border-dark": "rgba(255, 255, 255, 0.08)",
-        "text-muted-light": "#64748b",
-        "text-muted-dark": "#94a3b8",
+        "primary": "#F59E0B",           // amber-400
+        "primary-dark": "#D97706",      // amber-600
+        "primary-glow": "rgba(245, 158, 11, 0.45)",
+        "secondary": "#4ADE80",         // green-400
+        "background-light": "#FDFAF4",
+        "background-dark": "#0C0A06",   // deep warm black
+        "success": "#4ADE80",
+        "accent": "#F59E0B",
+        "vibrant-green": "#4ADE80",
+        "text-light": "#FDF8EE",
+        "text-dark": "#1C1208",
+        "module-bg-light": "#FFFCF0",
+        "module-bg-dark": "rgba(22, 18, 8, 0.6)",
+        "border-light": "#E8D9B8",
+        "border-dark": "rgba(245, 158, 11, 0.12)",
+        "text-muted-light": "#6B5B3E",
+        "text-muted-dark": "#A09070",
       },
       fontFamily: {
-        "display": ["Outfit", "sans-serif"],
-        "body": ["Inter", "sans-serif"],
+        "display": ["Fraunces", "Georgia", "serif"],
+        "body": ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        "mono": ["JetBrains Mono", "monospace"],
       },
       borderRadius: {
         "DEFAULT": "0.5rem",
@@ -42,9 +43,11 @@ module.exports = {
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 1px 3px 0 rgba(0, 0, 0, 0.04)',
-        'subtle-dark': '0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 4px 8px 0 rgba(0, 0, 0, 0.1)',
-        'glow': '0 0 15px rgba(139, 92, 246, 0.15)',
-        'neon': '0 0 8px rgba(139, 92, 246, 0.2), 0 0 16px rgba(139, 92, 246, 0.15)',
+        'subtle-dark': '0 2px 4px 0 rgba(0, 0, 0, 0.3), 0 4px 8px 0 rgba(0, 0, 0, 0.2)',
+        'glow': '0 0 20px rgba(245, 158, 11, 0.15)',
+        'neon': '0 0 8px rgba(245, 158, 11, 0.25), 0 0 20px rgba(245, 158, 11, 0.15)',
+        'amber': '0 4px 20px rgba(245, 158, 11, 0.25)',
+        'green': '0 4px 20px rgba(74, 222, 128, 0.20)',
       }
     },
   },

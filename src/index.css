@@ -13,44 +13,39 @@
   --space-xl: 2rem;     /* 32px — page sections */
   --space-2xl: 3rem;    /* 48px — large sections */
 
-  /* ── Colors ───────────────────────────────────────────────────── */
-  --color-primary: #8B5CF6;
-  --color-primary-dark: #7C3AED;
-  --color-secondary: #06b6d4;
-  --color-background: #0B0F19;
-  --color-foreground: #f8fafc;
-  /* Lighter white for main text */
-  --color-card: #0A0F1A;
-  /* Solid deep background for focus */
-  --color-card-border: rgba(255, 255, 255, 0.08);
-  --color-muted: #cbd5e1;
-  /* Lighter slate for muted text */
-  --color-muted-foreground: #94a3b8;
-  /* Increased contrast for secondary text */
-  --color-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --color-highlight: rgba(139, 92, 246, 0.08);
-  --color-border: rgba(255, 255, 255, 0.1);
-  --color-input: #111827;
-  /* Darker input background */
-  --color-gradient: linear-gradient(135deg, #8B5CF6, #06b6d4);
+  /* ── Colors — Nocturnal Scholar ───────────────────────────────── */
+  /* amber gold + electric green on deep warm black                  */
+  --color-primary: #F59E0B;       /* amber-400 — lamplight */
+  --color-primary-dark: #D97706;  /* amber-600 */
+  --color-secondary: #4ADE80;     /* green-400 — growth */
+  --color-background: #0C0A06;    /* near-black, warm */
+  --color-foreground: #FDF8EE;    /* warm cream */
+  --color-card: #161208;          /* dark warm card */
+  --color-card-border: rgba(245, 158, 11, 0.10);
+  --color-muted: #4A4030;         /* warm muted brown */
+  --color-muted-foreground: #A09070;
+  --color-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.6), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --color-highlight: rgba(245, 158, 11, 0.08);
+  --color-border: rgba(245, 158, 11, 0.12);
+  --color-input: #1A160E;
+  --color-gradient: linear-gradient(135deg, #F59E0B, #4ADE80);
 }
 
 .light {
-  --color-primary: #7c3aed;
-  --color-primary-dark: #6366f1;
-  --color-secondary: #06b6d4;
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
-  --color-card: #ffffff;
-  --color-card-border: rgba(0, 0, 0, 0.08);
-  --color-muted: #64748b;
-  --color-muted-foreground: #64748b;
-  /* slate-500 — WCAG AA compliant (4.6:1) on light backgrounds */
-  --color-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --color-highlight: rgba(124, 58, 237, 0.08);
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-input: #ffffff;
-  --color-gradient: linear-gradient(135deg, #7c3aed, #06b6d4);
+  --color-primary: #D97706;
+  --color-primary-dark: #B45309;
+  --color-secondary: #16A34A;
+  --color-background: #FDFAF4;
+  --color-foreground: #1C1208;
+  --color-card: #FFFCF0;
+  --color-card-border: rgba(28, 18, 8, 0.08);
+  --color-muted: #6B5B3E;
+  --color-muted-foreground: #6B5B3E;
+  --color-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --color-highlight: rgba(217, 119, 6, 0.08);
+  --color-border: rgba(28, 18, 8, 0.08);
+  --color-input: #FFFCF0;
+  --color-gradient: linear-gradient(135deg, #D97706, #16A34A);
 }
 
 *,
@@ -62,7 +57,7 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
@@ -75,7 +70,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Fraunces', Georgia, serif;
 }
 
 /* Background Animation */
@@ -96,7 +91,7 @@ body::before {
   right: -10vw;
   width: 50vw;
   height: 50vw;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(6, 182, 212, 0.1) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.04) 50%, transparent 70%);
   animation: float-glow 30s ease-in-out infinite;
 }
 
@@ -105,7 +100,7 @@ body::after {
   left: -10vw;
   width: 60vw;
   height: 60vw;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.08) 0%, rgba(74, 222, 128, 0.02) 50%, transparent 70%);
   animation: float-glow 35s ease-in-out infinite reverse;
 }
 
@@ -1004,4 +999,86 @@ textarea:focus-visible {
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ================================================================
+   MARQUEE — Horizontal scrolling ticker
+   ================================================================ */
+
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 28s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.marquee-wrapper {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+/* ================================================================
+   GRAIN OVERLAY — Subtle film grain for depth
+   ================================================================ */
+
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.018;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
+/* ================================================================
+   LANDING PAGE — Typography helpers
+   ================================================================ */
+
+.font-display-hero {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+}
+
+.font-mono-data {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum';
+}
+
+.text-amber-glow {
+  text-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+}
+
+/* ================================================================
+   SIDEBAR — Updated active state for amber theme
+   ================================================================ */
+
+.sidebar-item.active {
+  background: rgba(245, 158, 11, 0.10);
+  color: #FDF8EE;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.08);
+}
+
+.sidebar-item:hover {
+  background: rgba(245, 158, 11, 0.05);
+  color: var(--color-foreground);
+}
+
+/* ================================================================
+   HIGHLIGHT PILL — Updated for amber
+   ================================================================ */
+
+.highlight-pill {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(74, 222, 128, 0.15));
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
