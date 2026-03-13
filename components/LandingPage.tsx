@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
 import { PricingSection } from './PricingSection';
 import {
+    CheckCircle2Icon,
+    BrainCircuitIcon,
+    BarChart3Icon,
     XCircleIcon,
     ArrowRightIcon,
     LandmarkIcon,
@@ -17,231 +20,81 @@ import {
     UsersIcon,
     StarIcon,
     ChevronDownIcon,
-    MailIcon,
-    BrainCircuitIcon,
-    BarChart3Icon,
+    MessageCircleIcon,
+    MailIcon
 } from './icons';
 
-// ─── Animation Variants ─────────────────────────────────────────────────────
-
-const fadeUp = {
-    hidden: { opacity: 0, y: 28 },
-    visible: (delay = 0) => ({
-        opacity: 1,
-        y: 0,
-        transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1], delay }
-    })
+// --- Animations ---
+const fadeInUp = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const stagger = {
+const staggerContainer = {
     hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.1 }
+    }
 };
 
-// ─── Marquee strip ───────────────────────────────────────────────────────────
+// --- Sub-Components ---
 
-const MARQUEE_ITEMS = [
-    'ENEM', 'VESTIBULAR', 'OAB', 'MEDICINA', 'FUVEST', 'CONCURSOS FEDERAIS',
-    'SPACED REPETITION', 'FLASHCARDS IA', 'CICLOS DE ESTUDOS', 'RETENÇÃO',
-    'REDAÇÃO', 'SIMULADOS', 'REVISÃO INTELIGENTE', 'PROGRESSÃO REAL',
-];
-
-const MarqueeStrip: React.FC = () => {
-    const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
-    return (
-        <div className="marquee-wrapper border-y border-amber-500/10 bg-amber-500/[0.03] py-3">
-            <div className="marquee-track">
-                {items.map((item, i) => (
-                    <span key={i} className="flex items-center gap-5 px-5">
-                        <span
-                            className="text-[11px] font-mono tracking-widest uppercase whitespace-nowrap"
-                            style={{ color: i % 3 === 0 ? '#F59E0B' : 'rgba(253,248,238,0.35)' }}
-                        >
-                            {item}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-amber-500/20 shrink-0" />
-                    </span>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// ─── Animated counter ───────────────────────────────────────────────────────
-
-const CountUp: React.FC<{ to: number; suffix?: string }> = ({ to, suffix = '' }) => {
-    const [count, setCount] = useState(0);
-    const ref = useRef<HTMLSpanElement>(null);
-    const inView = useInView(ref, { once: true, margin: '-60px' });
-
-    useEffect(() => {
-        if (!inView) return;
-        let start = 0;
-        const duration = 1400;
-        const step = 16;
-        const steps = Math.floor(duration / step);
-        const increment = to / steps;
-        const timer = setInterval(() => {
-            start += increment;
-            if (start >= to) { setCount(to); clearInterval(timer); }
-            else setCount(Math.floor(start));
-        }, step);
-        return () => clearInterval(timer);
-    }, [inView, to]);
-
-    return <span ref={ref}>{count}{suffix}</span>;
-};
-
-// ─── Pain item ───────────────────────────────────────────────────────────────
-
-const PainItem: React.FC<{ text: string; index: number }> = ({ text, index }) => (
-    <motion.li
-        variants={fadeUp}
-        custom={index * 0.06}
-        className="flex items-start gap-5 group"
-    >
-        <span
-            className="font-mono text-xs tabular-nums shrink-0 mt-[3px] w-6 text-right opacity-40"
-            style={{ color: '#F59E0B' }}
-        >
-            0{index + 1}
-        </span>
-        <div className="flex-1 flex items-start gap-3 pb-5 border-b border-white/[0.06]">
-            <XCircleIcon className="w-5 h-5 shrink-0 mt-0.5" style={{ color: '#EF4444' }} />
-            <span className="text-base leading-snug" style={{ color: 'rgba(253,248,238,0.75)' }}>
-                {text}
-            </span>
-        </div>
+const PainItem = ({ text }: { text: string }) => (
+    <motion.li variants={fadeInUp} className="flex items-start gap-4 p-4 rounded-xl bg-red-500/5 border border-red-500/10 hover:bg-red-500/10 transition-colors">
+        <XCircleIcon className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
+        <span className="text-lg text-red-100/80">{text}</span>
     </motion.li>
 );
 
-// ─── Solution card ───────────────────────────────────────────────────────────
-
-const SolutionCard: React.FC<{
-    icon: React.FC<{ className?: string }>;
-    title: string;
-    description: string;
-    accent?: string;
-    delay?: number;
-}> = ({ icon: Icon, title, description, accent = '#F59E0B', delay = 0 }) => (
+const SolutionCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
     <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-40px' }}
-        variants={fadeUp}
-        custom={delay}
-        whileHover={{ y: -4 }}
-        className="relative p-7 rounded-2xl flex flex-col gap-5 overflow-hidden transition-all duration-300"
-        style={{
-            background: 'rgba(22,18,8,0.7)',
-            border: '1px solid rgba(245,158,11,0.10)',
-        }}
+        whileHover={{ y: -5 }}
+        className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/30 transition-all duration-300 relative overflow-hidden group"
     >
-        {/* accent top bar */}
-        <div className="absolute top-0 inset-x-0 h-[2px] rounded-t-2xl" style={{ background: accent }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-        <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: `${accent}18`, border: `1px solid ${accent}30` }}
-        >
-            <Icon className="w-6 h-6" style={{ color: accent } as any} />
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-7 h-7 text-primary" />
         </div>
-        <div>
-            <h3
-                className="text-xl font-display font-semibold mb-2 leading-snug"
-                style={{ color: '#FDF8EE' }}
-            >
-                {title}
-            </h3>
-            <p className="text-sm leading-relaxed" style={{ color: '#A09070' }}>
-                {description}
-            </p>
-        </div>
+        <h3 className="text-2xl font-bold mb-3 text-white">{title}</h3>
+        <p className="text-muted-foreground leading-relaxed">{description}</p>
     </motion.div>
 );
 
-// ─── Testimonial card ────────────────────────────────────────────────────────
-
-const TestimonialCard: React.FC<{
-    name: string;
-    role: string;
-    text: string;
-    avatar: string;
-    delay?: number;
-}> = ({ name, role, text, avatar, delay = 0 }) => (
+const TestimonialCard = ({ name, role, text, avatar }: { name: string, role: string, text: string, avatar: string }) => (
     <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-40px' }}
-        variants={fadeUp}
-        custom={delay}
-        className="relative p-7 rounded-2xl flex flex-col gap-5"
-        style={{
-            background: 'rgba(22,18,8,0.6)',
-            border: '1px solid rgba(245,158,11,0.10)',
-        }}
+        whileHover={{ y: -3 }}
+        className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/20 transition-all"
     >
-        {/* Giant quotation mark */}
-        <span
-            className="absolute top-3 right-5 font-display text-7xl leading-none select-none pointer-events-none"
-            style={{ color: 'rgba(245,158,11,0.12)' }}
-        >
-            "
-        </span>
-
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 mb-4">
             {[...Array(5)].map((_, i) => (
-                <StarIcon key={i} className="w-3.5 h-3.5" style={{ color: '#F59E0B', fill: '#F59E0B' } as any} />
+                <StarIcon key={i} className="w-4 h-4 text-yellow-500 fill-yellow-500" />
             ))}
         </div>
-
-        <p
-            className="text-sm leading-relaxed relative z-10 italic"
-            style={{ color: 'rgba(253,248,238,0.80)' }}
-        >
-            "{text}"
-        </p>
-
-        <div className="flex items-center gap-3 mt-auto">
-            <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                style={{
-                    background: 'linear-gradient(135deg, #F59E0B, #4ADE80)',
-                    color: '#0C0A06',
-                }}
-            >
+        <p className="text-muted-foreground mb-6 leading-relaxed italic">"{text}"</p>
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-black font-bold">
                 {avatar}
             </div>
             <div>
-                <p className="text-sm font-semibold" style={{ color: '#FDF8EE' }}>{name}</p>
-                <p className="text-xs" style={{ color: '#A09070' }}>{role}</p>
+                <p className="font-semibold text-white text-sm">{name}</p>
+                <p className="text-xs text-muted-foreground">{role}</p>
             </div>
         </div>
     </motion.div>
 );
 
-// ─── FAQ item ────────────────────────────────────────────────────────────────
-
-const FAQItem: React.FC<{ question: string; answer: string }> = ({ question, answer }) => {
-    const [isOpen, setIsOpen] = useState(false);
+const FAQItem = ({ question, answer }: { question: string, answer: string }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
     return (
-        <div
-            className="border-b transition-colors duration-200"
-            style={{ borderColor: 'rgba(245,158,11,0.10)' }}
-        >
+        <div className="border-b border-white/10">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full py-5 flex items-center justify-between text-left gap-4 transition-colors duration-200"
-                style={{ color: isOpen ? '#F59E0B' : '#FDF8EE' }}
+                className="w-full py-5 flex items-center justify-between text-left hover:text-primary transition-colors"
             >
-                <span className="font-medium text-base leading-snug">{question}</span>
-                <ChevronDownIcon
-                    className="w-4 h-4 shrink-0 transition-transform duration-300"
-                    style={{
-                        transform: isOpen ? 'rotate(180deg)' : 'none',
-                        color: '#F59E0B',
-                    }}
-                />
+                <span className="font-medium text-lg">{question}</span>
+                <ChevronDownIcon className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             <AnimatePresence>
                 {isOpen && (
@@ -249,23 +102,16 @@ const FAQItem: React.FC<{ question: string; answer: string }> = ({ question, ans
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                     >
-                        <p
-                            className="pb-5 text-sm leading-relaxed"
-                            style={{ color: '#A09070' }}
-                        >
-                            {answer}
-                        </p>
+                        <p className="pb-5 text-muted-foreground leading-relaxed">{answer}</p>
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 };
-
-// ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 export const LandingPage: React.FC = () => {
     const [showLogin, setShowLogin] = useState(false);
@@ -274,6 +120,7 @@ export const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Sincronizar URL com o estado do modal
     useEffect(() => {
         if (location.pathname === '/signup' || location.pathname === '/cadastro') {
             setInitialAuthMode('signup');
@@ -286,265 +133,117 @@ export const LandingPage: React.FC = () => {
         }
     }, [location.pathname]);
 
-    const handleSignupClick = () => navigate('/signup');
-    const handleLoginClick = () => navigate('/login');
-    const handleCloseModal = () => { setShowLogin(false); navigate('/'); };
+    const handleSignupClick = () => {
+        navigate('/signup');
+    };
+
+    const handleLoginClick = () => {
+        navigate('/login');
+    };
+
+    const handleCloseModal = () => {
+        setShowLogin(false);
+        navigate('/');
+    };
 
     return (
-        <div
-            className="min-h-screen text-foreground overflow-x-hidden"
-            style={{
-                background: '#0C0A06',
-                fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-            }}
-        >
-            {/* Film grain overlay */}
-            <div className="grain-overlay" />
+        <div className="min-h-screen bg-[#0A0A0B] text-foreground font-body overflow-x-hidden selection:bg-primary/30">
 
-            {/* ── NAVBAR ─────────────────────────────────────────────── */}
-            <nav
-                className="fixed top-0 inset-x-0 z-50 h-[68px] flex items-center"
-                style={{
-                    background: 'rgba(12,10,6,0.85)',
-                    backdropFilter: 'blur(16px)',
-                    borderBottom: '1px solid rgba(245,158,11,0.08)',
-                }}
-            >
-                <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
-                    {/* Logo */}
-                    <div className="flex items-center gap-2.5">
-                        <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{
-                                background: 'linear-gradient(135deg, #F59E0B, #4ADE80)',
-                                boxShadow: '0 0 16px rgba(245,158,11,0.25)',
-                            }}
-                        >
-                            <LandmarkIcon className="w-5 h-5" style={{ color: '#0C0A06' }} />
+            {/* Background Grid Pattern */}
+            <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" style={{
+                backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px)',
+                backgroundSize: '40px 40px'
+            }} />
+
+            {/* Navbar (Minimalist) */}
+            <nav className="fixed top-0 inset-x-0 z-50 h-20 border-b border-white/5 bg-[#0A0A0B]/80 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <LandmarkIcon className="w-6 h-6 text-black" />
                         </div>
-                        <span
-                            className="font-display font-bold text-xl tracking-tight"
-                            style={{ color: '#FDF8EE' }}
-                        >
-                            Eleva
-                        </span>
+                        <span className="font-display font-bold text-2xl tracking-tight">Eleva</span>
                     </div>
-
+                    {/* Login CTA only - No Menu */}
                     <button
                         onClick={handleLoginClick}
-                        className="text-sm font-medium transition-colors duration-200"
-                        style={{ color: '#A09070' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#FDF8EE')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#A09070')}
+                        className="text-sm font-medium text-muted-foreground hover:text-white transition-colors"
                     >
                         Já tenho conta
                     </button>
                 </div>
             </nav>
 
-            <main className="relative z-10">
+            <main className="relative z-10 pt-20">
 
-                {/* ── HERO ───────────────────────────────────────────── */}
-                <section className="relative pt-[68px] min-h-screen flex flex-col justify-center overflow-hidden">
+                {/* 🔵 HERO SECTION */}
+                <section className="pt-24 pb-32 px-6 relative overflow-hidden">
+                    {/* Glow Effects */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/20 blur-[120px] rounded-full opacity-30 -z-10" />
 
-                    {/* Amber radial glow */}
-                    <div
-                        className="absolute pointer-events-none"
-                        style={{
-                            top: '-10%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: '900px',
-                            height: '600px',
-                            background: 'radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.18) 0%, transparent 65%)',
-                            zIndex: 0,
-                        }}
-                    />
-
-                    {/* Giant watermark "ELEVA" */}
-                    <div
-                        className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden"
-                        style={{ zIndex: 0 }}
-                        aria-hidden
-                    >
-                        <span
-                            className="font-display font-bold"
-                            style={{
-                                fontSize: 'clamp(100px, 22vw, 280px)',
-                                color: 'transparent',
-                                WebkitTextStroke: '1px rgba(245,158,11,0.06)',
-                                letterSpacing: '0.12em',
-                                lineHeight: 1,
-                                userSelect: 'none',
-                            }}
-                        >
-                            ELEVA
-                        </span>
-                    </div>
-
-                    <div className="relative z-10 max-w-5xl mx-auto px-6 py-24 text-center">
+                    <div className="max-w-4xl mx-auto text-center space-y-8">
                         <motion.div
                             initial="hidden"
                             animate="visible"
-                            variants={stagger}
+                            variants={staggerContainer}
                             className="space-y-8"
                         >
-                            {/* Overline pill */}
-                            <motion.div variants={fadeUp} custom={0}>
-                                <span
-                                    className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest px-4 py-2 rounded-full"
-                                    style={{
-                                        background: 'rgba(245,158,11,0.10)',
-                                        border: '1px solid rgba(245,158,11,0.25)',
-                                        color: '#F59E0B',
-                                    }}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                                    Plataforma de estudos inteligente
-                                </span>
-                            </motion.div>
-
-                            {/* Main headline */}
-                            <motion.h1
-                                variants={fadeUp}
-                                custom={0.1}
-                                className="font-display leading-[1.05] tracking-tight"
-                                style={{
-                                    fontSize: 'clamp(44px, 8.5vw, 96px)',
-                                    color: '#FDF8EE',
-                                }}
-                            >
-                                Pare de estudar<br />
-                                <span style={{ color: '#F59E0B' }} className="text-amber-glow italic">
-                                    sem método.
-                                </span>
+                            <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-[1.1] tracking-tight">
+                                Pare de estudar <br />
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">sem método.</span>
                             </motion.h1>
 
-                            {/* Subtext */}
-                            <motion.p
-                                variants={fadeUp}
-                                custom={0.2}
-                                className="text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed"
-                                style={{ color: '#A09070', fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                            >
-                                Organize seus estudos em um só lugar — flashcards inteligentes, ciclos de revisão e métricas reais para quem leva o aprendizado a sério.
+                            <motion.p variants={fadeInUp} className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                                Organize seus estudos em um só lugar com o Eleva. Flashcards inteligentes, quizzes e organização diária para quem estuda sério.
                             </motion.p>
 
-                            {/* CTA */}
-                            <motion.div
-                                variants={fadeUp}
-                                custom={0.3}
-                                className="flex flex-col items-center gap-4"
-                            >
+                            <motion.div variants={fadeInUp} className="flex flex-col items-center gap-4">
                                 <button
                                     onClick={handleSignupClick}
-                                    className="group relative flex items-center gap-3 px-8 py-4 rounded-full text-base font-bold transition-all duration-300"
-                                    style={{
-                                        background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                                        color: '#0C0A06',
-                                        boxShadow: '0 0 0 0 rgba(245,158,11,0.4)',
-                                    }}
-                                    onMouseEnter={e => {
-                                        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 40px rgba(245,158,11,0.40), 0 4px 20px rgba(245,158,11,0.30)';
-                                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px) scale(1.02)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 0 rgba(245,158,11,0.4)';
-                                        (e.currentTarget as HTMLButtonElement).style.transform = '';
-                                    }}
+                                    className="group relative px-8 py-4 bg-white text-black text-lg font-bold rounded-full shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:scale-105 transition-all duration-300 flex items-center gap-3"
                                 >
-                                    Criar meu plano de estudos grátis
-                                    <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                    👉 Criar meu plano de estudos grátis
+                                    <div className="absolute inset-0 rounded-full border border-black/10" />
                                 </button>
-                                <p
-                                    className="text-xs font-mono"
-                                    style={{ color: 'rgba(160,144,112,0.6)' }}
-                                >
-                                    Sem cartão. Sem compromisso.
-                                </p>
+                                <p className="text-sm text-muted-foreground/60">Sem cartão. Sem compromisso.</p>
 
-                                {/* Social proof */}
-                                <div
-                                    className="flex items-center gap-2.5 py-2 px-4 rounded-full"
-                                    style={{
-                                        background: 'rgba(22,18,8,0.8)',
-                                        border: '1px solid rgba(245,158,11,0.12)',
-                                    }}
-                                >
-                                    <div className="flex -space-x-1.5">
-                                        {[
-                                            ['M', 'linear-gradient(135deg,#3B82F6,#2563EB)'],
-                                            ['L', 'linear-gradient(135deg,#4ADE80,#16A34A)'],
-                                            ['A', 'linear-gradient(135deg,#F59E0B,#D97706)'],
-                                        ].map(([letter, bg], i) => (
-                                            <div
-                                                key={i}
-                                                className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
-                                                style={{
-                                                    background: bg,
-                                                    color: '#0C0A06',
-                                                    border: '2px solid #0C0A06',
-                                                }}
-                                            >
-                                                {letter}
-                                            </div>
-                                        ))}
+                                {/* Social Proof */}
+                                <div className="flex items-center gap-2 mt-4 py-2 px-4 rounded-full bg-white/5 border border-white/10">
+                                    <div className="flex -space-x-2">
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">M</div>
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-green-500 to-green-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">L</div>
+                                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 border-2 border-[#0A0A0B] flex items-center justify-center text-[10px] font-bold text-white">A</div>
                                     </div>
-                                    <span
-                                        className="text-xs"
-                                        style={{ color: '#A09070' }}
-                                    >
-                                        +500 estudantes já usam o Eleva
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">+500 estudantes já usam o Eleva</span>
                                 </div>
                             </motion.div>
                         </motion.div>
                     </div>
                 </section>
 
-                {/* ── MARQUEE ──────────────────────────────────────────── */}
-                <MarqueeStrip />
-
-                {/* ── DEMO VIDEO ───────────────────────────────────────── */}
-                <section className="py-16 px-6">
-                    <div className="max-w-5xl mx-auto">
+                {/* 🎥 VÍDEO DEMO */}
+                <section className="py-12 px-6">
+                    <div className="max-w-6xl mx-auto">
                         <motion.div
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: '-80px' }}
-                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative rounded-2xl overflow-hidden"
-                            style={{
-                                border: '1px solid rgba(245,158,11,0.15)',
-                                boxShadow: '0 0 80px rgba(245,158,11,0.08), 0 30px 60px rgba(0,0,0,0.5)',
-                                background: '#0F0C06',
-                            }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.8 }}
+                            className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-primary/20 bg-[#0F0F11]"
                         >
-                            {/* Browser chrome */}
-                            <div
-                                className="h-10 flex items-center px-4 gap-2"
-                                style={{
-                                    background: 'rgba(245,158,11,0.04)',
-                                    borderBottom: '1px solid rgba(245,158,11,0.08)',
-                                }}
-                            >
+                            {/* Browser Header Mockup */}
+                            <div className="h-10 bg-white/5 border-b border-white/5 flex items-center px-4 gap-2">
                                 <div className="w-3 h-3 rounded-full bg-red-500/50" />
                                 <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                                 <div className="w-3 h-3 rounded-full bg-green-500/50" />
-                                <div
-                                    className="ml-4 px-3 py-1 rounded-md text-[10px] font-mono flex items-center gap-1.5"
-                                    style={{
-                                        background: 'rgba(245,158,11,0.06)',
-                                        color: '#A09070',
-                                    }}
-                                >
-                                    <LockIcon className="w-2.5 h-2.5" />
+                                <div className="ml-4 px-3 py-1 bg-black/50 rounded-md text-[10px] text-muted-foreground font-mono flex items-center gap-1">
+                                    <LockIcon className="w-3 h-3" />
                                     meueleva.com
                                 </div>
                             </div>
 
-                            {/* Video */}
-                            <div className="relative aspect-video overflow-hidden group">
+                            {/* Video Container */}
+                            <div className="relative aspect-video bg-black/50 overflow-hidden group">
                                 <video
                                     src="/dashboard-demo.mp4"
                                     autoPlay
@@ -553,418 +252,184 @@ export const LandingPage: React.FC = () => {
                                     playsInline
                                     className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
                                 />
+
+                                {/* Sound Toggle */}
                                 <button
                                     onClick={() => setIsMuted(!isMuted)}
-                                    className="absolute bottom-4 right-4 p-2 rounded-full backdrop-blur-sm transition-all z-20"
-                                    style={{
-                                        background: 'rgba(12,10,6,0.7)',
-                                        border: '1px solid rgba(245,158,11,0.20)',
-                                        color: 'rgba(253,248,238,0.7)',
-                                    }}
+                                    className="absolute bottom-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white/70 hover:text-white backdrop-blur-sm transition-all z-20"
                                 >
-                                    {isMuted ? <VolumeXIcon className="w-4 h-4" /> : <Volume2Icon className="w-4 h-4" />}
+                                    {isMuted ? <VolumeXIcon className="w-5 h-5" /> : <Volume2Icon className="w-5 h-5" />}
                                 </button>
-                                <div
-                                    className="absolute inset-0 pointer-events-none"
-                                    style={{ background: 'linear-gradient(to top, rgba(12,10,6,0.4) 0%, transparent 30%)' }}
-                                />
+
+                                {/* Overlay Gradient for smoother blend */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0B] via-transparent to-transparent opacity-20 pointer-events-none" />
                             </div>
                         </motion.div>
                     </div>
                 </section>
 
-                {/* ── STATS BAR ────────────────────────────────────────── */}
-                <section className="py-12 px-6">
-                    <div className="max-w-4xl mx-auto">
-                        <div
-                            className="grid grid-cols-3 divide-x rounded-2xl overflow-hidden"
-                            style={{
-                                background: 'rgba(22,18,8,0.6)',
-                                border: '1px solid rgba(245,158,11,0.10)',
-                                divideColor: 'rgba(245,158,11,0.10)',
-                            }}
-                        >
-                            {[
-                                { value: 500, suffix: '+', label: 'Estudantes ativos' },
-                                { value: 20, suffix: '+', label: 'Matérias disponíveis' },
-                                { value: 98, suffix: '%', label: 'Taxa de satisfação' },
-                            ].map(({ value, suffix, label }, i) => (
-                                <div
-                                    key={i}
-                                    className="flex flex-col items-center justify-center py-8 px-4 gap-1"
-                                    style={{ borderColor: 'rgba(245,158,11,0.10)' }}
-                                >
-                                    <span
-                                        className="font-mono text-3xl sm:text-4xl font-semibold"
-                                        style={{ color: '#F59E0B' }}
-                                    >
-                                        <CountUp to={value} suffix={suffix} />
-                                    </span>
-                                    <span
-                                        className="text-xs text-center leading-snug"
-                                        style={{ color: '#A09070' }}
-                                    >
-                                        {label}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ── PAIN SECTION ─────────────────────────────────────── */}
-                <section
-                    className="py-24 px-6"
-                    style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}
-                >
+                {/* 🟣 BLOCO DE DOR (Identificação) */}
+                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/40 border-y border-white/5">
                     <div className="max-w-3xl mx-auto">
-                        {/* Header */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="mb-14"
-                        >
-                            <p
-                                className="font-mono text-xs uppercase tracking-widest mb-4"
-                                style={{ color: '#F59E0B' }}
-                            >
-                                O problema
-                            </p>
-                            <h2
-                                className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                Esse cenário é familiar?
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
+                                Se você estuda, mas sente que não evolui...
                             </h2>
-                        </motion.div>
+                            <p className="text-muted-foreground">Isso soa familiar?</p>
+                        </div>
 
-                        {/* Pain list */}
-                        <motion.ul
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                            variants={stagger}
-                            className="space-y-0 mb-14"
-                        >
-                            <PainItem text="Estuda muito e esquece o conteúdo em dias" index={0} />
-                            <PainItem text="Não sabe exatamente o que revisar hoje" index={1} />
-                            <PainItem text="Perde horas organizando planilhas que não funcionam" index={2} />
-                            <PainItem text="Falta constância e sente que não está evoluindo" index={3} />
-                        </motion.ul>
+                        <ul className="space-y-4 max-w-2xl mx-auto mb-12">
+                            <PainItem text="Estuda muito e esquece rápido" />
+                            <PainItem text="Não sabe o que revisar hoje" />
+                            <PainItem text="Perde tempo organizando planilhas" />
+                            <PainItem text="Falta constância e motivação" />
+                        </ul>
 
-                        {/* Callout */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7, delay: 0.3 }}
-                            className="p-8 rounded-2xl text-center"
-                            style={{
-                                background: 'rgba(22,18,8,0.8)',
-                                border: '1px solid rgba(245,158,11,0.15)',
-                            }}
-                        >
-                            <p
-                                className="font-display text-2xl sm:text-3xl font-semibold mb-2"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                O problema não é falta de esforço.
-                            </p>
-                            <p
-                                className="font-display text-2xl sm:text-3xl font-bold"
-                                style={{ color: '#F59E0B' }}
-                            >
-                                É falta de método.
-                            </p>
-                        </motion.div>
-                    </div>
-                </section>
-
-                {/* ── SOLUTION SECTION ─────────────────────────────────── */}
-                <section
-                    className="py-24 px-6"
-                    style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}
-                >
-                    <div className="max-w-6xl mx-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="text-center mb-16"
-                        >
-                            <p
-                                className="font-mono text-xs uppercase tracking-widest mb-4"
-                                style={{ color: '#4ADE80' }}
-                            >
-                                A solução
-                            </p>
-                            <h2
-                                className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                O Eleva resolve isso pra você
-                            </h2>
-                        </motion.div>
-
-                        <div className="grid md:grid-cols-3 gap-5">
-                            <SolutionCard
-                                icon={LayoutDashboardIcon}
-                                title="Organização automática"
-                                description="Cronograma, materiais e metas organizados automaticamente. Sem planilhas, sem bagunça."
-                                accent="#F59E0B"
-                                delay={0}
-                            />
-                            <SolutionCard
-                                icon={BrainCircuitIcon}
-                                title="Revisão inteligente"
-                                description="Algoritmo de repetição espaçada decide o que revisar. Você só estuda o que precisa."
-                                accent="#4ADE80"
-                                delay={0.08}
-                            />
-                            <SolutionCard
-                                icon={BarChart3Icon}
-                                title="Progresso visível"
-                                description="Métricas reais de desempenho e constância. Saiba exatamente onde você está evoluindo."
-                                accent="#F59E0B"
-                                delay={0.16}
-                            />
+                        <div className="text-center p-8 bg-gradient-to-b from-white/5 to-transparent rounded-2xl border border-white/10">
+                            <p className="text-2xl font-medium text-white mb-2">O problema não é falta de esforço.</p>
+                            <p className="text-xl text-primary font-bold">É falta de método.</p>
                         </div>
                     </div>
                 </section>
 
-                {/* ── PROOF BANNER ─────────────────────────────────────── */}
-                <section
-                    className="py-20 px-6"
-                    style={{
-                        background: 'rgba(22,18,8,0.5)',
-                        borderTop: '1px solid rgba(245,158,11,0.08)',
-                        borderBottom: '1px solid rgba(245,158,11,0.08)',
-                    }}
-                >
-                    <div className="max-w-4xl mx-auto text-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.96 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="space-y-5"
-                        >
-                            <div
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-                                style={{
-                                    background: 'rgba(245,158,11,0.08)',
-                                    border: '1px solid rgba(245,158,11,0.20)',
-                                }}
-                            >
-                                <SparklesIcon className="w-4 h-4" style={{ color: '#F59E0B' }} />
-                                <span
-                                    className="text-sm font-medium"
-                                    style={{ color: '#F59E0B' }}
-                                >
-                                    Metodologia comprovada
-                                </span>
-                            </div>
-                            <h2
-                                className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                Feito para quem leva os estudos a sério
-                            </h2>
-                            <p
-                                className="text-lg max-w-2xl mx-auto leading-relaxed"
-                                style={{ color: '#A09070' }}
-                            >
-                                O Eleva foi criado para estudantes e concurseiros que querem{' '}
-                                <span style={{ color: '#FDF8EE', fontWeight: 600 }}>
-                                    constância, clareza e evolução real
-                                </span>{' '}
-                                — sem perder tempo com planilhas ou métodos confusos.
-                            </p>
-                        </motion.div>
+                {/* 🟢 BLOCO DE SOLUÇÃO (O Eleva) */}
+                <section className="py-32 px-6 text-center">
+                    <div className="mb-16">
+                        <span className="inline-block py-1 px-3 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold mb-6">
+                            A SOLUÇÃO
+                        </span>
+                        <h2 className="text-4xl md:text-5xl font-display font-bold">
+                            O Eleva resolve isso pra você
+                        </h2>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6 text-left">
+                        <SolutionCard
+                            icon={LayoutDashboardIcon}
+                            title="Organização automática"
+                            description="Tudo em um só lugar. Cronograma, materiais e metas organizados automaticamente, sem bagunça."
+                        />
+                        <SolutionCard
+                            icon={BrainCircuitIcon}
+                            title="Revisão inteligente"
+                            description="Você revisa apenas o que precisa. Nosso algoritmo garante que você não esqueça o conteúdo."
+                        />
+                        <SolutionCard
+                            icon={BarChart3Icon}
+                            title="Progresso visível"
+                            description="Saiba exatamente onde está evoluindo com métricas claras de desempenho e constância."
+                        />
                     </div>
                 </section>
 
-                {/* ── CTA STRONG ───────────────────────────────────────── */}
+                {/* 🟠 BLOCO DE PROVA */}
+                <section className="py-24 px-6 bg-[#0F0F11] border-t border-white/5">
+                    <div className="max-w-4xl mx-auto text-center space-y-8">
+                        <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/5 border border-white/10 mb-4">
+                            <SparklesIcon className="w-6 h-6 text-yellow-500 mr-2" />
+                            <span className="text-lg font-medium text-white">Metodologia comprovada</span>
+                        </div>
+
+                        <h2 className="text-3xl md:text-4xl font-display font-bold text-white">
+                            Feito para quem leva os estudos a sério
+                        </h2>
+
+                        <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+                            O Eleva foi criado para estudantes e concurseiros que querem
+                            <span className="text-white font-semibold"> constância, clareza e evolução real </span>
+                            — sem perder tempo com planilhas ou métodos confusos.
+                        </p>
+                    </div>
+                </section>
+
+                {/* 🔵 BLOCO DE CTA FORTE */}
                 <section className="py-32 px-6 relative overflow-hidden">
-                    <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                            background: 'radial-gradient(ellipse at 50% 50%, rgba(245,158,11,0.08) 0%, transparent 65%)',
-                        }}
-                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-50" />
 
-                    <div className="max-w-2xl mx-auto text-center relative z-10">
-                        <motion.div
-                            initial={{ opacity: 0, y: 24 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                            className="p-12 rounded-3xl"
-                            style={{
-                                background: 'rgba(22,18,8,0.80)',
-                                border: '1px solid rgba(245,158,11,0.18)',
-                                boxShadow: '0 0 80px rgba(245,158,11,0.06)',
-                            }}
-                        >
-                            <h2
-                                className="font-display text-4xl sm:text-5xl font-semibold mb-3 leading-tight"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                Comece hoje.
-                            </h2>
-                            <h2
-                                className="font-display text-4xl sm:text-5xl font-bold mb-8 leading-tight italic"
-                                style={{ color: '#F59E0B' }}
-                            >
-                                É grátis.
-                            </h2>
+                    <div className="max-w-3xl mx-auto text-center relative z-10 p-12 rounded-3xl border border-white/10 bg-black/40 backdrop-blur-sm">
+                        <h2 className="text-4xl md:text-5xl font-display font-bold mb-8">
+                            Comece hoje. É grátis.
+                        </h2>
 
+                        <div className="flex flex-col items-center gap-4">
                             <button
                                 onClick={handleSignupClick}
-                                className="w-full sm:w-auto px-10 py-4 text-lg font-bold rounded-full transition-all duration-300"
-                                style={{
-                                    background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                                    color: '#0C0A06',
-                                    boxShadow: '0 4px 24px rgba(245,158,11,0.30)',
-                                }}
-                                onMouseEnter={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 40px rgba(245,158,11,0.45)';
-                                }}
-                                onMouseLeave={e => {
-                                    (e.currentTarget as HTMLButtonElement).style.transform = '';
-                                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 24px rgba(245,158,11,0.30)';
-                                }}
+                                className="w-full sm:w-auto px-12 py-5 bg-primary hover:bg-primary-dark text-white text-xl font-bold rounded-xl shadow-xl shadow-primary/20 hover:scale-105 transition-all duration-300 active:scale-95"
                             >
-                                Criar conta gratuita
+                                👉 Criar conta gratuita
                             </button>
-
-                            <p
-                                className="mt-5 text-sm flex items-center justify-center gap-2"
-                                style={{ color: '#A09070' }}
-                            >
+                            <p className="text-sm text-muted-foreground flex items-center gap-2">
                                 <TimerIcon className="w-4 h-4" />
                                 Leva menos de 1 minuto
                             </p>
-                        </motion.div>
+                        </div>
                     </div>
                 </section>
 
-                {/* ── URGENCY CLOSER ───────────────────────────────────── */}
-                <section className="pb-8 px-6 text-center">
-                    <p
-                        className="text-base mb-4"
-                        style={{ color: '#A09070' }}
-                    >
-                        Quanto mais você adia, mais tempo perde estudando do jeito errado.
-                    </p>
-                    <button
-                        onClick={handleSignupClick}
-                        className="text-sm font-medium pb-0.5 transition-all duration-200"
-                        style={{
-                            color: '#FDF8EE',
-                            borderBottom: '1px solid rgba(245,158,11,0.40)',
-                        }}
-                        onMouseEnter={e => {
-                            (e.currentTarget as HTMLButtonElement).style.color = '#F59E0B';
-                            (e.currentTarget as HTMLButtonElement).style.borderBottomColor = '#F59E0B';
-                        }}
-                        onMouseLeave={e => {
-                            (e.currentTarget as HTMLButtonElement).style.color = '#FDF8EE';
-                            (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'rgba(245,158,11,0.40)';
-                        }}
-                    >
-                        Comece agora. Criar conta no Eleva →
-                    </button>
+                {/* 🔴 BLOCO FINAL (Urgência Suave) */}
+                <section className="pb-16 px-6 text-center">
+                    <div className="max-w-2xl mx-auto">
+                        <p className="text-lg text-muted-foreground mb-6">
+                            Quanto mais você adia, mais tempo perde estudando do jeito errado.
+                        </p>
+                        <button
+                            onClick={handleSignupClick}
+                            className="text-white hover:text-primary font-medium border-b border-transparent hover:border-primary transition-all pb-0.5"
+                        >
+                            Comece agora. Criar conta no Eleva →
+                        </button>
+                    </div>
                 </section>
 
-                {/* ── TESTIMONIALS ─────────────────────────────────────── */}
-                <section
-                    className="py-24 px-6"
-                    style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}
-                >
+                {/* ⭐ DEPOIMENTOS */}
+                <section className="py-24 px-6 bg-gradient-to-b from-transparent to-black/20">
                     <div className="max-w-6xl mx-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="text-center mb-16"
-                        >
-                            <p
-                                className="font-mono text-xs uppercase tracking-widest mb-4"
-                                style={{ color: '#F59E0B' }}
-                            >
-                                Depoimentos
-                            </p>
-                            <h2
-                                className="font-display text-3xl sm:text-4xl font-semibold"
-                                style={{ color: '#FDF8EE' }}
-                            >
+                        <div className="text-center mb-16">
+                            <span className="inline-block py-1 px-3 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm font-bold mb-6">
+                                DEPOIMENTOS
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-display font-bold">
                                 O que dizem sobre o Eleva
                             </h2>
-                        </motion.div>
+                        </div>
 
-                        <div className="grid md:grid-cols-3 gap-5">
+                        <div className="grid md:grid-cols-3 gap-6">
                             <TestimonialCard
                                 name="Mariana S."
                                 role="Aprovada no TRF3"
                                 text="Finalmente parei de esquecer o que estudava. O sistema de revisão do Eleva mudou minha rotina completamente."
                                 avatar="M"
-                                delay={0}
                             />
                             <TestimonialCard
                                 name="Lucas P."
                                 role="Estudante de Medicina"
                                 text="Uso os flashcards todo dia. Em 3 meses, minha retenção de conteúdo aumentou absurdamente. Recomendo demais!"
                                 avatar="L"
-                                delay={0.1}
                             />
                             <TestimonialCard
                                 name="Ana C."
-                                role="Concurseira — Área Fiscal"
+                                role="Concurseira - Área Fiscal"
                                 text="O dashboard me mostra exatamente onde preciso focar. Parei de perder tempo estudando o que já sei."
                                 avatar="A"
-                                delay={0.2}
                             />
                         </div>
                     </div>
                 </section>
 
-                {/* ── PRICING ──────────────────────────────────────────── */}
+
+                {/* 💲 PREÇOS */}
                 <PricingSection />
 
-                {/* ── FAQ ──────────────────────────────────────────────── */}
-                <section
-                    className="py-24 px-6"
-                    style={{ borderTop: '1px solid rgba(245,158,11,0.06)' }}
-                >
+                {/* ❓ FAQ */}
+                <section className="py-24 px-6">
                     <div className="max-w-3xl mx-auto">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.7 }}
-                            className="text-center mb-16"
-                        >
-                            <p
-                                className="font-mono text-xs uppercase tracking-widest mb-4"
-                                style={{ color: '#F59E0B' }}
-                            >
-                                FAQ
-                            </p>
-                            <h2
-                                className="font-display text-3xl sm:text-4xl font-semibold"
-                                style={{ color: '#FDF8EE' }}
-                            >
-                                Perguntas frequentes
+                        <div className="text-center mb-16">
+                            <h2 className="text-3xl md:text-4xl font-display font-bold">
+                                Perguntas Frequentes
                             </h2>
-                        </motion.div>
+                        </div>
 
-                        <div>
+                        <div className="space-y-2">
                             <FAQItem
                                 question="É realmente grátis?"
                                 answer="Sim! O plano gratuito inclui acesso ao dashboard, flashcards manuais, e organização básica. Você pode usar sem pagar nada e fazer upgrade quando quiser mais recursos."
@@ -989,108 +454,63 @@ export const LandingPage: React.FC = () => {
                     </div>
                 </section>
 
-                {/* ── FOOTER ───────────────────────────────────────────── */}
-                <footer
-                    className="py-12 px-6"
-                    style={{
-                        borderTop: '1px solid rgba(245,158,11,0.08)',
-                        background: 'rgba(8,6,3,0.6)',
-                    }}
-                >
+                {/* 🦶 FOOTER */}
+                <footer className="py-12 px-6 border-t border-white/5 bg-[#0A0A0B]">
                     <div className="max-w-6xl mx-auto">
                         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="flex items-center gap-2.5">
-                                <div
-                                    className="w-8 h-8 rounded-xl flex items-center justify-center"
-                                    style={{ background: 'linear-gradient(135deg, #F59E0B, #4ADE80)' }}
-                                >
-                                    <LandmarkIcon className="w-4 h-4" style={{ color: '#0C0A06' }} />
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+                                    <LandmarkIcon className="w-4 h-4 text-black" />
                                 </div>
-                                <span
-                                    className="font-display font-bold text-lg"
-                                    style={{ color: '#FDF8EE' }}
-                                >
-                                    Eleva
-                                </span>
+                                <span className="font-display font-bold text-lg">Eleva</span>
                             </div>
 
-                            <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-                                {[
-                                    { label: 'Termos de Uso', href: '#' },
-                                    { label: 'Política de Privacidade', href: '#' },
-                                ].map(({ label, href }) => (
-                                    <a
-                                        key={label}
-                                        href={href}
-                                        className="transition-colors duration-200"
-                                        style={{ color: '#A09070' }}
-                                        onMouseEnter={e => (e.currentTarget.style.color = '#FDF8EE')}
-                                        onMouseLeave={e => (e.currentTarget.style.color = '#A09070')}
-                                    >
-                                        {label}
-                                    </a>
-                                ))}
-                                <a
-                                    href="mailto:suporte@meueleva.com"
-                                    className="flex items-center gap-1.5 transition-colors duration-200"
-                                    style={{ color: '#A09070' }}
-                                    onMouseEnter={e => (e.currentTarget.style.color = '#F59E0B')}
-                                    onMouseLeave={e => (e.currentTarget.style.color = '#A09070')}
-                                >
-                                    <MailIcon className="w-3.5 h-3.5" />
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                                <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
+                                <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>
+                                <a href="mailto:suporte@meueleva.com" className="hover:text-white transition-colors flex items-center gap-1">
+                                    <MailIcon className="w-4 h-4" />
                                     suporte@meueleva.com
                                 </a>
                             </div>
                         </div>
 
-                        <div
-                            className="mt-8 pt-8 text-center text-xs font-mono"
-                            style={{
-                                borderTop: '1px solid rgba(245,158,11,0.06)',
-                                color: 'rgba(160,144,112,0.4)',
-                            }}
-                        >
+                        <div className="mt-8 pt-8 border-t border-white/5 text-center text-xs text-muted-foreground">
                             © {new Date().getFullYear()} Eleva. Todos os direitos reservados.
                         </div>
                     </div>
                 </footer>
 
-            </main>
-
-            {/* ── LOGIN MODAL ──────────────────────────────────────── */}
-            <AnimatePresence>
-                {showLogin && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={handleCloseModal}
-                            className="absolute inset-0"
-                            style={{ background: 'rgba(8,6,3,0.90)', backdropFilter: 'blur(8px)' }}
-                        />
-
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.96, y: 16 }}
-                            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                            className="relative z-10 w-full max-w-md"
-                        >
-                            <button
+                {/* Login Modal Overlay */}
+                <AnimatePresence>
+                    {showLogin && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 onClick={handleCloseModal}
-                                className="absolute -top-12 right-0 p-2 transition-colors duration-200"
-                                style={{ color: 'rgba(253,248,238,0.4)' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#FDF8EE')}
-                                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(253,248,238,0.4)')}
+                                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            />
+
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="relative z-10 w-full max-w-md"
                             >
-                                <XIcon className="w-5 h-5" />
-                            </button>
-                            <LoginPage initialAuthMode={initialAuthMode} />
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="absolute -top-12 right-0 p-2 text-white/50 hover:text-white transition-colors"
+                                >
+                                    <XIcon className="w-6 h-6" />
+                                </button>
+                                <LoginPage initialAuthMode={initialAuthMode} />
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+            </main>
         </div>
     );
 };
