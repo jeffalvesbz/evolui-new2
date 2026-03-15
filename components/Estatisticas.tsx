@@ -13,10 +13,6 @@ import {
     TargetIcon,
     CalendarDaysIcon,
     AlertTriangleIcon,
-    BrainIcon,
-    ActivityIcon,
-    ZapIcon,
-    SparklesIcon,
 } from './icons';
 import { useEstudosStore } from '../stores/useEstudosStore';
 import { useDisciplinasStore } from '../stores/useDisciplinasStore';
@@ -34,11 +30,6 @@ import { ptBR } from 'date-fns/locale';
 import { ActivityHeatmap } from './ActivityHeatmap';
 import { PeakHoursChart } from './PeakHoursChart';
 import { TopicPerformance } from './TopicPerformance';
-import { AdvancedInsights } from './AdvancedInsights';
-import { WeeklyComparison } from './WeeklyComparison';
-import { DisciplineEvolution } from './DisciplineEvolution';
-import { StudyEfficiency } from './StudyEfficiency';
-import { ConsistencyScore } from './ConsistencyScore';
 
 const formatStudyDuration = (minutes: number) => {
     const totalMinutes = Math.max(0, Math.round(minutes ?? 0));
@@ -486,111 +477,6 @@ const Estatisticas: React.FC = () => {
                     <MetricCard icon={BookOpenCheckIcon} title="Taxa Revisão" value={performanceStats.taxaRevisao} color="text-blue-500" />
                     <MetricCard icon={FileTextIcon} title="Média Simulados" value={performanceStats.mediaAcertosSimulados} color="text-green-500" />
                 </div>
-            </section>
-
-            {/* Insights Inteligentes */}
-            <section className="space-y-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <BrainIcon className="w-5 h-5 text-purple-500" />
-                    Insights Inteligentes
-                </h2>
-                <p className="text-sm text-muted-foreground -mt-2">Análises automáticas baseadas nos seus dados para direcionar seus estudos.</p>
-                <PremiumFeatureWrapper
-                    isLocked={planType === 'free'}
-                    requiredPlan="pro"
-                    feature="Receba diagnósticos precisos sobre o que melhorar"
-                    showPreview={true}
-                >
-                    <AdvancedInsights
-                        sessoes={sessoes}
-                        disciplinas={disciplinas}
-                        revisoes={revisoes}
-                        erros={erros}
-                        simulados={simulados}
-                    />
-                </PremiumFeatureWrapper>
-            </section>
-
-            {/* Comparativo Semanal + Consistência */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ActivityIcon className="w-5 h-5 text-blue-500" />
-                            Comparativo Semanal
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Compare seu desempenho semana a semana"
-                            showPreview={true}
-                        >
-                            <WeeklyComparison sessoes={sessoes} simulados={simulados} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <SparklesIcon className="w-5 h-5 text-orange-500" />
-                            Índice de Consistência
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Saiba se você estuda com regularidade ou só em vésperas"
-                            showPreview={true}
-                        >
-                            <ConsistencyScore sessoes={sessoes} simulados={simulados} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-            </section>
-
-            {/* Evolução por Disciplina + Eficiência */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUpIcon className="w-5 h-5 text-emerald-500" />
-                            Evolução por Disciplina
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Veja se seu aproveitamento está subindo ou caindo por matéria"
-                            showPreview={true}
-                        >
-                            <DisciplineEvolution sessoes={sessoes} disciplinas={disciplinas} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-border shadow-md">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ZapIcon className="w-5 h-5 text-amber-500" />
-                            Eficiência de Estudo
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PremiumFeatureWrapper
-                            isLocked={planType === 'free'}
-                            requiredPlan="pro"
-                            feature="Descubra onde seu tempo rende mais e onde está sendo desperdiçado"
-                            showPreview={true}
-                        >
-                            <StudyEfficiency sessoes={sessoes} disciplinas={disciplinas} />
-                        </PremiumFeatureWrapper>
-                    </CardContent>
-                </Card>
             </section>
 
             <section className="space-y-4">
