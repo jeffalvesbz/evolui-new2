@@ -23,7 +23,7 @@ export const useEditalSync = () => {
 
             // 1. Carregar dados específicos do edital
             useDisciplinasStore.getState().fetchDisciplinas(editalId);
-            useEstudosStore.getState().fetchSessoes(editalId, 300);
+            useEstudosStore.getState().fetchSessoes(editalId);
             useRevisoesStore.getState().fetchRevisoes(editalId);
             useCiclosStore.getState().fetchCiclos(editalId);
 
