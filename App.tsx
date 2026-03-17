@@ -101,7 +101,7 @@ const useEditalDataSync = () => {
         fetchDisciplinas(editalAtivo.id),
         fetchRevisoes(editalAtivo.id),
         // fetchErros(editalAtivo.id), // Removido do load inicial (carregar na página de erros)
-        fetchSessoes(editalAtivo.id, 300), // Limitado a 300 sessões para performance
+        fetchSessoes(editalAtivo.id), // Busca todas as sessões para cálculo correto de ofensiva
         fetchCiclos(editalAtivo.id),
         // fetchRedacoes(editalAtivo.id), // Removido do load inicial
         // fetchSimulados(editalAtivo.id), // Removido do load inicial
